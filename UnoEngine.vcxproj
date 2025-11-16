@@ -133,6 +133,7 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Engine\Core\Application.cpp" />
+    <ClCompile Include="Engine\Core\Camera.cpp" />
     <ClCompile Include="Engine\Graphics\GraphicsDevice.cpp" />
     <ClCompile Include="Engine\Window\Window.cpp" />
     <ClCompile Include="Engine\Graphics\Shader.cpp" />
@@ -142,6 +143,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Core\Application.h" />
+    <ClInclude Include="Engine\Core\Camera.h" />
+    <ClInclude Include="Engine\Graphics\ConstantBuffer.h" />
     <ClInclude Include="Engine\Core\NonCopyable.h" />
     <ClInclude Include="Engine\Core\Types.h" />
     <ClInclude Include="Engine\Graphics\D3D12Common.h" />

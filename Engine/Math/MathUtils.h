@@ -17,8 +17,8 @@ inline float ToDegrees(float radians) {
 
 // クランプ
 template<typename T>
-inline T Clamp(T value, T min, T max) {
-    return std::max(min, std::min(value, max));
+inline T Clamp(T value, T minVal, T maxVal) {
+    return (std::max)(minVal, (std::min)(value, maxVal));
 }
 
 // 線形補間
@@ -45,18 +45,18 @@ inline T Sign(T value) {
 // 最小・最大
 template<typename T>
 inline T Min(T a, T b) {
-    return std::min(a, b);
+    return (std::min)(a, b);
 }
 
 template<typename T>
 inline T Max(T a, T b) {
-    return std::max(a, b);
+    return (std::max)(a, b);
 }
 
 // 絶対値
 template<typename T>
 inline T Abs(T value) {
-    return std::abs(value);
+    return (std::abs)(value);
 }
 
 // 平滑補間（Smoothstep）

@@ -1,7 +1,13 @@
 #pragma once
 
+// Windowsマクロとの競合を回避
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
 #include <DirectXMath.h>
 #include <cmath>
+#include <algorithm>
 
 namespace UnoEngine {
 

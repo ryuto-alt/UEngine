@@ -13,10 +13,16 @@ void Pipeline::Initialize(
 }
 
 void Pipeline::CreateRootSignature(ID3D12Device* device) {
-    // 空のルートシグネチャ（将来的に定数バッファなどを追加）
+    // ルートパラメータ: 定数バッファ (b0)
+    D3D12_ROOT_PARAMETER rootParams[1] = {};
+    rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+    rootParams[0].Descriptor.ShaderRegister = 0;
+    rootParams[0].Descriptor.RegisterSpace = 0;
+    rootParams[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+
     D3D12_ROOT_SIGNATURE_DESC rootSigDesc = {};
-    rootSigDesc.NumParameters = 0;
-    rootSigDesc.pParameters = nullptr;
+    rootSigDesc.NumParameters = 1;
+    rootSigDesc.pParameters = rootParams;
     rootSigDesc.NumStaticSamplers = 0;
     rootSigDesc.pStaticSamplers = nullptr;
     rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;

@@ -1,9 +1,18 @@
 #include "Engine/Core/Application.h"
+#include "Engine/Core/Application.h"
+#include "Engine/Core/Camera.h"
 #include "Engine/Graphics/Shader.h"
 #include "Engine/Graphics/Pipeline.h"
 #include "Engine/Graphics/VertexBuffer.h"
+#include "Engine/Graphics/ConstantBuffer.h"
+#include "Engine/Math/Math.h"
 
 using namespace UnoEngine;
+
+// 定数バッファ構造体
+struct alignas(256) TransformCB {
+    DirectX::XMFLOAT4X4 mvp;
+};
 
 // 頂点構造体
 struct Vertex {
@@ -44,10 +53,23 @@ protected:
         };
 
         vertexBuffer_.Create(device, triangleVertices, sizeof(triangleVertices), sizeof(Vertex));
+
+        // カメラ初期化
+        camera_.SetPosition(Vector3(0.0f, 0.0f, -3.0f));
+        camera_.SetPerspective(
+            Math::ToRadians(60.0f),
+            static_cast<float>(GetWindow()->GetWidth()) / GetWindow()->GetHeight(),
+            0.1f,
+            100.0f
+        );
+
+        // 定数バッファ作成
+        constantBuffer_.Create(device);
     }
 
     void OnUpdate(float deltaTime) override {
-        // 更新処理
+        // 三角形を回転
+        rotation_ += deltaTime;
     }
 
     void OnRender() override {
@@ -70,6 +92,20 @@ protected:
         cmdList->SetPipelineState(pipeline_.GetPipelineState());
         cmdList->SetGraphicsRootSignature(pipeline_.GetRootSignature());
 
+        // MVP行列計算
+        Matrix4x4 model = Matrix4x4::RotationY(rotation_);
+        Matrix4x4 view = camera_.GetViewMatrix();
+        Matrix4x4 projection = camera_.GetProjectionMatrix();
+        Matrix4x4 mvp = model * view * projection;
+
+        // 定数バッファ更新
+        TransformCB cbData;
+        DirectX::XMStoreFloat4x4(&cbData.mvp, DirectX::XMMatrixTranspose(mvp.GetXMMatrix()));
+        constantBuffer_.Update(cbData);
+
+        // 定数バッファ設定
+        cmdList->SetGraphicsRootConstantBufferView(0, constantBuffer_.GetGPUAddress());
+
         // 頂点バッファ設定
         cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         auto vbView = vertexBuffer_.GetView();
@@ -88,6 +124,9 @@ private:
     Shader pixelShader_;
     Pipeline pipeline_;
     VertexBuffer vertexBuffer_;
+    Camera camera_;
+    ConstantBuffer<TransformCB> constantBuffer_;
+    float rotation_ = 0.0f;
 };
 
 int WINAPI WinMain(

@@ -1,0 +1,259 @@
+#include "GraphicsDevice.h"
+#include <stdexcept>
+
+namespace UnoEngine {
+
+GraphicsDevice::GraphicsDevice(const GraphicsConfig& config)
+    : config_(config) {
+}
+
+void GraphicsDevice::Initialize(Window* window) {
+    if (config_.enableDebugLayer) {
+        EnableDebugLayer();
+    }
+
+    CreateDevice();
+    CreateCommandQueue();
+    CreateSwapChain(window);
+    CreateRenderTargets();
+    CreateFence();
+
+    // コマンドアロケータとリスト作成
+    for (uint32 i = 0; i < BACK_BUFFER_COUNT; ++i) {
+        ThrowIfFailed(
+            device_->CreateCommandAllocator(
+                D3D12_COMMAND_LIST_TYPE_DIRECT,
+                IID_PPV_ARGS(&commandAllocators_[i])
+            ),
+            "Failed to create command allocator"
+        );
+    }
+
+    ThrowIfFailed(
+        device_->CreateCommandList(
+            0,
+            D3D12_COMMAND_LIST_TYPE_DIRECT,
+            commandAllocators_[0].Get(),
+            nullptr,
+            IID_PPV_ARGS(&commandList_)
+        ),
+        "Failed to create command list"
+    );
+
+    // 初期状態はクローズ
+    commandList_->Close();
+}
+
+void GraphicsDevice::EnableDebugLayer() {
+#if defined(_DEBUG)
+    ComPtr<ID3D12Debug> debugController;
+    if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)))) {
+        debugController->EnableDebugLayer();
+
+        if (config_.enableGPUValidation) {
+            ComPtr<ID3D12Debug1> debugController1;
+            if (SUCCEEDED(debugController.As(&debugController1))) {
+                debugController1->SetEnableGPUBasedValidation(TRUE);
+            }
+        }
+    }
+#endif
+}
+
+void GraphicsDevice::CreateDevice() {
+    // DXGIファクトリ作成
+    ThrowIfFailed(
+        CreateDXGIFactory2(0, IID_PPV_ARGS(&factory_)),
+        "Failed to create DXGI factory"
+    );
+
+    // アダプタ選択（最初の利用可能なハードウェアアダプタ）
+    ComPtr<IDXGIAdapter1> adapter;
+    for (uint32 i = 0; factory_->EnumAdapters1(i, &adapter) != DXGI_ERROR_NOT_FOUND; ++i) {
+        DXGI_ADAPTER_DESC1 desc;
+        adapter->GetDesc1(&desc);
+
+        // ソフトウェアアダプタをスキップ
+        if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) {
+            continue;
+        }
+
+        // デバイス作成試行
+        if (SUCCEEDED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&device_)))) {
+            break;
+        }
+    }
+
+    if (!device_) {
+        throw std::runtime_error("Failed to create D3D12 device");
+    }
+}
+
+void GraphicsDevice::CreateCommandQueue() {
+    D3D12_COMMAND_QUEUE_DESC queueDesc = {};
+    queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+    queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+
+    ThrowIfFailed(
+        device_->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&commandQueue_)),
+        "Failed to create command queue"
+    );
+}
+
+void GraphicsDevice::CreateSwapChain(Window* window) {
+    DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
+    swapChainDesc.Width = window->GetWidth();
+    swapChainDesc.Height = window->GetHeight();
+    swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    swapChainDesc.SampleDesc.Count = 1;
+    swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    swapChainDesc.BufferCount = BACK_BUFFER_COUNT;
+    swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+
+    ComPtr<IDXGISwapChain1> swapChain1;
+    ThrowIfFailed(
+        factory_->CreateSwapChainForHwnd(
+            commandQueue_.Get(),
+            window->GetHandle(),
+            &swapChainDesc,
+            nullptr,
+            nullptr,
+            &swapChain1
+        ),
+        "Failed to create swap chain"
+    );
+
+    ThrowIfFailed(
+        swapChain1.As(&swapChain_),
+        "Failed to query IDXGISwapChain3"
+    );
+
+    // Alt+Enterでのフルスクリーン切替を無効化
+    factory_->MakeWindowAssociation(window->GetHandle(), DXGI_MWA_NO_ALT_ENTER);
+
+    currentBackBufferIndex_ = swapChain_->GetCurrentBackBufferIndex();
+}
+
+void GraphicsDevice::CreateRenderTargets() {
+    // RTVヒープ作成
+    D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
+    rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+    rtvHeapDesc.NumDescriptors = BACK_BUFFER_COUNT;
+
+    ThrowIfFailed(
+        device_->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&rtvHeap_)),
+        "Failed to create RTV heap"
+    );
+
+    rtvDescriptorSize_ = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+    // バックバッファ用RTV作成
+    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHeap_->GetCPUDescriptorHandleForHeapStart();
+
+    for (uint32 i = 0; i < BACK_BUFFER_COUNT; ++i) {
+        ThrowIfFailed(
+            swapChain_->GetBuffer(i, IID_PPV_ARGS(&renderTargets_[i])),
+            "Failed to get swap chain buffer"
+        );
+
+        device_->CreateRenderTargetView(renderTargets_[i].Get(), nullptr, rtvHandle);
+        rtvHandle.ptr += rtvDescriptorSize_;
+    }
+}
+
+void GraphicsDevice::CreateFence() {
+    ThrowIfFailed(
+        device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence_)),
+        "Failed to create fence"
+    );
+
+    fenceEvent_ = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    if (!fenceEvent_) {
+        throw std::runtime_error("Failed to create fence event");
+    }
+}
+
+void GraphicsDevice::BeginFrame() {
+    // このバックバッファのGPU処理完了を待つ
+    if (fence_->GetCompletedValue() < fenceValues_[currentBackBufferIndex_]) {
+        fence_->SetEventOnCompletion(fenceValues_[currentBackBufferIndex_], fenceEvent_);
+        WaitForSingleObject(fenceEvent_, INFINITE);
+    }
+
+    // コマンドアロケータをリセット
+    ThrowIfFailed(
+        commandAllocators_[currentBackBufferIndex_]->Reset(),
+        "Failed to reset command allocator"
+    );
+
+    // コマンドリストをリセット
+    ThrowIfFailed(
+        commandList_->Reset(commandAllocators_[currentBackBufferIndex_].Get(), nullptr),
+        "Failed to reset command list"
+    );
+
+    // レンダーターゲットへの遷移
+    D3D12_RESOURCE_BARRIER barrier = {};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.pResource = renderTargets_[currentBackBufferIndex_].Get();
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+
+    commandList_->ResourceBarrier(1, &barrier);
+
+    // レンダーターゲットをクリア
+    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHeap_->GetCPUDescriptorHandleForHeapStart();
+    rtvHandle.ptr += currentBackBufferIndex_ * rtvDescriptorSize_;
+
+    const float clearColor[] = { 0.2f, 0.3f, 0.4f, 1.0f };
+    commandList_->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+    commandList_->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+}
+
+void GraphicsDevice::EndFrame() {
+    // プレゼントへの遷移
+    D3D12_RESOURCE_BARRIER barrier = {};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.pResource = renderTargets_[currentBackBufferIndex_].Get();
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+
+    commandList_->ResourceBarrier(1, &barrier);
+
+    // コマンドリストをクローズ
+    ThrowIfFailed(
+        commandList_->Close(),
+        "Failed to close command list"
+    );
+
+    // コマンドキューに投入
+    ID3D12CommandList* cmdLists[] = { commandList_.Get() };
+    commandQueue_->ExecuteCommandLists(1, cmdLists);
+}
+
+void GraphicsDevice::Present() {
+    // 画面更新
+    ThrowIfFailed(
+        swapChain_->Present(1, 0),
+        "Failed to present"
+    );
+
+    // 現在のフレームにフェンス値を設定
+    const uint64 currentFence = ++currentFenceValue_;
+    commandQueue_->Signal(fence_.Get(), currentFence);
+    fenceValues_[currentBackBufferIndex_] = currentFence;
+
+    // 次のバックバッファインデックスを取得
+    currentBackBufferIndex_ = swapChain_->GetCurrentBackBufferIndex();
+}
+
+void GraphicsDevice::WaitForGPU() {
+    const uint64 fenceValue = ++currentFenceValue_;
+    commandQueue_->Signal(fence_.Get(), fenceValue);
+    fence_->SetEventOnCompletion(fenceValue, fenceEvent_);
+    WaitForSingleObject(fenceEvent_, INFINITE);
+}
+
+} // namespace UnoEngine

@@ -87,6 +87,11 @@ LRESULT CALLBACK Window::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM l
         window = reinterpret_cast<Window*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
     }
 
+    // コールバック呼び出し
+    if (window && window->messageCallback_) {
+        window->messageCallback_(msg, wparam, lparam);
+    }
+
     switch (msg) {
     case WM_DESTROY:
         PostQuitMessage(0);

@@ -26,6 +26,12 @@ void Application::Initialize() {
     graphics_ = MakeUnique<GraphicsDevice>(config_.graphics);
     graphics_->Initialize(window_.get());
 
+    // 入力システム初期化
+    input_ = MakeUnique<InputManager>();
+    window_->SetMessageCallback([this](UINT msg, WPARAM wparam, LPARAM lparam) {
+        input_->ProcessMessage(msg, wparam, lparam);
+    });
+
     OnInit();
     running_ = true;
 }
@@ -46,6 +52,9 @@ void Application::MainLoop() {
         float deltaTime = duration<float>(currentTime - lastTime).count();
         lastTime = currentTime;
 
+        // 入力更新
+        input_->Update();
+
         // 更新
         OnUpdate(deltaTime);
 
@@ -59,6 +68,7 @@ void Application::MainLoop() {
 
 void Application::Shutdown() {
     OnShutdown();
+    input_.reset();
     graphics_.reset();
     window_.reset();
 }

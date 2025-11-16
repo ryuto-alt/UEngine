@@ -18,11 +18,17 @@ struct WindowConfig {
 // ウィンドウクラス
 class Window : public NonCopyable {
 public:
+    // メッセージコールバック型
+    using MessageCallback = std::function<void(UINT, WPARAM, LPARAM)>;
+
     explicit Window(const WindowConfig& config);
     ~Window();
 
     // ウィンドウメッセージ処理
     bool ProcessMessages();
+
+    // メッセージコールバック設定
+    void SetMessageCallback(MessageCallback callback) { messageCallback_ = callback; }
 
     // アクセサ
     HWND GetHandle() const { return hwnd_; }
@@ -42,6 +48,7 @@ private:
     uint32 height_ = 0;
     bool fullscreen_ = false;
     std::wstring className_;
+    MessageCallback messageCallback_;
 };
 
 } // namespace UnoEngine

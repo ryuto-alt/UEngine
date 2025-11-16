@@ -1,11 +1,11 @@
 #include "Engine/Core/Application.h"
-#include "Engine/Core/Application.h"
 #include "Engine/Core/Camera.h"
 #include "Engine/Graphics/Shader.h"
 #include "Engine/Graphics/Pipeline.h"
 #include "Engine/Graphics/VertexBuffer.h"
 #include "Engine/Graphics/ConstantBuffer.h"
 #include "Engine/Math/Math.h"
+#include "Engine/Input/InputManager.h"
 
 using namespace UnoEngine;
 
@@ -68,6 +68,62 @@ protected:
     }
 
     void OnUpdate(float deltaTime) override {
+        auto* input = GetInput();
+        const auto& keyboard = input->GetKeyboard();
+        const auto& mouse = input->GetMouse();
+
+        // カメラ移動速度
+        const float moveSpeed = 5.0f * deltaTime;
+        const float rotateSpeed = 2.0f * deltaTime;
+
+        // WASD移動
+        Vector3 cameraPos = camera_.GetPosition();
+        Vector3 forward = camera_.GetForward();
+        Vector3 right = camera_.GetRight();
+
+        if (keyboard.IsDown(KeyCode::W)) {
+            cameraPos = cameraPos + forward * moveSpeed;
+        }
+        if (keyboard.IsDown(KeyCode::S)) {
+            cameraPos = cameraPos - forward * moveSpeed;
+        }
+        if (keyboard.IsDown(KeyCode::A)) {
+            cameraPos = cameraPos - right * moveSpeed;
+        }
+        if (keyboard.IsDown(KeyCode::D)) {
+            cameraPos = cameraPos + right * moveSpeed;
+        }
+        if (keyboard.IsDown(KeyCode::Q)) {
+            cameraPos.SetY(cameraPos.GetY() - moveSpeed);
+        }
+        if (keyboard.IsDown(KeyCode::E)) {
+            cameraPos.SetY(cameraPos.GetY() + moveSpeed);
+        }
+
+        camera_.SetPosition(cameraPos);
+
+        // 矢印キーで回転
+        Quaternion rotation = camera_.GetRotation();
+        if (keyboard.IsDown(KeyCode::Left)) {
+            rotation = Quaternion::RotationAxis(Vector3::UnitY(), rotateSpeed) * rotation;
+        }
+        if (keyboard.IsDown(KeyCode::Right)) {
+            rotation = Quaternion::RotationAxis(Vector3::UnitY(), -rotateSpeed) * rotation;
+        }
+        if (keyboard.IsDown(KeyCode::Up)) {
+            rotation = rotation * Quaternion::RotationAxis(Vector3::UnitX(), rotateSpeed);
+        }
+        if (keyboard.IsDown(KeyCode::Down)) {
+            rotation = rotation * Quaternion::RotationAxis(Vector3::UnitX(), -rotateSpeed);
+        }
+
+        camera_.SetRotation(rotation);
+
+        // Escapeで終了
+        if (keyboard.IsPressed(KeyCode::Escape)) {
+            PostQuitMessage(0);
+        }
+
         // 三角形を回転
         rotation_ += deltaTime;
     }

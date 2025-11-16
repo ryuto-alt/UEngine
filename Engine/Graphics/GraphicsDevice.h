@@ -29,6 +29,7 @@ public:
     // アクセサ
     ID3D12Device* GetDevice() const { return device_.Get(); }
     ID3D12CommandQueue* GetCommandQueue() const { return commandQueue_.Get(); }
+    ID3D12GraphicsCommandList* GetCommandList() const { return commandList_.Get(); }
     IDXGISwapChain3* GetSwapChain() const { return swapChain_.Get(); }
     uint32 GetCurrentBackBufferIndex() const { return currentBackBufferIndex_; }
 

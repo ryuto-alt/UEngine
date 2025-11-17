@@ -147,6 +147,8 @@
     <ClCompile Include="Engine\Graphics\Material.cpp" />
     <ClCompile Include="Engine\Graphics\Mesh.cpp" />
     <ClCompile Include="Engine\Graphics\ObjLoader.cpp" />
+    <ClCompile Include="Engine\Graphics\Sprite.cpp" />
+    <ClCompile Include="Engine\Graphics\SpritePipeline.cpp" />
     <ClCompile Include="Engine\Graphics\Texture2D.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -174,6 +176,8 @@
     <ClInclude Include="Engine\Graphics\Material.h" />
     <ClInclude Include="Engine\Graphics\Mesh.h" />
     <ClInclude Include="Engine\Graphics\ObjLoader.h" />
+    <ClInclude Include="Engine\Graphics\Sprite.h" />
+    <ClInclude Include="Engine\Graphics\SpritePipeline.h" />
     <ClInclude Include="Engine\Graphics\Texture2D.h" />
     <ClInclude Include="Engine\Graphics\d3dx12.h" />
   </ItemGroup>
@@ -181,6 +185,8 @@
     <None Include="packages.config" />
     <None Include="Shaders\BasicVS.hlsl" />
     <None Include="Shaders\BasicPS.hlsl" />
+    <None Include="Shaders\SpriteVS.hlsl" />
+    <None Include="Shaders\SpritePS.hlsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

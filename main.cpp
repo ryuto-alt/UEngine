@@ -6,6 +6,8 @@
 #include "Engine/Graphics/ObjLoader.h"
 #include "Engine/Graphics/ConstantBuffer.h"
 #include "Engine/Graphics/Texture2D.h"
+#include "Engine/Graphics/Sprite.h"
+#include "Engine/Graphics/SpritePipeline.h"
 #include "Engine/Math/Math.h"
 #include "Engine/Input/InputManager.h"
 
@@ -40,6 +42,11 @@ protected:
 
         pipeline_.Initialize(device, vertexShader_, pixelShader_, DXGI_FORMAT_R8G8B8A8_UNORM);
 
+        spriteVertexShader_.CompileFromFile(L"Shaders/SpriteVS.hlsl", ShaderStage::Vertex);
+        spritePixelShader_.CompileFromFile(L"Shaders/SpritePS.hlsl", ShaderStage::Pixel);
+
+        spritePipeline_.Initialize(device, spriteVertexShader_, spritePixelShader_);
+
         // リソース作成用の一時コマンドアロケータとリスト
         ComPtr<ID3D12CommandAllocator> initAllocator;
         device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&initAllocator));
@@ -50,6 +57,11 @@ protected:
         if (!mesh_.HasMaterial()) {
             texture_.LoadFromFile(GetGraphics(), commandList, L"resources/tex/uvChecker.png", 0);
         }
+
+        sprite_.Initialize(GetGraphics());
+        sprite_.LoadTexture(GetGraphics(), commandList, L"resources/tex/uvChecker.png", 1);
+        sprite_.SetPosition(100, 100);
+        sprite_.SetScale(1.0f);
 
         // コマンドリストを実行してGPU処理完了を待つ
         commandList->Close();
@@ -196,6 +208,8 @@ protected:
         cmdList->IASetIndexBuffer(&ibView);
 
         cmdList->DrawIndexedInstanced(mesh_.GetIndexBuffer().GetIndexCount(), 1, 0, 0, 0);
+
+        sprite_.Draw(GetGraphics(), cmdList, spritePipeline_.GetPipelineState(), spritePipeline_.GetRootSignature());
     }
 
     void OnShutdown() override {
@@ -210,6 +224,11 @@ private:
     ConstantBuffer<TransformCB> constantBuffer_;
     Texture2D texture_;
     float rotation_ = 0.0f;
+
+    Shader spriteVertexShader_;
+    Shader spritePixelShader_;
+    SpritePipeline spritePipeline_;
+    Sprite sprite_;
 };
 
 int WINAPI WinMain(

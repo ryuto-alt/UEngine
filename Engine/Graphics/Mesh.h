@@ -11,9 +11,9 @@
 namespace UnoEngine {
 
 struct Vertex {
-    Vector3 position;
-    Vector3 normal;
-    Vector2 uv;
+    float px, py, pz;
+    float nx, ny, nz;
+    float u, v;
 };
 
 class Mesh : public NonCopyable {

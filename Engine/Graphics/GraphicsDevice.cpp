@@ -17,6 +17,7 @@ void GraphicsDevice::Initialize(Window* window) {
     CreateSwapChain(window);
     CreateRenderTargets();
     CreateDepthStencil();
+    CreateSRVHeap();
     CreateFence();
 
     // コマンドアロケータとリスト作成
@@ -214,6 +215,40 @@ void GraphicsDevice::CreateDepthStencil() {
 
     device_->CreateDepthStencilView(depthStencil_.Get(), &dsvDesc,
                                     dsvHeap_->GetCPUDescriptorHandleForHeapStart());
+}
+
+
+void GraphicsDevice::CreateSRVHeap() {
+    D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
+    srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+    srvHeapDesc.NumDescriptors = MAX_SRV_COUNT;
+    srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+
+    ThrowIfFailed(
+        device_->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&srvHeap_)),
+        "Failed to create SRV heap"
+    );
+
+    srvDescriptorSize_ = device_->GetDescriptorHandleIncrementSize(
+        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
+    );
+}
+
+void GraphicsDevice::CreateSRV(ID3D12Resource* resource, uint32 index) {
+    if (index >= MAX_SRV_COUNT) {
+        throw std::runtime_error("SRV index out of range");
+    }
+
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Format = resource->GetDesc().Format;
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    srvDesc.Texture2D.MipLevels = resource->GetDesc().MipLevels;
+
+    D3D12_CPU_DESCRIPTOR_HANDLE handle = srvHeap_->GetCPUDescriptorHandleForHeapStart();
+    handle.ptr += index * srvDescriptorSize_;
+
+    device_->CreateShaderResourceView(resource, &srvDesc, handle);
 }
 
 void GraphicsDevice::CreateFence() {

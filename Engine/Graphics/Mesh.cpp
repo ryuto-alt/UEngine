@@ -29,21 +29,20 @@ void Mesh::CalculateBounds(const std::vector<Vertex>& vertices) {
         return;
     }
 
-    float minX = vertices[0].position.GetX();
-    float minY = vertices[0].position.GetY();
-    float minZ = vertices[0].position.GetZ();
+    float minX = vertices[0].px;
+    float minY = vertices[0].py;
+    float minZ = vertices[0].pz;
     float maxX = minX;
     float maxY = minY;
     float maxZ = minZ;
 
     for (const auto& vertex : vertices) {
-        const auto& pos = vertex.position;
-        minX = (std::min)(minX, pos.GetX());
-        minY = (std::min)(minY, pos.GetY());
-        minZ = (std::min)(minZ, pos.GetZ());
-        maxX = (std::max)(maxX, pos.GetX());
-        maxY = (std::max)(maxY, pos.GetY());
-        maxZ = (std::max)(maxZ, pos.GetZ());
+        minX = (std::min)(minX, vertex.px);
+        minY = (std::min)(minY, vertex.py);
+        minZ = (std::min)(minZ, vertex.pz);
+        maxX = (std::max)(maxX, vertex.px);
+        maxY = (std::max)(maxY, vertex.py);
+        maxZ = (std::max)(maxZ, vertex.pz);
     }
 
     boundsMin_ = Vector3(minX, minY, minZ);

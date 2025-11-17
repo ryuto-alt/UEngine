@@ -5,6 +5,7 @@
 #include "Engine/Graphics/Mesh.h"
 #include "Engine/Graphics/ObjLoader.h"
 #include "Engine/Graphics/ConstantBuffer.h"
+#include "Engine/Graphics/Texture2D.h"
 #include "Engine/Math/Math.h"
 #include "Engine/Input/InputManager.h"
 
@@ -45,6 +46,8 @@ protected:
         commandList->Reset(initAllocator.Get(), nullptr);
 
         mesh_ = ObjLoader::Load(device, commandList, "resources/model/testmodel/testmodel.obj");
+        
+        texture_.LoadFromFile(GetGraphics(), commandList, L"resources/tex/uvChecker.png", 0);
 
         // コマンドリストを実行してGPU処理完了を待つ
         commandList->Close();
@@ -150,6 +153,15 @@ protected:
         // パイプライン設定
         cmdList->SetPipelineState(pipeline_.GetPipelineState());
         cmdList->SetGraphicsRootSignature(pipeline_.GetRootSignature());
+        
+        // SRVヒープ設定
+        ID3D12DescriptorHeap* heaps[] = { GetGraphics()->GetSRVHeap() };
+        cmdList->SetDescriptorHeaps(1, heaps);
+        
+        // テクスチャ設定
+        D3D12_GPU_DESCRIPTOR_HANDLE srvHandle = GetGraphics()->GetSRVHeap()->GetGPUDescriptorHandleForHeapStart();
+        srvHandle.ptr += texture_.GetSRVIndex() * GetGraphics()->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+        cmdList->SetGraphicsRootDescriptorTable(1, srvHandle);
 
         // MVP行列計算
         Matrix4x4 model = Matrix4x4::RotationY(rotation_);
@@ -186,6 +198,7 @@ private:
     Mesh mesh_;
     Camera camera_;
     ConstantBuffer<TransformCB> constantBuffer_;
+    Texture2D texture_;
     float rotation_ = 0.0f;
 };
 

@@ -131,18 +131,29 @@ Mesh ObjLoader::Load(ID3D12Device* device, ID3D12GraphicsCommandList* commandLis
 
                     assert(faceIndex.positionIndex >= 0 &&
                            faceIndex.positionIndex < static_cast<int32>(positions.size()));
-                    vertex.position = positions[faceIndex.positionIndex];
+                    const Vector3& pos = positions[faceIndex.positionIndex];
+                    vertex.px = pos.GetX();
+                    vertex.py = pos.GetY();
+                    vertex.pz = pos.GetZ();
 
                     if (faceIndex.uvIndex >= 0 && faceIndex.uvIndex < static_cast<int32>(uvs.size())) {
-                        vertex.uv = uvs[faceIndex.uvIndex];
+                        const Vector2& uv = uvs[faceIndex.uvIndex];
+                        vertex.u = uv.GetX();
+                        vertex.v = uv.GetY();
                     } else {
-                        vertex.uv = Vector2::Zero();
+                        vertex.u = 0.0f;
+                        vertex.v = 0.0f;
                     }
 
                     if (faceIndex.normalIndex >= 0 && faceIndex.normalIndex < static_cast<int32>(normals.size())) {
-                        vertex.normal = normals[faceIndex.normalIndex];
+                        const Vector3& norm = normals[faceIndex.normalIndex];
+                        vertex.nx = norm.GetX();
+                        vertex.ny = norm.GetY();
+                        vertex.nz = norm.GetZ();
                     } else {
-                        vertex.normal = Vector3::UnitY();
+                        vertex.nx = 0.0f;
+                        vertex.ny = 1.0f;
+                        vertex.nz = 0.0f;
                     }
 
                     const uint32 vertexIndex = static_cast<uint32>(vertices.size());

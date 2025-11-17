@@ -33,6 +33,8 @@ public:
     IDXGISwapChain3* GetSwapChain() const { return swapChain_.Get(); }
     uint32 GetCurrentBackBufferIndex() const { return currentBackBufferIndex_; }
     ID3D12DescriptorHeap* GetDSVHeap() const { return dsvHeap_.Get(); }
+    ID3D12DescriptorHeap* GetSRVHeap() const { return srvHeap_.Get(); }
+    void CreateSRV(ID3D12Resource* resource, uint32 index);
 
 private:
     void EnableDebugLayer();
@@ -41,6 +43,7 @@ private:
     void CreateSwapChain(Window* window);
     void CreateRenderTargets();
     void CreateDepthStencil();
+    void CreateSRVHeap();
     void CreateFence();
     void WaitForGPU();
 
@@ -66,6 +69,11 @@ private:
     // 深度ステンシル
     ComPtr<ID3D12DescriptorHeap> dsvHeap_;
     ComPtr<ID3D12Resource> depthStencil_;
+
+    // SRVヒープ
+    ComPtr<ID3D12DescriptorHeap> srvHeap_;
+    uint32 srvDescriptorSize_ = 0;
+    static constexpr uint32 MAX_SRV_COUNT = 256;
 
     // 同期オブジェクト
     ComPtr<ID3D12Fence> fence_;

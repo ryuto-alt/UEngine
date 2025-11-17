@@ -87,6 +87,23 @@ private:
     DirectX::XMVECTOR vec_;
 };
 
+// 2次元ベクトル（UV座標用）
+class Vector2 {
+public:
+    Vector2() : x(0.0f), y(0.0f) {}
+    Vector2(float x, float y) : x(x), y(y) {}
+
+    float GetX() const { return x; }
+    float GetY() const { return y; }
+    void SetX(float value) { x = value; }
+    void SetY(float value) { y = value; }
+
+    static Vector2 Zero() { return Vector2(0.0f, 0.0f); }
+    static Vector2 One() { return Vector2(1.0f, 1.0f); }
+
+    float x, y;
+};
+
 // スカラー * ベクトル
 inline Vector3 operator*(float scalar, const Vector3& vec) { return vec * scalar; }
 inline Vector4 operator*(float scalar, const Vector4& vec) { return vec * scalar; }

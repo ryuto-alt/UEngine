@@ -10,6 +10,8 @@ class VertexBuffer {
 public:
     VertexBuffer() = default;
     ~VertexBuffer() = default;
+    VertexBuffer(VertexBuffer&&) = default;
+    VertexBuffer& operator=(VertexBuffer&&) = default;
 
     // 作成
     void Create(ID3D12Device* device, const void* data, uint32 size, uint32 stride);

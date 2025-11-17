@@ -16,6 +16,7 @@ void GraphicsDevice::Initialize(Window* window) {
     CreateCommandQueue();
     CreateSwapChain(window);
     CreateRenderTargets();
+    CreateDepthStencil();
     CreateFence();
 
     // コマンドアロケータとリスト作成
@@ -161,6 +162,60 @@ void GraphicsDevice::CreateRenderTargets() {
     }
 }
 
+void GraphicsDevice::CreateDepthStencil() {
+    // DSVヒープ作成
+    D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
+    dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+    dsvHeapDesc.NumDescriptors = 1;
+
+    ThrowIfFailed(
+        device_->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&dsvHeap_)),
+        "Failed to create DSV heap"
+    );
+
+    // 深度ステンシルバッファ作成
+    DXGI_SWAP_CHAIN_DESC swapChainDesc;
+    swapChain_->GetDesc(&swapChainDesc);
+
+    D3D12_RESOURCE_DESC depthDesc = {};
+    depthDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+    depthDesc.Width = swapChainDesc.BufferDesc.Width;
+    depthDesc.Height = swapChainDesc.BufferDesc.Height;
+    depthDesc.DepthOrArraySize = 1;
+    depthDesc.MipLevels = 1;
+    depthDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    depthDesc.SampleDesc.Count = 1;
+    depthDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+
+    D3D12_CLEAR_VALUE clearValue = {};
+    clearValue.Format = DXGI_FORMAT_D32_FLOAT;
+    clearValue.DepthStencil.Depth = 1.0f;
+
+    D3D12_HEAP_PROPERTIES heapProps = {};
+    heapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+    ThrowIfFailed(
+        device_->CreateCommittedResource(
+            &heapProps,
+            D3D12_HEAP_FLAG_NONE,
+            &depthDesc,
+            D3D12_RESOURCE_STATE_DEPTH_WRITE,
+            &clearValue,
+            IID_PPV_ARGS(&depthStencil_)
+        ),
+        "Failed to create depth stencil buffer"
+    );
+
+    // DSV作成
+    D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+    dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+    dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
+
+    device_->CreateDepthStencilView(depthStencil_.Get(), &dsvDesc,
+                                    dsvHeap_->GetCPUDescriptorHandleForHeapStart());
+}
+
 void GraphicsDevice::CreateFence() {
     ThrowIfFailed(
         device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence_)),
@@ -208,7 +263,13 @@ void GraphicsDevice::BeginFrame() {
 
     const float clearColor[] = { 0.2f, 0.3f, 0.4f, 1.0f };
     commandList_->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-    commandList_->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+
+    // 深度ステンシルをクリア
+    D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvHeap_->GetCPUDescriptorHandleForHeapStart();
+    commandList_->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
+    // レンダーターゲットと深度ステンシルを設定
+    commandList_->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 }
 
 void GraphicsDevice::EndFrame() {

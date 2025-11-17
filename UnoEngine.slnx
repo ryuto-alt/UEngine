@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="UnoEngine.vcxproj" />
+  <Project Path="UnoEngine.vcxproj" Id="7ff3337e-8433-4f9a-b736-4947fb04658b" />
 </Solution>

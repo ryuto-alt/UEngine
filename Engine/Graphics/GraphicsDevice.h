@@ -32,6 +32,7 @@ public:
     ID3D12GraphicsCommandList* GetCommandList() const { return commandList_.Get(); }
     IDXGISwapChain3* GetSwapChain() const { return swapChain_.Get(); }
     uint32 GetCurrentBackBufferIndex() const { return currentBackBufferIndex_; }
+    ID3D12DescriptorHeap* GetDSVHeap() const { return dsvHeap_.Get(); }
 
 private:
     void EnableDebugLayer();
@@ -39,6 +40,7 @@ private:
     void CreateCommandQueue();
     void CreateSwapChain(Window* window);
     void CreateRenderTargets();
+    void CreateDepthStencil();
     void CreateFence();
     void WaitForGPU();
 
@@ -60,6 +62,10 @@ private:
     ComPtr<ID3D12DescriptorHeap> rtvHeap_;
     ComPtr<ID3D12Resource> renderTargets_[BACK_BUFFER_COUNT];
     uint32 rtvDescriptorSize_ = 0;
+
+    // 深度ステンシル
+    ComPtr<ID3D12DescriptorHeap> dsvHeap_;
+    ComPtr<ID3D12Resource> depthStencil_;
 
     // 同期オブジェクト
     ComPtr<ID3D12Fence> fence_;

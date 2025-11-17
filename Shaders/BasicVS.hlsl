@@ -6,17 +6,20 @@ cbuffer Transform : register(b0) {
 
 struct VSInput {
     float3 position : POSITION;
-    float4 color : COLOR;
+    float3 normal : NORMAL;
+    float2 uv : TEXCOORD;
 };
 
 struct VSOutput {
     float4 position : SV_POSITION;
-    float4 color : COLOR;
+    float3 normal : NORMAL;
+    float2 uv : TEXCOORD;
 };
 
 VSOutput main(VSInput input) {
     VSOutput output;
     output.position = mul(float4(input.position, 1.0f), mvp);
-    output.color = input.color;
+    output.normal = input.normal;
+    output.uv = input.uv;
     return output;
 }

@@ -2,22 +2,16 @@
 #include "Engine/Core/Camera.h"
 #include "Engine/Graphics/Shader.h"
 #include "Engine/Graphics/Pipeline.h"
-#include "Engine/Graphics/VertexBuffer.h"
+#include "Engine/Graphics/Mesh.h"
+#include "Engine/Graphics/ObjLoader.h"
 #include "Engine/Graphics/ConstantBuffer.h"
 #include "Engine/Math/Math.h"
 #include "Engine/Input/InputManager.h"
 
 using namespace UnoEngine;
 
-// 定数バッファ構造体
 struct alignas(256) TransformCB {
     DirectX::XMFLOAT4X4 mvp;
-};
-
-// 頂点構造体
-struct Vertex {
-    float position[3];
-    float color[4];
 };
 
 class SampleApp : public Application {
@@ -27,7 +21,7 @@ public:
 private:
     static ApplicationConfig CreateConfig() {
         ApplicationConfig config;
-        config.window.title = L"UnoEngine - Sample";
+        config.window.title = L"UnoEngine - OBJ Viewer";
         config.window.width = 1280;
         config.window.height = 720;
         config.graphics.enableDebugLayer = true;
@@ -37,25 +31,35 @@ private:
 protected:
     void OnInit() override {
         auto* device = GetGraphics()->GetDevice();
+        auto* commandQueue = GetGraphics()->GetCommandQueue();
+        auto* commandList = GetGraphics()->GetCommandList();
 
-        // シェーダーコンパイル
         vertexShader_.CompileFromFile(L"Shaders/BasicVS.hlsl", ShaderStage::Vertex);
         pixelShader_.CompileFromFile(L"Shaders/BasicPS.hlsl", ShaderStage::Pixel);
 
-        // パイプライン作成
         pipeline_.Initialize(device, vertexShader_, pixelShader_, DXGI_FORMAT_R8G8B8A8_UNORM);
 
-        // 三角形の頂点データ
-        Vertex triangleVertices[] = {
-            { { 0.0f, 0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },   // 上: 赤
-            { { 0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },  // 右下: 緑
-            { { -0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } }  // 左下: 青
-        };
+        // リソース作成用の一時コマンドアロケータとリスト
+        ComPtr<ID3D12CommandAllocator> initAllocator;
+        device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&initAllocator));
+        commandList->Reset(initAllocator.Get(), nullptr);
 
-        vertexBuffer_.Create(device, triangleVertices, sizeof(triangleVertices), sizeof(Vertex));
+        mesh_ = ObjLoader::Load(device, commandList, "resources/model/testmodel/testmodel.obj");
 
-        // カメラ初期化
-        camera_.SetPosition(Vector3(0.0f, 0.0f, -3.0f));
+        // コマンドリストを実行してGPU処理完了を待つ
+        commandList->Close();
+        ID3D12CommandList* commandLists[] = { commandList };
+        commandQueue->ExecuteCommandLists(1, commandLists);
+
+        ComPtr<ID3D12Fence> fence;
+        device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
+        HANDLE fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+        commandQueue->Signal(fence.Get(), 1);
+        fence->SetEventOnCompletion(1, fenceEvent);
+        WaitForSingleObject(fenceEvent, INFINITE);
+        CloseHandle(fenceEvent);
+
+        camera_.SetPosition(Vector3(0.0f, 0.0f, -5.0f));
         camera_.SetPerspective(
             Math::ToRadians(60.0f),
             static_cast<float>(GetWindow()->GetWidth()) / GetWindow()->GetHeight(),
@@ -63,7 +67,6 @@ protected:
             100.0f
         );
 
-        // 定数バッファ作成
         constantBuffer_.Create(device);
     }
 
@@ -162,24 +165,25 @@ protected:
         // 定数バッファ設定
         cmdList->SetGraphicsRootConstantBufferView(0, constantBuffer_.GetGPUAddress());
 
-        // 頂点バッファ設定
         cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        auto vbView = vertexBuffer_.GetView();
+
+        auto vbView = mesh_.GetVertexBuffer().GetView();
         cmdList->IASetVertexBuffers(0, 1, &vbView);
 
-        // 描画
-        cmdList->DrawInstanced(3, 1, 0, 0);
+        auto ibView = mesh_.GetIndexBuffer().GetView();
+        cmdList->IASetIndexBuffer(&ibView);
+
+        cmdList->DrawIndexedInstanced(mesh_.GetIndexBuffer().GetIndexCount(), 1, 0, 0, 0);
     }
 
     void OnShutdown() override {
-        // 終了処理
     }
 
 private:
     Shader vertexShader_;
     Shader pixelShader_;
     Pipeline pipeline_;
-    VertexBuffer vertexBuffer_;
+    Mesh mesh_;
     Camera camera_;
     ConstantBuffer<TransformCB> constantBuffer_;
     float rotation_ = 0.0f;

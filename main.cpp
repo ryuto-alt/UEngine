@@ -8,6 +8,8 @@
 #include "Engine/Graphics/Texture2D.h"
 #include "Engine/Graphics/Sprite.h"
 #include "Engine/Graphics/SpritePipeline.h"
+#include "Engine/UI/ImGuiManager.h"
+#include <imgui.h>
 #include "Engine/Math/Math.h"
 #include "Engine/Input/InputManager.h"
 
@@ -48,7 +50,7 @@ protected:
         spritePipeline_.Initialize(device, spriteVertexShader_, spritePixelShader_);
 
         // リソース作成用の一時コマンドアロケータとリスト
-        ComPtr<ID3D12CommandAllocator> initAllocator;
+        Microsoft::WRL::ComPtr<ID3D12CommandAllocator> initAllocator;
         device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&initAllocator));
         commandList->Reset(initAllocator.Get(), nullptr);
 
@@ -58,17 +60,17 @@ protected:
             texture_.LoadFromFile(GetGraphics(), commandList, L"resources/tex/uvChecker.png", 0);
         }
 
-        sprite_.Initialize(GetGraphics());
-        sprite_.LoadTexture(GetGraphics(), commandList, L"resources/tex/uvChecker.png", 1);
-        sprite_.SetPosition(100, 100);
-        sprite_.SetScale(1.0f);
+        // sprite_.Initialize(GetGraphics());
+        // sprite_.LoadTexture(GetGraphics(), commandList, L"resources/tex/uvChecker.png", 1);
+        // sprite_.SetPosition(100, 100);
+        // sprite_.SetScale(1.0f);
 
         // コマンドリストを実行してGPU処理完了を待つ
         commandList->Close();
         ID3D12CommandList* commandLists[] = { commandList };
         commandQueue->ExecuteCommandLists(1, commandLists);
 
-        ComPtr<ID3D12Fence> fence;
+        Microsoft::WRL::ComPtr<ID3D12Fence> fence;
         device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
         HANDLE fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
         commandQueue->Signal(fence.Get(), 1);
@@ -85,6 +87,9 @@ protected:
         );
 
         constantBuffer_.Create(device);
+
+        // ImGui初期化（SRVインデックス2を使用）
+        imguiManager_.Initialize(GetGraphics(), GetWindow(), 2);
     }
 
     void OnUpdate(float deltaTime) override {
@@ -209,7 +214,16 @@ protected:
 
         cmdList->DrawIndexedInstanced(mesh_.GetIndexBuffer().GetIndexCount(), 1, 0, 0, 0);
 
-        sprite_.Draw(GetGraphics(), cmdList, spritePipeline_.GetPipelineState(), spritePipeline_.GetRootSignature());
+        // ImGui描画
+        imguiManager_.BeginFrame();
+        
+        // ImGuiデモウィンドウ表示
+        ImGui::ShowDemoWindow();
+        
+        imguiManager_.EndFrame();
+        imguiManager_.Render(cmdList);
+
+        // sprite_.Draw(GetGraphics(), cmdList, spritePipeline_.GetPipelineState(), spritePipeline_.GetRootSignature());
     }
 
     void OnShutdown() override {
@@ -229,6 +243,7 @@ private:
     Shader spritePixelShader_;
     SpritePipeline spritePipeline_;
     Sprite sprite_;
+    ImGuiManager imguiManager_;
 };
 
 int WINAPI WinMain(

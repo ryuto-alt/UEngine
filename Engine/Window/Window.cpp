@@ -1,6 +1,9 @@
 #include "Window.h"
 #include <stdexcept>
 
+// ImGui Win32ハンドラの前方宣言
+extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 namespace UnoEngine {
 
 Window::Window(const WindowConfig& config)
@@ -77,6 +80,11 @@ bool Window::ProcessMessages() {
 }
 
 LRESULT CALLBACK Window::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+    // ImGui入力処理（最優先）
+    if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)) {
+        return true;
+    }
+
     Window* window = nullptr;
 
     if (msg == WM_NCCREATE) {

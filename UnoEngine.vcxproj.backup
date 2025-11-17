@@ -150,7 +150,6 @@
     <ClCompile Include="Engine\Graphics\Sprite.cpp" />
     <ClCompile Include="Engine\Graphics\SpritePipeline.cpp" />
     <ClCompile Include="Engine\Graphics\Texture2D.cpp" />
-    <ClCompile Include="Engine\UI\ImGuiManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Core\Application.h" />
@@ -181,7 +180,6 @@
     <ClInclude Include="Engine\Graphics\SpritePipeline.h" />
     <ClInclude Include="Engine\Graphics\Texture2D.h" />
     <ClInclude Include="Engine\Graphics\d3dx12.h" />
-    <ClInclude Include="Engine\UI\ImGuiManager.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

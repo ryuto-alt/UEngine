@@ -3,6 +3,7 @@
 #include <sstream>
 #include <cassert>
 #include <unordered_map>
+#include <filesystem>
 #include <Windows.h>
 
 namespace UnoEngine {
@@ -67,12 +68,82 @@ Vector3 CalculateFaceNormal(const Vector3& v0, const Vector3& v1, const Vector3&
     return edge1.Cross(edge2).Normalize();
 }
 
+
+std::unordered_map<std::string, MaterialData> LoadMTL(const std::string& mtlPath, const std::string& baseDirectory) {
+    std::unordered_map<std::string, MaterialData> materials;
+    
+    std::ifstream file(mtlPath);
+    if (!file.is_open()) {
+        return materials;
+    }
+
+    MaterialData* currentMaterial = nullptr;
+    std::string line;
+
+    while (std::getline(file, line)) {
+        if (line.empty() || line[0] == '#') {
+            continue;
+        }
+
+        std::stringstream ss(line);
+        std::string type;
+        ss >> type;
+
+        if (type == "newmtl") {
+            std::string name;
+            std::getline(ss >> std::ws, name);
+            currentMaterial = &materials[name];
+            currentMaterial->name = name;
+        }
+        else if (currentMaterial) {
+            if (type == "Ka") {
+                ss >> currentMaterial->ambient[0] >> currentMaterial->ambient[1] >> currentMaterial->ambient[2];
+            }
+            else if (type == "Kd") {
+                ss >> currentMaterial->diffuse[0] >> currentMaterial->diffuse[1] >> currentMaterial->diffuse[2];
+            }
+            else if (type == "Ks") {
+                ss >> currentMaterial->specular[0] >> currentMaterial->specular[1] >> currentMaterial->specular[2];
+            }
+            else if (type == "Ke") {
+                ss >> currentMaterial->emissive[0] >> currentMaterial->emissive[1] >> currentMaterial->emissive[2];
+            }
+            else if (type == "Ns") {
+                ss >> currentMaterial->shininess;
+            }
+            else if (type == "d") {
+                ss >> currentMaterial->opacity;
+            }
+            else if (type == "map_Kd") {
+                std::string texPath;
+                std::getline(ss >> std::ws, texPath);
+                
+                namespace fs = std::filesystem;
+                fs::path absolutePath(texPath);
+                
+                if (absolutePath.is_absolute()) {
+                    currentMaterial->diffuseTexturePath = absolutePath.filename().string();
+                } else {
+                    currentMaterial->diffuseTexturePath = texPath;
+                }
+            }
+        }
+    }
+
+    return materials;
 }
 
-Mesh ObjLoader::Load(ID3D12Device* device, ID3D12GraphicsCommandList* commandList,
+}
+
+Mesh ObjLoader::Load(GraphicsDevice* graphics, ID3D12GraphicsCommandList* commandList,
                      const std::string& filepath) {
+    auto* device = graphics->GetDevice();
     std::ifstream file(filepath);
     assert(file.is_open() && "Failed to open OBJ file");
+
+    namespace fs = std::filesystem;
+    const fs::path objPath(filepath);
+    const std::string baseDirectory = objPath.parent_path().string();
 
     std::vector<Vector3> positions;
     std::vector<Vector2> uvs;
@@ -80,6 +151,10 @@ Mesh ObjLoader::Load(ID3D12Device* device, ID3D12GraphicsCommandList* commandLis
     std::vector<Vertex> vertices;
     std::vector<uint32> indices;
     std::unordered_map<FaceIndex, uint32, FaceIndexHash> vertexCache;
+    
+    std::unordered_map<std::string, MaterialData> materials;
+    std::string currentMaterialName;
+    MaterialData* activeMaterial = nullptr;
 
     std::string line;
     uint32 lineNumber = 0;
@@ -95,7 +170,20 @@ Mesh ObjLoader::Load(ID3D12Device* device, ID3D12GraphicsCommandList* commandLis
         std::string type;
         ss >> type;
 
-        if (type == "v") {
+        if (type == "mtllib") {
+            std::string mtlFilename;
+            ss >> mtlFilename;
+            const std::string mtlPath = baseDirectory + "/" + mtlFilename;
+            materials = LoadMTL(mtlPath, baseDirectory);
+        }
+        else if (type == "usemtl") {
+            std::getline(ss >> std::ws, currentMaterialName);
+            auto it = materials.find(currentMaterialName);
+            if (it != materials.end()) {
+                activeMaterial = &it->second;
+            }
+        }
+        else if (type == "v") {
             float x, y, z;
             ss >> x >> y >> z;
             positions.emplace_back(x, y, z);
@@ -173,12 +261,17 @@ Mesh ObjLoader::Load(ID3D12Device* device, ID3D12GraphicsCommandList* commandLis
         : filepath;
 
     char debugMsg[512];
-    sprintf_s(debugMsg, "OBJ Loaded: %s - %zu vertices, %zu indices\n",
-             name.c_str(), vertices.size(), indices.size());
+    sprintf_s(debugMsg, "OBJ Loaded: %s - %zu vertices, %zu indices, %zu materials\n",
+             name.c_str(), vertices.size(), indices.size(), materials.size());
     OutputDebugStringA(debugMsg);
 
     Mesh mesh;
     mesh.Create(device, commandList, vertices, indices, name);
+    
+    if (activeMaterial && !materials.empty()) {
+        mesh.LoadMaterial(*activeMaterial, graphics, commandList, baseDirectory, 0);
+    }
+    
     return mesh;
 }
 

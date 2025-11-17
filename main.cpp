@@ -45,9 +45,11 @@ protected:
         device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&initAllocator));
         commandList->Reset(initAllocator.Get(), nullptr);
 
-        mesh_ = ObjLoader::Load(device, commandList, "resources/model/testmodel/testmodel.obj");
-        
-        texture_.LoadFromFile(GetGraphics(), commandList, L"resources/tex/uvChecker.png", 0);
+        mesh_ = ObjLoader::Load(GetGraphics(), commandList, "resources/model/testmodel/testmodel.obj");
+
+        if (!mesh_.HasMaterial()) {
+            texture_.LoadFromFile(GetGraphics(), commandList, L"resources/tex/uvChecker.png", 0);
+        }
 
         // コマンドリストを実行してGPU処理完了を待つ
         commandList->Close();
@@ -160,7 +162,15 @@ protected:
         
         // テクスチャ設定
         D3D12_GPU_DESCRIPTOR_HANDLE srvHandle = GetGraphics()->GetSRVHeap()->GetGPUDescriptorHandleForHeapStart();
-        srvHandle.ptr += texture_.GetSRVIndex() * GetGraphics()->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+        uint32 srvIndex = 0;
+
+        if (mesh_.HasMaterial() && mesh_.GetMaterial()->HasDiffuseTexture()) {
+            srvIndex = mesh_.GetMaterial()->GetSRVIndex();
+        } else {
+            srvIndex = texture_.GetSRVIndex();
+        }
+
+        srvHandle.ptr += srvIndex * GetGraphics()->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
         cmdList->SetGraphicsRootDescriptorTable(1, srvHandle);
 
         // MVP行列計算

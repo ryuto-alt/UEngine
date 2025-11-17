@@ -1,13 +1,14 @@
 #pragma once
 
 #include "Mesh.h"
+#include "GraphicsDevice.h"
 #include <string>
 
 namespace UnoEngine {
 
 class ObjLoader {
 public:
-    static Mesh Load(ID3D12Device* device, ID3D12GraphicsCommandList* commandList,
+    static Mesh Load(GraphicsDevice* graphics, ID3D12GraphicsCommandList* commandList,
                     const std::string& filepath);
 
 private:

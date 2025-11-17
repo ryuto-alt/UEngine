@@ -144,6 +144,7 @@
     <ClCompile Include="Engine\Input\Mouse.cpp" />
     <ClCompile Include="Engine\Input\InputManager.cpp" />
     <ClCompile Include="Engine\Graphics\IndexBuffer.cpp" />
+    <ClCompile Include="Engine\Graphics\Material.cpp" />
     <ClCompile Include="Engine\Graphics\Mesh.cpp" />
     <ClCompile Include="Engine\Graphics\ObjLoader.cpp" />
     <ClCompile Include="Engine\Graphics\Texture2D.cpp" />
@@ -170,6 +171,7 @@
     <ClInclude Include="Engine\Input\Mouse.h" />
     <ClInclude Include="Engine\Input\InputManager.h" />
     <ClInclude Include="Engine\Graphics\IndexBuffer.h" />
+    <ClInclude Include="Engine\Graphics\Material.h" />
     <ClInclude Include="Engine\Graphics\Mesh.h" />
     <ClInclude Include="Engine\Graphics\ObjLoader.h" />
     <ClInclude Include="Engine\Graphics\Texture2D.h" />

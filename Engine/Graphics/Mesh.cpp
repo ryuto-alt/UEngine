@@ -23,6 +23,14 @@ void Mesh::Create(ID3D12Device* device, ID3D12GraphicsCommandList* commandList,
     CalculateBounds(vertices);
 }
 
+
+void Mesh::LoadMaterial(const MaterialData& materialData, GraphicsDevice* graphics,
+                       ID3D12GraphicsCommandList* commandList,
+                       const std::string& baseDirectory, uint32 srvIndex) {
+    material_ = std::make_unique<Material>();
+    material_->LoadFromData(materialData, graphics, commandList, baseDirectory, srvIndex);
+}
+
 void Mesh::CalculateBounds(const std::vector<Vertex>& vertices) {
     if (vertices.empty()) {
         boundsMin_ = boundsMax_ = Vector3::Zero();

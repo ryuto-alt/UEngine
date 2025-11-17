@@ -20,6 +20,14 @@ void Texture2D::LoadFromFile(GraphicsDevice* graphics, ID3D12GraphicsCommandList
         "Failed to load texture file"
     );
 
+    // 元のメタデータを保存
+    DirectX::TexMetadata originalMetadata = metadata;
+    
+    // リソース作成用にsRGBフォーマットに変換（ガンマ補正用）
+    if (!DirectX::IsSRGB(metadata.format)) {
+        metadata.format = DirectX::MakeSRGB(metadata.format);
+    }
+
     ThrowIfFailed(
         DirectX::CreateTexture(device, metadata, &resource_),
         "Failed to create texture resource"
@@ -28,7 +36,7 @@ void Texture2D::LoadFromFile(GraphicsDevice* graphics, ID3D12GraphicsCommandList
     std::vector<D3D12_SUBRESOURCE_DATA> subresources;
     ThrowIfFailed(
         DirectX::PrepareUpload(device, scratchImage.GetImages(), scratchImage.GetImageCount(),
-                              metadata, subresources),
+                              originalMetadata, subresources),
         "Failed to prepare texture upload"
     );
 

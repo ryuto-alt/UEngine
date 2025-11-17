@@ -40,7 +40,7 @@ protected:
         vertexShader_.CompileFromFile(L"Shaders/BasicVS.hlsl", ShaderStage::Vertex);
         pixelShader_.CompileFromFile(L"Shaders/BasicPS.hlsl", ShaderStage::Pixel);
 
-        pipeline_.Initialize(device, vertexShader_, pixelShader_, DXGI_FORMAT_R8G8B8A8_UNORM);
+        pipeline_.Initialize(device, vertexShader_, pixelShader_, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
 
         spriteVertexShader_.CompileFromFile(L"Shaders/SpriteVS.hlsl", ShaderStage::Vertex);
         spritePixelShader_.CompileFromFile(L"Shaders/SpritePS.hlsl", ShaderStage::Pixel);

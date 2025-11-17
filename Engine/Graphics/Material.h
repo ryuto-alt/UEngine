@@ -20,6 +20,11 @@ struct MaterialData {
     float shininess = 250.0f;
     float opacity = 1.0f;
     std::string diffuseTexturePath;
+
+    // PBRパラメータ
+    float metallic = 0.0f;   // 金属性 (0.0 = 非金属, 1.0 = 金属)
+    float roughness = 0.5f;  // 粗さ (0.0 = 完全に滑らか, 1.0 = 完全に粗い)
+    float albedo[3] = { 1.0f, 1.0f, 1.0f };  // アルベド色（基本色）
 };
 
 class Material : public NonCopyable {

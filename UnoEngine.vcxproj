@@ -150,6 +150,7 @@
     <ClCompile Include="Engine\Graphics\Sprite.cpp" />
     <ClCompile Include="Engine\Graphics\SpritePipeline.cpp" />
     <ClCompile Include="Engine\Graphics\Texture2D.cpp" />
+    <ClCompile Include="Engine\Graphics\DirectionalLight.cpp" />
     <ClCompile Include="Engine\UI\ImGuiManager.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -180,6 +181,7 @@
     <ClInclude Include="Engine\Graphics\Sprite.h" />
     <ClInclude Include="Engine\Graphics\SpritePipeline.h" />
     <ClInclude Include="Engine\Graphics\Texture2D.h" />
+    <ClInclude Include="Engine\Graphics\DirectionalLight.h" />
     <ClInclude Include="Engine\Graphics\d3dx12.h" />
     <ClInclude Include="Engine\UI\ImGuiManager.h" />
   </ItemGroup>
@@ -187,6 +189,8 @@
     <None Include="packages.config" />
     <None Include="Shaders\BasicVS.hlsl" />
     <None Include="Shaders\BasicPS.hlsl" />
+    <None Include="Shaders\PBRVS.hlsl" />
+    <None Include="Shaders\PBRPS.hlsl" />
     <None Include="Shaders\SpriteVS.hlsl" />
     <None Include="Shaders\SpritePS.hlsl" />
   </ItemGroup>

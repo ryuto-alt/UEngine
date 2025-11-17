@@ -8,6 +8,7 @@
 #include "Engine/Graphics/Texture2D.h"
 #include "Engine/Graphics/Sprite.h"
 #include "Engine/Graphics/SpritePipeline.h"
+#include "Engine/Graphics/DirectionalLight.h"
 #include "Engine/UI/ImGuiManager.h"
 #include <imgui.h>
 #include "Engine/Math/Math.h"
@@ -16,7 +17,28 @@
 using namespace UnoEngine;
 
 struct alignas(256) TransformCB {
+    DirectX::XMFLOAT4X4 world;
+    DirectX::XMFLOAT4X4 view;
+    DirectX::XMFLOAT4X4 projection;
     DirectX::XMFLOAT4X4 mvp;
+};
+
+struct alignas(256) LightCB {
+    DirectX::XMFLOAT3 directionalLightDirection;
+    float padding0;
+    DirectX::XMFLOAT3 directionalLightColor;
+    float directionalLightIntensity;
+    DirectX::XMFLOAT3 ambientLight;
+    float padding1;
+    DirectX::XMFLOAT3 cameraPosition;
+    float padding2;
+};
+
+struct alignas(256) MaterialCB {
+    DirectX::XMFLOAT3 albedo;
+    float metallic;
+    float roughness;
+    DirectX::XMFLOAT3 padding;
 };
 
 class SampleApp : public Application {
@@ -39,8 +61,8 @@ protected:
         auto* commandQueue = GetGraphics()->GetCommandQueue();
         auto* commandList = GetGraphics()->GetCommandList();
 
-        vertexShader_.CompileFromFile(L"Shaders/BasicVS.hlsl", ShaderStage::Vertex);
-        pixelShader_.CompileFromFile(L"Shaders/BasicPS.hlsl", ShaderStage::Pixel);
+        vertexShader_.CompileFromFile(L"Shaders/PBRVS.hlsl", ShaderStage::Vertex);
+        pixelShader_.CompileFromFile(L"Shaders/PBRPS.hlsl", ShaderStage::Pixel);
 
         pipeline_.Initialize(device, vertexShader_, pixelShader_, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
 
@@ -87,6 +109,13 @@ protected:
         );
 
         constantBuffer_.Create(device);
+        lightBuffer_.Create(device);
+        materialBuffer_.Create(device);
+
+        // ディレクショナルライトの設定（真上から照らす）
+        directionalLight_.SetDirection(Vector3(0.0f, -1.0f, 0.0f));
+        directionalLight_.SetColor(Vector3(1.0f, 1.0f, 1.0f));
+        directionalLight_.SetIntensity(2.0f);
 
         // ImGui初期化（SRVインデックス2を使用）
         imguiManager_.Initialize(GetGraphics(), GetWindow(), 2);
@@ -191,18 +220,42 @@ protected:
         cmdList->SetGraphicsRootDescriptorTable(1, srvHandle);
 
         // MVP行列計算
-        Matrix4x4 model = Matrix4x4::RotationY(rotation_);
+        Matrix4x4 world = Matrix4x4::RotationY(rotation_);
         Matrix4x4 view = camera_.GetViewMatrix();
         Matrix4x4 projection = camera_.GetProjectionMatrix();
-        Matrix4x4 mvp = model * view * projection;
+        Matrix4x4 mvp = world * view * projection;
 
-        // 定数バッファ更新
-        TransformCB cbData;
-        DirectX::XMStoreFloat4x4(&cbData.mvp, DirectX::XMMatrixTranspose(mvp.GetXMMatrix()));
-        constantBuffer_.Update(cbData);
+        // Transform定数バッファ更新
+        TransformCB transformData;
+        DirectX::XMStoreFloat4x4(&transformData.world, DirectX::XMMatrixTranspose(world.GetXMMatrix()));
+        DirectX::XMStoreFloat4x4(&transformData.view, DirectX::XMMatrixTranspose(view.GetXMMatrix()));
+        DirectX::XMStoreFloat4x4(&transformData.projection, DirectX::XMMatrixTranspose(projection.GetXMMatrix()));
+        DirectX::XMStoreFloat4x4(&transformData.mvp, DirectX::XMMatrixTranspose(mvp.GetXMMatrix()));
+        constantBuffer_.Update(transformData);
+
+        // Light定数バッファ更新
+        LightCB lightData;
+        Vector3 lightDir = directionalLight_.GetDirection();
+        Vector3 lightColor = directionalLight_.GetColor();
+        Vector3 cameraPos = camera_.GetPosition();
+        lightData.directionalLightDirection = DirectX::XMFLOAT3(lightDir.GetX(), lightDir.GetY(), lightDir.GetZ());
+        lightData.directionalLightColor = DirectX::XMFLOAT3(lightColor.GetX(), lightColor.GetY(), lightColor.GetZ());
+        lightData.directionalLightIntensity = directionalLight_.GetIntensity();
+        lightData.ambientLight = DirectX::XMFLOAT3(0.03f, 0.03f, 0.03f);
+        lightData.cameraPosition = DirectX::XMFLOAT3(cameraPos.GetX(), cameraPos.GetY(), cameraPos.GetZ());
+        lightBuffer_.Update(lightData);
+
+        // Material定数バッファ更新
+        MaterialCB materialData;
+        materialData.albedo = DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f);
+        materialData.metallic = 0.0f;
+        materialData.roughness = 0.5f;
+        materialBuffer_.Update(materialData);
 
         // 定数バッファ設定
         cmdList->SetGraphicsRootConstantBufferView(0, constantBuffer_.GetGPUAddress());
+        cmdList->SetGraphicsRootConstantBufferView(2, lightBuffer_.GetGPUAddress());
+        cmdList->SetGraphicsRootConstantBufferView(3, materialBuffer_.GetGPUAddress());
 
         cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -236,6 +289,8 @@ private:
     Mesh mesh_;
     Camera camera_;
     ConstantBuffer<TransformCB> constantBuffer_;
+    ConstantBuffer<LightCB> lightBuffer_;
+    ConstantBuffer<MaterialCB> materialBuffer_;
     Texture2D texture_;
     float rotation_ = 0.0f;
 
@@ -244,6 +299,8 @@ private:
     SpritePipeline spritePipeline_;
     Sprite sprite_;
     ImGuiManager imguiManager_;
+
+    DirectionalLight directionalLight_;
 };
 
 int WINAPI WinMain(

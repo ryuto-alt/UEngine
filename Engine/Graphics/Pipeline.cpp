@@ -22,19 +22,31 @@ void Pipeline::CreateRootSignature(ID3D12Device* device) {
     descRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
     // ルートパラメータ
-    D3D12_ROOT_PARAMETER rootParams[2] = {};
-    
-    // 定数バッファ (b0)
+    D3D12_ROOT_PARAMETER rootParams[4] = {};
+
+    // 定数バッファ (b0) - Transform
     rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
     rootParams[0].Descriptor.ShaderRegister = 0;
     rootParams[0].Descriptor.RegisterSpace = 0;
-    rootParams[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+    rootParams[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
     // テクスチャディスクリプタテーブル (t0)
     rootParams[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
     rootParams[1].DescriptorTable.NumDescriptorRanges = 1;
     rootParams[1].DescriptorTable.pDescriptorRanges = &descRange;
     rootParams[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+    // 定数バッファ (b1) - Light
+    rootParams[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+    rootParams[2].Descriptor.ShaderRegister = 1;
+    rootParams[2].Descriptor.RegisterSpace = 0;
+    rootParams[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+    // 定数バッファ (b2) - Material
+    rootParams[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+    rootParams[3].Descriptor.ShaderRegister = 2;
+    rootParams[3].Descriptor.RegisterSpace = 0;
+    rootParams[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
     // スタティックサンプラー (s0)
     D3D12_STATIC_SAMPLER_DESC sampler = {};
@@ -53,7 +65,7 @@ void Pipeline::CreateRootSignature(ID3D12Device* device) {
     sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
     D3D12_ROOT_SIGNATURE_DESC rootSigDesc = {};
-    rootSigDesc.NumParameters = 2;
+    rootSigDesc.NumParameters = 4;
     rootSigDesc.pParameters = rootParams;
     rootSigDesc.NumStaticSamplers = 1;
     rootSigDesc.pStaticSamplers = &sampler;

@@ -2,6 +2,7 @@
 
 #include "MathCommon.h"
 #include "Vector.h"
+#include "../Core/Types.h"
 
 namespace UnoEngine {
 
@@ -40,6 +41,13 @@ public:
 
     float Determinant() const { return DirectX::XMVectorGetX(DirectX::XMMatrixDeterminant(mat_)); }
 
+    // Element access
+    float GetElement(uint32 row, uint32 col) const {
+        DirectX::XMFLOAT4X4 m;
+        DirectX::XMStoreFloat4x4(&m, mat_);
+        return m.m[row][col];
+    }
+
     // DirectXMathへの変換
     DirectX::XMMATRIX GetXMMatrix() const { return mat_; }
 
@@ -64,6 +72,10 @@ public:
 
     static Matrix4x4 Scaling(float uniformScale) {
         return Scaling(uniformScale, uniformScale, uniformScale);
+    }
+
+    static Matrix4x4 Scale(const Vector3& scale) {
+        return Scaling(scale);
     }
 
     static Matrix4x4 RotationX(float radians) {

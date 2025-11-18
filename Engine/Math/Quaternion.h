@@ -50,6 +50,12 @@ public:
         return Vector3(DirectX::XMVector3Rotate(vec.GetXMVector(), quat_));
     }
 
+    Vector3 operator*(const Vector3& vec) const {
+        return RotateVector(vec);
+    }
+
+    Matrix4x4 ToMatrix() const;
+
     // DirectXMathへの変換
     DirectX::XMVECTOR GetXMVector() const { return quat_; }
 
@@ -65,6 +71,8 @@ public:
     }
 
     static Quaternion FromRotationMatrix(const Matrix4x4& mat);
+    
+    static Quaternion LookRotation(const Vector3& forward, const Vector3& up);
 
 private:
     DirectX::XMVECTOR quat_;

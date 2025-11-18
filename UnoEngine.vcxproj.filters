@@ -39,6 +39,15 @@
     <Filter Include="Engine\UI">
       <UniqueIdentifier>{6f7a8b9c-0d1e-2f3a-4b5c-6d7e8f9a0b1c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Game\Components">
+      <UniqueIdentifier>{7b8c9d0e-1f2a-3b4c-5d6e-7f8a9b0c1d2e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game\Scenes">
+      <UniqueIdentifier>{8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{9d0e1f2a-3b4c-5d6e-7f8a-9b0c1d2e3f4a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -125,11 +134,11 @@
     <ClCompile Include="Engine\Graphics\ResourceLoader.cpp">
       <Filter>Engine\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="Game\GameScene.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="Game\Scenes\GameScene.cpp">
+      <Filter>Game\Scenes</Filter>
     </ClCompile>
     <ClCompile Include="Game\Components\PlayerController.cpp">
-      <Filter>Game</Filter>
+      <Filter>Game\Components</Filter>
     </ClCompile>
     <ClCompile Include="Engine\UI\ImGuiManager.cpp">
       <Filter>Engine\UI</Filter>
@@ -247,11 +256,11 @@
     <ClInclude Include="Engine\Graphics\ResourceLoader.h">
       <Filter>Engine\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="Game\GameScene.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="Game\Scenes\GameScene.h">
+      <Filter>Game\Scenes</Filter>
     </ClInclude>
     <ClInclude Include="Game\Components\PlayerController.h">
-      <Filter>Game</Filter>
+      <Filter>Game\Components</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\d3dx12.h">
       <Filter>Engine\Graphics</Filter>
@@ -262,11 +271,23 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="Shaders\BasicVS.hlsl" />
-    <None Include="Shaders\BasicPS.hlsl" />
-    <None Include="Shaders\PBRVS.hlsl" />
-    <None Include="Shaders\PBRPS.hlsl" />
-    <None Include="Shaders\SpriteVS.hlsl" />
-    <None Include="Shaders\SpritePS.hlsl" />
+    <None Include="Shaders\BasicVS.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\BasicPS.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\PBRVS.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\PBRPS.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\SpriteVS.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\SpritePS.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

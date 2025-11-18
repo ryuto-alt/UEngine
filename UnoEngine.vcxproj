@@ -159,7 +159,7 @@
     <ClCompile Include="Engine\Graphics\MeshRenderer.cpp" />
     <ClCompile Include="Engine\Graphics\DirectionalLightComponent.cpp" />
     <ClCompile Include="Engine\Graphics\ResourceLoader.cpp" />
-    <ClCompile Include="Game\GameScene.cpp" />
+    <ClCompile Include="Game\Scenes\GameScene.cpp" />
     <ClCompile Include="Game\Components\PlayerController.cpp" />
     <ClCompile Include="Engine\UI\ImGuiManager.cpp" />
   </ItemGroup>
@@ -201,7 +201,7 @@
     <ClInclude Include="Engine\Graphics\MeshRenderer.h" />
     <ClInclude Include="Engine\Graphics\DirectionalLightComponent.h" />
     <ClInclude Include="Engine\Graphics\ResourceLoader.h" />
-    <ClInclude Include="Game\GameScene.h" />
+    <ClInclude Include="Game\Scenes\GameScene.h" />
     <ClInclude Include="Game\Components\PlayerController.h" />
     <ClInclude Include="Engine\Graphics\d3dx12.h" />
     <ClInclude Include="Engine\UI\ImGuiManager.h" />

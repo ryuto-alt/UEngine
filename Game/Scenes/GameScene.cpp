@@ -1,11 +1,11 @@
 #include "GameScene.h"
-#include "Components/PlayerController.h"
-#include "../Engine/Core/GameObject.h"
-#include "../Engine/Core/OrbitController.h"
-#include "../Engine/Graphics/ResourceLoader.h"
-#include "../Engine/Graphics/MeshRenderer.h"
-#include "../Engine/Graphics/DirectionalLightComponent.h"
-#include "../Engine/Math/Math.h"
+#include "../Components/PlayerController.h"
+#include "../../Engine/Core/GameObject.h"
+#include "../../Engine/Core/OrbitController.h"
+#include "../../Engine/Graphics/ResourceLoader.h"
+#include "../../Engine/Graphics/MeshRenderer.h"
+#include "../../Engine/Graphics/DirectionalLightComponent.h"
+#include "../../Engine/Math/Math.h"
 
 namespace UnoEngine {
 

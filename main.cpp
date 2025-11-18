@@ -1,7 +1,7 @@
 #include "Engine/Core/Application.h"
 #include "Engine/Core/Camera.h"
 #include "Engine/Core/SceneManager.h"
-#include "Game/GameScene.h"
+#include "Game/Scenes/GameScene.h"
 #include "Engine/Graphics/Shader.h"
 #include "Engine/Graphics/Pipeline.h"
 #include "Engine/Graphics/ConstantBuffer.h"

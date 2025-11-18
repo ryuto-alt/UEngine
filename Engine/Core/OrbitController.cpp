@@ -1,16 +1,16 @@
 #include "OrbitController.h"
+#include "SceneManager.h"
 #include "../Input/InputManager.h"
 #include <algorithm>
 
 namespace UnoEngine {
 
-OrbitController::OrbitController(Camera* camera, InputManager* input)
-    : camera_(camera)
-    , input_(input) {
-}
-
 void OrbitController::OnUpdate(float deltaTime) {
-    const auto& mouse = input_->GetMouse();
+    auto* input = SceneManager::GetInstance().GetInputManager();
+    auto* camera = SceneManager::GetInstance().GetCamera();
+    if (!input || !camera) return;
+
+    const auto& mouse = input->GetMouse();
 
     // Rotation with right mouse button
     if (mouse.IsDown(MouseButton::Right)) {
@@ -43,7 +43,7 @@ void OrbitController::OnUpdate(float deltaTime) {
     );
 
     Vector3 cameraPos = target_ + offset;
-    camera_->SetPosition(cameraPos);
+    camera->SetPosition(cameraPos);
 
     // Look at target
     Vector3 forward = (target_ - cameraPos).Normalize();
@@ -51,7 +51,7 @@ void OrbitController::OnUpdate(float deltaTime) {
     Vector3 up = forward.Cross(right);
 
     Quaternion rot = Quaternion::LookRotation(forward, up);
-    camera_->SetRotation(rot);
+    camera->SetRotation(rot);
 }
 
 } // namespace UnoEngine

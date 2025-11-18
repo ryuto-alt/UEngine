@@ -10,7 +10,7 @@ class InputManager;
 
 class OrbitController : public Component {
 public:
-    OrbitController(Camera* camera, InputManager* input);
+    OrbitController() = default;
 
     void OnUpdate(float deltaTime) override;
 
@@ -23,8 +23,6 @@ public:
     float GetDistance() const { return distance_; }
 
 private:
-    Camera* camera_;
-    InputManager* input_;
 
     Vector3 target_ = Vector3::Zero();
     float distance_ = 5.0f;

@@ -1,6 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <Filter Include="Game">
+      <UniqueIdentifier>{7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ソース ファイル">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
@@ -113,6 +116,21 @@
     <ClCompile Include="Engine\Graphics\DirectionalLight.cpp">
       <Filter>Engine\Graphics</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Graphics\MeshRenderer.cpp">
+      <Filter>Engine\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\DirectionalLightComponent.cpp">
+      <Filter>Engine\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\ResourceLoader.cpp">
+      <Filter>Engine\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\GameScene.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\Components\PlayerController.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\UI\ImGuiManager.cpp">
       <Filter>Engine\UI</Filter>
     </ClCompile>
@@ -219,6 +237,21 @@
     </ClInclude>
     <ClInclude Include="Engine\Graphics\DirectionalLight.h">
       <Filter>Engine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\MeshRenderer.h">
+      <Filter>Engine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\DirectionalLightComponent.h">
+      <Filter>Engine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\ResourceLoader.h">
+      <Filter>Engine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\GameScene.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\Components\PlayerController.h">
+      <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\d3dx12.h">
       <Filter>Engine\Graphics</Filter>

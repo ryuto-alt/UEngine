@@ -7,6 +7,9 @@
 
 namespace UnoEngine {
 
+class Camera;
+class InputManager;
+
 class SceneManager {
 public:
     static SceneManager& GetInstance();
@@ -19,6 +22,12 @@ public:
 
     Scene* GetActiveScene() const { return activeScene_.get(); }
 
+    void SetCamera(Camera* camera) { camera_ = camera; }
+    void SetInputManager(InputManager* input) { input_ = input; }
+
+    Camera* GetCamera() const { return camera_; }
+    InputManager* GetInputManager() const { return input_; }
+
 private:
     SceneManager() = default;
     ~SceneManager() = default;
@@ -28,6 +37,9 @@ private:
     using SceneFactory = std::unique_ptr<Scene>(*)();
     std::unordered_map<std::string, SceneFactory> sceneFactories_;
     std::unique_ptr<Scene> activeScene_;
+
+    Camera* camera_ = nullptr;
+    InputManager* input_ = nullptr;
 };
 
 template<typename T>

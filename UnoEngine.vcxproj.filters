@@ -143,6 +143,15 @@
     <ClCompile Include="Engine\UI\ImGuiManager.cpp">
       <Filter>Engine\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Core\RenderSystem.cpp">
+      <Filter>Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\LightManager.cpp">
+      <Filter>Engine\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\Renderer.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Core\Application.h">
@@ -267,6 +276,21 @@
     </ClInclude>
     <ClInclude Include="Engine\UI\ImGuiManager.h">
       <Filter>Engine\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\RenderSystem.h">
+      <Filter>Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\LightManager.h">
+      <Filter>Engine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\RenderView.h">
+      <Filter>Engine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\RenderItem.h">
+      <Filter>Engine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\Renderer.h">
+      <Filter>Game</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

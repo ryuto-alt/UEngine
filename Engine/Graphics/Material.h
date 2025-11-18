@@ -42,6 +42,8 @@ public:
     const Texture2D* GetDiffuseTexture() const { return diffuseTexture_.get(); }
     bool HasDiffuseTexture() const { return diffuseTexture_ != nullptr; }
     uint32 GetSRVIndex() const { return diffuseTexture_ ? diffuseTexture_->GetSRVIndex() : 0; }
+    
+    void Bind(ID3D12GraphicsCommandList* cmdList, class Pipeline* pipeline);
 
 private:
     MaterialData data_;

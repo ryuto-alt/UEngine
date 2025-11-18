@@ -139,6 +139,8 @@
     <ClCompile Include="Engine\Core\Scene.cpp" />
     <ClCompile Include="Engine\Core\SceneManager.cpp" />
     <ClCompile Include="Engine\Core\OrbitController.cpp" />
+    <ClCompile Include="Engine\Core\RenderSystem.cpp" />
+    <ClCompile Include="Engine\Graphics\LightManager.cpp" />
     <ClCompile Include="Engine\Graphics\GraphicsDevice.cpp" />
     <ClCompile Include="Engine\Window\Window.cpp" />
     <ClCompile Include="Engine\Graphics\Shader.cpp" />
@@ -161,6 +163,7 @@
     <ClCompile Include="Engine\Graphics\ResourceLoader.cpp" />
     <ClCompile Include="Game\Scenes\GameScene.cpp" />
     <ClCompile Include="Game\Components\PlayerController.cpp" />
+    <ClCompile Include="Game\Renderer.cpp" />
     <ClCompile Include="Engine\UI\ImGuiManager.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -172,6 +175,10 @@
     <ClInclude Include="Engine\Core\Scene.h" />
     <ClInclude Include="Engine\Core\SceneManager.h" />
     <ClInclude Include="Engine\Core\OrbitController.h" />
+    <ClInclude Include="Engine\Core\RenderSystem.h" />
+    <ClInclude Include="Engine\Graphics\LightManager.h" />
+    <ClInclude Include="Engine\Graphics\RenderView.h" />
+    <ClInclude Include="Engine\Graphics\RenderItem.h" />
     <ClInclude Include="Engine\Graphics\ConstantBuffer.h" />
     <ClInclude Include="Engine\Core\NonCopyable.h" />
     <ClInclude Include="Engine\Core\Types.h" />
@@ -203,6 +210,7 @@
     <ClInclude Include="Engine\Graphics\ResourceLoader.h" />
     <ClInclude Include="Game\Scenes\GameScene.h" />
     <ClInclude Include="Game\Components\PlayerController.h" />
+    <ClInclude Include="Game\Renderer.h" />
     <ClInclude Include="Engine\Graphics\d3dx12.h" />
     <ClInclude Include="Engine\UI\ImGuiManager.h" />
   </ItemGroup>

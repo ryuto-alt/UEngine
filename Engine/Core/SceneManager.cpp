@@ -1,30 +1,22 @@
 #include "SceneManager.h"
-#include <stdexcept>
 
 namespace UnoEngine {
 
-SceneManager& SceneManager::GetInstance() {
-    static SceneManager instance;
-    return instance;
+void SceneManager::Update(float deltaTime) {
+    if (activeScene_) {
+        activeScene_->OnUpdate(deltaTime);
+    }
 }
 
-void SceneManager::LoadScene(const std::string& name) {
-    auto it = sceneFactories_.find(name);
-    if (it == sceneFactories_.end()) {
-        throw std::runtime_error("Scene not registered: " + name);
-    }
-
+void SceneManager::LoadScene(std::unique_ptr<Scene> scene) {
     if (activeScene_) {
         activeScene_->OnUnload();
     }
-
-    activeScene_ = it->second();
-    activeScene_->OnLoad();
-}
-
-void SceneManager::OnUpdate(float deltaTime) {
+    
+    activeScene_ = std::move(scene);
+    
     if (activeScene_) {
-        activeScene_->OnUpdate(deltaTime);
+        activeScene_->OnLoad();
     }
 }
 

@@ -1,5 +1,6 @@
 #include "Material.h"
 #include "GraphicsDevice.h"
+#include "Pipeline.h"
 #include <filesystem>
 
 namespace UnoEngine {
@@ -25,6 +26,13 @@ void Material::LoadFromData(const MaterialData& data, GraphicsDevice* graphics,
             diffuseTexture_ = std::make_unique<Texture2D>();
             diffuseTexture_->LoadFromFile(graphics, commandList, texturePath.wstring(), srvIndex);
         }
+    }
+}
+
+void Material::Bind(ID3D12GraphicsCommandList* cmdList, Pipeline* pipeline) {
+    if (pipeline) {
+        cmdList->SetPipelineState(pipeline->GetPipelineState());
+        cmdList->SetGraphicsRootSignature(pipeline->GetRootSignature());
     }
 }
 

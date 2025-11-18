@@ -13,6 +13,8 @@ public:
     OrbitController() = default;
 
     void OnUpdate(float deltaTime) override;
+    
+    void SetInputManager(InputManager* input) { input_ = input; }
 
     void SetTarget(const Vector3& target) { target_ = target; }
     void SetDistance(float distance) { distance_ = distance; }
@@ -21,9 +23,12 @@ public:
 
     Vector3 GetTarget() const { return target_; }
     float GetDistance() const { return distance_; }
+    
+    Camera* GetCamera() { return &camera_; }
 
 private:
-
+    Camera camera_;
+    InputManager* input_ = nullptr;
     Vector3 target_ = Vector3::Zero();
     float distance_ = 5.0f;
     float yaw_ = 0.0f;

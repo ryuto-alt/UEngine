@@ -31,6 +31,13 @@ void Application::Initialize() {
     window_->SetMessageCallback([this](UINT msg, WPARAM wparam, LPARAM lparam) {
         input_->ProcessMessage(msg, wparam, lparam);
     });
+    
+    // 描画システム初期化
+    sceneManager_ = MakeUnique<SceneManager>();
+    renderSystem_ = MakeUnique<RenderSystem>();
+    lightManager_ = MakeUnique<LightManager>();
+    renderer_ = MakeUnique<Renderer>();
+    renderer_->Initialize(graphics_.get(), window_.get());
 
     OnInit();
     running_ = true;
@@ -56,14 +63,29 @@ void Application::MainLoop() {
         input_->Update();
 
         // 更新
+        sceneManager_->Update(deltaTime);
         OnUpdate(deltaTime);
 
         // 描画
-        graphics_->BeginFrame();
         OnRender();
-        graphics_->EndFrame();
-        graphics_->Present();
     }
+}
+
+void Application::OnRender() {
+    graphics_->BeginFrame();
+    
+    Scene* scene = sceneManager_->GetActiveScene();
+    if (scene) {
+        RenderView view;
+        scene->OnRender(view);
+        
+        auto items = renderSystem_->CollectRenderables(scene, view);
+        
+        renderer_->Draw(view, items, lightManager_.get());
+    }
+    
+    graphics_->EndFrame();
+    graphics_->Present();
 }
 
 void Application::Shutdown() {

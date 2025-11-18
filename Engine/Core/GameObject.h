@@ -2,6 +2,7 @@
 
 #include "Component.h"
 #include "Transform.h"
+#include "Types.h"
 #include <vector>
 #include <memory>
 #include <string>
@@ -10,8 +11,19 @@
 
 namespace UnoEngine {
 
+namespace Layers {
+    using Layer = uint32;
+    
+    constexpr Layer DEFAULT = 1 << 0;
+    constexpr Layer PLAYER  = 1 << 1;
+    constexpr Layer ENEMY   = 1 << 2;
+    constexpr Layer UI      = 1 << 3;
+}
+
 class GameObject {
 public:
+    using Layer = uint32;
+    
     GameObject(const std::string& name = "GameObject");
     ~GameObject() = default;
 
@@ -34,6 +46,9 @@ public:
 
     bool IsActive() const { return isActive_; }
     void SetActive(bool active) { isActive_ = active; }
+    
+    Layer GetLayer() const { return layer_; }
+    void SetLayer(Layer layer) { layer_ = layer; }
 
 private:
     std::string name_;
@@ -41,6 +56,7 @@ private:
     std::vector<std::unique_ptr<Component>> components_;
     std::unordered_map<std::type_index, Component*> componentMap_;
     bool isActive_ = true;
+    Layer layer_ = Layers::DEFAULT;
 };
 
 template<typename T, typename... Args>

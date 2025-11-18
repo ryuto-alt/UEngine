@@ -10,9 +10,14 @@
 namespace UnoEngine {
 
 void GameScene::OnLoad() {
+    SetActiveCamera(nullptr);
+    
     // Camera
     auto* camera = CreateGameObject("Camera");
-    camera->AddComponent<OrbitController>();
+    auto* orbitController = camera->AddComponent<OrbitController>();
+    if (input_) {
+        orbitController->SetInputManager(input_);
+    }
 
     // Player
     auto* player = CreateGameObject("Player");
@@ -20,7 +25,10 @@ void GameScene::OnLoad() {
         ResourceLoader::LoadMesh("resources/model/testmodel/testmodel.obj"),
         ResourceLoader::LoadMaterial("default")
     );
-    player->AddComponent<PlayerController>();
+    auto* playerController = player->AddComponent<PlayerController>();
+    if (input_) {
+        playerController->SetInputManager(input_);
+    }
 
     // Directional Light
     auto* light = CreateGameObject("DirectionalLight");
@@ -31,6 +39,39 @@ void GameScene::OnLoad() {
     lightComp->SetColor(Vector3(1.0f, 1.0f, 1.0f));
     lightComp->SetIntensity(2.0f);
     lightComp->UseTransformDirection(true);
+    
+    // Cameraを検索してactiveに設定
+    for (const auto& go : GetGameObjects()) {
+        if (go->GetName() == "Camera") {
+            auto* orbitController = go->GetComponent<OrbitController>();
+            if (orbitController) {
+                SetActiveCamera(orbitController->GetCamera());
+                break;
+            }
+        }
+    }
+}
+
+void GameScene::OnUpdate(float deltaTime) {
+    // Playerオブジェクトを回転
+    for (const auto& go : GetGameObjects()) {
+        if (go->GetName() == "Player") {
+            auto& transform = go->GetTransform();
+            Quaternion currentRotation = transform.GetLocalRotation();
+            Quaternion deltaRotation = Quaternion::RotationAxis(Vector3::UnitY(), Math::ToRadians(30.0f) * deltaTime);
+            transform.SetLocalRotation(deltaRotation * currentRotation);
+            break;
+        }
+    }
+}
+
+void GameScene::OnRender(RenderView& view) {
+    Camera* camera = GetActiveCamera();
+    if (!camera) return;
+    
+    view.camera = camera;
+    view.layerMask = Layers::DEFAULT | Layers::PLAYER | Layers::ENEMY;
+    view.viewName = "MainView";
 }
 
 } // namespace UnoEngine

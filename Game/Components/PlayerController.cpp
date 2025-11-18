@@ -1,15 +1,13 @@
 #include "PlayerController.h"
 #include "../../Engine/Core/GameObject.h"
-#include "../../Engine/Core/SceneManager.h"
 #include "../../Engine/Input/InputManager.h"
 
 namespace UnoEngine {
 
 	void PlayerController::OnUpdate(float deltaTime) {
-		auto* input = SceneManager::GetInstance().GetInputManager();
-		if (!input) return;
+		if (!input_) return;
 
-		auto& keyboard = input->GetKeyboard();
+		auto& keyboard = input_->GetKeyboard();
 		Vector3 movement = Vector3::Zero();
 
 		// WASD movement

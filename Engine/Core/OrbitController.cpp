@@ -6,11 +6,9 @@
 namespace UnoEngine {
 
 void OrbitController::OnUpdate(float deltaTime) {
-    auto* input = SceneManager::GetInstance().GetInputManager();
-    auto* camera = SceneManager::GetInstance().GetCamera();
-    if (!input || !camera) return;
+    if (!input_) return;
 
-    const auto& mouse = input->GetMouse();
+    const auto& mouse = input_->GetMouse();
 
     // Rotation with right mouse button
     if (mouse.IsDown(MouseButton::Right)) {
@@ -43,7 +41,7 @@ void OrbitController::OnUpdate(float deltaTime) {
     );
 
     Vector3 cameraPos = target_ + offset;
-    camera->SetPosition(cameraPos);
+    camera_.SetPosition(cameraPos);
 
     // Look at target
     Vector3 forward = (target_ - cameraPos).Normalize();
@@ -51,7 +49,7 @@ void OrbitController::OnUpdate(float deltaTime) {
     Vector3 up = forward.Cross(right);
 
     Quaternion rot = Quaternion::LookRotation(forward, up);
-    camera->SetRotation(rot);
+    camera_.SetRotation(rot);
 }
 
 } // namespace UnoEngine

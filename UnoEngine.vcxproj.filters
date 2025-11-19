@@ -134,6 +134,9 @@
     <ClCompile Include="Engine\Graphics\Texture2D.cpp">
       <Filter>Engine\Graphics</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Graphics\RenderTexture.cpp">
+      <Filter>Engine\Graphics</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Graphics\DirectionalLight.cpp">
       <Filter>Engine\Graphics</Filter>
     </ClCompile>
@@ -269,6 +272,9 @@
       <Filter>Engine\Graphics</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\Texture2D.h">
+      <Filter>Engine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\RenderTexture.h">
       <Filter>Engine\Graphics</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\DirectionalLight.h">

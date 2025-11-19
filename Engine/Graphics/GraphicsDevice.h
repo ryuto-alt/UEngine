@@ -25,6 +25,8 @@ public:
     void BeginFrame();
     void EndFrame();
     void Present();
+    void SetBackBufferAsRenderTarget();
+    void WaitForGPU();
 
     // アクセサ
     ID3D12Device* GetDevice() const { return device_.Get(); }
@@ -45,7 +47,6 @@ private:
     void CreateDepthStencil();
     void CreateSRVHeap();
     void CreateFence();
-    void WaitForGPU();
 
 private:
     // 設定
@@ -73,7 +74,7 @@ private:
     // SRVヒープ
     ComPtr<ID3D12DescriptorHeap> srvHeap_;
     uint32 srvDescriptorSize_ = 0;
-    static constexpr uint32 MAX_SRV_COUNT = 256;
+    static constexpr uint32 MAX_SRV_COUNT = 4096;
 
     // 同期オブジェクト
     ComPtr<ID3D12Fence> fence_;

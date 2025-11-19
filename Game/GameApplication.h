@@ -17,11 +17,13 @@ public:
     // Game-layer resource API
     Mesh* LoadMesh(const std::string& path);
     Material* LoadMaterial(const std::string& name);
-    
+
     PlayerSystem& GetPlayerSystem() { return playerSystem_; }
+    GraphicsDevice* GetGraphicsDevice() { return graphics_.get(); }
 
 protected:
     void OnInit() override;
+    void OnRender() override;
 
 private:
     PlayerSystem playerSystem_;

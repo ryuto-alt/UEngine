@@ -63,7 +63,7 @@ void Window::CreateWindowInstance(const WindowConfig& config) {
         throw std::runtime_error("Failed to create window");
     }
 
-    ShowWindow(hwnd_, SW_SHOW);
+    ShowWindow(hwnd_, SW_SHOWMAXIMIZED);
     UpdateWindow(hwnd_);
 }
 

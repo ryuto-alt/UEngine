@@ -34,9 +34,23 @@ void GameScene::OnLoad() {
     lightComp->SetColor(Vector3(1.0f, 1.0f, 1.0f));
     lightComp->SetIntensity(1.0f);
     lightComp->UseTransformDirection(false);
+
+    // RenderTexture setup (SRVインデックス 3と4を使用) - 16:9 aspect ratio
+    gameViewTexture_.Create(app->GetGraphicsDevice(), 1280, 720, 3);
+    sceneViewTexture_.Create(app->GetGraphicsDevice(), 1280, 720, 4);
+
+    // Console初期ログ
+    consoleMessages_.push_back("[System] UnoEngine Editor Initialized");
+    consoleMessages_.push_back("[Scene] GameScene loaded successfully");
+    consoleMessages_.push_back("[Info] Press ~ to toggle console");
 }
 
 void GameScene::OnUpdate(float deltaTime) {
+    // 前のフレームで記録したサイズでRenderTextureをリサイズ（描画前に実行）
+    auto* app = static_cast<GameApplication*>(GetApplication());
+    gameViewTexture_.Resize(app->GetGraphicsDevice(), desiredGameViewWidth_, desiredGameViewHeight_);
+    sceneViewTexture_.Resize(app->GetGraphicsDevice(), desiredSceneViewWidth_, desiredSceneViewHeight_);
+
     // Rotate player
     if (player_) {
         auto& transform = player_->GetTransform();
@@ -55,22 +69,220 @@ void GameScene::OnUpdate(float deltaTime) {
 }
 
 void GameScene::OnImGui() {
-    ImGui::Begin("Debug Info");
+    // DockSpace Setup
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->WorkPos);
+    ImGui::SetNextWindowSize(viewport->WorkSize);
+    ImGui::SetNextWindowViewport(viewport->ID);
 
-    Camera* camera = GetActiveCamera();
-    if (camera) {
-        ImGui::Text("Camera Position: (%.2f, %.2f, %.2f)",
-            camera->GetPosition().GetX(),
-            camera->GetPosition().GetY(),
-            camera->GetPosition().GetZ());
-    }
+    ImGuiWindowFlags windowFlags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+    windowFlags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
+    windowFlags |= ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+    windowFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
-    if (player_) {
-        auto pos = player_->GetTransform().GetLocalPosition();
-        ImGui::Text("Player Position: (%.2f, %.2f, %.2f)", pos.GetX(), pos.GetY(), pos.GetZ());
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+    ImGui::Begin("DockSpace", nullptr, windowFlags);
+    ImGui::PopStyleVar(3);
+
+    ImGuiID dockspaceID = ImGui::GetID("MainDockSpace");
+    ImGui::DockSpace(dockspaceID, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
+
+    // Menu Bar
+    if (ImGui::BeginMenuBar()) {
+        if (ImGui::BeginMenu("View")) {
+            ImGui::SeparatorText("Viewports");
+            ImGui::MenuItem("Game View", nullptr, &showGameView_);
+            ImGui::MenuItem("Debug View", nullptr, &showSceneView_);
+
+            ImGui::SeparatorText("Tools");
+            ImGui::MenuItem("Inspector", nullptr, &showInspector_);
+            ImGui::MenuItem("Hierarchy", nullptr, &showHierarchy_);
+            ImGui::MenuItem("Console", nullptr, &showConsole_);
+            ImGui::MenuItem("Project", nullptr, &showProject_);
+
+            ImGui::SeparatorText("Performance");
+            ImGui::MenuItem("Stats", nullptr, &showStats_);
+            ImGui::MenuItem("Profiler", nullptr, &showProfiler_);
+
+            ImGui::EndMenu();
+        }
+        ImGui::EndMenuBar();
     }
 
     ImGui::End();
+
+    // Game View (Runtime view)
+    if (showGameView_) {
+        ImGui::Begin("Game View", &showGameView_);
+        ImVec2 viewportSize = ImGui::GetContentRegionAvail();
+
+        if (viewportSize.x > 0 && viewportSize.y > 0) {
+            // 次のフレームで適用するサイズを記録
+            desiredGameViewWidth_ = static_cast<uint32>(viewportSize.x);
+            desiredGameViewHeight_ = static_cast<uint32>(viewportSize.y);
+
+            // 現在のテクスチャサイズで表示
+            ImGui::Image((ImTextureID)gameViewTexture_.GetSRVHandle().ptr,
+                ImVec2(static_cast<float>(gameViewTexture_.GetWidth()),
+                       static_cast<float>(gameViewTexture_.GetHeight())));
+        }
+
+        ImGui::End();
+    }
+
+    // Debug View (Editor view with debug tools)
+    if (showSceneView_) {
+        ImGui::Begin("Debug View", &showSceneView_);
+        ImVec2 viewportSize = ImGui::GetContentRegionAvail();
+
+        if (viewportSize.x > 0 && viewportSize.y > 0) {
+            // 次のフレームで適用するサイズを記録
+            desiredSceneViewWidth_ = static_cast<uint32>(viewportSize.x);
+            desiredSceneViewHeight_ = static_cast<uint32>(viewportSize.y);
+
+            // 現在のテクスチャサイズで表示
+            ImGui::Image((ImTextureID)sceneViewTexture_.GetSRVHandle().ptr,
+                ImVec2(static_cast<float>(sceneViewTexture_.GetWidth()),
+                       static_cast<float>(sceneViewTexture_.GetHeight())));
+        }
+
+        ImGui::End();
+    }
+
+    // Inspector
+    if (showInspector_) {
+        ImGui::Begin("Inspector", &showInspector_);
+
+        if (player_) {
+            ImGui::Text("Selected: Player");
+            ImGui::Separator();
+
+            auto& transform = player_->GetTransform();
+            auto pos = transform.GetLocalPosition();
+            auto rot = transform.GetLocalRotation();
+            auto scale = transform.GetLocalScale();
+
+            ImGui::Text("Transform");
+            ImGui::Text("Position: (%.2f, %.2f, %.2f)", pos.GetX(), pos.GetY(), pos.GetZ());
+            ImGui::Text("Rotation: (%.2f, %.2f, %.2f, %.2f)",
+                rot.GetX(), rot.GetY(), rot.GetZ(), rot.GetW());
+            ImGui::Text("Scale: (%.2f, %.2f, %.2f)", scale.GetX(), scale.GetY(), scale.GetZ());
+        } else {
+            ImGui::Text("No object selected");
+        }
+
+        ImGui::End();
+    }
+
+    // Hierarchy
+    if (showHierarchy_) {
+        ImGui::Begin("Hierarchy", &showHierarchy_);
+
+        const auto& objects = GetGameObjects();
+        for (const auto& obj : objects) {
+            if (ImGui::Selectable(obj->GetName().c_str(), selectedObject_ == obj.get())) {
+                selectedObject_ = obj.get();
+            }
+        }
+
+        ImGui::End();
+    }
+
+    // Stats
+    if (showStats_) {
+        ImGui::Begin("Stats", &showStats_);
+
+        Camera* camera = GetActiveCamera();
+        if (camera) {
+            ImGui::Text("Camera Position: (%.2f, %.2f, %.2f)",
+                camera->GetPosition().GetX(),
+                camera->GetPosition().GetY(),
+                camera->GetPosition().GetZ());
+        }
+
+        ImGui::Separator();
+        ImGui::Text("Objects: %zu", GetGameObjects().size());
+        ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+        ImGui::Text("Frame Time: %.3f ms", 1000.0f / ImGui::GetIO().Framerate);
+
+        ImGui::End();
+    }
+
+    // Console
+    if (showConsole_) {
+        ImGui::Begin("Console", &showConsole_);
+
+        if (ImGui::Button("Clear")) {
+            consoleMessages_.clear();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Add Test Log")) {
+            consoleMessages_.push_back("[Info] Test log message");
+        }
+
+        ImGui::Separator();
+        ImGui::BeginChild("ConsoleScrolling", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
+
+        for (const auto& msg : consoleMessages_) {
+            ImGui::TextUnformatted(msg.c_str());
+        }
+
+        if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+            ImGui::SetScrollHereY(1.0f);
+
+        ImGui::EndChild();
+        ImGui::End();
+    }
+
+    // Project (Assets)
+    if (showProject_) {
+        ImGui::Begin("Project", &showProject_);
+
+        ImGui::Text("Assets");
+        ImGui::Separator();
+
+        if (ImGui::TreeNode("Models")) {
+            ImGui::Selectable("testmodel.obj");
+            ImGui::TreePop();
+        }
+
+        if (ImGui::TreeNode("Textures")) {
+            ImGui::Selectable("ruru6.png");
+            ImGui::TreePop();
+        }
+
+        if (ImGui::TreeNode("Scenes")) {
+            ImGui::Selectable("GameScene");
+            ImGui::TreePop();
+        }
+
+        ImGui::End();
+    }
+
+    // Profiler
+    if (showProfiler_) {
+        ImGui::Begin("Profiler", &showProfiler_);
+
+        ImGui::Text("Performance Profiler");
+        ImGui::Separator();
+
+        static float values[90] = {};
+        static int values_offset = 0;
+        values[values_offset] = ImGui::GetIO().Framerate;
+        values_offset = (values_offset + 1) % IM_ARRAYSIZE(values);
+
+        ImGui::PlotLines("FPS", values, IM_ARRAYSIZE(values), values_offset, nullptr, 0.0f, 120.0f, ImVec2(0, 80));
+
+        ImGui::Separator();
+        ImGui::Text("Draw Calls: N/A");
+        ImGui::Text("Vertices: N/A");
+        ImGui::Text("Triangles: N/A");
+
+        ImGui::End();
+    }
 }
 
 void GameScene::OnRender(RenderView& view) {

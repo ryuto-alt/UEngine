@@ -19,7 +19,8 @@ void ImGuiManager::Initialize(GraphicsDevice* graphics, Window* window, uint32 s
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // キーボードナビゲーション有効化
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     // ImGuiスタイル設定
     ImGui::StyleColorsDark();

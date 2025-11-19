@@ -157,6 +157,7 @@
     <ClCompile Include="Engine\Graphics\Sprite.cpp" />
     <ClCompile Include="Engine\Graphics\SpritePipeline.cpp" />
     <ClCompile Include="Engine\Graphics\Texture2D.cpp" />
+    <ClCompile Include="Engine\Graphics\RenderTexture.cpp" />
     <ClCompile Include="Engine\Graphics\DirectionalLight.cpp" />
     <ClCompile Include="Engine\Graphics\MeshRenderer.cpp" />
     <ClCompile Include="Engine\Graphics\DirectionalLightComponent.cpp" />
@@ -207,6 +208,7 @@
     <ClInclude Include="Engine\Graphics\Sprite.h" />
     <ClInclude Include="Engine\Graphics\SpritePipeline.h" />
     <ClInclude Include="Engine\Graphics\Texture2D.h" />
+    <ClInclude Include="Engine\Graphics\RenderTexture.h" />
     <ClInclude Include="Engine\Graphics\DirectionalLight.h" />
     <ClInclude Include="Engine\Graphics\MeshRenderer.h" />
     <ClInclude Include="Engine\Graphics\DirectionalLightComponent.h" />

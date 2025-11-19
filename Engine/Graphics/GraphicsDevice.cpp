@@ -315,6 +315,17 @@ void GraphicsDevice::BeginFrame() {
     commandList_->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 }
 
+void GraphicsDevice::SetBackBufferAsRenderTarget() {
+    auto* cmdList = commandList_.Get();
+    
+    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHeap_->GetCPUDescriptorHandleForHeapStart();
+    rtvHandle.ptr += currentBackBufferIndex_ * rtvDescriptorSize_;
+    
+    D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvHeap_->GetCPUDescriptorHandleForHeapStart();
+    
+    cmdList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+}
+
 void GraphicsDevice::EndFrame() {
     // プレゼントへの遷移
     D3D12_RESOURCE_BARRIER barrier = {};

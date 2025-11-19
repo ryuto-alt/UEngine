@@ -47,8 +47,12 @@ public:
 
     void Initialize(GraphicsDevice* graphics, Window* window);
     void Draw(const RenderView& view, const std::vector<RenderItem>& renderItems, LightManager* lightManager, Scene* scene = nullptr);
+    void DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle, 
+                       D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle, const RenderView& view, 
+                       const std::vector<RenderItem>& items, LightManager* lightManager);
 
     Pipeline* GetPipeline() { return &pipeline_; }
+    ImGuiManager* GetImGuiManager() { return imguiManager_.get(); }
 
 protected:
     virtual void RenderUI(Scene* scene);

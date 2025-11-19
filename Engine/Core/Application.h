@@ -39,22 +39,23 @@ protected:
     virtual void OnUpdate(float deltaTime) {}
     virtual void OnShutdown() {}
 
+    // サブクラスからアクセス可能なメンバー
+    UniquePtr<GraphicsDevice> graphics_;
+    UniquePtr<RenderSystem> renderSystem_;
+    UniquePtr<LightManager> lightManager_;
+    UniquePtr<Renderer> renderer_;
+
 private:
     void Initialize();
     void MainLoop();
-    virtual void OnRender() final;
+    virtual void OnRender();
     void Shutdown();
 
 private:
     ApplicationConfig config_;
     UniquePtr<Window> window_;
-    UniquePtr<GraphicsDevice> graphics_;
     UniquePtr<InputManager> input_;
     UniquePtr<SceneManager> sceneManager_;
-    
-    UniquePtr<RenderSystem> renderSystem_;
-    UniquePtr<LightManager> lightManager_;
-    UniquePtr<Renderer> renderer_;
     
     bool running_ = false;
 };

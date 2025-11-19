@@ -128,4 +128,52 @@ void Renderer::RenderUI(Scene* scene) {
     imguiManager_->Render(cmdList);
 }
 
+void Renderer::DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle, 
+                             D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle, const RenderView& view, 
+                             const std::vector<RenderItem>& items, LightManager* lightManager) {
+    if (!view.camera) return;
+
+    auto* cmdList = graphics_->GetCommandList();
+
+    // Resource barrier: PIXEL_SHADER_RESOURCE -> RENDER_TARGET
+    D3D12_RESOURCE_BARRIER barrier = {};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.pResource = renderTarget;
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    cmdList->ResourceBarrier(1, &barrier);
+
+    // Set render target with depth buffer
+    cmdList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+
+    // Clear render target and depth buffer
+    const float clearColor[] = {0.2f, 0.3f, 0.4f, 1.0f};
+    cmdList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+    cmdList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
+    // Set viewport based on texture size
+    D3D12_RESOURCE_DESC desc = renderTarget->GetDesc();
+    D3D12_VIEWPORT viewport = {};
+    viewport.Width = static_cast<float>(desc.Width);
+    viewport.Height = static_cast<float>(desc.Height);
+    viewport.MaxDepth = 1.0f;
+
+    D3D12_RECT scissorRect = {};
+    scissorRect.right = static_cast<LONG>(desc.Width);
+    scissorRect.bottom = static_cast<LONG>(desc.Height);
+
+    cmdList->RSSetViewports(1, &viewport);
+    cmdList->RSSetScissorRects(1, &scissorRect);
+
+    // Render scene
+    UpdateLighting(view, lightManager);
+    RenderMeshes(view, items);
+
+    // Resource barrier: RENDER_TARGET -> PIXEL_SHADER_RESOURCE
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+    cmdList->ResourceBarrier(1, &barrier);
+}
+
 } // namespace UnoEngine

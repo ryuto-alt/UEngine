@@ -74,8 +74,8 @@ void Renderer::Draw(const RenderView& view, const std::vector<RenderItem>& rende
         bool hasTexture = item.material->HasDiffuseTexture();
         
         char debugMsg[512];
-        sprintf_s(debugMsg, "Frame: HasTexture=%d, SRVIndex=%u, Material=%p\n", hasTexture ? 1 : 0, item.material->GetSRVIndex(), item.material);
-        OutputDebugStringA(debugMsg);
+        //sprintf_s(debugMsg, "Frame: HasTexture=%d, SRVIndex=%u, Material=%p\n", hasTexture ? 1 : 0, item.material->GetSRVIndex(), item.material);
+        //OutputDebugStringA(debugMsg);
         
         if (hasTexture) {
             srvIndex = item.material->GetSRVIndex();

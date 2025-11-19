@@ -5,10 +5,18 @@
 #include <unordered_map>
 #include <filesystem>
 #include <Windows.h>
+#include <iostream>
 
 namespace UnoEngine {
 
 namespace {
+
+void LogObjError(const std::string& message, const std::string& file, int line) {
+    std::string fullMessage = "[OBJ Loader Error] " + message + "\n  File: " + file + "\n  Line: " + std::to_string(line);
+    std::cerr << fullMessage << std::endl;
+    OutputDebugStringA((fullMessage + "\n").c_str());
+    MessageBoxA(nullptr, fullMessage.c_str(), "OBJ Loading Error", MB_OK | MB_ICONERROR);
+}
 
 struct FaceIndex {
     int32 positionIndex;
@@ -139,7 +147,12 @@ Mesh ObjLoader::Load(GraphicsDevice* graphics, ID3D12GraphicsCommandList* comman
                      const std::string& filepath) {
     auto* device = graphics->GetDevice();
     std::ifstream file(filepath);
-    assert(file.is_open() && "Failed to open OBJ file");
+
+    if (!file.is_open()) {
+        std::string errorMsg = "Failed to open OBJ file\n  File path: " + filepath + "\n\nPlease check:\n  1. File exists\n  2. File path is correct\n  3. File is not locked by another program";
+        LogObjError(errorMsg, filepath, 0);
+        throw std::runtime_error("Failed to open OBJ file: " + filepath);
+    }
 
     namespace fs = std::filesystem;
     const fs::path objPath(filepath);
@@ -202,13 +215,40 @@ Mesh ObjLoader::Load(GraphicsDevice* graphics, ID3D12GraphicsCommandList* comman
             FaceIndex faceIndices[3];
             std::string token;
 
-            for (int i = 0; i < 3; ++i) {
-                assert(ss >> token && "Face must have 3 vertices");
-                ParseFace(token, faceIndices[i]);
+            // 頂点トークンをすべて収集
+            std::vector<std::string> faceTokens;
+            while (ss >> token) {
+                faceTokens.push_back(token);
             }
 
-            std::string extra;
-            assert(!(ss >> extra) && "Only triangles are supported");
+            // 三角形かチェック
+            if (faceTokens.size() < 3) {
+                std::string errorMsg = "Face has only " + std::to_string(faceTokens.size()) + " vertices (minimum 3 required)";
+                LogObjError(errorMsg, filepath, lineNumber);
+                throw std::runtime_error(errorMsg);
+            }
+
+            if (faceTokens.size() > 3) {
+                std::stringstream detailMsg;
+                detailMsg << "Face has " << faceTokens.size() << " vertices (only triangles are supported)\n";
+                detailMsg << "  Face data: f";
+                for (const auto& t : faceTokens) {
+                    detailMsg << " " << t;
+                }
+                detailMsg << "\n\n";
+                detailMsg << "Solution: Triangulate your mesh in your 3D software:\n";
+                detailMsg << "  - Blender: Select All > Triangulate Faces (Ctrl+T)\n";
+                detailMsg << "  - Maya: Mesh > Triangulate\n";
+                detailMsg << "  - 3ds Max: Edit Poly > Turn to Triangles";
+
+                LogObjError(detailMsg.str(), filepath, lineNumber);
+                throw std::runtime_error("OBJ file contains non-triangulated faces");
+            }
+
+            // 三角形の場合のみ処理
+            for (int i = 0; i < 3; ++i) {
+                ParseFace(faceTokens[i], faceIndices[i]);
+            }
 
             for (const auto& faceIndex : faceIndices) {
                 auto it = vertexCache.find(faceIndex);
@@ -217,8 +257,15 @@ Mesh ObjLoader::Load(GraphicsDevice* graphics, ID3D12GraphicsCommandList* comman
                 } else {
                     Vertex vertex;
 
-                    assert(faceIndex.positionIndex >= 0 &&
-                           faceIndex.positionIndex < static_cast<int32>(positions.size()));
+                    if (faceIndex.positionIndex < 0 || faceIndex.positionIndex >= static_cast<int32>(positions.size())) {
+                        std::stringstream errorMsg;
+                        errorMsg << "Invalid vertex position index: " << faceIndex.positionIndex << "\n";
+                        errorMsg << "  Valid range: 0 to " << (positions.size() - 1) << "\n";
+                        errorMsg << "  Total positions defined: " << positions.size();
+                        LogObjError(errorMsg.str(), filepath, lineNumber);
+                        throw std::runtime_error("Invalid vertex index in face");
+                    }
+
                     const Vector3& pos = positions[faceIndex.positionIndex];
                     vertex.px = pos.GetX();
                     vertex.py = pos.GetY();
@@ -253,7 +300,20 @@ Mesh ObjLoader::Load(GraphicsDevice* graphics, ID3D12GraphicsCommandList* comman
         }
     }
 
-    assert(!vertices.empty() && !indices.empty() && "OBJ file contains no geometry");
+    if (vertices.empty() || indices.empty()) {
+        std::stringstream errorMsg;
+        errorMsg << "OBJ file contains no geometry\n";
+        errorMsg << "  Vertices: " << vertices.size() << "\n";
+        errorMsg << "  Indices: " << indices.size() << "\n";
+        errorMsg << "  Positions (v): " << positions.size() << "\n";
+        errorMsg << "  UVs (vt): " << uvs.size() << "\n";
+        errorMsg << "  Normals (vn): " << normals.size() << "\n\n";
+        errorMsg << "Please check:\n";
+        errorMsg << "  - File contains 'f' (face) definitions\n";
+        errorMsg << "  - Faces reference valid vertices";
+        LogObjError(errorMsg.str(), filepath, lineNumber);
+        throw std::runtime_error("OBJ file contains no geometry");
+    }
 
     const size_t lastSlash = filepath.find_last_of("/\\");
     const std::string name = (lastSlash != std::string::npos)

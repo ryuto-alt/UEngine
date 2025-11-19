@@ -325,23 +325,25 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="Shaders\BasicVS.hlsl">
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Shaders\BasicVS.hlsl">
       <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\BasicPS.hlsl">
+    </FxCompile>
+    <FxCompile Include="Shaders\BasicPS.hlsl">
       <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\PBRVS.hlsl">
+    </FxCompile>
+    <FxCompile Include="Shaders\PBRVS.hlsl">
       <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\PBRPS.hlsl">
+    </FxCompile>
+    <FxCompile Include="Shaders\PBRPS.hlsl">
       <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\SpriteVS.hlsl">
+    </FxCompile>
+    <FxCompile Include="Shaders\SpriteVS.hlsl">
       <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\SpritePS.hlsl">
+    </FxCompile>
+    <FxCompile Include="Shaders\SpritePS.hlsl">
       <Filter>Shaders</Filter>
-    </None>
+    </FxCompile>
   </ItemGroup>
 </Project>

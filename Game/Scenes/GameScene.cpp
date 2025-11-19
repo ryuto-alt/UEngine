@@ -80,6 +80,8 @@ void GameScene::OnRender(RenderView& view) {
     view.camera = camera;
     view.layerMask = Layers::DEFAULT | Layers::PLAYER | Layers::ENEMY;
     view.viewName = "MainView";
+
+
 }
 
 } // namespace UnoEngine

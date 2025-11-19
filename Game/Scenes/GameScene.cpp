@@ -25,7 +25,7 @@ void GameScene::OnLoad() {
     // Player setup
     player_ = CreateGameObject("Player");
     auto* app = static_cast<GameApplication*>(GetApplication());
-    auto* mesh = app->LoadMesh("resources/model/testmodel/testmodel.obj");
+    auto* mesh = app->LoadMesh("assets/model/testmodel/testmodel.obj");
     player_->AddComponent<MeshRenderer>(mesh, const_cast<Material*>(mesh->GetMaterial()));
     player_->AddComponent<Player>();
 

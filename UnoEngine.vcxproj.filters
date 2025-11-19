@@ -63,6 +63,12 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{9d0e1f2a-3b4c-5d6e-7f8a-9b0c1d2e3f4a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\externals">
+      <UniqueIdentifier>{e0f1a2b3-c4d5-6e7f-8a9b-0c1d2e3f4a5b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\externals\tinygltf">
+      <UniqueIdentifier>{f1a2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -123,6 +129,9 @@
       <Filter>Engine\Graphics</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Resource\ObjLoader.cpp">
+      <Filter>Engine\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Resource\GltfLoader.cpp">
       <Filter>Engine\Resource</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Graphics\Material.cpp">
@@ -268,6 +277,12 @@
     <ClInclude Include="Engine\Resource\ObjLoader.h">
       <Filter>Engine\Resource</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Resource\IModelLoader.h">
+      <Filter>Engine\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Resource\GltfLoader.h">
+      <Filter>Engine\Resource</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Graphics\Material.h">
       <Filter>Engine\Graphics</Filter>
     </ClInclude>
@@ -336,6 +351,18 @@
     </ClInclude>
     <ClInclude Include="Game\UI\EditorUI.h">
       <Filter>Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\externals\tinygltf\tiny_gltf.h">
+      <Filter>Engine\externals\tinygltf</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\externals\tinygltf\json.hpp">
+      <Filter>Engine\externals\tinygltf</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\externals\tinygltf\stb_image.h">
+      <Filter>Engine\externals\tinygltf</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\externals\tinygltf\stb_image_write.h">
+      <Filter>Engine\externals\tinygltf</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

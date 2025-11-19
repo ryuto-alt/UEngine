@@ -148,8 +148,24 @@ std::unordered_map<std::string, MaterialData> LoadMTL(const std::string& mtlPath
 
 }
 
-Mesh ObjLoader::Load(GraphicsDevice* graphics, ID3D12GraphicsCommandList* commandList,
-                     const std::string& filepath) {
+ModelData ObjLoader::Load(GraphicsDevice* graphics, ID3D12GraphicsCommandList* commandList,
+                          const std::string& filepath) {
+    auto mesh = MakeUnique<Mesh>(ParseObjFile(graphics, commandList, filepath));
+    
+    ModelData modelData;
+    modelData.name = filepath;
+    modelData.meshes.push_back(std::move(mesh));
+    
+    return modelData;
+}
+
+Mesh ObjLoader::LoadSingle(GraphicsDevice* graphics, ID3D12GraphicsCommandList* commandList,
+                           const std::string& filepath) {
+    return ParseObjFile(graphics, commandList, filepath);
+}
+
+Mesh ObjLoader::ParseObjFile(GraphicsDevice* graphics, ID3D12GraphicsCommandList* commandList,
+                             const std::string& filepath) {
     auto* device = graphics->GetDevice();
     std::ifstream file(filepath);
 

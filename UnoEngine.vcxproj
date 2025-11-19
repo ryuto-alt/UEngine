@@ -170,6 +170,7 @@
     <ClCompile Include="Engine\Graphics\Material.cpp" />
     <ClCompile Include="Engine\Graphics\Mesh.cpp" />
     <ClCompile Include="Engine\Resource\ObjLoader.cpp" />
+    <ClCompile Include="Engine\Resource\GltfLoader.cpp" />
     <ClCompile Include="Engine\Graphics\Sprite.cpp" />
     <ClCompile Include="Engine\Graphics\SpritePipeline.cpp" />
     <ClCompile Include="Engine\Graphics\Texture2D.cpp" />
@@ -222,6 +223,8 @@
     <ClInclude Include="Engine\Graphics\Material.h" />
     <ClInclude Include="Engine\Graphics\Mesh.h" />
     <ClInclude Include="Engine\Resource\ObjLoader.h" />
+    <ClInclude Include="Engine\Resource\IModelLoader.h" />
+    <ClInclude Include="Engine\Resource\GltfLoader.h" />
     <ClInclude Include="Engine\Graphics\Sprite.h" />
     <ClInclude Include="Engine\Graphics\SpritePipeline.h" />
     <ClInclude Include="Engine\Graphics\Texture2D.h" />
@@ -239,6 +242,10 @@
     <ClInclude Include="Game\UI\EditorUI.h" />
     <ClInclude Include="Engine\Graphics\d3dx12.h" />
     <ClInclude Include="Engine\UI\ImGuiManager.h" />
+    <ClInclude Include="Engine\externals\tinygltf\tiny_gltf.h" />
+    <ClInclude Include="Engine\externals\tinygltf\json.hpp" />
+    <ClInclude Include="Engine\externals\tinygltf\stb_image.h" />
+    <ClInclude Include="Engine\externals\tinygltf\stb_image_write.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

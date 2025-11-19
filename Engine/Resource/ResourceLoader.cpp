@@ -1,7 +1,9 @@
 #include "ResourceLoader.h"
 #include "../Graphics/GraphicsDevice.h"
 #include "ObjLoader.h"
+#include "GltfLoader.h"
 #include <stdexcept>
+#include <algorithm>
 
 namespace UnoEngine {
 
@@ -15,6 +17,10 @@ void ResourceLoader::Shutdown() {
 
 Mesh* ResourceLoader::LoadMesh(const std::string& path) {
     return GetInstance().LoadMeshImpl(path);
+}
+
+ModelData* ResourceLoader::LoadModel(const std::string& path) {
+    return GetInstance().LoadModelImpl(path);
 }
 
 Material* ResourceLoader::LoadMaterial(const std::string& name) {
@@ -36,18 +42,28 @@ void ResourceLoader::InitializeImpl(GraphicsDevice* graphics) {
 
 void ResourceLoader::ShutdownImpl() {
     meshCache_.clear();
+    modelCache_.clear();
     materialCache_.clear();
     textureCache_.clear();
     graphics_ = nullptr;
 }
 
 Mesh* ResourceLoader::LoadMeshImpl(const std::string& path) {
+    // ModelDataとして読み込んで、最初のメッシュを返す
+    ModelData* modelData = LoadModelImpl(path);
+    if (modelData && !modelData->meshes.empty()) {
+        return modelData->meshes[0].get();
+    }
+    return nullptr;
+}
+
+ModelData* ResourceLoader::LoadModelImpl(const std::string& path) {
     if (!graphics_) {
         throw std::runtime_error("ResourceLoader not initialized");
     }
 
-    auto it = meshCache_.find(path);
-    if (it != meshCache_.end()) {
+    auto it = modelCache_.find(path);
+    if (it != modelCache_.end()) {
         return it->second.get();
     }
 
@@ -59,7 +75,20 @@ Mesh* ResourceLoader::LoadMeshImpl(const std::string& path) {
     device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator));
     commandList->Reset(allocator.Get(), nullptr);
 
-    auto mesh = std::make_unique<Mesh>(ObjLoader::Load(graphics_, commandList, path));
+    // 拡張子に応じてローダーを選択
+    std::string ext = path.substr(path.find_last_of("."));
+    std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+    
+    ModelData modelData;
+    if (ext == ".gltf" || ext == ".glb") {
+        GltfLoader loader;
+        modelData = loader.Load(graphics_, commandList, path);
+    } else if (ext == ".obj") {
+        ObjLoader loader;
+        modelData = loader.Load(graphics_, commandList, path);
+    } else {
+        throw std::runtime_error("Unsupported model format: " + ext);
+    }
 
     commandList->Close();
     ID3D12CommandList* commandLists[] = { commandList };
@@ -73,8 +102,9 @@ Mesh* ResourceLoader::LoadMeshImpl(const std::string& path) {
     WaitForSingleObject(fenceEvent, INFINITE);
     CloseHandle(fenceEvent);
 
-    Mesh* ptr = mesh.get();
-    meshCache_[path] = std::move(mesh);
+    auto model = std::make_unique<ModelData>(std::move(modelData));
+    ModelData* ptr = model.get();
+    modelCache_[path] = std::move(model);
     return ptr;
 }
 

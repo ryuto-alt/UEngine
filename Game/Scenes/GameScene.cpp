@@ -22,20 +22,28 @@ void GameScene::OnLoad() {
     camera->SetRotation(Quaternion::LookRotation(Vector3(0.0f, -0.5f, -1.0f).Normalize(), Vector3::UnitY()));
     SetActiveCamera(camera.release());
 
-    // Player setup
+    // Player setup (glTF model)
     player_ = CreateGameObject("Player");
     auto* app = static_cast<GameApplication*>(GetApplication());
-    auto* mesh = app->LoadMesh("assets/model/testmodel/testmodel.obj");
+    auto* mesh = app->LoadMesh("assets/model/testmodel/walk.gltf");
     player_->AddComponent<MeshRenderer>(mesh, const_cast<Material*>(mesh->GetMaterial()));
     player_->AddComponent<Player>();
 
-    // Light setup
-    auto* light = CreateGameObject("DirectionalLight");
-    auto* lightComp = light->AddComponent<DirectionalLightComponent>();
-    lightComp->SetDirection(Vector3(0.0f, -1.0f, 0.0f));
-    lightComp->SetColor(Vector3(1.0f, 1.0f, 1.0f));
-    lightComp->SetIntensity(1.0f);
-    lightComp->UseTransformDirection(false);
+    // Main Light (斜め前から)
+    auto* mainLight = CreateGameObject("MainLight");
+    auto* mainLightComp = mainLight->AddComponent<DirectionalLightComponent>();
+    mainLightComp->SetDirection(Vector3(0.3f, -0.7f, -0.5f).Normalize());
+    mainLightComp->SetColor(Vector3(1.0f, 0.98f, 0.95f)); // 少し暖色
+    mainLightComp->SetIntensity(1.2f);
+    mainLightComp->UseTransformDirection(false);
+
+    // Rim Light (背後から、輪郭を強調)
+    auto* rimLight = CreateGameObject("RimLight");
+    auto* rimLightComp = rimLight->AddComponent<DirectionalLightComponent>();
+    rimLightComp->SetDirection(Vector3(-0.2f, 0.3f, 0.8f).Normalize());
+    rimLightComp->SetColor(Vector3(0.7f, 0.8f, 1.0f)); // 少し寒色
+    rimLightComp->SetIntensity(0.5f);
+    rimLightComp->UseTransformDirection(false);
 
 #ifdef _DEBUG
     // EditorUI初期化 (Debug builds only)

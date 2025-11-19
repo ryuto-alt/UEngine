@@ -27,6 +27,7 @@ public:
     void Present();
     void SetBackBufferAsRenderTarget();
     void WaitForGPU();
+    void OnResize(uint32 width, uint32 height);
 
     // アクセサ
     ID3D12Device* GetDevice() const { return device_.Get(); }

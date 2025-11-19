@@ -31,6 +31,15 @@ void Application::Initialize() {
     input_ = MakeUnique<InputManager>();
     window_->SetMessageCallback([this](UINT msg, WPARAM wparam, LPARAM lparam) {
         input_->ProcessMessage(msg, wparam, lparam);
+
+        // ウィンドウリサイズ処理
+        if (msg == WM_SIZE) {
+            uint32 width = LOWORD(lparam);
+            uint32 height = HIWORD(lparam);
+            if (width > 0 && height > 0) {
+                graphics_->OnResize(width, height);
+            }
+        }
     });
     
     // 描画システム初期化

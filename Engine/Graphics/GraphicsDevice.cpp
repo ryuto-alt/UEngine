@@ -371,4 +371,38 @@ void GraphicsDevice::WaitForGPU() {
     WaitForSingleObject(fenceEvent_, INFINITE);
 }
 
+void GraphicsDevice::OnResize(uint32 width, uint32 height) {
+    if (width == 0 || height == 0) return;
+
+    // GPU処理が完了するまで待つ
+    WaitForGPU();
+
+    // 既存のリソースを解放
+    for (uint32 i = 0; i < BACK_BUFFER_COUNT; ++i) {
+        renderTargets_[i].Reset();
+    }
+    depthStencil_.Reset();
+
+    // スワップチェーンのリサイズ
+    DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
+    swapChain_->GetDesc(&swapChainDesc);
+    ThrowIfFailed(
+        swapChain_->ResizeBuffers(
+            BACK_BUFFER_COUNT,
+            width,
+            height,
+            swapChainDesc.BufferDesc.Format,
+            swapChainDesc.Flags
+        ),
+        "Failed to resize swap chain buffers"
+    );
+
+    // レンダーターゲットと深度バッファを再作成
+    CreateRenderTargets();
+    CreateDepthStencil();
+
+    // 次のフレームのインデックスを取得
+    currentBackBufferIndex_ = swapChain_->GetCurrentBackBufferIndex();
+}
+
 } // namespace UnoEngine

@@ -107,6 +107,17 @@ void Pipeline::CreatePipelineState(
     psoDesc.pRootSignature = rootSignature_.Get();
     psoDesc.VS = vertexShader.GetBytecodeDesc();
     psoDesc.PS = pixelShader.GetBytecodeDesc();
+    psoDesc.BlendState.AlphaToCoverageEnable = FALSE;
+    psoDesc.BlendState.IndependentBlendEnable = FALSE;
+    psoDesc.BlendState.RenderTarget[0].BlendEnable = FALSE;
+    psoDesc.BlendState.RenderTarget[0].LogicOpEnable = FALSE;
+    psoDesc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
+    psoDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_ZERO;
+    psoDesc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+    psoDesc.BlendState.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+    psoDesc.BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+    psoDesc.BlendState.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+    psoDesc.BlendState.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_NOOP;
     psoDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
     psoDesc.SampleMask = UINT_MAX;
     psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;

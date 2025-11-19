@@ -21,9 +21,10 @@ void GameScene::OnLoad() {
 
     // Player
     auto* player = CreateGameObject("Player");
+    auto* mesh = ResourceLoader::LoadMesh("resources/model/testmodel/testmodel.obj");
     player->AddComponent<MeshRenderer>(
-        ResourceLoader::LoadMesh("resources/model/testmodel/testmodel.obj"),
-        ResourceLoader::LoadMaterial("default")
+        mesh,
+        const_cast<Material*>(mesh->GetMaterial())
     );
     auto* playerController = player->AddComponent<PlayerController>();
     if (input_) {
@@ -32,13 +33,11 @@ void GameScene::OnLoad() {
 
     // Directional Light
     auto* light = CreateGameObject("DirectionalLight");
-    light->GetTransform().SetLocalRotation(
-        Quaternion::RotationAxis(Vector3::UnitX(), Math::ToRadians(90.0f))
-    );
     auto* lightComp = light->AddComponent<DirectionalLightComponent>();
+    lightComp->SetDirection(Vector3(0.0f, -1.0f, 0.0f)); // 真上から下へ
     lightComp->SetColor(Vector3(1.0f, 1.0f, 1.0f));
-    lightComp->SetIntensity(2.0f);
-    lightComp->UseTransformDirection(true);
+    lightComp->SetIntensity(1.0f);
+    lightComp->UseTransformDirection(false);
     
     // Cameraを検索してactiveに設定
     for (const auto& go : GetGameObjects()) {

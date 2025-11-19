@@ -74,48 +74,19 @@ float4 main(PSInput input) : SV_TARGET {
     // テクスチャから色を取得
     float3 albedo = albedoTexture.Sample(albedoSampler, input.uv).rgb;
 
-    // マテリアルパラメータを適用
-    albedo *= materialAlbedo;
-    float metallic = materialMetallic;
-    float roughness = max(materialRoughness, 0.04f); // 完全に滑らかな面を避ける
-
     // 正規化されたベクトル
     float3 N = normalize(input.normal);
-    float3 V = normalize(cameraPosition - input.worldPos);
     float3 L = normalize(-directionalLightDirection);
-    float3 H = normalize(V + L);
 
-    // F0の計算（金属性に応じて変化）
-    float3 F0 = float3(0.04f, 0.04f, 0.04f);  // 非金属の基本反射率
-    F0 = lerp(F0, albedo, metallic);
-
-    // Cook-Torrance BRDF
-    float NDF = DistributionGGX(N, H, roughness);
-    float G = GeometrySmith(N, V, L, roughness);
-    float3 F = FresnelSchlick(max(dot(H, V), 0.0f), F0);
-
-    float3 kS = F;
-    float3 kD = float3(1.0f, 1.0f, 1.0f) - kS;
-    kD *= 1.0f - metallic;
-
-    float3 numerator = NDF * G * F;
-    float denominator = 4.0f * max(dot(N, V), 0.0f) * max(dot(N, L), 0.0f) + 0.0001f;
-    float3 specular = numerator / denominator;
-
-    // ディレクショナルライトの寄与
+    // Lambertライティング
     float NdotL = max(dot(N, L), 0.0f);
-    float3 radiance = directionalLightColor * directionalLightIntensity;
-    float3 Lo = (kD * albedo / PI + specular) * radiance * NdotL;
+    float3 directLight = albedo * directionalLightColor * directionalLightIntensity * NdotL;
 
-    // 環境光（シンプルなアンビエント）
-    float3 ambient = ambientLight * albedo;
+    // 環境光
+    float3 ambient = albedo * ambientLight;
 
     // 最終的な色
-    float3 color = ambient + Lo;
+    float3 color = ambient + directLight;
 
-    // トーンマッピング（Reinhardトーンマッピング）
-    color = color / (color + float3(1.0f, 1.0f, 1.0f));
-
-    // ガンマ補正は、sRGBレンダーターゲットが自動で行います
     return float4(color, 1.0f);
 }

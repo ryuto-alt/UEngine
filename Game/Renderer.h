@@ -51,7 +51,6 @@ public:
 
 private:
     void SetupViewport();
-    void SetupPipelineState();
     void RenderUI();
 
 private:

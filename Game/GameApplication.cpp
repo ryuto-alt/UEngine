@@ -19,17 +19,17 @@ Material* GameApplication::LoadMaterial(const std::string& name) {
 
 void GameApplication::OnRender() {
     graphics_->BeginFrame();
-    
+
     Scene* scene = GetSceneManager()->GetActiveScene();
     if (scene) {
-        // GameSceneの場合はRenderTextureに描画
-        GameScene* gameScene = dynamic_cast<GameScene*>(scene);
-        
         RenderView view;
         scene->OnRender(view);
-        
+
         auto items = renderSystem_->CollectRenderables(scene, view);
 
+#ifdef _DEBUG
+        // GameSceneの場合はRenderTextureに描画 (Debug builds only)
+        GameScene* gameScene = dynamic_cast<GameScene*>(scene);
         if (gameScene) {
             auto* editorUI = gameScene->GetEditorUI();
 
@@ -58,17 +58,16 @@ void GameApplication::OnRender() {
                 lightManager_.get()
             );
             }
-        }
 
-        // メインウィンドウのレンダーターゲットを再設定
-        if (gameScene) {
+            // メインウィンドウのレンダーターゲットを再設定
             graphics_->SetBackBufferAsRenderTarget();
         }
+#endif
 
         // メインウィンドウに描画
         renderer_->Draw(view, items, lightManager_.get(), scene);
     }
-    
+
     graphics_->EndFrame();
     graphics_->Present();
 }

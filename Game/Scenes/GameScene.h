@@ -1,7 +1,10 @@
 #pragma once
 
 #include "../../Engine/Core/Scene.h"
+
+#ifdef _DEBUG
 #include "../UI/EditorUI.h"
+#endif
 
 namespace UnoEngine {
 
@@ -14,12 +17,17 @@ public:
 
     GameObject* GetPlayer() const { return player_; }
 
-    // EditorUIへのアクセス
+#ifdef _DEBUG
+    // EditorUIへのアクセス (Debug builds only)
     EditorUI* GetEditorUI() { return &editorUI_; }
+#endif
 
 private:
     GameObject* player_ = nullptr;
+
+#ifdef _DEBUG
     EditorUI editorUI_;
+#endif
 };
 
 } // namespace UnoEngine

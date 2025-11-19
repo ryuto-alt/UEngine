@@ -6,7 +6,10 @@
 #include "../../Engine/Graphics/MeshRenderer.h"
 #include "../../Engine/Graphics/DirectionalLightComponent.h"
 #include "../../Engine/Math/Math.h"
+
+#ifdef _DEBUG
 #include <imgui.h>
+#endif
 
 namespace UnoEngine {
 
@@ -34,18 +37,22 @@ void GameScene::OnLoad() {
     lightComp->SetIntensity(1.0f);
     lightComp->UseTransformDirection(false);
 
-    // EditorUI初期化
+#ifdef _DEBUG
+    // EditorUI初期化 (Debug builds only)
     editorUI_.Initialize(app->GetGraphicsDevice());
     editorUI_.AddConsoleMessage("[Scene] GameScene loaded successfully");
+#endif
 }
 
 void GameScene::OnUpdate(float deltaTime) {
+#ifdef _DEBUG
     // 前のフレームで記録したサイズでRenderTextureをリサイズ（描画前に実行）
     auto* app = static_cast<GameApplication*>(GetApplication());
     uint32 gameW, gameH, sceneW, sceneH;
     editorUI_.GetDesiredViewportSizes(gameW, gameH, sceneW, sceneH);
     editorUI_.GetGameViewTexture()->Resize(app->GetGraphicsDevice(), gameW, gameH);
     editorUI_.GetSceneViewTexture()->Resize(app->GetGraphicsDevice(), sceneW, sceneH);
+#endif
 
     // Rotate player
     if (player_) {
@@ -65,6 +72,7 @@ void GameScene::OnUpdate(float deltaTime) {
 }
 
 void GameScene::OnImGui() {
+#ifdef _DEBUG
     // EditorContextを構築
     EditorContext context;
     context.player = player_;
@@ -75,6 +83,7 @@ void GameScene::OnImGui() {
 
     // EditorUIに描画を委譲
     editorUI_.Render(context);
+#endif
 }
 
 void GameScene::OnRender(RenderView& view) {

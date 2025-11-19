@@ -1,6 +1,15 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <Filter Include="Engine\Rendering">
+      <UniqueIdentifier>{9e0f1a2b-3c4d-5e6f-7a8b-9c0d1e2f3a4b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Resource">
+      <UniqueIdentifier>{0f1a2b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Systems">
+      <UniqueIdentifier>{1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Game">
       <UniqueIdentifier>{7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d}</UniqueIdentifier>
     </Filter>
@@ -110,8 +119,8 @@
     <ClCompile Include="Engine\Graphics\Mesh.cpp">
       <Filter>Engine\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Graphics\ObjLoader.cpp">
-      <Filter>Engine\Graphics</Filter>
+    <ClCompile Include="Engine\Resource\ObjLoader.cpp">
+      <Filter>Engine\Resource</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Graphics\Material.cpp">
       <Filter>Engine\Graphics</Filter>
@@ -134,8 +143,8 @@
     <ClCompile Include="Engine\Graphics\DirectionalLightComponent.cpp">
       <Filter>Engine\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Graphics\ResourceLoader.cpp">
-      <Filter>Engine\Graphics</Filter>
+    <ClCompile Include="Engine\Resource\ResourceLoader.cpp">
+      <Filter>Engine\Resource</Filter>
     </ClCompile>
     <ClCompile Include="Game\Scenes\GameScene.cpp">
       <Filter>Game\Scenes</Filter>
@@ -146,14 +155,14 @@
     <ClCompile Include="Engine\UI\ImGuiManager.cpp">
       <Filter>Engine\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\RenderSystem.cpp">
-      <Filter>Engine\Core</Filter>
+    <ClCompile Include="Engine\Rendering\RenderSystem.cpp">
+      <Filter>Engine\Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Graphics\LightManager.cpp">
-      <Filter>Engine\Graphics</Filter>
+    <ClCompile Include="Engine\Rendering\LightManager.cpp">
+      <Filter>Engine\Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="Game\Renderer.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="Engine\Rendering\Renderer.cpp">
+      <Filter>Engine\Rendering</Filter>
     </ClCompile>
     <ClCompile Include="Game\GameApplication.cpp">
       <Filter>Game</Filter>
@@ -247,8 +256,8 @@
     <ClInclude Include="Engine\Graphics\Mesh.h">
       <Filter>Engine\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Graphics\ObjLoader.h">
-      <Filter>Engine\Graphics</Filter>
+    <ClInclude Include="Engine\Resource\ObjLoader.h">
+      <Filter>Engine\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\Material.h">
       <Filter>Engine\Graphics</Filter>
@@ -271,8 +280,8 @@
     <ClInclude Include="Engine\Graphics\DirectionalLightComponent.h">
       <Filter>Engine\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Graphics\ResourceLoader.h">
-      <Filter>Engine\Graphics</Filter>
+    <ClInclude Include="Engine\Resource\ResourceLoader.h">
+      <Filter>Engine\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Game\Scenes\GameScene.h">
       <Filter>Game\Scenes</Filter>
@@ -286,20 +295,23 @@
     <ClInclude Include="Engine\UI\ImGuiManager.h">
       <Filter>Engine\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\RenderSystem.h">
-      <Filter>Engine\Core</Filter>
+    <ClInclude Include="Engine\Rendering\RenderSystem.h">
+      <Filter>Engine\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Graphics\LightManager.h">
-      <Filter>Engine\Graphics</Filter>
+    <ClInclude Include="Engine\Rendering\LightManager.h">
+      <Filter>Engine\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Graphics\RenderView.h">
-      <Filter>Engine\Graphics</Filter>
+    <ClInclude Include="Engine\Rendering\RenderView.h">
+      <Filter>Engine\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Graphics\RenderItem.h">
-      <Filter>Engine\Graphics</Filter>
+    <ClInclude Include="Engine\Rendering\RenderItem.h">
+      <Filter>Engine\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="Game\Renderer.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="Engine\Systems\ISystem.h">
+      <Filter>Engine\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Rendering\Renderer.h">
+      <Filter>Engine\Rendering</Filter>
     </ClInclude>
     <ClInclude Include="Game\GameApplication.h">
       <Filter>Game</Filter>

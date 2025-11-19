@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Mesh.h"
-#include "GraphicsDevice.h"
+#include "../Graphics/Mesh.h"
+#include "../Graphics/GraphicsDevice.h"
 #include <string>
 
 namespace UnoEngine {

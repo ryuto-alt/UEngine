@@ -1,5 +1,5 @@
 #include "GameApplication.h"
-#include "../Engine/Graphics/ResourceLoader.h"
+#include "../Engine/Resource/ResourceLoader.h"
 
 namespace UnoEngine {
 

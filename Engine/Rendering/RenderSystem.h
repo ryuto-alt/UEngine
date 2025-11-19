@@ -1,15 +1,14 @@
 #pragma once
 
-#include "Scene.h"
-#include "Camera.h"
-#include "../Graphics/RenderView.h"
-#include "../Graphics/RenderItem.h"
+#include "../Core/Scene.h"
+#include "../Core/Camera.h"
+#include "RenderView.h"
+#include "RenderItem.h"
 #include "../Math/Matrix.h"
 #include <vector>
 
 namespace UnoEngine {
 
-// Rendering system
 class RenderSystem {
 public:
     RenderSystem() = default;
@@ -19,7 +18,6 @@ public:
 
 private:
     bool PassesLayerMask(uint32 objectLayer, uint32 viewMask) const;
-
 };
 
 } // namespace UnoEngine

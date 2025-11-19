@@ -1,5 +1,5 @@
 #include "ResourceLoader.h"
-#include "GraphicsDevice.h"
+#include "../Graphics/GraphicsDevice.h"
 #include "ObjLoader.h"
 #include <stdexcept>
 

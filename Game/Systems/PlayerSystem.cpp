@@ -1,4 +1,5 @@
 #include "PlayerSystem.h"
+#include "../../Engine/Core/Scene.h"
 #include "../Components/Player.h"
 #include "../../Engine/Core/Camera.h"
 #include "../../Engine/Input/InputManager.h"
@@ -23,6 +24,10 @@ void PlayerSystem::Update(Camera* camera, Player* player, InputManager* input, f
         movement = movement.Normalize() * player->moveSpeed * deltaTime;
         camera->SetPosition(camera->GetPosition() + movement);
     }
+}
+
+void PlayerSystem::OnUpdate(Scene* scene, float deltaTime) {
+    // Scene-based system implementation can be added here if needed
 }
 
 } // namespace UnoEngine

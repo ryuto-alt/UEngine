@@ -1,12 +1,11 @@
 #pragma once
 
-#include "Mesh.h"
-#include "Material.h"
+#include "../Graphics/Mesh.h"
+#include "../Graphics/Material.h"
 #include "../Math/Matrix.h"
 
 namespace UnoEngine {
 
-// Rendering data structure
 struct RenderItem {
     Mesh* mesh = nullptr;
     Material* material = nullptr;

@@ -1,6 +1,6 @@
 #include "Game/GameApplication.h"
 #include "Game/Scenes/GameScene.h"
-#include "Engine/Graphics/ResourceLoader.h"
+#include "Engine/Resource/ResourceLoader.h"
 #include "Engine/Input/InputManager.h"
 
 using namespace UnoEngine;

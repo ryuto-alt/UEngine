@@ -39,6 +39,4 @@ bool RenderSystem::PassesLayerMask(uint32 objectLayer, uint32 viewMask) const {
     return (objectLayer & viewMask) != 0;
 }
 
-
-
 } // namespace UnoEngine

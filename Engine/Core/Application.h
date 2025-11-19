@@ -2,13 +2,13 @@
 
 #include "Types.h"
 #include "NonCopyable.h"
-#include "RenderSystem.h"
+#include "../Rendering/RenderSystem.h"
 #include "SceneManager.h"
 #include "../Window/Window.h"
 #include "../Graphics/GraphicsDevice.h"
-#include "../Graphics/LightManager.h"
+#include "../Rendering/LightManager.h"
 #include "../Input/InputManager.h"
-#include "../../Game/Renderer.h"
+#include "../Rendering/Renderer.h"
 
 namespace UnoEngine {
 

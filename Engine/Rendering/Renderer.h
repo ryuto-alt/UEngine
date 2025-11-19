@@ -1,19 +1,18 @@
 #pragma once
 
-#include "../Engine/Graphics/GraphicsDevice.h"
-#include "../Engine/Graphics/Pipeline.h"
-#include "../Engine/Graphics/ConstantBuffer.h"
-#include "../Engine/Graphics/RenderItem.h"
-#include "../Engine/Graphics/RenderView.h"
-#include "../Engine/Graphics/LightManager.h"
-#include "../Engine/Window/Window.h"
-#include "../Engine/UI/ImGuiManager.h"
+#include "../Graphics/GraphicsDevice.h"
+#include "../Graphics/Pipeline.h"
+#include "../Graphics/ConstantBuffer.h"
+#include "RenderItem.h"
+#include "RenderView.h"
+#include "LightManager.h"
+#include "../Window/Window.h"
+#include "../UI/ImGuiManager.h"
 #include <DirectXMath.h>
 #include <vector>
 
 namespace UnoEngine {
 
-// Constant buffer structures
 struct alignas(256) TransformCB {
     DirectX::XMFLOAT4X4 world;
     DirectX::XMFLOAT4X4 view;

@@ -1,5 +1,5 @@
 #include "LightManager.h"
-#include "DirectionalLightComponent.h"
+#include "../Graphics/DirectionalLightComponent.h"
 
 namespace UnoEngine {
 

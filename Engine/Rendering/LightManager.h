@@ -1,12 +1,11 @@
 #pragma once
 
-#include "DirectionalLight.h"
+#include "../Graphics/DirectionalLight.h"
 
 namespace UnoEngine {
 
 class DirectionalLightComponent;
 
-// Light management
 struct GPULightData {
     Vector3 direction{0.0f, -1.0f, 0.0f};
     Vector3 color{1.0f, 1.0f, 1.0f};

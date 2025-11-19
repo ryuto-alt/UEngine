@@ -42,10 +42,12 @@ public:
     const Texture2D* GetDiffuseTexture() const { return diffuseTexture_.get(); }
     bool HasDiffuseTexture() const { return diffuseTexture_ != nullptr; }
     uint32 GetSRVIndex() const { return diffuseTexture_ ? diffuseTexture_->GetSRVIndex() : 0; }
+    D3D12_GPU_DESCRIPTOR_HANDLE GetAlbedoSRV(ID3D12DescriptorHeap* heap) const;
 
 private:
     MaterialData data_;
     std::unique_ptr<Texture2D> diffuseTexture_;
+    ID3D12Device* device_ = nullptr;
 };
 
 } // namespace UnoEngine

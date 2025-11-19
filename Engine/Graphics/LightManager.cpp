@@ -21,4 +21,14 @@ DirectionalLightComponent* LightManager::GetDirectionalLight() const {
     return directionalLight_;
 }
 
+GPULightData LightManager::BuildGPULightData() const {
+    GPULightData data;
+    if (directionalLight_) {
+        data.direction = directionalLight_->GetDirection();
+        data.color = directionalLight_->GetColor();
+        data.intensity = directionalLight_->GetIntensity();
+    }
+    return data;
+}
+
 } // namespace UnoEngine

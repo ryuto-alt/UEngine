@@ -39,19 +39,25 @@ struct alignas(256) MaterialCB {
     DirectX::XMFLOAT3 padding;
 };
 
+class Scene;
+
 class Renderer {
 public:
     Renderer() = default;
-    ~Renderer() = default;
+    virtual ~Renderer() = default;
 
     void Initialize(GraphicsDevice* graphics, Window* window);
-    void Draw(const RenderView& view, const std::vector<RenderItem>& renderItems, LightManager* lightManager);
-    
+    void Draw(const RenderView& view, const std::vector<RenderItem>& renderItems, LightManager* lightManager, Scene* scene = nullptr);
+
     Pipeline* GetPipeline() { return &pipeline_; }
+
+protected:
+    virtual void RenderUI(Scene* scene);
 
 private:
     void SetupViewport();
-    void RenderUI();
+    void UpdateLighting(const RenderView& view, LightManager* lightManager);
+    void RenderMeshes(const RenderView& view, const std::vector<RenderItem>& items);
 
 private:
     GraphicsDevice* graphics_ = nullptr;

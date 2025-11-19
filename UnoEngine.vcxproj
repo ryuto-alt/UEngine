@@ -164,6 +164,8 @@
     <ClCompile Include="Game\Scenes\GameScene.cpp" />
     <ClCompile Include="Game\Components\PlayerController.cpp" />
     <ClCompile Include="Game\Renderer.cpp" />
+    <ClCompile Include="Game\GameApplication.cpp" />
+    <ClCompile Include="Game\Systems\PlayerSystem.cpp" />
     <ClCompile Include="Engine\UI\ImGuiManager.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -211,6 +213,9 @@
     <ClInclude Include="Game\Scenes\GameScene.h" />
     <ClInclude Include="Game\Components\PlayerController.h" />
     <ClInclude Include="Game\Renderer.h" />
+    <ClInclude Include="Game\GameApplication.h" />
+    <ClInclude Include="Game\Components\Player.h" />
+    <ClInclude Include="Game\Systems\PlayerSystem.h" />
     <ClInclude Include="Engine\Graphics\d3dx12.h" />
     <ClInclude Include="Engine\UI\ImGuiManager.h" />
   </ItemGroup>

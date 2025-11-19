@@ -34,6 +34,7 @@ void Application::Initialize() {
     
     // 描画システム初期化
     sceneManager_ = MakeUnique<SceneManager>();
+    sceneManager_->SetApplication(this);
     renderSystem_ = MakeUnique<RenderSystem>();
     lightManager_ = MakeUnique<LightManager>();
     renderer_ = MakeUnique<Renderer>();
@@ -80,8 +81,8 @@ void Application::OnRender() {
         scene->OnRender(view);
         
         auto items = renderSystem_->CollectRenderables(scene, view);
-        
-        renderer_->Draw(view, items, lightManager_.get());
+
+        renderer_->Draw(view, items, lightManager_.get(), scene);
     }
     
     graphics_->EndFrame();

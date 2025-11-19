@@ -1,67 +1,76 @@
 #include "GameScene.h"
-#include "../Components/PlayerController.h"
+#include "../Components/Player.h"
+#include "../GameApplication.h"
 #include "../../Engine/Core/GameObject.h"
-#include "../../Engine/Core/OrbitController.h"
-#include "../../Engine/Graphics/ResourceLoader.h"
+#include "../../Engine/Core/Camera.h"
 #include "../../Engine/Graphics/MeshRenderer.h"
 #include "../../Engine/Graphics/DirectionalLightComponent.h"
 #include "../../Engine/Math/Math.h"
+#include "../../Engine/UI/ImGuiManager.h"
+#include <imgui.h>
 
 namespace UnoEngine {
 
 void GameScene::OnLoad() {
     SetActiveCamera(nullptr);
-    
-    // Camera
-    auto* camera = CreateGameObject("Camera");
-    auto* orbitController = camera->AddComponent<OrbitController>();
-    if (input_) {
-        orbitController->SetInputManager(input_);
-    }
 
-    // Player
-    auto* player = CreateGameObject("Player");
-    auto* mesh = ResourceLoader::LoadMesh("resources/model/testmodel/testmodel.obj");
-    player->AddComponent<MeshRenderer>(
-        mesh,
-        const_cast<Material*>(mesh->GetMaterial())
-    );
-    auto* playerController = player->AddComponent<PlayerController>();
-    if (input_) {
-        playerController->SetInputManager(input_);
-    }
+    // Camera setup
+    auto camera = MakeUnique<Camera>();
+    camera->SetPosition(Vector3(0.0f, 5.0f, 10.0f));
+    camera->SetRotation(Quaternion::LookRotation(Vector3(0.0f, -0.5f, -1.0f).Normalize(), Vector3::UnitY()));
+    SetActiveCamera(camera.release());
 
-    // Directional Light
+    // Player setup
+    player_ = CreateGameObject("Player");
+    auto* app = static_cast<GameApplication*>(GetApplication());
+    auto* mesh = app->LoadMesh("resources/model/testmodel/testmodel.obj");
+    player_->AddComponent<MeshRenderer>(mesh, const_cast<Material*>(mesh->GetMaterial()));
+    player_->AddComponent<Player>();
+
+    // Light setup
     auto* light = CreateGameObject("DirectionalLight");
     auto* lightComp = light->AddComponent<DirectionalLightComponent>();
-    lightComp->SetDirection(Vector3(0.0f, -1.0f, 0.0f)); // 真上から下へ
+    lightComp->SetDirection(Vector3(0.0f, -1.0f, 0.0f));
     lightComp->SetColor(Vector3(1.0f, 1.0f, 1.0f));
     lightComp->SetIntensity(1.0f);
     lightComp->UseTransformDirection(false);
-    
-    // Cameraを検索してactiveに設定
-    for (const auto& go : GetGameObjects()) {
-        if (go->GetName() == "Camera") {
-            auto* orbitController = go->GetComponent<OrbitController>();
-            if (orbitController) {
-                SetActiveCamera(orbitController->GetCamera());
-                break;
-            }
-        }
-    }
 }
 
 void GameScene::OnUpdate(float deltaTime) {
-    // Playerオブジェクトを回転
-    for (const auto& go : GetGameObjects()) {
-        if (go->GetName() == "Player") {
-            auto& transform = go->GetTransform();
-            Quaternion currentRotation = transform.GetLocalRotation();
-            Quaternion deltaRotation = Quaternion::RotationAxis(Vector3::UnitY(), Math::ToRadians(30.0f) * deltaTime);
-            transform.SetLocalRotation(deltaRotation * currentRotation);
-            break;
-        }
+    // Rotate player
+    if (player_) {
+        auto& transform = player_->GetTransform();
+        Quaternion currentRotation = transform.GetLocalRotation();
+        Quaternion deltaRotation = Quaternion::RotationAxis(Vector3::UnitY(), Math::ToRadians(30.0f) * deltaTime);
+        transform.SetLocalRotation(deltaRotation * currentRotation);
     }
+
+    // Update camera input via player system
+    Camera* camera = GetActiveCamera();
+    if (camera && player_) {
+        auto* playerComp = player_->GetComponent<Player>();
+        auto* app = static_cast<GameApplication*>(GetApplication());
+        app->GetPlayerSystem().Update(camera, playerComp, input_, deltaTime);
+    }
+}
+
+void GameScene::OnImGui() {
+    ImGui::Begin("Debug Info");
+
+    Camera* camera = GetActiveCamera();
+    if (camera) {
+        ImGui::Text("Camera Position: (%.2f, %.2f, %.2f)",
+            camera->GetPosition().GetX(),
+            camera->GetPosition().GetY(),
+            camera->GetPosition().GetZ());
+    }
+
+    if (player_) {
+        auto pos = player_->GetTransform().GetLocalPosition();
+        ImGui::Text("Player Position: (%.2f, %.2f, %.2f)", pos.GetX(), pos.GetY(), pos.GetZ());
+    }
+
+    ImGui::End();
 }
 
 void GameScene::OnRender(RenderView& view) {

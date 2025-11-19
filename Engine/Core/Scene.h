@@ -9,6 +9,9 @@
 
 namespace UnoEngine {
 
+class Application;
+class InputManager;
+
 class Scene {
 public:
     Scene(const std::string& name = "Scene");
@@ -27,12 +30,21 @@ public:
     
     Camera* GetActiveCamera() const { return activeCamera_; }
     void SetActiveCamera(Camera* camera) { activeCamera_ = camera; }
+    
+    Application* GetApplication() const { return app_; }
+    void SetApplication(Application* app) { app_ = app; }
+    
+    void SetInputManager(InputManager* input) { input_ = input; }
+
+protected:
+    InputManager* input_ = nullptr;
 
 private:
     std::string name_;
     std::vector<std::unique_ptr<GameObject>> gameObjects_;
     std::vector<GameObject*> pendingDestroy_;
     Camera* activeCamera_ = nullptr;
+    Application* app_ = nullptr;
 };
 
 } // namespace UnoEngine

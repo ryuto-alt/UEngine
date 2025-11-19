@@ -27,17 +27,17 @@ public:
     // エンジン実行
     int Run();
 
-protected:
-    // オーバーライド可能なライフサイクル
-    virtual void OnInit() {}
-    virtual void OnUpdate(float deltaTime) {}
-    virtual void OnShutdown() {}
-
     // アクセサ
     Window* GetWindow() const { return window_.get(); }
     GraphicsDevice* GetGraphics() const { return graphics_.get(); }
     InputManager* GetInput() const { return input_.get(); }
     SceneManager* GetSceneManager() const { return sceneManager_.get(); }
+
+protected:
+    // オーバーライド可能なライフサイクル
+    virtual void OnInit() {}
+    virtual void OnUpdate(float deltaTime) {}
+    virtual void OnShutdown() {}
 
 private:
     void Initialize();

@@ -45,6 +45,9 @@
     <Filter Include="Game\Scenes">
       <UniqueIdentifier>{8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Game\Systems">
+      <UniqueIdentifier>{a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Shaders">
       <UniqueIdentifier>{9d0e1f2a-3b4c-5d6e-7f8a-9b0c1d2e3f4a}</UniqueIdentifier>
     </Filter>
@@ -151,6 +154,12 @@
     </ClCompile>
     <ClCompile Include="Game\Renderer.cpp">
       <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\GameApplication.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\Systems\PlayerSystem.cpp">
+      <Filter>Game\Systems</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -291,6 +300,15 @@
     </ClInclude>
     <ClInclude Include="Game\Renderer.h">
       <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\GameApplication.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\Components\Player.h">
+      <Filter>Game\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\Systems\PlayerSystem.h">
+      <Filter>Game\Systems</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

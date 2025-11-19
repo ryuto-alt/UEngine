@@ -29,21 +29,21 @@ void GameScene::OnLoad() {
     player_->AddComponent<MeshRenderer>(mesh, const_cast<Material*>(mesh->GetMaterial()));
     player_->AddComponent<Player>();
 
-    // Main Light (斜め前から)
+    // Main Light (斜め前から、より強く)
     auto* mainLight = CreateGameObject("MainLight");
     auto* mainLightComp = mainLight->AddComponent<DirectionalLightComponent>();
     mainLightComp->SetDirection(Vector3(0.3f, -0.7f, -0.5f).Normalize());
-    mainLightComp->SetColor(Vector3(1.0f, 0.98f, 0.95f)); // 少し暖色
-    mainLightComp->SetIntensity(1.2f);
+    mainLightComp->SetColor(Vector3(1.0f, 1.0f, 1.0f)); // 純白
+    mainLightComp->SetIntensity(2.0f); // より明るく
     mainLightComp->UseTransformDirection(false);
 
-    // Rim Light (背後から、輪郭を強調)
-    auto* rimLight = CreateGameObject("RimLight");
-    auto* rimLightComp = rimLight->AddComponent<DirectionalLightComponent>();
-    rimLightComp->SetDirection(Vector3(-0.2f, 0.3f, 0.8f).Normalize());
-    rimLightComp->SetColor(Vector3(0.7f, 0.8f, 1.0f)); // 少し寒色
-    rimLightComp->SetIntensity(0.5f);
-    rimLightComp->UseTransformDirection(false);
+    // Fill Light (全体を明るく)
+    auto* fillLight = CreateGameObject("FillLight");
+    auto* fillLightComp = fillLight->AddComponent<DirectionalLightComponent>();
+    fillLightComp->SetDirection(Vector3(0.0f, -1.0f, 0.0f)); // 真上から
+    fillLightComp->SetColor(Vector3(1.0f, 1.0f, 1.0f));
+    fillLightComp->SetIntensity(1.0f);
+    fillLightComp->UseTransformDirection(false);
 
 #ifdef _DEBUG
     // EditorUI初期化 (Debug builds only)

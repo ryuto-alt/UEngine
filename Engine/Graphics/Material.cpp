@@ -34,9 +34,17 @@ void Material::LoadFromData(const MaterialData& data, GraphicsDevice* graphics,
             sprintf_s(successMsg, "Material: Texture loaded successfully from '%s'\n", texturePath.string().c_str());
             OutputDebugStringA(successMsg);
         } else {
+            // フォールバック: デフォルト白テクスチャを使用
             char errorMsg[512];
-            sprintf_s(errorMsg, "Material: Texture file NOT FOUND: '%s'\n", texturePath.string().c_str());
+            sprintf_s(errorMsg, "Material: Texture file NOT FOUND: '%s', using default white texture\n", texturePath.string().c_str());
             OutputDebugStringA(errorMsg);
+            
+            fs::path defaultTexture = "assets/tex/white1x1.png";
+            if (fs::exists(defaultTexture)) {
+                diffuseTexture_ = std::make_unique<Texture2D>();
+                diffuseTexture_->LoadFromFile(graphics, commandList, defaultTexture.wstring(), srvIndex);
+                OutputDebugStringA("Material: Loaded default white texture\n");
+            }
         }
     }
 }

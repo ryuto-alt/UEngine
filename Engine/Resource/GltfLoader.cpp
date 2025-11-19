@@ -48,6 +48,9 @@ ModelData GltfLoader::Load(GraphicsDevice* graphics,
     ModelData modelData;
     modelData.name = filepath;
     
+    std::cout << "glTF: Loading " << filepath << std::endl;
+    std::cout << "glTF: Found " << model.meshes.size() << " meshes" << std::endl;
+    
     // 各メッシュをロード
     for (size_t meshIdx = 0; meshIdx < model.meshes.size(); ++meshIdx) {
         const auto& gltfMesh = model.meshes[meshIdx];
@@ -77,16 +80,32 @@ ModelData GltfLoader::Load(GraphicsDevice* graphics,
             
             mesh->Create(graphics->GetDevice(), commandList, vertices, indices, meshName);
             
-            // マテリアルが存在する場合はロード
+            std::cout << "glTF: Mesh " << meshName << " - vertices: " << vertices.size() << ", indices: " << indices.size() << std::endl;
+            
+            // マテリアルをロード
+            MaterialData materialData;
             if (primitive.material >= 0) {
-                auto materialData = ExtractMaterial(&model, primitive.material);
-                
-                // ベースディレクトリを取得
-                std::string baseDir = filepath.substr(0, filepath.find_last_of("/\\"));
-                
-                mesh->LoadMaterial(materialData, graphics, commandList, baseDir, 
-                                  static_cast<uint32>(modelData.meshes.size()));
+                std::cout << "glTF: Loading material index " << primitive.material << std::endl;
+                materialData = ExtractMaterial(&model, primitive.material);
+                std::cout << "glTF: Material name: " << materialData.name << ", diffuse: (" 
+                         << materialData.diffuse[0] << ", " << materialData.diffuse[1] << ", " << materialData.diffuse[2] << ")" << std::endl;
+                std::cout << "glTF: Texture path: " << materialData.diffuseTexturePath << std::endl;
+            } else {
+                std::cout << "glTF: No material, using default white" << std::endl;
+                // デフォルト白色マテリアル
+                materialData.name = "DefaultWhite";
+                materialData.diffuse[0] = materialData.diffuse[1] = materialData.diffuse[2] = 1.0f;
+                materialData.ambient[0] = materialData.ambient[1] = materialData.ambient[2] = 0.8f; // より明るく
+                materialData.specular[0] = materialData.specular[1] = materialData.specular[2] = 0.5f;
+                materialData.shininess = 32.0f;
+                materialData.diffuseTexturePath = "white1x1.png";
             }
+            
+            // ベースディレクトリを取得
+            std::string baseDir = filepath.substr(0, filepath.find_last_of("/\\"));
+            
+            mesh->LoadMaterial(materialData, graphics, commandList, baseDir, 
+                              static_cast<uint32>(modelData.meshes.size()));
             
             modelData.meshes.push_back(std::move(mesh));
         }
@@ -148,9 +167,11 @@ std::vector<Vertex> GltfLoader::ExtractVertices(const void* modelPtr, int meshIn
             vertices[i].nz = normals[i * normStride + 2];
         }
     } else {
-        // 法線がない場合はゼロで初期化
+        // 法線がない場合は上向き（Y+）で初期化
         for (auto& v : vertices) {
-            v.nx = v.ny = v.nz = 0.0f;
+            v.nx = 0.0f;
+            v.ny = 1.0f;
+            v.nz = 0.0f;
         }
     }
     
@@ -259,8 +280,8 @@ MaterialData GltfLoader::ExtractMaterial(const void* modelPtr, int materialIndex
         }
     }
     
-    // デフォルト値
-    matData.ambient[0] = matData.ambient[1] = matData.ambient[2] = 0.2f;
+    // デフォルト値（ambientを明るく設定）
+    matData.ambient[0] = matData.ambient[1] = matData.ambient[2] = 0.8f;
     matData.specular[0] = matData.specular[1] = matData.specular[2] = 0.5f;
     matData.shininess = 32.0f;
     

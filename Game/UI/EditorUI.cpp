@@ -247,19 +247,70 @@ void EditorUI::RenderStats(const EditorContext& context) {
 
     ImGui::Begin("Stats", &showStats_);
 
-    if (context.camera) {
-        ImGui::Text("Camera Position: (%.2f, %.2f, %.2f)",
-            context.camera->GetPosition().GetX(),
-            context.camera->GetPosition().GetY(),
-            context.camera->GetPosition().GetZ());
+    // Performance section
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.48f, 0.72f, 0.89f, 1.0f)); // Light blue header
+    ImGui::Text("Performance");
+    ImGui::PopStyleColor();
+    ImGui::Separator();
+
+    // FPS display with color coding
+    float fps = context.fps;
+    ImVec4 fpsColor = fps >= 60.0f ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) :  // Green if 60+ FPS
+                      fps >= 30.0f ? ImVec4(1.0f, 1.0f, 0.0f, 1.0f) :  // Yellow if 30-60 FPS
+                                     ImVec4(1.0f, 0.0f, 0.0f, 1.0f);   // Red if < 30 FPS
+
+    ImGui::Text("FPS:");
+    ImGui::SameLine(120.0f);
+    ImGui::PushStyleColor(ImGuiCol_Text, fpsColor);
+    ImGui::Text("%.1f", fps);
+    ImGui::PopStyleColor();
+
+    ImGui::Text("Frame Time:");
+    ImGui::SameLine(120.0f);
+    ImGui::Text("%.3f ms", context.frameTime);
+
+    // FPS Graph
+    static float fpsHistory[90] = {};
+    static int fpsOffset = 0;
+    fpsHistory[fpsOffset] = fps;
+    fpsOffset = (fpsOffset + 1) % 90;
+
+    ImGui::Spacing();
+    ImGui::PlotLines("##FPSGraph", fpsHistory, 90, fpsOffset, nullptr, 0.0f, 120.0f, ImVec2(0, 60));
+
+    ImGui::Spacing();
+    ImGui::Separator();
+
+    // Scene statistics
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.48f, 0.72f, 0.89f, 1.0f)); // Light blue header
+    ImGui::Text("Scene");
+    ImGui::PopStyleColor();
+    ImGui::Separator();
+
+    if (context.gameObjects) {
+        ImGui::Text("Objects:");
+        ImGui::SameLine(120.0f);
+        ImGui::Text("%zu", context.gameObjects->size());
     }
 
+    ImGui::Spacing();
     ImGui::Separator();
-    if (context.gameObjects) {
-        ImGui::Text("Objects: %zu", context.gameObjects->size());
+
+    // Camera information
+    if (context.camera) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.48f, 0.72f, 0.89f, 1.0f)); // Light blue header
+        ImGui::Text("Camera");
+        ImGui::PopStyleColor();
+        ImGui::Separator();
+
+        auto pos = context.camera->GetPosition();
+        ImGui::Text("Position:");
+        ImGui::Indent(20.0f);
+        ImGui::Text("X: %.2f", pos.GetX());
+        ImGui::Text("Y: %.2f", pos.GetY());
+        ImGui::Text("Z: %.2f", pos.GetZ());
+        ImGui::Unindent(20.0f);
     }
-    ImGui::Text("FPS: %.1f", context.fps);
-    ImGui::Text("Frame Time: %.3f ms", context.frameTime);
 
     ImGui::End();
 }

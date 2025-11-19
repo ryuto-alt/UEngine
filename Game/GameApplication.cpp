@@ -31,8 +31,10 @@ void GameApplication::OnRender() {
         auto items = renderSystem_->CollectRenderables(scene, view);
 
         if (gameScene) {
+            auto* editorUI = gameScene->GetEditorUI();
+
             // Game Viewに描画
-            auto* gameViewTex = gameScene->GetGameViewTexture();
+            auto* gameViewTex = editorUI->GetGameViewTexture();
             if (gameViewTex && gameViewTex->GetResource()) {
                 renderer_->DrawToTexture(
                 gameViewTex->GetResource(),
@@ -45,7 +47,7 @@ void GameApplication::OnRender() {
             }
 
             // Scene Viewに描画
-            auto* sceneViewTex = gameScene->GetSceneViewTexture();
+            auto* sceneViewTex = editorUI->GetSceneViewTexture();
             if (sceneViewTex && sceneViewTex->GetResource()) {
                 renderer_->DrawToTexture(
                 sceneViewTex->GetResource(),

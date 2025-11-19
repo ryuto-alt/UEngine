@@ -167,6 +167,7 @@
     <ClCompile Include="Engine\Rendering\Renderer.cpp" />
     <ClCompile Include="Game\GameApplication.cpp" />
     <ClCompile Include="Game\Systems\PlayerSystem.cpp" />
+    <ClCompile Include="Game\UI\EditorUI.cpp" />
     <ClCompile Include="Engine\UI\ImGuiManager.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -219,6 +220,7 @@
     <ClInclude Include="Game\GameApplication.h" />
     <ClInclude Include="Game\Components\Player.h" />
     <ClInclude Include="Game\Systems\PlayerSystem.h" />
+    <ClInclude Include="Game\UI\EditorUI.h" />
     <ClInclude Include="Engine\Graphics\d3dx12.h" />
     <ClInclude Include="Engine\UI\ImGuiManager.h" />
   </ItemGroup>

@@ -57,6 +57,9 @@
     <Filter Include="Game\Systems">
       <UniqueIdentifier>{a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Game\UI">
+      <UniqueIdentifier>{b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Shaders">
       <UniqueIdentifier>{9d0e1f2a-3b4c-5d6e-7f8a-9b0c1d2e3f4a}</UniqueIdentifier>
     </Filter>
@@ -172,6 +175,9 @@
     </ClCompile>
     <ClCompile Include="Game\Systems\PlayerSystem.cpp">
       <Filter>Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\UI\EditorUI.cpp">
+      <Filter>Game\UI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -327,6 +333,9 @@
     </ClInclude>
     <ClInclude Include="Game\Systems\PlayerSystem.h">
       <Filter>Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\UI\EditorUI.h">
+      <Filter>Game\UI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

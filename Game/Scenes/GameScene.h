@@ -41,6 +41,9 @@ private:
     bool showProject_ = true;
     bool showProfiler_ = false;
 
+    // Docking layout
+    bool dockingLayoutInitialized_ = false;
+
     // Console log messages
     std::vector<std::string> consoleMessages_;
 };

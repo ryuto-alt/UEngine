@@ -8,6 +8,7 @@
 #include "../../Engine/Math/Math.h"
 #include "../../Engine/UI/ImGuiManager.h"
 #include <imgui.h>
+#include <imgui_internal.h>
 
 namespace UnoEngine {
 
@@ -90,6 +91,52 @@ void GameScene::OnImGui() {
     ImGuiID dockspaceID = ImGui::GetID("MainDockSpace");
     ImGui::DockSpace(dockspaceID, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
 
+    // 初回起動時にデフォルトレイアウトを構築
+    if (!dockingLayoutInitialized_) {
+        dockingLayoutInitialized_ = true;
+
+        // レイアウトをリセット
+        ImGui::DockBuilderRemoveNode(dockspaceID);
+        ImGui::DockBuilderAddNode(dockspaceID, ImGuiDockNodeFlags_DockSpace);
+        ImGui::DockBuilderSetNodeSize(dockspaceID, viewport->WorkSize);
+
+        // ドックスペースを分割
+        ImGuiID dock_left, dock_left_top, dock_left_bottom;
+        ImGuiID dock_right, dock_right_top, dock_right_bottom;
+        ImGuiID dock_game_view, dock_debug_view;
+
+        // 左(20%) | 右(80%)
+        dock_left = ImGui::DockBuilderSplitNode(dockspaceID, ImGuiDir_Left, 0.20f, nullptr, &dock_right);
+
+        // 左側を上下に分割（上60% = Hierarchy/Inspector/Stats, 下40% = Project）
+        dock_left_top = ImGui::DockBuilderSplitNode(dock_left, ImGuiDir_Up, 0.60f, nullptr, &dock_left_bottom);
+
+        // 右側を上下に分割（上75% = Viewports, 下25% = Console）
+        dock_right_top = ImGui::DockBuilderSplitNode(dock_right, ImGuiDir_Up, 0.75f, nullptr, &dock_right_bottom);
+
+        // 右上部を左右に分割（Game View 50% | Debug View 50%）
+        dock_game_view = ImGui::DockBuilderSplitNode(dock_right_top, ImGuiDir_Left, 0.5f, nullptr, &dock_debug_view);
+
+        // パネルをドックに配置
+        // 左上: Hierarchy, Inspector, Stats（タブ）
+        ImGui::DockBuilderDockWindow("Hierarchy", dock_left_top);
+        ImGui::DockBuilderDockWindow("Inspector", dock_left_top);
+        ImGui::DockBuilderDockWindow("Stats", dock_left_top);
+        ImGui::DockBuilderDockWindow("Profiler", dock_left_top);
+
+        // 左下: Project
+        ImGui::DockBuilderDockWindow("Project", dock_left_bottom);
+
+        // 右上: Game View（左）、Debug View（右）
+        ImGui::DockBuilderDockWindow("Game View", dock_game_view);
+        ImGui::DockBuilderDockWindow("Debug View", dock_debug_view);
+
+        // 右下: Console
+        ImGui::DockBuilderDockWindow("Console", dock_right_bottom);
+
+        ImGui::DockBuilderFinish(dockspaceID);
+    }
+
     // Menu Bar
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("View")) {
@@ -107,6 +154,11 @@ void GameScene::OnImGui() {
             ImGui::MenuItem("Stats", nullptr, &showStats_);
             ImGui::MenuItem("Profiler", nullptr, &showProfiler_);
 
+            ImGui::Separator();
+            if (ImGui::MenuItem("Reset Layout", "Ctrl+Shift+R")) {
+                dockingLayoutInitialized_ = false;
+            }
+
             ImGui::EndMenu();
         }
         ImGui::EndMenuBar();
@@ -117,17 +169,35 @@ void GameScene::OnImGui() {
     // Game View (Runtime view)
     if (showGameView_) {
         ImGui::Begin("Game View", &showGameView_);
-        ImVec2 viewportSize = ImGui::GetContentRegionAvail();
+        ImVec2 availableSize = ImGui::GetContentRegionAvail();
 
-        if (viewportSize.x > 0 && viewportSize.y > 0) {
-            // 次のフレームで適用するサイズを記録
-            desiredGameViewWidth_ = static_cast<uint32>(viewportSize.x);
-            desiredGameViewHeight_ = static_cast<uint32>(viewportSize.y);
+        if (availableSize.x > 0 && availableSize.y > 0) {
+            // 16:9のアスペクト比を維持した最適なサイズを計算
+            const float aspectRatio = 16.0f / 9.0f;
+            ImVec2 imageSize;
 
-            // 現在のテクスチャサイズで表示
-            ImGui::Image((ImTextureID)gameViewTexture_.GetSRVHandle().ptr,
-                ImVec2(static_cast<float>(gameViewTexture_.GetWidth()),
-                       static_cast<float>(gameViewTexture_.GetHeight())));
+            // 幅基準で高さを計算
+            imageSize.x = availableSize.x;
+            imageSize.y = availableSize.x / aspectRatio;
+
+            // 高さが利用可能スペースを超える場合は、高さ基準で計算
+            if (imageSize.y > availableSize.y) {
+                imageSize.y = availableSize.y;
+                imageSize.x = availableSize.y * aspectRatio;
+            }
+
+            // 中央配置のための余白を計算
+            ImVec2 cursorPos = ImGui::GetCursorPos();
+            cursorPos.x += (availableSize.x - imageSize.x) * 0.5f;
+            cursorPos.y += (availableSize.y - imageSize.y) * 0.5f;
+            ImGui::SetCursorPos(cursorPos);
+
+            // 次のフレームで適用するサイズを記録（16:9を維持）
+            desiredGameViewWidth_ = static_cast<uint32>(imageSize.x);
+            desiredGameViewHeight_ = static_cast<uint32>(imageSize.y);
+
+            // テクスチャを表示
+            ImGui::Image((ImTextureID)gameViewTexture_.GetSRVHandle().ptr, imageSize);
         }
 
         ImGui::End();
@@ -136,17 +206,35 @@ void GameScene::OnImGui() {
     // Debug View (Editor view with debug tools)
     if (showSceneView_) {
         ImGui::Begin("Debug View", &showSceneView_);
-        ImVec2 viewportSize = ImGui::GetContentRegionAvail();
+        ImVec2 availableSize = ImGui::GetContentRegionAvail();
 
-        if (viewportSize.x > 0 && viewportSize.y > 0) {
-            // 次のフレームで適用するサイズを記録
-            desiredSceneViewWidth_ = static_cast<uint32>(viewportSize.x);
-            desiredSceneViewHeight_ = static_cast<uint32>(viewportSize.y);
+        if (availableSize.x > 0 && availableSize.y > 0) {
+            // 16:9のアスペクト比を維持した最適なサイズを計算
+            const float aspectRatio = 16.0f / 9.0f;
+            ImVec2 imageSize;
 
-            // 現在のテクスチャサイズで表示
-            ImGui::Image((ImTextureID)sceneViewTexture_.GetSRVHandle().ptr,
-                ImVec2(static_cast<float>(sceneViewTexture_.GetWidth()),
-                       static_cast<float>(sceneViewTexture_.GetHeight())));
+            // 幅基準で高さを計算
+            imageSize.x = availableSize.x;
+            imageSize.y = availableSize.x / aspectRatio;
+
+            // 高さが利用可能スペースを超える場合は、高さ基準で計算
+            if (imageSize.y > availableSize.y) {
+                imageSize.y = availableSize.y;
+                imageSize.x = availableSize.y * aspectRatio;
+            }
+
+            // 中央配置のための余白を計算
+            ImVec2 cursorPos = ImGui::GetCursorPos();
+            cursorPos.x += (availableSize.x - imageSize.x) * 0.5f;
+            cursorPos.y += (availableSize.y - imageSize.y) * 0.5f;
+            ImGui::SetCursorPos(cursorPos);
+
+            // 次のフレームで適用するサイズを記録（16:9を維持）
+            desiredSceneViewWidth_ = static_cast<uint32>(imageSize.x);
+            desiredSceneViewHeight_ = static_cast<uint32>(imageSize.y);
+
+            // テクスチャを表示
+            ImGui::Image((ImTextureID)sceneViewTexture_.GetSRVHandle().ptr, imageSize);
         }
 
         ImGui::End();

@@ -12,10 +12,15 @@ namespace UnoEngine {
 namespace {
 
 void LogObjError(const std::string& message, const std::string& file, int line) {
-    std::string fullMessage = "[OBJ Loader Error] " + message + "\n  File: " + file + "\n  Line: " + std::to_string(line);
+    std::string fullMessage = "[OBJファイル読み込みエラー]\n\n" + message + "\n\nファイル: " + file + "\n行番号: " + std::to_string(line);
     std::cerr << fullMessage << std::endl;
     OutputDebugStringA((fullMessage + "\n").c_str());
-    MessageBoxA(nullptr, fullMessage.c_str(), "OBJ Loading Error", MB_OK | MB_ICONERROR);
+   
+    int wideSize = MultiByteToWideChar(CP_UTF8, 0, fullMessage.c_str(), -1, nullptr, 0);
+	std::wstring wideMessage(wideSize, 0);
+	MultiByteToWideChar(CP_UTF8, 0, fullMessage.c_str(), -1, &wideMessage[0], wideSize);
+
+    MessageBoxW(nullptr, wideMessage.c_str(), L"OBJファイル読み込みエラー", MB_OK | MB_ICONERROR);
 }
 
 struct FaceIndex {
@@ -149,7 +154,12 @@ Mesh ObjLoader::Load(GraphicsDevice* graphics, ID3D12GraphicsCommandList* comman
     std::ifstream file(filepath);
 
     if (!file.is_open()) {
-        std::string errorMsg = "Failed to open OBJ file\n  File path: " + filepath + "\n\nPlease check:\n  1. File exists\n  2. File path is correct\n  3. File is not locked by another program";
+        std::string errorMsg = "OBJファイルを開けませんでした\n\n";
+        errorMsg += "ファイルパス:\n" + filepath + "\n\n";
+        errorMsg += "確認してください:\n";
+        errorMsg += "  1. ファイルが存在するか\n";
+        errorMsg += "  2. ファイルパスが正しいか\n";
+        errorMsg += "  3. 他のプログラムで開いていないか";
         LogObjError(errorMsg, filepath, 0);
         throw std::runtime_error("Failed to open OBJ file: " + filepath);
     }
@@ -223,23 +233,34 @@ Mesh ObjLoader::Load(GraphicsDevice* graphics, ID3D12GraphicsCommandList* comman
 
             // 三角形かチェック
             if (faceTokens.size() < 3) {
-                std::string errorMsg = "Face has only " + std::to_string(faceTokens.size()) + " vertices (minimum 3 required)";
+                std::string errorMsg = "面の頂点数が不足しています（" + std::to_string(faceTokens.size()) + "頂点、最低3頂点必要）";
                 LogObjError(errorMsg, filepath, lineNumber);
                 throw std::runtime_error(errorMsg);
             }
 
             if (faceTokens.size() > 3) {
                 std::stringstream detailMsg;
-                detailMsg << "Face has " << faceTokens.size() << " vertices (only triangles are supported)\n";
-                detailMsg << "  Face data: f";
+                detailMsg << "【問題】\n";
+                detailMsg << "このメッシュには四角形（または" << faceTokens.size() << "角形）のポリゴンが含まれています。\n";
+                detailMsg << "このエンジンは三角形ポリゴンのみ対応しています。\n\n";
+
+                detailMsg << "【エラー箇所のデータ】\n";
+                detailMsg << "f";
                 for (const auto& t : faceTokens) {
                     detailMsg << " " << t;
                 }
                 detailMsg << "\n\n";
-                detailMsg << "Solution: Triangulate your mesh in your 3D software:\n";
-                detailMsg << "  - Blender: Select All > Triangulate Faces (Ctrl+T)\n";
-                detailMsg << "  - Maya: Mesh > Triangulate\n";
-                detailMsg << "  - 3ds Max: Edit Poly > Turn to Triangles";
+
+                detailMsg << "【解決方法】\n";
+                detailMsg << "メッシュを三角面化：\n\n";
+                detailMsg << "■ Blender の場合:\n";
+                detailMsg << "  1. すべて選択 (A キー)\n";
+                detailMsg << "  2. 右クリック → Triangulate Faces\n";
+                detailMsg << "  または Ctrl+T\n\n";
+                detailMsg << "■ Maya の場合:\n";
+                detailMsg << "  Mesh → Triangulate\n\n";
+                detailMsg << "■ 3ds Max の場合:\n";
+                detailMsg << "  Edit Poly → Turn to Triangles";
 
                 LogObjError(detailMsg.str(), filepath, lineNumber);
                 throw std::runtime_error("OBJ file contains non-triangulated faces");
@@ -259,9 +280,14 @@ Mesh ObjLoader::Load(GraphicsDevice* graphics, ID3D12GraphicsCommandList* comman
 
                     if (faceIndex.positionIndex < 0 || faceIndex.positionIndex >= static_cast<int32>(positions.size())) {
                         std::stringstream errorMsg;
-                        errorMsg << "Invalid vertex position index: " << faceIndex.positionIndex << "\n";
-                        errorMsg << "  Valid range: 0 to " << (positions.size() - 1) << "\n";
-                        errorMsg << "  Total positions defined: " << positions.size();
+                        errorMsg << "【問題】\n";
+                        errorMsg << "無効な頂点インデックスが指定されています\n\n";
+                        errorMsg << "指定されたインデックス: " << faceIndex.positionIndex << "\n";
+                        errorMsg << "有効な範囲: 0 ～ " << (positions.size() - 1) << "\n";
+                        errorMsg << "定義済み頂点数: " << positions.size() << "\n\n";
+                        errorMsg << "【原因】\n";
+                        errorMsg << "面(f)の定義で、存在しない頂点を参照しています。\n";
+                        errorMsg << "OBJファイルが破損している可能性があります。";
                         LogObjError(errorMsg.str(), filepath, lineNumber);
                         throw std::runtime_error("Invalid vertex index in face");
                     }
@@ -302,15 +328,17 @@ Mesh ObjLoader::Load(GraphicsDevice* graphics, ID3D12GraphicsCommandList* comman
 
     if (vertices.empty() || indices.empty()) {
         std::stringstream errorMsg;
-        errorMsg << "OBJ file contains no geometry\n";
-        errorMsg << "  Vertices: " << vertices.size() << "\n";
-        errorMsg << "  Indices: " << indices.size() << "\n";
-        errorMsg << "  Positions (v): " << positions.size() << "\n";
-        errorMsg << "  UVs (vt): " << uvs.size() << "\n";
-        errorMsg << "  Normals (vn): " << normals.size() << "\n\n";
-        errorMsg << "Please check:\n";
-        errorMsg << "  - File contains 'f' (face) definitions\n";
-        errorMsg << "  - Faces reference valid vertices";
+        errorMsg << "【問題】\n";
+        errorMsg << "OBJファイルにジオメトリ（形状データ）が含まれていません\n\n";
+        errorMsg << "【ファイルの内容】\n";
+        errorMsg << "  頂点 (v): " << positions.size() << " 個\n";
+        errorMsg << "  UV (vt): " << uvs.size() << " 個\n";
+        errorMsg << "  法線 (vn): " << normals.size() << " 個\n";
+        errorMsg << "  面 (f): 0 個\n\n";
+        errorMsg << "【確認してください】\n";
+        errorMsg << "  - ファイルに面(f)の定義があるか\n";
+        errorMsg << "  - 面が有効な頂点を参照しているか\n";
+        errorMsg << "  - エクスポート設定が正しいか";
         LogObjError(errorMsg.str(), filepath, lineNumber);
         throw std::runtime_error("OBJ file contains no geometry");
     }

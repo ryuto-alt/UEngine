@@ -11,12 +11,21 @@
 
 namespace UnoEngine {
 
+/// レイヤー定義
+/// GameObjectをグループ化し、レンダリングやコリジョン判定の対象を制御
 namespace Layers {
     using Layer = uint32;
     
+    /// デフォルトレイヤー（背景、地形、その他の一般的なオブジェクト用）
     constexpr Layer DEFAULT = 1 << 0;
+    
+    /// プレイヤーキャラクター用レイヤー
     constexpr Layer PLAYER  = 1 << 1;
+    
+    /// 敵キャラクター用レイヤー
     constexpr Layer ENEMY   = 1 << 2;
+    
+    /// UIオブジェクト用レイヤー
     constexpr Layer UI      = 1 << 3;
 }
 

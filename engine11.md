@@ -130,7 +130,7 @@ public:
 ### 例2: UI専用シーン
 
 ```cpp
-class MenuScene : public Scene {
+class MenuScene : public Scene {w
 public:
     void OnRender(RenderView& view) override {
         view.camera = uiCamera_;  // 正射影カメラ

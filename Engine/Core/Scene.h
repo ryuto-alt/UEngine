@@ -21,6 +21,7 @@ public:
     virtual void OnUnload() {}
     virtual void OnUpdate(float deltaTime);
     virtual void OnRender(RenderView& view) = 0;
+    virtual void OnImGui() {}
 
     GameObject* CreateGameObject(const std::string& name = "GameObject");
     void DestroyGameObject(GameObject* obj);

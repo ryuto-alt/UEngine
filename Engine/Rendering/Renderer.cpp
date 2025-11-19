@@ -119,6 +119,11 @@ void Renderer::RenderUI(Scene* scene) {
     auto* cmdList = graphics_->GetCommandList();
 
     imguiManager_->BeginFrame();
+
+    if (scene) {
+        scene->OnImGui();
+    }
+
     imguiManager_->EndFrame();
     imguiManager_->Render(cmdList);
 }

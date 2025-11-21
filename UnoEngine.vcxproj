@@ -182,6 +182,8 @@
     <ClCompile Include="Game\Scenes\GameScene.cpp" />
     <ClCompile Include="Game\Components\PlayerController.cpp" />
     <ClCompile Include="Engine\Rendering\Renderer.cpp" />
+    <ClCompile Include="Engine\Rendering\Skeleton.cpp" />
+    <ClCompile Include="Engine\Rendering\Animation.cpp" />
     <ClCompile Include="Game\GameApplication.cpp" />
     <ClCompile Include="Game\Systems\PlayerSystem.cpp" />
     <ClCompile Include="Game\UI\EditorUI.cpp" />
@@ -200,6 +202,8 @@
     <ClInclude Include="Engine\Rendering\LightManager.h" />
     <ClInclude Include="Engine\Rendering\RenderView.h" />
     <ClInclude Include="Engine\Rendering\RenderItem.h" />
+    <ClInclude Include="Engine\Rendering\Skeleton.h" />
+    <ClInclude Include="Engine\Rendering\Animation.h" />
     <ClInclude Include="Engine\Systems\ISystem.h" />
     <ClInclude Include="Engine\Graphics\ConstantBuffer.h" />
     <ClInclude Include="Engine\Core\NonCopyable.h" />

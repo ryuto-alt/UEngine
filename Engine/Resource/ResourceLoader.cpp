@@ -51,8 +51,13 @@ void ResourceLoader::ShutdownImpl() {
 Mesh* ResourceLoader::LoadMeshImpl(const std::string& path) {
     // ModelDataとして読み込んで、最初のメッシュを返す
     ModelData* modelData = LoadModelImpl(path);
-    if (modelData && !modelData->meshes.empty()) {
-        return modelData->meshes[0].get();
+    if (modelData) {
+        if (!modelData->meshes.empty()) {
+            return modelData->meshes[0].get();
+        }
+        if (!modelData->skinnedMeshes.empty()) {
+            return reinterpret_cast<Mesh*>(modelData->skinnedMeshes[0].get());
+        }
     }
     return nullptr;
 }

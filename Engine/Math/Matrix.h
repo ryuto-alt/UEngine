@@ -2,6 +2,7 @@
 
 #include "MathCommon.h"
 #include "Vector.h"
+#include "Quaternion.h"
 #include "../Core/Types.h"
 
 namespace UnoEngine {
@@ -92,6 +93,10 @@ public:
 
     static Matrix4x4 RotationAxis(const Vector3& axis, float radians) {
         return Matrix4x4(DirectX::XMMatrixRotationAxis(axis.GetXMVector(), radians));
+    }
+
+    static Matrix4x4 RotationQuaternion(const Quaternion& quat) {
+        return Matrix4x4(DirectX::XMMatrixRotationQuaternion(quat.GetXMVector()));
     }
 
     // カメラ行列

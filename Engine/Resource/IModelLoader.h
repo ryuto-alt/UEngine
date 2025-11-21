@@ -2,6 +2,8 @@
 
 #include "../Graphics/Mesh.h"
 #include "../Graphics/GraphicsDevice.h"
+#include "../Rendering/Skeleton.h"
+#include "../Rendering/Animation.h"
 #include "../Core/Types.h"
 #include <vector>
 #include <string>
@@ -9,14 +11,13 @@
 
 namespace UnoEngine {
 
-/// モデルデータ（複数メッシュ、将来的にアニメーション情報も含む）
 struct ModelData {
     std::vector<UniquePtr<Mesh>> meshes;
+    std::vector<UniquePtr<SkinnedMesh>> skinnedMeshes;
+    UniquePtr<Skeleton> skeleton;
+    std::vector<UniquePtr<Animation>> animations;
     std::string name;
-    
-    // Phase 2以降で追加予定
-    // std::vector<AnimationClip> animations;
-    // Skeleton skeleton;
+    bool hasSkin = false;
 };
 
 /// モデルローダーの共通インターフェース

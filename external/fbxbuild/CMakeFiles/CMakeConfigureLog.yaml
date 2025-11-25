@@ -1,0 +1,1860 @@
+
+---
+events:
+  -
+    kind: "find-v1"
+    backtrace:
+      - "CMakeLists.txt:88 (find_program)"
+    mode: "program"
+    variable: "CCACHE_PATH"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "ccache"
+    candidate_directories:
+      - "C:/Program Files/Common Files/Oracle/Java/javapath/"
+      - "C:/Windows/System32/"
+      - "C:/Windows/"
+      - "C:/Windows/System32/wbem/"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/"
+      - "C:/Windows/System32/OpenSSH/"
+      - "C:/Program Files/dotnet/"
+      - "C:/Program Files/nodejs/"
+      - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
+      - "C:/Program Files/NVIDIA Corporation/NVIDIA App/NvDLISR/"
+      - "C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common/"
+      - "C:/Program Files/PowerShell/7/"
+      - "C:/Program Files/Git/cmd/"
+      - "C:/flutter/"
+      - "C:/Users/Unoryuto/flutter/bin/"
+      - "C:/Program Files (x86)/Incredibuild/"
+      - "C:/Program Files/CMake/bin/"
+      - "C:/Users/Unoryuto/.local/bin/"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WindowsApps/"
+      - "C:/Users/Unoryuto/AppData/Roaming/npm/"
+      - "C:/Users/Unoryuto/AppData/Local/gitkraken/bin/"
+      - "C:/Users/Unoryuto/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/Users/Unoryuto/.dotnet/tools/"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/"
+      - "C:/Users/Unoryuto/AppData/Local/Python/bin/"
+      - "C:/src/flutter/bin/"
+    searched_directories:
+      - "C:/Program Files/Common Files/Oracle/Java/javapath/ccache.com"
+      - "C:/Program Files/Common Files/Oracle/Java/javapath/ccache.exe"
+      - "C:/Program Files/Common Files/Oracle/Java/javapath/ccache"
+      - "C:/Windows/System32/ccache.com"
+      - "C:/Windows/System32/ccache.exe"
+      - "C:/Windows/System32/ccache"
+      - "C:/Windows/ccache.com"
+      - "C:/Windows/ccache.exe"
+      - "C:/Windows/ccache"
+      - "C:/Windows/System32/wbem/ccache.com"
+      - "C:/Windows/System32/wbem/ccache.exe"
+      - "C:/Windows/System32/wbem/ccache"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/ccache.com"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/ccache.exe"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/ccache"
+      - "C:/Windows/System32/OpenSSH/ccache.com"
+      - "C:/Windows/System32/OpenSSH/ccache.exe"
+      - "C:/Windows/System32/OpenSSH/ccache"
+      - "C:/Program Files/dotnet/ccache.com"
+      - "C:/Program Files/dotnet/ccache.exe"
+      - "C:/Program Files/dotnet/ccache"
+      - "C:/Program Files/nodejs/ccache.com"
+      - "C:/Program Files/nodejs/ccache.exe"
+      - "C:/Program Files/nodejs/ccache"
+      - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/ccache.com"
+      - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/ccache.exe"
+      - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/ccache"
+      - "C:/Program Files/NVIDIA Corporation/NVIDIA App/NvDLISR/ccache.com"
+      - "C:/Program Files/NVIDIA Corporation/NVIDIA App/NvDLISR/ccache.exe"
+      - "C:/Program Files/NVIDIA Corporation/NVIDIA App/NvDLISR/ccache"
+      - "C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common/ccache.com"
+      - "C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common/ccache.exe"
+      - "C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common/ccache"
+      - "C:/Program Files/PowerShell/7/ccache.com"
+      - "C:/Program Files/PowerShell/7/ccache.exe"
+      - "C:/Program Files/PowerShell/7/ccache"
+      - "C:/Program Files/Git/cmd/ccache.com"
+      - "C:/Program Files/Git/cmd/ccache.exe"
+      - "C:/Program Files/Git/cmd/ccache"
+      - "C:/flutter/ccache.com"
+      - "C:/flutter/ccache.exe"
+      - "C:/flutter/ccache"
+      - "C:/Users/Unoryuto/flutter/bin/ccache.com"
+      - "C:/Users/Unoryuto/flutter/bin/ccache.exe"
+      - "C:/Users/Unoryuto/flutter/bin/ccache"
+      - "C:/Program Files (x86)/Incredibuild/ccache.com"
+      - "C:/Program Files (x86)/Incredibuild/ccache.exe"
+      - "C:/Program Files (x86)/Incredibuild/ccache"
+      - "C:/Program Files/CMake/bin/ccache.com"
+      - "C:/Program Files/CMake/bin/ccache.exe"
+      - "C:/Program Files/CMake/bin/ccache"
+      - "C:/Users/Unoryuto/.local/bin/ccache.com"
+      - "C:/Users/Unoryuto/.local/bin/ccache.exe"
+      - "C:/Users/Unoryuto/.local/bin/ccache"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WindowsApps/ccache.com"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WindowsApps/ccache.exe"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WindowsApps/ccache"
+      - "C:/Users/Unoryuto/AppData/Roaming/npm/ccache.com"
+      - "C:/Users/Unoryuto/AppData/Roaming/npm/ccache.exe"
+      - "C:/Users/Unoryuto/AppData/Roaming/npm/ccache"
+      - "C:/Users/Unoryuto/AppData/Local/gitkraken/bin/ccache.com"
+      - "C:/Users/Unoryuto/AppData/Local/gitkraken/bin/ccache.exe"
+      - "C:/Users/Unoryuto/AppData/Local/gitkraken/bin/ccache"
+      - "C:/Users/Unoryuto/AppData/Local/Programs/Microsoft VS Code/bin/ccache.com"
+      - "C:/Users/Unoryuto/AppData/Local/Programs/Microsoft VS Code/bin/ccache.exe"
+      - "C:/Users/Unoryuto/AppData/Local/Programs/Microsoft VS Code/bin/ccache"
+      - "C:/Users/Unoryuto/.dotnet/tools/ccache.com"
+      - "C:/Users/Unoryuto/.dotnet/tools/ccache.exe"
+      - "C:/Users/Unoryuto/.dotnet/tools/ccache"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/ccache.com"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/ccache.exe"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/ccache"
+      - "C:/Users/Unoryuto/AppData/Local/Python/bin/ccache.com"
+      - "C:/Users/Unoryuto/AppData/Local/Python/bin/ccache.exe"
+      - "C:/Users/Unoryuto/AppData/Local/Python/bin/ccache"
+      - "C:/src/flutter/bin/ccache.com"
+      - "C:/src/flutter/bin/ccache.exe"
+      - "C:/src/flutter/bin/ccache"
+    found: false
+    search_context:
+      ENV{PATH}:
+        - "C:\\Program Files\\Common Files\\Oracle\\Java\\javapath"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\nodejs\\"
+        - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
+        - "C:\\Program Files\\NVIDIA Corporation\\NVIDIA App\\NvDLISR"
+        - "C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common"
+        - "C:\\Program Files\\PowerShell\\7\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "C:\\flutter"
+        - "C:\\Users\\Unoryuto\\flutter\\bin"
+        - "C:\\Program Files (x86)\\Incredibuild"
+        - "C:\\Program Files\\CMake\\bin"
+        - "C:\\Users\\Unoryuto\\.local\\bin"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\Unoryuto\\AppData\\Roaming\\npm"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\gitkraken\\bin"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\Unoryuto\\.dotnet\\tools"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Microsoft\\WinGet\\Packages\\astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Python\\bin"
+        - "C:\\src\\flutter\\bin"
+        - "C:\\flutter"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineSystem.cmake:212 (message)"
+      - "CMakeLists.txt:107 (PROJECT)"
+    message: |
+      The system is: Windows - 10.0.26100 - AMD64
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:462 (find_file)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:500 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:107 (PROJECT)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCCompilerId.c.in"
+    candidate_directories:
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/"
+    found: "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeCCompilerId.c.in"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Program Files\\Common Files\\Oracle\\Java\\javapath"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\nodejs\\"
+        - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
+        - "C:\\Program Files\\NVIDIA Corporation\\NVIDIA App\\NvDLISR"
+        - "C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common"
+        - "C:\\Program Files\\PowerShell\\7\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "C:\\flutter"
+        - "C:\\Users\\Unoryuto\\flutter\\bin"
+        - "C:\\Program Files (x86)\\Incredibuild"
+        - "C:\\Program Files\\CMake\\bin"
+        - "C:\\Users\\Unoryuto\\.local\\bin"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\Unoryuto\\AppData\\Roaming\\npm"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\gitkraken\\bin"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\Unoryuto\\.dotnet\\tools"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Microsoft\\WinGet\\Packages\\astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Python\\bin"
+        - "C:\\src\\flutter\\bin"
+        - "C:\\flutter"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:107 (PROJECT)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+      Compiler:  
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      MSBuild 縺ｮ繝舌・繧ｸ繝ｧ繝ｳ 18.0.5+e22287bf1 (.NET Framework)
+      2025/11/25 17:38:32 縺ｫ繝薙Ν繝峨ｒ髢句ｧ九＠縺ｾ縺励◆縲・
+      
+      繝弱・繝・1 荳翫・繝励Ο繧ｸ繧ｧ繧ｯ繝・"C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\4.2.0\\CompilerIdC\\CompilerIdC.vcxproj" (譌｢螳壹・繧ｿ繝ｼ繧ｲ繝・ヨ)縲・
+      PrepareForBuild:
+        繝・ぅ繝ｬ繧ｯ繝医Μ "Debug\\" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+        讒矩\xc2\x80蛹門・蜉帙′譛牙柑縺ｫ縺ｪ縺｣縺ｦ縺・∪縺吶\xc2\x80ゅさ繝ｳ繝代う繝ｩ險ｺ譁ｭ縺ｮ譖ｸ蠑剰ｨｭ螳壹↓縺ｯ繧ｨ繝ｩ繝ｼ髫主ｱ､縺悟渚譏縺輔ｌ縺ｾ縺吶\xc2\x80りｩｳ邏ｰ縺ｫ縺､縺・※縺ｯ縲”ttps://aka.ms/cpp/structured-output 繧貞盾辣ｧ縺励※縺上□縺輔＞縲・
+        繝・ぅ繝ｬ繧ｯ繝医Μ "Debug\\CompilerIdC.tlog\\" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+      InitializeBuildStatus:
+        "AlwaysCreate" 縺梧欠螳壹＆繧後◆縺溘ａ "Debug\\CompilerIdC.tlog\\unsuccessfulbuild" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+        "Debug\\CompilerIdC.tlog\\unsuccessfulbuild" 縺ｮ繧ｿ繝・メ 繧ｿ繧ｹ繧ｯ繧貞ｮ溯｡後＠縺ｦ縺・∪縺吶\xc2\x80・
+      VcpkgTripletSelection:
+        Using triplet "x64-windows" from "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\"
+        Using normalized configuration "Release"
+      ClCompile:
+        C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\include" /nologo /W0 /WX- /diagnostics:column /Od /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\\\" /Fd"Debug\\vc145.pdb" /external:W0 /Gd /TC /FC /errorReport:queue CMakeCCompilerId.c
+        CMakeCCompilerId.c
+      Link:
+        C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:".\\CompilerIdC.exe" /INCREMENTAL:NO /NOLOGO /LIBPATH:"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\lib" /LIBPATH:"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\lib\\manual-link" kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:".\\CompilerIdC.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\\CompilerIdC.lib" /MACHINE:X64 Debug\\CMakeCCompilerId.obj
+        CompilerIdC.vcxproj -> C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\4.2.0\\CompilerIdC\\CompilerIdC.exe
+      AppLocalFromInstalled:
+        pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\4.2.0\\CompilerIdC\\CompilerIdC.exe" "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\bin" "Debug\\CompilerIdC.tlog\\CompilerIdC.write.1u.tlog" "Debug\\vcpkg.applocal.log"
+      PostBuildEvent:
+        for %%i in (cl.exe) do @echo CMAKE_C_COMPILER=%%~$PATH:i
+        :VCEnd
+        CMAKE_C_COMPILER=C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe
+      FinalizeBuildStatus:
+        繝輔ぃ繧､繝ｫ "Debug\\CompilerIdC.tlog\\unsuccessfulbuild" 繧貞炎髯､縺励※縺・∪縺吶\xc2\x80・
+        "Debug\\CompilerIdC.tlog\\CompilerIdC.lastbuildstate" 縺ｮ繧ｿ繝・メ 繧ｿ繧ｹ繧ｯ繧貞ｮ溯｡後＠縺ｦ縺・∪縺吶\xc2\x80・
+      繝励Ο繧ｸ繧ｧ繧ｯ繝・"C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\4.2.0\\CompilerIdC\\CompilerIdC.vcxproj" (譌｢螳壹・繧ｿ繝ｼ繧ｲ繝・ヨ) 縺ｮ繝薙Ν繝峨′螳御ｺ・＠縺ｾ縺励◆縲・
+      
+      繝薙Ν繝峨↓謌仙粥縺励∪縺励◆縲・
+          0 蛟九・隴ｦ蜻・
+          0 繧ｨ繝ｩ繝ｼ
+      
+      邨碁℃譎る俣 00:00:01.09
+      
+      
+      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.exe"
+      
+      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.vcxproj"
+      
+      The C compiler identification is MSVC, found in:
+        C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/4.2.0/CompilerIdC/CompilerIdC.exe
+      
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:37 (find_program)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:65 (__resolve_tool_path)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:103 (__resolve_linker_path)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:107 (PROJECT)"
+    mode: "program"
+    variable: "_CMAKE_TOOL_WITH_PATH"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "link"
+    candidate_directories:
+      - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/"
+      - "C:/Program Files/Common Files/Oracle/Java/javapath/"
+      - "C:/Windows/System32/"
+      - "C:/Windows/"
+      - "C:/Windows/System32/wbem/"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/"
+      - "C:/Windows/System32/OpenSSH/"
+      - "C:/Program Files/dotnet/"
+      - "C:/Program Files/nodejs/"
+      - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
+      - "C:/Program Files/NVIDIA Corporation/NVIDIA App/NvDLISR/"
+      - "C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common/"
+      - "C:/Program Files/PowerShell/7/"
+      - "C:/Program Files/Git/cmd/"
+      - "C:/flutter/"
+      - "C:/Users/Unoryuto/flutter/bin/"
+      - "C:/Program Files (x86)/Incredibuild/"
+      - "C:/Program Files/CMake/bin/"
+      - "C:/Users/Unoryuto/.local/bin/"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WindowsApps/"
+      - "C:/Users/Unoryuto/AppData/Roaming/npm/"
+      - "C:/Users/Unoryuto/AppData/Local/gitkraken/bin/"
+      - "C:/Users/Unoryuto/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/Users/Unoryuto/.dotnet/tools/"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/"
+      - "C:/Users/Unoryuto/AppData/Local/Python/bin/"
+      - "C:/src/flutter/bin/"
+    searched_directories:
+      - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/link.com"
+    found: "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/link.exe"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Program Files\\Common Files\\Oracle\\Java\\javapath"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\nodejs\\"
+        - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
+        - "C:\\Program Files\\NVIDIA Corporation\\NVIDIA App\\NvDLISR"
+        - "C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common"
+        - "C:\\Program Files\\PowerShell\\7\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "C:\\flutter"
+        - "C:\\Users\\Unoryuto\\flutter\\bin"
+        - "C:\\Program Files (x86)\\Incredibuild"
+        - "C:\\Program Files\\CMake\\bin"
+        - "C:\\Users\\Unoryuto\\.local\\bin"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\Unoryuto\\AppData\\Roaming\\npm"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\gitkraken\\bin"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\Unoryuto\\.dotnet\\tools"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Microsoft\\WinGet\\Packages\\astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Python\\bin"
+        - "C:\\src\\flutter\\bin"
+        - "C:\\flutter"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:37 (find_program)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:65 (__resolve_tool_path)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:104 (__resolve_linker_path)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:107 (PROJECT)"
+    mode: "program"
+    variable: "_CMAKE_TOOL_WITH_PATH"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "lld-link"
+    candidate_directories:
+      - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/"
+      - "C:/Program Files/Common Files/Oracle/Java/javapath/"
+      - "C:/Windows/System32/"
+      - "C:/Windows/"
+      - "C:/Windows/System32/wbem/"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/"
+      - "C:/Windows/System32/OpenSSH/"
+      - "C:/Program Files/dotnet/"
+      - "C:/Program Files/nodejs/"
+      - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
+      - "C:/Program Files/NVIDIA Corporation/NVIDIA App/NvDLISR/"
+      - "C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common/"
+      - "C:/Program Files/PowerShell/7/"
+      - "C:/Program Files/Git/cmd/"
+      - "C:/flutter/"
+      - "C:/Users/Unoryuto/flutter/bin/"
+      - "C:/Program Files (x86)/Incredibuild/"
+      - "C:/Program Files/CMake/bin/"
+      - "C:/Users/Unoryuto/.local/bin/"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WindowsApps/"
+      - "C:/Users/Unoryuto/AppData/Roaming/npm/"
+      - "C:/Users/Unoryuto/AppData/Local/gitkraken/bin/"
+      - "C:/Users/Unoryuto/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/Users/Unoryuto/.dotnet/tools/"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/"
+      - "C:/Users/Unoryuto/AppData/Local/Python/bin/"
+      - "C:/src/flutter/bin/"
+    searched_directories:
+      - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/lld-link.com"
+      - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/lld-link.exe"
+      - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/lld-link"
+      - "C:/Program Files/Common Files/Oracle/Java/javapath/lld-link.com"
+      - "C:/Program Files/Common Files/Oracle/Java/javapath/lld-link.exe"
+      - "C:/Program Files/Common Files/Oracle/Java/javapath/lld-link"
+      - "C:/Windows/System32/lld-link.com"
+      - "C:/Windows/System32/lld-link.exe"
+      - "C:/Windows/System32/lld-link"
+      - "C:/Windows/lld-link.com"
+      - "C:/Windows/lld-link.exe"
+      - "C:/Windows/lld-link"
+      - "C:/Windows/System32/wbem/lld-link.com"
+      - "C:/Windows/System32/wbem/lld-link.exe"
+      - "C:/Windows/System32/wbem/lld-link"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/lld-link.com"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/lld-link.exe"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/lld-link"
+      - "C:/Windows/System32/OpenSSH/lld-link.com"
+      - "C:/Windows/System32/OpenSSH/lld-link.exe"
+      - "C:/Windows/System32/OpenSSH/lld-link"
+      - "C:/Program Files/dotnet/lld-link.com"
+      - "C:/Program Files/dotnet/lld-link.exe"
+      - "C:/Program Files/dotnet/lld-link"
+      - "C:/Program Files/nodejs/lld-link.com"
+      - "C:/Program Files/nodejs/lld-link.exe"
+      - "C:/Program Files/nodejs/lld-link"
+      - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/lld-link.com"
+      - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/lld-link.exe"
+      - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/lld-link"
+      - "C:/Program Files/NVIDIA Corporation/NVIDIA App/NvDLISR/lld-link.com"
+      - "C:/Program Files/NVIDIA Corporation/NVIDIA App/NvDLISR/lld-link.exe"
+      - "C:/Program Files/NVIDIA Corporation/NVIDIA App/NvDLISR/lld-link"
+      - "C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common/lld-link.com"
+      - "C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common/lld-link.exe"
+      - "C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common/lld-link"
+      - "C:/Program Files/PowerShell/7/lld-link.com"
+      - "C:/Program Files/PowerShell/7/lld-link.exe"
+      - "C:/Program Files/PowerShell/7/lld-link"
+      - "C:/Program Files/Git/cmd/lld-link.com"
+      - "C:/Program Files/Git/cmd/lld-link.exe"
+      - "C:/Program Files/Git/cmd/lld-link"
+      - "C:/flutter/lld-link.com"
+      - "C:/flutter/lld-link.exe"
+      - "C:/flutter/lld-link"
+      - "C:/Users/Unoryuto/flutter/bin/lld-link.com"
+      - "C:/Users/Unoryuto/flutter/bin/lld-link.exe"
+      - "C:/Users/Unoryuto/flutter/bin/lld-link"
+      - "C:/Program Files (x86)/Incredibuild/lld-link.com"
+      - "C:/Program Files (x86)/Incredibuild/lld-link.exe"
+      - "C:/Program Files (x86)/Incredibuild/lld-link"
+      - "C:/Program Files/CMake/bin/lld-link.com"
+      - "C:/Program Files/CMake/bin/lld-link.exe"
+      - "C:/Program Files/CMake/bin/lld-link"
+      - "C:/Users/Unoryuto/.local/bin/lld-link.com"
+      - "C:/Users/Unoryuto/.local/bin/lld-link.exe"
+      - "C:/Users/Unoryuto/.local/bin/lld-link"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WindowsApps/lld-link.com"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WindowsApps/lld-link.exe"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WindowsApps/lld-link"
+      - "C:/Users/Unoryuto/AppData/Roaming/npm/lld-link.com"
+      - "C:/Users/Unoryuto/AppData/Roaming/npm/lld-link.exe"
+      - "C:/Users/Unoryuto/AppData/Roaming/npm/lld-link"
+      - "C:/Users/Unoryuto/AppData/Local/gitkraken/bin/lld-link.com"
+      - "C:/Users/Unoryuto/AppData/Local/gitkraken/bin/lld-link.exe"
+      - "C:/Users/Unoryuto/AppData/Local/gitkraken/bin/lld-link"
+      - "C:/Users/Unoryuto/AppData/Local/Programs/Microsoft VS Code/bin/lld-link.com"
+      - "C:/Users/Unoryuto/AppData/Local/Programs/Microsoft VS Code/bin/lld-link.exe"
+      - "C:/Users/Unoryuto/AppData/Local/Programs/Microsoft VS Code/bin/lld-link"
+      - "C:/Users/Unoryuto/.dotnet/tools/lld-link.com"
+      - "C:/Users/Unoryuto/.dotnet/tools/lld-link.exe"
+      - "C:/Users/Unoryuto/.dotnet/tools/lld-link"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/lld-link.com"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/lld-link.exe"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/lld-link"
+      - "C:/Users/Unoryuto/AppData/Local/Python/bin/lld-link.com"
+      - "C:/Users/Unoryuto/AppData/Local/Python/bin/lld-link.exe"
+      - "C:/Users/Unoryuto/AppData/Local/Python/bin/lld-link"
+      - "C:/src/flutter/bin/lld-link.com"
+      - "C:/src/flutter/bin/lld-link.exe"
+      - "C:/src/flutter/bin/lld-link"
+    found: false
+    search_context:
+      ENV{PATH}:
+        - "C:\\Program Files\\Common Files\\Oracle\\Java\\javapath"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\nodejs\\"
+        - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
+        - "C:\\Program Files\\NVIDIA Corporation\\NVIDIA App\\NvDLISR"
+        - "C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common"
+        - "C:\\Program Files\\PowerShell\\7\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "C:\\flutter"
+        - "C:\\Users\\Unoryuto\\flutter\\bin"
+        - "C:\\Program Files (x86)\\Incredibuild"
+        - "C:\\Program Files\\CMake\\bin"
+        - "C:\\Users\\Unoryuto\\.local\\bin"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\Unoryuto\\AppData\\Roaming\\npm"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\gitkraken\\bin"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\Unoryuto\\.dotnet\\tools"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Microsoft\\WinGet\\Packages\\astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Python\\bin"
+        - "C:\\src\\flutter\\bin"
+        - "C:\\flutter"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:107 (PROJECT)"
+    mode: "program"
+    variable: "CMAKE_LINKER"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "link"
+    candidate_directories:
+      - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/"
+      - "C:/Program Files/Common Files/Oracle/Java/javapath/"
+      - "C:/Windows/System32/"
+      - "C:/Windows/"
+      - "C:/Windows/System32/wbem/"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/"
+      - "C:/Windows/System32/OpenSSH/"
+      - "C:/Program Files/dotnet/"
+      - "C:/Program Files/nodejs/"
+      - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
+      - "C:/Program Files/NVIDIA Corporation/NVIDIA App/NvDLISR/"
+      - "C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common/"
+      - "C:/Program Files/PowerShell/7/"
+      - "C:/Program Files/Git/cmd/"
+      - "C:/flutter/"
+      - "C:/Users/Unoryuto/flutter/bin/"
+      - "C:/Program Files (x86)/Incredibuild/"
+      - "C:/Program Files/CMake/bin/"
+      - "C:/Users/Unoryuto/.local/bin/"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WindowsApps/"
+      - "C:/Users/Unoryuto/AppData/Roaming/npm/"
+      - "C:/Users/Unoryuto/AppData/Local/gitkraken/bin/"
+      - "C:/Users/Unoryuto/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/Users/Unoryuto/.dotnet/tools/"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/"
+      - "C:/Users/Unoryuto/AppData/Local/Python/bin/"
+      - "C:/src/flutter/bin/"
+    searched_directories:
+      - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/link.com"
+    found: "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/link.exe"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Program Files\\Common Files\\Oracle\\Java\\javapath"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\nodejs\\"
+        - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
+        - "C:\\Program Files\\NVIDIA Corporation\\NVIDIA App\\NvDLISR"
+        - "C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common"
+        - "C:\\Program Files\\PowerShell\\7\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "C:\\flutter"
+        - "C:\\Users\\Unoryuto\\flutter\\bin"
+        - "C:\\Program Files (x86)\\Incredibuild"
+        - "C:\\Program Files\\CMake\\bin"
+        - "C:\\Users\\Unoryuto\\.local\\bin"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\Unoryuto\\AppData\\Roaming\\npm"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\gitkraken\\bin"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\Unoryuto\\.dotnet\\tools"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Microsoft\\WinGet\\Packages\\astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Python\\bin"
+        - "C:\\src\\flutter\\bin"
+        - "C:\\flutter"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:107 (PROJECT)"
+    mode: "program"
+    variable: "CMAKE_MT"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "mt"
+    candidate_directories:
+      - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/"
+      - "C:/Program Files/Common Files/Oracle/Java/javapath/"
+      - "C:/Windows/System32/"
+      - "C:/Windows/"
+      - "C:/Windows/System32/wbem/"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/"
+      - "C:/Windows/System32/OpenSSH/"
+      - "C:/Program Files/dotnet/"
+      - "C:/Program Files/nodejs/"
+      - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
+      - "C:/Program Files/NVIDIA Corporation/NVIDIA App/NvDLISR/"
+      - "C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common/"
+      - "C:/Program Files/PowerShell/7/"
+      - "C:/Program Files/Git/cmd/"
+      - "C:/flutter/"
+      - "C:/Users/Unoryuto/flutter/bin/"
+      - "C:/Program Files (x86)/Incredibuild/"
+      - "C:/Program Files/CMake/bin/"
+      - "C:/Users/Unoryuto/.local/bin/"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WindowsApps/"
+      - "C:/Users/Unoryuto/AppData/Roaming/npm/"
+      - "C:/Users/Unoryuto/AppData/Local/gitkraken/bin/"
+      - "C:/Users/Unoryuto/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/Users/Unoryuto/.dotnet/tools/"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/"
+      - "C:/Users/Unoryuto/AppData/Local/Python/bin/"
+      - "C:/src/flutter/bin/"
+    searched_directories:
+      - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/mt.com"
+      - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/mt.exe"
+      - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/mt"
+      - "C:/Program Files/Common Files/Oracle/Java/javapath/mt.com"
+      - "C:/Program Files/Common Files/Oracle/Java/javapath/mt.exe"
+      - "C:/Program Files/Common Files/Oracle/Java/javapath/mt"
+      - "C:/Windows/System32/mt.com"
+      - "C:/Windows/System32/mt.exe"
+      - "C:/Windows/System32/mt"
+      - "C:/Windows/mt.com"
+      - "C:/Windows/mt.exe"
+      - "C:/Windows/mt"
+      - "C:/Windows/System32/wbem/mt.com"
+      - "C:/Windows/System32/wbem/mt.exe"
+      - "C:/Windows/System32/wbem/mt"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/mt.com"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/mt.exe"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/mt"
+      - "C:/Windows/System32/OpenSSH/mt.com"
+      - "C:/Windows/System32/OpenSSH/mt.exe"
+      - "C:/Windows/System32/OpenSSH/mt"
+      - "C:/Program Files/dotnet/mt.com"
+      - "C:/Program Files/dotnet/mt.exe"
+      - "C:/Program Files/dotnet/mt"
+      - "C:/Program Files/nodejs/mt.com"
+      - "C:/Program Files/nodejs/mt.exe"
+      - "C:/Program Files/nodejs/mt"
+      - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/mt.com"
+      - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/mt.exe"
+      - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/mt"
+      - "C:/Program Files/NVIDIA Corporation/NVIDIA App/NvDLISR/mt.com"
+      - "C:/Program Files/NVIDIA Corporation/NVIDIA App/NvDLISR/mt.exe"
+      - "C:/Program Files/NVIDIA Corporation/NVIDIA App/NvDLISR/mt"
+      - "C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common/mt.com"
+      - "C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common/mt.exe"
+      - "C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common/mt"
+      - "C:/Program Files/PowerShell/7/mt.com"
+      - "C:/Program Files/PowerShell/7/mt.exe"
+      - "C:/Program Files/PowerShell/7/mt"
+      - "C:/Program Files/Git/cmd/mt.com"
+      - "C:/Program Files/Git/cmd/mt.exe"
+      - "C:/Program Files/Git/cmd/mt"
+      - "C:/flutter/mt.com"
+      - "C:/flutter/mt.exe"
+      - "C:/flutter/mt"
+      - "C:/Users/Unoryuto/flutter/bin/mt.com"
+      - "C:/Users/Unoryuto/flutter/bin/mt.exe"
+      - "C:/Users/Unoryuto/flutter/bin/mt"
+      - "C:/Program Files (x86)/Incredibuild/mt.com"
+      - "C:/Program Files (x86)/Incredibuild/mt.exe"
+      - "C:/Program Files (x86)/Incredibuild/mt"
+      - "C:/Program Files/CMake/bin/mt.com"
+      - "C:/Program Files/CMake/bin/mt.exe"
+      - "C:/Program Files/CMake/bin/mt"
+      - "C:/Users/Unoryuto/.local/bin/mt.com"
+      - "C:/Users/Unoryuto/.local/bin/mt.exe"
+      - "C:/Users/Unoryuto/.local/bin/mt"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WindowsApps/mt.com"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WindowsApps/mt.exe"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WindowsApps/mt"
+      - "C:/Users/Unoryuto/AppData/Roaming/npm/mt.com"
+      - "C:/Users/Unoryuto/AppData/Roaming/npm/mt.exe"
+      - "C:/Users/Unoryuto/AppData/Roaming/npm/mt"
+      - "C:/Users/Unoryuto/AppData/Local/gitkraken/bin/mt.com"
+      - "C:/Users/Unoryuto/AppData/Local/gitkraken/bin/mt.exe"
+      - "C:/Users/Unoryuto/AppData/Local/gitkraken/bin/mt"
+      - "C:/Users/Unoryuto/AppData/Local/Programs/Microsoft VS Code/bin/mt.com"
+      - "C:/Users/Unoryuto/AppData/Local/Programs/Microsoft VS Code/bin/mt.exe"
+      - "C:/Users/Unoryuto/AppData/Local/Programs/Microsoft VS Code/bin/mt"
+      - "C:/Users/Unoryuto/.dotnet/tools/mt.com"
+      - "C:/Users/Unoryuto/.dotnet/tools/mt.exe"
+      - "C:/Users/Unoryuto/.dotnet/tools/mt"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/mt.com"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/mt.exe"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/mt"
+      - "C:/Users/Unoryuto/AppData/Local/Python/bin/mt.com"
+      - "C:/Users/Unoryuto/AppData/Local/Python/bin/mt.exe"
+      - "C:/Users/Unoryuto/AppData/Local/Python/bin/mt"
+      - "C:/src/flutter/bin/mt.com"
+      - "C:/src/flutter/bin/mt.exe"
+      - "C:/src/flutter/bin/mt"
+    found: false
+    search_context:
+      ENV{PATH}:
+        - "C:\\Program Files\\Common Files\\Oracle\\Java\\javapath"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\nodejs\\"
+        - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
+        - "C:\\Program Files\\NVIDIA Corporation\\NVIDIA App\\NvDLISR"
+        - "C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common"
+        - "C:\\Program Files\\PowerShell\\7\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "C:\\flutter"
+        - "C:\\Users\\Unoryuto\\flutter\\bin"
+        - "C:\\Program Files (x86)\\Incredibuild"
+        - "C:\\Program Files\\CMake\\bin"
+        - "C:\\Users\\Unoryuto\\.local\\bin"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\Unoryuto\\AppData\\Roaming\\npm"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\gitkraken\\bin"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\Unoryuto\\.dotnet\\tools"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Microsoft\\WinGet\\Packages\\astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Python\\bin"
+        - "C:\\src\\flutter\\bin"
+        - "C:\\flutter"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:107 (PROJECT)"
+    mode: "program"
+    variable: "CMAKE_AR"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "lib"
+    candidate_directories:
+      - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/"
+      - "C:/Program Files/Common Files/Oracle/Java/javapath/"
+      - "C:/Windows/System32/"
+      - "C:/Windows/"
+      - "C:/Windows/System32/wbem/"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/"
+      - "C:/Windows/System32/OpenSSH/"
+      - "C:/Program Files/dotnet/"
+      - "C:/Program Files/nodejs/"
+      - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
+      - "C:/Program Files/NVIDIA Corporation/NVIDIA App/NvDLISR/"
+      - "C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common/"
+      - "C:/Program Files/PowerShell/7/"
+      - "C:/Program Files/Git/cmd/"
+      - "C:/flutter/"
+      - "C:/Users/Unoryuto/flutter/bin/"
+      - "C:/Program Files (x86)/Incredibuild/"
+      - "C:/Program Files/CMake/bin/"
+      - "C:/Users/Unoryuto/.local/bin/"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WindowsApps/"
+      - "C:/Users/Unoryuto/AppData/Roaming/npm/"
+      - "C:/Users/Unoryuto/AppData/Local/gitkraken/bin/"
+      - "C:/Users/Unoryuto/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/Users/Unoryuto/.dotnet/tools/"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/"
+      - "C:/Users/Unoryuto/AppData/Local/Python/bin/"
+      - "C:/src/flutter/bin/"
+    searched_directories:
+      - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/lib.com"
+    found: "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/lib.exe"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Program Files\\Common Files\\Oracle\\Java\\javapath"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\nodejs\\"
+        - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
+        - "C:\\Program Files\\NVIDIA Corporation\\NVIDIA App\\NvDLISR"
+        - "C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common"
+        - "C:\\Program Files\\PowerShell\\7\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "C:\\flutter"
+        - "C:\\Users\\Unoryuto\\flutter\\bin"
+        - "C:\\Program Files (x86)\\Incredibuild"
+        - "C:\\Program Files\\CMake\\bin"
+        - "C:\\Users\\Unoryuto\\.local\\bin"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\Unoryuto\\AppData\\Roaming\\npm"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\gitkraken\\bin"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\Unoryuto\\.dotnet\\tools"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Microsoft\\WinGet\\Packages\\astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Python\\bin"
+        - "C:\\src\\flutter\\bin"
+        - "C:\\flutter"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:462 (find_file)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:500 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:107 (PROJECT)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCXXCompilerId.cpp.in"
+    candidate_directories:
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/"
+    found: "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeCXXCompilerId.cpp.in"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Program Files\\Common Files\\Oracle\\Java\\javapath"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\nodejs\\"
+        - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
+        - "C:\\Program Files\\NVIDIA Corporation\\NVIDIA App\\NvDLISR"
+        - "C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common"
+        - "C:\\Program Files\\PowerShell\\7\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "C:\\flutter"
+        - "C:\\Users\\Unoryuto\\flutter\\bin"
+        - "C:\\Program Files (x86)\\Incredibuild"
+        - "C:\\Program Files\\CMake\\bin"
+        - "C:\\Users\\Unoryuto\\.local\\bin"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\Unoryuto\\AppData\\Roaming\\npm"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\gitkraken\\bin"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\Unoryuto\\.dotnet\\tools"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Microsoft\\WinGet\\Packages\\astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Python\\bin"
+        - "C:\\src\\flutter\\bin"
+        - "C:\\flutter"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:107 (PROJECT)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+      Compiler:  
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      MSBuild 縺ｮ繝舌・繧ｸ繝ｧ繝ｳ 18.0.5+e22287bf1 (.NET Framework)
+      2025/11/25 17:38:33 縺ｫ繝薙Ν繝峨ｒ髢句ｧ九＠縺ｾ縺励◆縲・
+      
+      繝弱・繝・1 荳翫・繝励Ο繧ｸ繧ｧ繧ｯ繝・"C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\4.2.0\\CompilerIdCXX\\CompilerIdCXX.vcxproj" (譌｢螳壹・繧ｿ繝ｼ繧ｲ繝・ヨ)縲・
+      PrepareForBuild:
+        繝・ぅ繝ｬ繧ｯ繝医Μ "Debug\\" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+        讒矩\xc2\x80蛹門・蜉帙′譛牙柑縺ｫ縺ｪ縺｣縺ｦ縺・∪縺吶\xc2\x80ゅさ繝ｳ繝代う繝ｩ險ｺ譁ｭ縺ｮ譖ｸ蠑剰ｨｭ螳壹↓縺ｯ繧ｨ繝ｩ繝ｼ髫主ｱ､縺悟渚譏縺輔ｌ縺ｾ縺吶\xc2\x80りｩｳ邏ｰ縺ｫ縺､縺・※縺ｯ縲”ttps://aka.ms/cpp/structured-output 繧貞盾辣ｧ縺励※縺上□縺輔＞縲・
+        繝・ぅ繝ｬ繧ｯ繝医Μ "Debug\\CompilerIdCXX.tlog\\" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+      InitializeBuildStatus:
+        "AlwaysCreate" 縺梧欠螳壹＆繧後◆縺溘ａ "Debug\\CompilerIdCXX.tlog\\unsuccessfulbuild" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+        "Debug\\CompilerIdCXX.tlog\\unsuccessfulbuild" 縺ｮ繧ｿ繝・メ 繧ｿ繧ｹ繧ｯ繧貞ｮ溯｡後＠縺ｦ縺・∪縺吶\xc2\x80・
+      VcpkgTripletSelection:
+        Using triplet "x64-windows" from "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\"
+        Using normalized configuration "Release"
+      ClCompile:
+        C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\include" /nologo /W0 /WX- /diagnostics:column /Od /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\\\" /Fd"Debug\\vc145.pdb" /external:W0 /Gd /TP /FC /errorReport:queue CMakeCXXCompilerId.cpp
+        CMakeCXXCompilerId.cpp
+      Link:
+        C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:".\\CompilerIdCXX.exe" /INCREMENTAL:NO /NOLOGO /LIBPATH:"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\lib" /LIBPATH:"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\lib\\manual-link" kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:".\\CompilerIdCXX.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\\CompilerIdCXX.lib" /MACHINE:X64 Debug\\CMakeCXXCompilerId.obj
+        CompilerIdCXX.vcxproj -> C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\4.2.0\\CompilerIdCXX\\CompilerIdCXX.exe
+      AppLocalFromInstalled:
+        pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\4.2.0\\CompilerIdCXX\\CompilerIdCXX.exe" "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\bin" "Debug\\CompilerIdCXX.tlog\\CompilerIdCXX.write.1u.tlog" "Debug\\vcpkg.applocal.log"
+      PostBuildEvent:
+        for %%i in (cl.exe) do @echo CMAKE_CXX_COMPILER=%%~$PATH:i
+        :VCEnd
+        CMAKE_CXX_COMPILER=C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe
+      FinalizeBuildStatus:
+        繝輔ぃ繧､繝ｫ "Debug\\CompilerIdCXX.tlog\\unsuccessfulbuild" 繧貞炎髯､縺励※縺・∪縺吶\xc2\x80・
+        "Debug\\CompilerIdCXX.tlog\\CompilerIdCXX.lastbuildstate" 縺ｮ繧ｿ繝・メ 繧ｿ繧ｹ繧ｯ繧貞ｮ溯｡後＠縺ｦ縺・∪縺吶\xc2\x80・
+      繝励Ο繧ｸ繧ｧ繧ｯ繝・"C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\4.2.0\\CompilerIdCXX\\CompilerIdCXX.vcxproj" (譌｢螳壹・繧ｿ繝ｼ繧ｲ繝・ヨ) 縺ｮ繝薙Ν繝峨′螳御ｺ・＠縺ｾ縺励◆縲・
+      
+      繝薙Ν繝峨↓謌仙粥縺励∪縺励◆縲・
+          0 蛟九・隴ｦ蜻・
+          0 繧ｨ繝ｩ繝ｼ
+      
+      邨碁℃譎る俣 00:00:01.07
+      
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.exe"
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.vcxproj"
+      
+      The CXX compiler identification is MSVC, found in:
+        C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/4.2.0/CompilerIdCXX/CompilerIdCXX.exe
+      
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:37 (find_program)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:65 (__resolve_tool_path)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:104 (__resolve_linker_path)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCXXCompiler.cmake:206 (include)"
+      - "CMakeLists.txt:107 (PROJECT)"
+    mode: "program"
+    variable: "_CMAKE_TOOL_WITH_PATH"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "lld-link"
+    candidate_directories:
+      - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/"
+      - "C:/Program Files/Common Files/Oracle/Java/javapath/"
+      - "C:/Windows/System32/"
+      - "C:/Windows/"
+      - "C:/Windows/System32/wbem/"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/"
+      - "C:/Windows/System32/OpenSSH/"
+      - "C:/Program Files/dotnet/"
+      - "C:/Program Files/nodejs/"
+      - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
+      - "C:/Program Files/NVIDIA Corporation/NVIDIA App/NvDLISR/"
+      - "C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common/"
+      - "C:/Program Files/PowerShell/7/"
+      - "C:/Program Files/Git/cmd/"
+      - "C:/flutter/"
+      - "C:/Users/Unoryuto/flutter/bin/"
+      - "C:/Program Files (x86)/Incredibuild/"
+      - "C:/Program Files/CMake/bin/"
+      - "C:/Users/Unoryuto/.local/bin/"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WindowsApps/"
+      - "C:/Users/Unoryuto/AppData/Roaming/npm/"
+      - "C:/Users/Unoryuto/AppData/Local/gitkraken/bin/"
+      - "C:/Users/Unoryuto/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/Users/Unoryuto/.dotnet/tools/"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/"
+      - "C:/Users/Unoryuto/AppData/Local/Python/bin/"
+      - "C:/src/flutter/bin/"
+    searched_directories:
+      - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/lld-link.com"
+      - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/lld-link.exe"
+      - "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/lld-link"
+      - "C:/Program Files/Common Files/Oracle/Java/javapath/lld-link.com"
+      - "C:/Program Files/Common Files/Oracle/Java/javapath/lld-link.exe"
+      - "C:/Program Files/Common Files/Oracle/Java/javapath/lld-link"
+      - "C:/Windows/System32/lld-link.com"
+      - "C:/Windows/System32/lld-link.exe"
+      - "C:/Windows/System32/lld-link"
+      - "C:/Windows/lld-link.com"
+      - "C:/Windows/lld-link.exe"
+      - "C:/Windows/lld-link"
+      - "C:/Windows/System32/wbem/lld-link.com"
+      - "C:/Windows/System32/wbem/lld-link.exe"
+      - "C:/Windows/System32/wbem/lld-link"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/lld-link.com"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/lld-link.exe"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/lld-link"
+      - "C:/Windows/System32/OpenSSH/lld-link.com"
+      - "C:/Windows/System32/OpenSSH/lld-link.exe"
+      - "C:/Windows/System32/OpenSSH/lld-link"
+      - "C:/Program Files/dotnet/lld-link.com"
+      - "C:/Program Files/dotnet/lld-link.exe"
+      - "C:/Program Files/dotnet/lld-link"
+      - "C:/Program Files/nodejs/lld-link.com"
+      - "C:/Program Files/nodejs/lld-link.exe"
+      - "C:/Program Files/nodejs/lld-link"
+      - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/lld-link.com"
+      - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/lld-link.exe"
+      - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/lld-link"
+      - "C:/Program Files/NVIDIA Corporation/NVIDIA App/NvDLISR/lld-link.com"
+      - "C:/Program Files/NVIDIA Corporation/NVIDIA App/NvDLISR/lld-link.exe"
+      - "C:/Program Files/NVIDIA Corporation/NVIDIA App/NvDLISR/lld-link"
+      - "C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common/lld-link.com"
+      - "C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common/lld-link.exe"
+      - "C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common/lld-link"
+      - "C:/Program Files/PowerShell/7/lld-link.com"
+      - "C:/Program Files/PowerShell/7/lld-link.exe"
+      - "C:/Program Files/PowerShell/7/lld-link"
+      - "C:/Program Files/Git/cmd/lld-link.com"
+      - "C:/Program Files/Git/cmd/lld-link.exe"
+      - "C:/Program Files/Git/cmd/lld-link"
+      - "C:/flutter/lld-link.com"
+      - "C:/flutter/lld-link.exe"
+      - "C:/flutter/lld-link"
+      - "C:/Users/Unoryuto/flutter/bin/lld-link.com"
+      - "C:/Users/Unoryuto/flutter/bin/lld-link.exe"
+      - "C:/Users/Unoryuto/flutter/bin/lld-link"
+      - "C:/Program Files (x86)/Incredibuild/lld-link.com"
+      - "C:/Program Files (x86)/Incredibuild/lld-link.exe"
+      - "C:/Program Files (x86)/Incredibuild/lld-link"
+      - "C:/Program Files/CMake/bin/lld-link.com"
+      - "C:/Program Files/CMake/bin/lld-link.exe"
+      - "C:/Program Files/CMake/bin/lld-link"
+      - "C:/Users/Unoryuto/.local/bin/lld-link.com"
+      - "C:/Users/Unoryuto/.local/bin/lld-link.exe"
+      - "C:/Users/Unoryuto/.local/bin/lld-link"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WindowsApps/lld-link.com"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WindowsApps/lld-link.exe"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WindowsApps/lld-link"
+      - "C:/Users/Unoryuto/AppData/Roaming/npm/lld-link.com"
+      - "C:/Users/Unoryuto/AppData/Roaming/npm/lld-link.exe"
+      - "C:/Users/Unoryuto/AppData/Roaming/npm/lld-link"
+      - "C:/Users/Unoryuto/AppData/Local/gitkraken/bin/lld-link.com"
+      - "C:/Users/Unoryuto/AppData/Local/gitkraken/bin/lld-link.exe"
+      - "C:/Users/Unoryuto/AppData/Local/gitkraken/bin/lld-link"
+      - "C:/Users/Unoryuto/AppData/Local/Programs/Microsoft VS Code/bin/lld-link.com"
+      - "C:/Users/Unoryuto/AppData/Local/Programs/Microsoft VS Code/bin/lld-link.exe"
+      - "C:/Users/Unoryuto/AppData/Local/Programs/Microsoft VS Code/bin/lld-link"
+      - "C:/Users/Unoryuto/.dotnet/tools/lld-link.com"
+      - "C:/Users/Unoryuto/.dotnet/tools/lld-link.exe"
+      - "C:/Users/Unoryuto/.dotnet/tools/lld-link"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/lld-link.com"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/lld-link.exe"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/lld-link"
+      - "C:/Users/Unoryuto/AppData/Local/Python/bin/lld-link.com"
+      - "C:/Users/Unoryuto/AppData/Local/Python/bin/lld-link.exe"
+      - "C:/Users/Unoryuto/AppData/Local/Python/bin/lld-link"
+      - "C:/src/flutter/bin/lld-link.com"
+      - "C:/src/flutter/bin/lld-link.exe"
+      - "C:/src/flutter/bin/lld-link"
+    found: false
+    search_context:
+      ENV{PATH}:
+        - "C:\\Program Files\\Common Files\\Oracle\\Java\\javapath"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\nodejs\\"
+        - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
+        - "C:\\Program Files\\NVIDIA Corporation\\NVIDIA App\\NvDLISR"
+        - "C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common"
+        - "C:\\Program Files\\PowerShell\\7\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "C:\\flutter"
+        - "C:\\Users\\Unoryuto\\flutter\\bin"
+        - "C:\\Program Files (x86)\\Incredibuild"
+        - "C:\\Program Files\\CMake\\bin"
+        - "C:\\Users\\Unoryuto\\.local\\bin"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\Unoryuto\\AppData\\Roaming\\npm"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\gitkraken\\bin"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\Unoryuto\\.dotnet\\tools"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Microsoft\\WinGet\\Packages\\astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Python\\bin"
+        - "C:\\src\\flutter\\bin"
+        - "C:\\flutter"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineRCCompiler.cmake:40 (find_program)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/Platform/Windows-MSVC.cmake:580 (enable_language)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/Platform/Windows-MSVC.cmake:553 (__windows_compiler_msvc_enable_rc)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/Platform/Windows-MSVC-C.cmake:5 (__windows_compiler_msvc)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeCInformation.cmake:48 (include)"
+      - "CMakeLists.txt:107 (PROJECT)"
+    mode: "program"
+    variable: "CMAKE_RC_COMPILER"
+    description: "RC compiler"
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "rc"
+    candidate_directories:
+      - "C:/Program Files/Common Files/Oracle/Java/javapath/"
+      - "C:/Windows/System32/"
+      - "C:/Windows/"
+      - "C:/Windows/System32/wbem/"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/"
+      - "C:/Windows/System32/OpenSSH/"
+      - "C:/Program Files/dotnet/"
+      - "C:/Program Files/nodejs/"
+      - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/"
+      - "C:/Program Files/NVIDIA Corporation/NVIDIA App/NvDLISR/"
+      - "C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common/"
+      - "C:/Program Files/PowerShell/7/"
+      - "C:/Program Files/Git/cmd/"
+      - "C:/flutter/"
+      - "C:/Users/Unoryuto/flutter/bin/"
+      - "C:/Program Files (x86)/Incredibuild/"
+      - "C:/Program Files/CMake/bin/"
+      - "C:/Users/Unoryuto/.local/bin/"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WindowsApps/"
+      - "C:/Users/Unoryuto/AppData/Roaming/npm/"
+      - "C:/Users/Unoryuto/AppData/Local/gitkraken/bin/"
+      - "C:/Users/Unoryuto/AppData/Local/Programs/Microsoft VS Code/bin/"
+      - "C:/Users/Unoryuto/.dotnet/tools/"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/"
+      - "C:/Users/Unoryuto/AppData/Local/Python/bin/"
+      - "C:/src/flutter/bin/"
+      - "C:/Program Files/bin/"
+      - "C:/Program Files/sbin/"
+      - "C:/Program Files/"
+      - "C:/Program Files (x86)/bin/"
+      - "C:/Program Files (x86)/sbin/"
+      - "C:/Program Files (x86)/"
+      - "C:/Program Files/CMake/bin/"
+      - "C:/Program Files/CMake/sbin/"
+      - "C:/Program Files/CMake/"
+      - "C:/Program Files (x86)/Assimp/bin/"
+      - "C:/Program Files (x86)/Assimp/sbin/"
+      - "C:/Program Files (x86)/Assimp/"
+    searched_directories:
+      - "C:/Program Files/Common Files/Oracle/Java/javapath/rc.com"
+      - "C:/Program Files/Common Files/Oracle/Java/javapath/rc.exe"
+      - "C:/Program Files/Common Files/Oracle/Java/javapath/rc"
+      - "C:/Windows/System32/rc.com"
+      - "C:/Windows/System32/rc.exe"
+      - "C:/Windows/System32/rc"
+      - "C:/Windows/rc.com"
+      - "C:/Windows/rc.exe"
+      - "C:/Windows/rc"
+      - "C:/Windows/System32/wbem/rc.com"
+      - "C:/Windows/System32/wbem/rc.exe"
+      - "C:/Windows/System32/wbem/rc"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/rc.com"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/rc.exe"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/rc"
+      - "C:/Windows/System32/OpenSSH/rc.com"
+      - "C:/Windows/System32/OpenSSH/rc.exe"
+      - "C:/Windows/System32/OpenSSH/rc"
+      - "C:/Program Files/dotnet/rc.com"
+      - "C:/Program Files/dotnet/rc.exe"
+      - "C:/Program Files/dotnet/rc"
+      - "C:/Program Files/nodejs/rc.com"
+      - "C:/Program Files/nodejs/rc.exe"
+      - "C:/Program Files/nodejs/rc"
+      - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/rc.com"
+      - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/rc.exe"
+      - "C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/rc"
+      - "C:/Program Files/NVIDIA Corporation/NVIDIA App/NvDLISR/rc.com"
+      - "C:/Program Files/NVIDIA Corporation/NVIDIA App/NvDLISR/rc.exe"
+      - "C:/Program Files/NVIDIA Corporation/NVIDIA App/NvDLISR/rc"
+      - "C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common/rc.com"
+      - "C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common/rc.exe"
+      - "C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common/rc"
+      - "C:/Program Files/PowerShell/7/rc.com"
+      - "C:/Program Files/PowerShell/7/rc.exe"
+      - "C:/Program Files/PowerShell/7/rc"
+      - "C:/Program Files/Git/cmd/rc.com"
+      - "C:/Program Files/Git/cmd/rc.exe"
+      - "C:/Program Files/Git/cmd/rc"
+      - "C:/flutter/rc.com"
+      - "C:/flutter/rc.exe"
+      - "C:/flutter/rc"
+      - "C:/Users/Unoryuto/flutter/bin/rc.com"
+      - "C:/Users/Unoryuto/flutter/bin/rc.exe"
+      - "C:/Users/Unoryuto/flutter/bin/rc"
+      - "C:/Program Files (x86)/Incredibuild/rc.com"
+      - "C:/Program Files (x86)/Incredibuild/rc.exe"
+      - "C:/Program Files (x86)/Incredibuild/rc"
+      - "C:/Program Files/CMake/bin/rc.com"
+      - "C:/Program Files/CMake/bin/rc.exe"
+      - "C:/Program Files/CMake/bin/rc"
+      - "C:/Users/Unoryuto/.local/bin/rc.com"
+      - "C:/Users/Unoryuto/.local/bin/rc.exe"
+      - "C:/Users/Unoryuto/.local/bin/rc"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WindowsApps/rc.com"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WindowsApps/rc.exe"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WindowsApps/rc"
+      - "C:/Users/Unoryuto/AppData/Roaming/npm/rc.com"
+      - "C:/Users/Unoryuto/AppData/Roaming/npm/rc.exe"
+      - "C:/Users/Unoryuto/AppData/Roaming/npm/rc"
+      - "C:/Users/Unoryuto/AppData/Local/gitkraken/bin/rc.com"
+      - "C:/Users/Unoryuto/AppData/Local/gitkraken/bin/rc.exe"
+      - "C:/Users/Unoryuto/AppData/Local/gitkraken/bin/rc"
+      - "C:/Users/Unoryuto/AppData/Local/Programs/Microsoft VS Code/bin/rc.com"
+      - "C:/Users/Unoryuto/AppData/Local/Programs/Microsoft VS Code/bin/rc.exe"
+      - "C:/Users/Unoryuto/AppData/Local/Programs/Microsoft VS Code/bin/rc"
+      - "C:/Users/Unoryuto/.dotnet/tools/rc.com"
+      - "C:/Users/Unoryuto/.dotnet/tools/rc.exe"
+      - "C:/Users/Unoryuto/.dotnet/tools/rc"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/rc.com"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/rc.exe"
+      - "C:/Users/Unoryuto/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/rc"
+      - "C:/Users/Unoryuto/AppData/Local/Python/bin/rc.com"
+      - "C:/Users/Unoryuto/AppData/Local/Python/bin/rc.exe"
+      - "C:/Users/Unoryuto/AppData/Local/Python/bin/rc"
+      - "C:/src/flutter/bin/rc.com"
+      - "C:/src/flutter/bin/rc.exe"
+      - "C:/src/flutter/bin/rc"
+      - "C:/Program Files/bin/rc.com"
+      - "C:/Program Files/bin/rc.exe"
+      - "C:/Program Files/bin/rc"
+      - "C:/Program Files/sbin/rc.com"
+      - "C:/Program Files/sbin/rc.exe"
+      - "C:/Program Files/sbin/rc"
+      - "C:/Program Files/rc.com"
+      - "C:/Program Files/rc.exe"
+      - "C:/Program Files/rc"
+      - "C:/Program Files (x86)/bin/rc.com"
+      - "C:/Program Files (x86)/bin/rc.exe"
+      - "C:/Program Files (x86)/bin/rc"
+      - "C:/Program Files (x86)/sbin/rc.com"
+      - "C:/Program Files (x86)/sbin/rc.exe"
+      - "C:/Program Files (x86)/sbin/rc"
+      - "C:/Program Files (x86)/rc.com"
+      - "C:/Program Files (x86)/rc.exe"
+      - "C:/Program Files (x86)/rc"
+      - "C:/Program Files/CMake/bin/rc.com"
+      - "C:/Program Files/CMake/bin/rc.exe"
+      - "C:/Program Files/CMake/bin/rc"
+      - "C:/Program Files/CMake/sbin/rc.com"
+      - "C:/Program Files/CMake/sbin/rc.exe"
+      - "C:/Program Files/CMake/sbin/rc"
+      - "C:/Program Files/CMake/rc.com"
+      - "C:/Program Files/CMake/rc.exe"
+      - "C:/Program Files/CMake/rc"
+      - "C:/Program Files (x86)/Assimp/bin/rc.com"
+      - "C:/Program Files (x86)/Assimp/bin/rc.exe"
+      - "C:/Program Files (x86)/Assimp/bin/rc"
+      - "C:/Program Files (x86)/Assimp/sbin/rc.com"
+      - "C:/Program Files (x86)/Assimp/sbin/rc.exe"
+      - "C:/Program Files (x86)/Assimp/sbin/rc"
+      - "C:/Program Files (x86)/Assimp/rc.com"
+      - "C:/Program Files (x86)/Assimp/rc.exe"
+      - "C:/Program Files (x86)/Assimp/rc"
+    found: false
+    search_context:
+      ENV{PATH}:
+        - "C:\\Program Files\\Common Files\\Oracle\\Java\\javapath"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\nodejs\\"
+        - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
+        - "C:\\Program Files\\NVIDIA Corporation\\NVIDIA App\\NvDLISR"
+        - "C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common"
+        - "C:\\Program Files\\PowerShell\\7\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "C:\\flutter"
+        - "C:\\Users\\Unoryuto\\flutter\\bin"
+        - "C:\\Program Files (x86)\\Incredibuild"
+        - "C:\\Program Files\\CMake\\bin"
+        - "C:\\Users\\Unoryuto\\.local\\bin"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\Unoryuto\\AppData\\Roaming\\npm"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\gitkraken\\bin"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\Unoryuto\\.dotnet\\tools"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Microsoft\\WinGet\\Packages\\astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe"
+        - "C:\\Users\\Unoryuto\\AppData\\Local\\Python\\bin"
+        - "C:\\src\\flutter\\bin"
+        - "C:\\flutter"
+      CMAKE_INSTALL_PREFIX: "C:/Program Files (x86)/Assimp"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "C:/Program Files"
+        - "C:/Program Files (x86)"
+        - "C:/Program Files/CMake"
+        - "C:/Program Files (x86)/Assimp"
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerABI.cmake:83 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:107 (PROJECT)"
+    checks:
+      - "Detecting C compiler ABI info"
+    directories:
+      source: "C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-6aej09"
+      binary: "C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-6aej09"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "CMAKE_C_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-6aej09'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_4dd18.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild 縺ｮ繝舌・繧ｸ繝ｧ繝ｳ 18.0.5+e22287bf1 (.NET Framework)
+        2025/11/25 17:38:34 縺ｫ繝薙Ν繝峨ｒ髢句ｧ九＠縺ｾ縺励◆縲・
+        
+        繝弱・繝・1 荳翫・繝励Ο繧ｸ繧ｧ繧ｯ繝・"C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-6aej09\\cmTC_4dd18.vcxproj" (譌｢螳壹・繧ｿ繝ｼ繧ｲ繝・ヨ)縲・
+        PrepareForBuild:
+          讒矩\xc2\x80蛹門・蜉帙′譛牙柑縺ｫ縺ｪ縺｣縺ｦ縺・∪縺吶\xc2\x80ゅさ繝ｳ繝代う繝ｩ險ｺ譁ｭ縺ｮ譖ｸ蠑剰ｨｭ螳壹↓縺ｯ繧ｨ繝ｩ繝ｼ髫主ｱ､縺悟渚譏縺輔ｌ縺ｾ縺吶\xc2\x80りｩｳ邏ｰ縺ｫ縺､縺・※縺ｯ縲”ttps://aka.ms/cpp/structured-output 繧貞盾辣ｧ縺励※縺上□縺輔＞縲・
+          繝・ぅ繝ｬ繧ｯ繝医Μ "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-6aej09\\Debug\\" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+          繝・ぅ繝ｬ繧ｯ繝医Μ "cmTC_4dd18.dir\\Debug\\cmTC_4dd18.tlog\\" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+        InitializeBuildStatus:
+          "AlwaysCreate" 縺梧欠螳壹＆繧後◆縺溘ａ "cmTC_4dd18.dir\\Debug\\cmTC_4dd18.tlog\\unsuccessfulbuild" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+          "cmTC_4dd18.dir\\Debug\\cmTC_4dd18.tlog\\unsuccessfulbuild" 縺ｮ繧ｿ繝・メ 繧ｿ繧ｹ繧ｯ繧貞ｮ溯｡後＠縺ｦ縺・∪縺吶\xc2\x80・
+        VcpkgTripletSelection:
+          Using triplet "x64-windows" from "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\"
+          Using normalized configuration "Debug"
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_4dd18.dir\\Debug\\\\" /Fd"cmTC_4dd18.dir\\Debug\\vc145.pdb" /external:W1 /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-4.2\\Modules\\CMakeCCompilerABI.c"
+          Microsoft(R) C/C++ Optimizing Compiler Version 19.50.35718 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /I"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_4dd18.dir\\Debug\\\\" /Fd"cmTC_4dd18.dir\\Debug\\vc145.pdb" /external:W1 /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-4.2\\Modules\\CMakeCCompilerABI.c"
+          CMakeCCompilerABI.c
+        Link:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-6aej09\\Debug\\cmTC_4dd18.exe" /INCREMENTAL /ILK:"cmTC_4dd18.dir\\Debug\\cmTC_4dd18.ilk" /NOLOGO /LIBPATH:"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\debug\\lib" /LIBPATH:"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\debug\\lib\\manual-link" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\debug\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-6aej09/Debug/cmTC_4dd18.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-6aej09/Debug/cmTC_4dd18.lib" /MACHINE:X64  /machine:x64 cmTC_4dd18.dir\\Debug\\CMakeCCompilerABI.obj
+          cmTC_4dd18.vcxproj -> C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-6aej09\\Debug\\cmTC_4dd18.exe
+        AppLocalFromInstalled:
+          pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-6aej09\\Debug\\cmTC_4dd18.exe" "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\debug\\bin" "cmTC_4dd18.dir\\Debug\\cmTC_4dd18.tlog\\cmTC_4dd18.write.1u.tlog" "cmTC_4dd18.dir\\Debug\\vcpkg.applocal.log"
+        FinalizeBuildStatus:
+          繝輔ぃ繧､繝ｫ "cmTC_4dd18.dir\\Debug\\cmTC_4dd18.tlog\\unsuccessfulbuild" 繧貞炎髯､縺励※縺・∪縺吶\xc2\x80・
+          "cmTC_4dd18.dir\\Debug\\cmTC_4dd18.tlog\\cmTC_4dd18.lastbuildstate" 縺ｮ繧ｿ繝・メ 繧ｿ繧ｹ繧ｯ繧貞ｮ溯｡後＠縺ｦ縺・∪縺吶\xc2\x80・
+        繝励Ο繧ｸ繧ｧ繧ｯ繝・"C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-6aej09\\cmTC_4dd18.vcxproj" (譌｢螳壹・繧ｿ繝ｼ繧ｲ繝・ヨ) 縺ｮ繝薙Ν繝峨′螳御ｺ・＠縺ｾ縺励◆縲・
+        
+        繝薙Ν繝峨↓謌仙粥縺励∪縺励◆縲・
+            0 蛟九・隴ｦ蜻・
+            0 繧ｨ繝ｩ繝ｼ
+        
+        邨碁℃譎る俣 00:00:01.10
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerABI.cmake:253 (message)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:107 (PROJECT)"
+    message: |
+      Parsed C implicit link information:
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|link\\.exe|lld-link(\\.exe)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|"|[0-9]+>[ 	-]*Build:[ 	0-9]+ ms[ 	]*)?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|link\\.exe|lld-link(\\.exe)?))("|,| |$)]
+        linker tool for 'C': C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/HostX64/x64/link.exe
+        implicit libs: []
+        implicit objs: []
+        implicit dirs: []
+        implicit fwks: []
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/Internal/CMakeDetermineLinkerId.cmake:38 (message)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerABI.cmake:299 (cmake_determine_linker_id)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:107 (PROJECT)"
+    message: |
+      Running the C compiler's linker: "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/HostX64/x64/link.exe" "-v"
+      Microsoft (R) Incremental Linker Version 14.50.35718.0
+      Copyright (C) Microsoft Corporation.  All rights reserved.
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerABI.cmake:83 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:107 (PROJECT)"
+    checks:
+      - "Detecting CXX compiler ABI info"
+    directories:
+      source: "C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-silckr"
+      binary: "C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-silckr"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /EHsc"
+      CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
+      CMAKE_CXX_SCAN_FOR_MODULES: "OFF"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "CMAKE_CXX_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-silckr'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_0148b.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild 縺ｮ繝舌・繧ｸ繝ｧ繝ｳ 18.0.5+e22287bf1 (.NET Framework)
+        2025/11/25 17:38:36 縺ｫ繝薙Ν繝峨ｒ髢句ｧ九＠縺ｾ縺励◆縲・
+        
+        繝弱・繝・1 荳翫・繝励Ο繧ｸ繧ｧ繧ｯ繝・"C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-silckr\\cmTC_0148b.vcxproj" (譌｢螳壹・繧ｿ繝ｼ繧ｲ繝・ヨ)縲・
+        PrepareForBuild:
+          讒矩\xc2\x80蛹門・蜉帙′譛牙柑縺ｫ縺ｪ縺｣縺ｦ縺・∪縺吶\xc2\x80ゅさ繝ｳ繝代う繝ｩ險ｺ譁ｭ縺ｮ譖ｸ蠑剰ｨｭ螳壹↓縺ｯ繧ｨ繝ｩ繝ｼ髫主ｱ､縺悟渚譏縺輔ｌ縺ｾ縺吶\xc2\x80りｩｳ邏ｰ縺ｫ縺､縺・※縺ｯ縲”ttps://aka.ms/cpp/structured-output 繧貞盾辣ｧ縺励※縺上□縺輔＞縲・
+          繝・ぅ繝ｬ繧ｯ繝医Μ "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-silckr\\Debug\\" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+          繝・ぅ繝ｬ繧ｯ繝医Μ "cmTC_0148b.dir\\Debug\\cmTC_0148b.tlog\\" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+        InitializeBuildStatus:
+          "AlwaysCreate" 縺梧欠螳壹＆繧後◆縺溘ａ "cmTC_0148b.dir\\Debug\\cmTC_0148b.tlog\\unsuccessfulbuild" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+          "cmTC_0148b.dir\\Debug\\cmTC_0148b.tlog\\unsuccessfulbuild" 縺ｮ繧ｿ繝・メ 繧ｿ繧ｹ繧ｯ繧貞ｮ溯｡後＠縺ｦ縺・∪縺吶\xc2\x80・
+        VcpkgTripletSelection:
+          Using triplet "x64-windows" from "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\"
+          Using normalized configuration "Debug"
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /Fo"cmTC_0148b.dir\\Debug\\\\" /Fd"cmTC_0148b.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-4.2\\Modules\\CMakeCXXCompilerABI.cpp"
+          Microsoft(R) C/C++ Optimizing Compiler Version 19.50.35718 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /I"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /Fo"cmTC_0148b.dir\\Debug\\\\" /Fd"cmTC_0148b.dir\\Debug\\vc145.pdb" /external:W1 /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-4.2\\Modules\\CMakeCXXCompilerABI.cpp"
+          CMakeCXXCompilerABI.cpp
+        Link:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-silckr\\Debug\\cmTC_0148b.exe" /INCREMENTAL /ILK:"cmTC_0148b.dir\\Debug\\cmTC_0148b.ilk" /NOLOGO /LIBPATH:"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\debug\\lib" /LIBPATH:"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\debug\\lib\\manual-link" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\debug\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-silckr/Debug/cmTC_0148b.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-silckr/Debug/cmTC_0148b.lib" /MACHINE:X64  /machine:x64 cmTC_0148b.dir\\Debug\\CMakeCXXCompilerABI.obj
+          cmTC_0148b.vcxproj -> C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-silckr\\Debug\\cmTC_0148b.exe
+        AppLocalFromInstalled:
+          pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-silckr\\Debug\\cmTC_0148b.exe" "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\debug\\bin" "cmTC_0148b.dir\\Debug\\cmTC_0148b.tlog\\cmTC_0148b.write.1u.tlog" "cmTC_0148b.dir\\Debug\\vcpkg.applocal.log"
+        FinalizeBuildStatus:
+          繝輔ぃ繧､繝ｫ "cmTC_0148b.dir\\Debug\\cmTC_0148b.tlog\\unsuccessfulbuild" 繧貞炎髯､縺励※縺・∪縺吶\xc2\x80・
+          "cmTC_0148b.dir\\Debug\\cmTC_0148b.tlog\\cmTC_0148b.lastbuildstate" 縺ｮ繧ｿ繝・メ 繧ｿ繧ｹ繧ｯ繧貞ｮ溯｡後＠縺ｦ縺・∪縺吶\xc2\x80・
+        繝励Ο繧ｸ繧ｧ繧ｯ繝・"C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-silckr\\cmTC_0148b.vcxproj" (譌｢螳壹・繧ｿ繝ｼ繧ｲ繝・ヨ) 縺ｮ繝薙Ν繝峨′螳御ｺ・＠縺ｾ縺励◆縲・
+        
+        繝薙Ν繝峨↓謌仙粥縺励∪縺励◆縲・
+            0 蛟九・隴ｦ蜻・
+            0 繧ｨ繝ｩ繝ｼ
+        
+        邨碁℃譎る俣 00:00:01.07
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerABI.cmake:253 (message)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:107 (PROJECT)"
+    message: |
+      Parsed CXX implicit link information:
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|link\\.exe|lld-link(\\.exe)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|"|[0-9]+>[ 	-]*Build:[ 	0-9]+ ms[ 	]*)?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|link\\.exe|lld-link(\\.exe)?))("|,| |$)]
+        linker tool for 'CXX': C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/HostX64/x64/link.exe
+        implicit libs: []
+        implicit objs: []
+        implicit dirs: []
+        implicit fwks: []
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/Internal/CMakeDetermineLinkerId.cmake:38 (message)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerABI.cmake:299 (cmake_determine_linker_id)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:107 (PROJECT)"
+    message: |
+      Running the CXX compiler's linker: "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/HostX64/x64/link.exe" "-v"
+      Microsoft (R) Incremental Linker Version 14.50.35718.0
+      Copyright (C) Microsoft Corporation.  All rights reserved.
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CheckIncludeFile.cmake:174 (try_compile)"
+      - "contrib/zlib/CMakeLists.txt:35 (check_include_file)"
+    checks:
+      - "Looking for sys/types.h"
+    directories:
+      source: "C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-1gyb20"
+      binary: "C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-1gyb20"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/cmake-modules"
+    buildResult:
+      variable: "HAVE_SYS_TYPES_H"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-1gyb20'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_1cf0b.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild 縺ｮ繝舌・繧ｸ繝ｧ繝ｳ 18.0.5+e22287bf1 (.NET Framework)
+        2025/11/25 17:38:37 縺ｫ繝薙Ν繝峨ｒ髢句ｧ九＠縺ｾ縺励◆縲・
+        
+        繝弱・繝・1 荳翫・繝励Ο繧ｸ繧ｧ繧ｯ繝・"C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-1gyb20\\cmTC_1cf0b.vcxproj" (譌｢螳壹・繧ｿ繝ｼ繧ｲ繝・ヨ)縲・
+        PrepareForBuild:
+          讒矩\xc2\x80蛹門・蜉帙′譛牙柑縺ｫ縺ｪ縺｣縺ｦ縺・∪縺吶\xc2\x80ゅさ繝ｳ繝代う繝ｩ險ｺ譁ｭ縺ｮ譖ｸ蠑剰ｨｭ螳壹↓縺ｯ繧ｨ繝ｩ繝ｼ髫主ｱ､縺悟渚譏縺輔ｌ縺ｾ縺吶\xc2\x80りｩｳ邏ｰ縺ｫ縺､縺・※縺ｯ縲”ttps://aka.ms/cpp/structured-output 繧貞盾辣ｧ縺励※縺上□縺輔＞縲・
+          繝・ぅ繝ｬ繧ｯ繝医Μ "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-1gyb20\\Debug\\" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+          繝・ぅ繝ｬ繧ｯ繝医Μ "cmTC_1cf0b.dir\\Debug\\cmTC_1cf0b.tlog\\" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+        InitializeBuildStatus:
+          "AlwaysCreate" 縺梧欠螳壹＆繧後◆縺溘ａ "cmTC_1cf0b.dir\\Debug\\cmTC_1cf0b.tlog\\unsuccessfulbuild" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+          "cmTC_1cf0b.dir\\Debug\\cmTC_1cf0b.tlog\\unsuccessfulbuild" 縺ｮ繧ｿ繝・メ 繧ｿ繧ｹ繧ｯ繧貞ｮ溯｡後＠縺ｦ縺・∪縺吶\xc2\x80・
+        VcpkgTripletSelection:
+          Using triplet "x64-windows" from "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\"
+          Using normalized configuration "Debug"
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_1cf0b.dir\\Debug\\\\" /Fd"cmTC_1cf0b.dir\\Debug\\vc145.pdb" /external:W1 /TC /errorReport:queue "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-1gyb20\\CheckIncludeFile.c"
+          Microsoft(R) C/C++ Optimizing Compiler Version 19.50.35718 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /I"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_1cf0b.dir\\Debug\\\\" /Fd"cmTC_1cf0b.dir\\Debug\\vc145.pdb" /external:W1 /TC /errorReport:queue "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-1gyb20\\CheckIncludeFile.c"
+          CheckIncludeFile.c
+        Link:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-1gyb20\\Debug\\cmTC_1cf0b.exe" /INCREMENTAL /ILK:"cmTC_1cf0b.dir\\Debug\\cmTC_1cf0b.ilk" /NOLOGO /LIBPATH:"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\debug\\lib" /LIBPATH:"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\debug\\lib\\manual-link" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\debug\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-1gyb20/Debug/cmTC_1cf0b.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-1gyb20/Debug/cmTC_1cf0b.lib" /MACHINE:X64  /machine:x64 cmTC_1cf0b.dir\\Debug\\CheckIncludeFile.obj
+          cmTC_1cf0b.vcxproj -> C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-1gyb20\\Debug\\cmTC_1cf0b.exe
+        AppLocalFromInstalled:
+          pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-1gyb20\\Debug\\cmTC_1cf0b.exe" "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\debug\\bin" "cmTC_1cf0b.dir\\Debug\\cmTC_1cf0b.tlog\\cmTC_1cf0b.write.1u.tlog" "cmTC_1cf0b.dir\\Debug\\vcpkg.applocal.log"
+        FinalizeBuildStatus:
+          繝輔ぃ繧､繝ｫ "cmTC_1cf0b.dir\\Debug\\cmTC_1cf0b.tlog\\unsuccessfulbuild" 繧貞炎髯､縺励※縺・∪縺吶\xc2\x80・
+          "cmTC_1cf0b.dir\\Debug\\cmTC_1cf0b.tlog\\cmTC_1cf0b.lastbuildstate" 縺ｮ繧ｿ繝・メ 繧ｿ繧ｹ繧ｯ繧貞ｮ溯｡後＠縺ｦ縺・∪縺吶\xc2\x80・
+        繝励Ο繧ｸ繧ｧ繧ｯ繝・"C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-1gyb20\\cmTC_1cf0b.vcxproj" (譌｢螳壹・繧ｿ繝ｼ繧ｲ繝・ヨ) 縺ｮ繝薙Ν繝峨′螳御ｺ・＠縺ｾ縺励◆縲・
+        
+        繝薙Ν繝峨↓謌仙粥縺励∪縺励◆縲・
+            0 蛟九・隴ｦ蜻・
+            0 繧ｨ繝ｩ繝ｼ
+        
+        邨碁℃譎る俣 00:00:01.10
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CheckIncludeFile.cmake:174 (try_compile)"
+      - "contrib/zlib/CMakeLists.txt:36 (check_include_file)"
+    checks:
+      - "Looking for stdint.h"
+    directories:
+      source: "C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-5x1ujx"
+      binary: "C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-5x1ujx"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/cmake-modules"
+    buildResult:
+      variable: "HAVE_STDINT_H"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-5x1ujx'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_74ddd.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild 縺ｮ繝舌・繧ｸ繝ｧ繝ｳ 18.0.5+e22287bf1 (.NET Framework)
+        2025/11/25 17:38:38 縺ｫ繝薙Ν繝峨ｒ髢句ｧ九＠縺ｾ縺励◆縲・
+        
+        繝弱・繝・1 荳翫・繝励Ο繧ｸ繧ｧ繧ｯ繝・"C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-5x1ujx\\cmTC_74ddd.vcxproj" (譌｢螳壹・繧ｿ繝ｼ繧ｲ繝・ヨ)縲・
+        PrepareForBuild:
+          讒矩\xc2\x80蛹門・蜉帙′譛牙柑縺ｫ縺ｪ縺｣縺ｦ縺・∪縺吶\xc2\x80ゅさ繝ｳ繝代う繝ｩ險ｺ譁ｭ縺ｮ譖ｸ蠑剰ｨｭ螳壹↓縺ｯ繧ｨ繝ｩ繝ｼ髫主ｱ､縺悟渚譏縺輔ｌ縺ｾ縺吶\xc2\x80りｩｳ邏ｰ縺ｫ縺､縺・※縺ｯ縲”ttps://aka.ms/cpp/structured-output 繧貞盾辣ｧ縺励※縺上□縺輔＞縲・
+          繝・ぅ繝ｬ繧ｯ繝医Μ "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-5x1ujx\\Debug\\" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+          繝・ぅ繝ｬ繧ｯ繝医Μ "cmTC_74ddd.dir\\Debug\\cmTC_74ddd.tlog\\" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+        InitializeBuildStatus:
+          "AlwaysCreate" 縺梧欠螳壹＆繧後◆縺溘ａ "cmTC_74ddd.dir\\Debug\\cmTC_74ddd.tlog\\unsuccessfulbuild" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+          "cmTC_74ddd.dir\\Debug\\cmTC_74ddd.tlog\\unsuccessfulbuild" 縺ｮ繧ｿ繝・メ 繧ｿ繧ｹ繧ｯ繧貞ｮ溯｡後＠縺ｦ縺・∪縺吶\xc2\x80・
+        VcpkgTripletSelection:
+          Using triplet "x64-windows" from "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\"
+          Using normalized configuration "Debug"
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_74ddd.dir\\Debug\\\\" /Fd"cmTC_74ddd.dir\\Debug\\vc145.pdb" /external:W1 /TC /errorReport:queue "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-5x1ujx\\CheckIncludeFile.c"
+          Microsoft(R) C/C++ Optimizing Compiler Version 19.50.35718 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /I"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_74ddd.dir\\Debug\\\\" /Fd"cmTC_74ddd.dir\\Debug\\vc145.pdb" /external:W1 /TC /errorReport:queue "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-5x1ujx\\CheckIncludeFile.c"
+          CheckIncludeFile.c
+        Link:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-5x1ujx\\Debug\\cmTC_74ddd.exe" /INCREMENTAL /ILK:"cmTC_74ddd.dir\\Debug\\cmTC_74ddd.ilk" /NOLOGO /LIBPATH:"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\debug\\lib" /LIBPATH:"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\debug\\lib\\manual-link" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\debug\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-5x1ujx/Debug/cmTC_74ddd.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-5x1ujx/Debug/cmTC_74ddd.lib" /MACHINE:X64  /machine:x64 cmTC_74ddd.dir\\Debug\\CheckIncludeFile.obj
+          cmTC_74ddd.vcxproj -> C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-5x1ujx\\Debug\\cmTC_74ddd.exe
+        AppLocalFromInstalled:
+          pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-5x1ujx\\Debug\\cmTC_74ddd.exe" "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\debug\\bin" "cmTC_74ddd.dir\\Debug\\cmTC_74ddd.tlog\\cmTC_74ddd.write.1u.tlog" "cmTC_74ddd.dir\\Debug\\vcpkg.applocal.log"
+        FinalizeBuildStatus:
+          繝輔ぃ繧､繝ｫ "cmTC_74ddd.dir\\Debug\\cmTC_74ddd.tlog\\unsuccessfulbuild" 繧貞炎髯､縺励※縺・∪縺吶\xc2\x80・
+          "cmTC_74ddd.dir\\Debug\\cmTC_74ddd.tlog\\cmTC_74ddd.lastbuildstate" 縺ｮ繧ｿ繝・メ 繧ｿ繧ｹ繧ｯ繧貞ｮ溯｡後＠縺ｦ縺・∪縺吶\xc2\x80・
+        繝励Ο繧ｸ繧ｧ繧ｯ繝・"C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-5x1ujx\\cmTC_74ddd.vcxproj" (譌｢螳壹・繧ｿ繝ｼ繧ｲ繝・ヨ) 縺ｮ繝薙Ν繝峨′螳御ｺ・＠縺ｾ縺励◆縲・
+        
+        繝薙Ν繝峨↓謌仙粥縺励∪縺励◆縲・
+            0 蛟九・隴ｦ蜻・
+            0 繧ｨ繝ｩ繝ｼ
+        
+        邨碁℃譎る俣 00:00:01.09
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CheckIncludeFile.cmake:174 (try_compile)"
+      - "contrib/zlib/CMakeLists.txt:37 (check_include_file)"
+    checks:
+      - "Looking for stddef.h"
+    directories:
+      source: "C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-6g1p1b"
+      binary: "C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-6g1p1b"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/cmake-modules"
+    buildResult:
+      variable: "HAVE_STDDEF_H"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-6g1p1b'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_3c50e.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild 縺ｮ繝舌・繧ｸ繝ｧ繝ｳ 18.0.5+e22287bf1 (.NET Framework)
+        2025/11/25 17:38:40 縺ｫ繝薙Ν繝峨ｒ髢句ｧ九＠縺ｾ縺励◆縲・
+        
+        繝弱・繝・1 荳翫・繝励Ο繧ｸ繧ｧ繧ｯ繝・"C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-6g1p1b\\cmTC_3c50e.vcxproj" (譌｢螳壹・繧ｿ繝ｼ繧ｲ繝・ヨ)縲・
+        PrepareForBuild:
+          讒矩\xc2\x80蛹門・蜉帙′譛牙柑縺ｫ縺ｪ縺｣縺ｦ縺・∪縺吶\xc2\x80ゅさ繝ｳ繝代う繝ｩ險ｺ譁ｭ縺ｮ譖ｸ蠑剰ｨｭ螳壹↓縺ｯ繧ｨ繝ｩ繝ｼ髫主ｱ､縺悟渚譏縺輔ｌ縺ｾ縺吶\xc2\x80りｩｳ邏ｰ縺ｫ縺､縺・※縺ｯ縲”ttps://aka.ms/cpp/structured-output 繧貞盾辣ｧ縺励※縺上□縺輔＞縲・
+          繝・ぅ繝ｬ繧ｯ繝医Μ "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-6g1p1b\\Debug\\" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+          繝・ぅ繝ｬ繧ｯ繝医Μ "cmTC_3c50e.dir\\Debug\\cmTC_3c50e.tlog\\" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+        InitializeBuildStatus:
+          "AlwaysCreate" 縺梧欠螳壹＆繧後◆縺溘ａ "cmTC_3c50e.dir\\Debug\\cmTC_3c50e.tlog\\unsuccessfulbuild" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+          "cmTC_3c50e.dir\\Debug\\cmTC_3c50e.tlog\\unsuccessfulbuild" 縺ｮ繧ｿ繝・メ 繧ｿ繧ｹ繧ｯ繧貞ｮ溯｡後＠縺ｦ縺・∪縺吶\xc2\x80・
+        VcpkgTripletSelection:
+          Using triplet "x64-windows" from "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\"
+          Using normalized configuration "Debug"
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_3c50e.dir\\Debug\\\\" /Fd"cmTC_3c50e.dir\\Debug\\vc145.pdb" /external:W1 /TC /errorReport:queue "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-6g1p1b\\CheckIncludeFile.c"
+          Microsoft(R) C/C++ Optimizing Compiler Version 19.50.35718 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /I"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_3c50e.dir\\Debug\\\\" /Fd"cmTC_3c50e.dir\\Debug\\vc145.pdb" /external:W1 /TC /errorReport:queue "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-6g1p1b\\CheckIncludeFile.c"
+          CheckIncludeFile.c
+        Link:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-6g1p1b\\Debug\\cmTC_3c50e.exe" /INCREMENTAL /ILK:"cmTC_3c50e.dir\\Debug\\cmTC_3c50e.ilk" /NOLOGO /LIBPATH:"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\debug\\lib" /LIBPATH:"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\debug\\lib\\manual-link" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\debug\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-6g1p1b/Debug/cmTC_3c50e.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-6g1p1b/Debug/cmTC_3c50e.lib" /MACHINE:X64  /machine:x64 cmTC_3c50e.dir\\Debug\\CheckIncludeFile.obj
+          cmTC_3c50e.vcxproj -> C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-6g1p1b\\Debug\\cmTC_3c50e.exe
+        AppLocalFromInstalled:
+          pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-6g1p1b\\Debug\\cmTC_3c50e.exe" "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\debug\\bin" "cmTC_3c50e.dir\\Debug\\cmTC_3c50e.tlog\\cmTC_3c50e.write.1u.tlog" "cmTC_3c50e.dir\\Debug\\vcpkg.applocal.log"
+        FinalizeBuildStatus:
+          繝輔ぃ繧､繝ｫ "cmTC_3c50e.dir\\Debug\\cmTC_3c50e.tlog\\unsuccessfulbuild" 繧貞炎髯､縺励※縺・∪縺吶\xc2\x80・
+          "cmTC_3c50e.dir\\Debug\\cmTC_3c50e.tlog\\cmTC_3c50e.lastbuildstate" 縺ｮ繧ｿ繝・メ 繧ｿ繧ｹ繧ｯ繧貞ｮ溯｡後＠縺ｦ縺・∪縺吶\xc2\x80・
+        繝励Ο繧ｸ繧ｧ繧ｯ繝・"C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-6g1p1b\\cmTC_3c50e.vcxproj" (譌｢螳壹・繧ｿ繝ｼ繧ｲ繝・ヨ) 縺ｮ繝薙Ν繝峨′螳御ｺ・＠縺ｾ縺励◆縲・
+        
+        繝薙Ν繝峨↓謌仙粥縺励∪縺励◆縲・
+            0 蛟九・隴ｦ蜻・
+            0 繧ｨ繝ｩ繝ｼ
+        
+        邨碁℃譎る俣 00:00:01.09
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CheckTypeSize.cmake:348 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CheckTypeSize.cmake:481 (__check_type_size_impl)"
+      - "contrib/zlib/CMakeLists.txt:55 (check_type_size)"
+    checks:
+      - "Check size of off64_t"
+    directories:
+      source: "C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-a2o8j1"
+      binary: "C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-a2o8j1"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/cmake-modules"
+    buildResult:
+      variable: "HAVE_OFF64_T"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-a2o8j1'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_b2bc1.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild 縺ｮ繝舌・繧ｸ繝ｧ繝ｳ 18.0.5+e22287bf1 (.NET Framework)
+        2025/11/25 17:38:41 縺ｫ繝薙Ν繝峨ｒ髢句ｧ九＠縺ｾ縺励◆縲・
+        
+        繝弱・繝・1 荳翫・繝励Ο繧ｸ繧ｧ繧ｯ繝・"C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-a2o8j1\\cmTC_b2bc1.vcxproj" (譌｢螳壹・繧ｿ繝ｼ繧ｲ繝・ヨ)縲・
+        PrepareForBuild:
+          讒矩\xc2\x80蛹門・蜉帙′譛牙柑縺ｫ縺ｪ縺｣縺ｦ縺・∪縺吶\xc2\x80ゅさ繝ｳ繝代う繝ｩ險ｺ譁ｭ縺ｮ譖ｸ蠑剰ｨｭ螳壹↓縺ｯ繧ｨ繝ｩ繝ｼ髫主ｱ､縺悟渚譏縺輔ｌ縺ｾ縺吶\xc2\x80りｩｳ邏ｰ縺ｫ縺､縺・※縺ｯ縲”ttps://aka.ms/cpp/structured-output 繧貞盾辣ｧ縺励※縺上□縺輔＞縲・
+          繝・ぅ繝ｬ繧ｯ繝医Μ "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-a2o8j1\\Debug\\" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+          繝・ぅ繝ｬ繧ｯ繝医Μ "cmTC_b2bc1.dir\\Debug\\cmTC_b2bc1.tlog\\" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+        InitializeBuildStatus:
+          "AlwaysCreate" 縺梧欠螳壹＆繧後◆縺溘ａ "cmTC_b2bc1.dir\\Debug\\cmTC_b2bc1.tlog\\unsuccessfulbuild" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+          "cmTC_b2bc1.dir\\Debug\\cmTC_b2bc1.tlog\\unsuccessfulbuild" 縺ｮ繧ｿ繝・メ 繧ｿ繧ｹ繧ｯ繧貞ｮ溯｡後＠縺ｦ縺・∪縺吶\xc2\x80・
+        VcpkgTripletSelection:
+          Using triplet "x64-windows" from "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\"
+          Using normalized configuration "Debug"
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _LARGEFILE64_SOURCE=1 /D HAVE_SYS_TYPES_H /D HAVE_STDINT_H /D HAVE_STDDEF_H /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_b2bc1.dir\\Debug\\\\" /Fd"cmTC_b2bc1.dir\\Debug\\vc145.pdb" /external:W1 /TC /errorReport:queue "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-a2o8j1\\OFF64_T.c"
+          Microsoft(R) C/C++ Optimizing Compiler Version 19.50.35718 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /I"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _LARGEFILE64_SOURCE=1 /D HAVE_SYS_TYPES_H /D HAVE_STDINT_H /D HAVE_STDDEF_H /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_b2bc1.dir\\Debug\\\\" /Fd"cmTC_b2bc1.dir\\Debug\\vc145.pdb" /external:W1 /TC /errorReport:queue "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-a2o8j1\\OFF64_T.c"
+          OFF64_T.c
+        C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-a2o8j1\\OFF64_T.c(29,12): error C2065: 'off64_t': 螳夂ｾｩ縺輔ｌ縺ｦ縺・↑縺・ｭ伜挨蟄舌〒縺吶\xc2\x80・[C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-a2o8j1\\cmTC_b2bc1.vcxproj]
+        C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-a2o8j1\\OFF64_T.c(30,12): error C2065: 'off64_t': 螳夂ｾｩ縺輔ｌ縺ｦ縺・↑縺・ｭ伜挨蟄舌〒縺吶\xc2\x80・[C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-a2o8j1\\cmTC_b2bc1.vcxproj]
+        C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-a2o8j1\\OFF64_T.c(31,12): error C2065: 'off64_t': 螳夂ｾｩ縺輔ｌ縺ｦ縺・↑縺・ｭ伜挨蟄舌〒縺吶\xc2\x80・[C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-a2o8j1\\cmTC_b2bc1.vcxproj]
+        C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-a2o8j1\\OFF64_T.c(32,12): error C2065: 'off64_t': 螳夂ｾｩ縺輔ｌ縺ｦ縺・↑縺・ｭ伜挨蟄舌〒縺吶\xc2\x80・[C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-a2o8j1\\cmTC_b2bc1.vcxproj]
+        C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-a2o8j1\\OFF64_T.c(33,12): error C2065: 'off64_t': 螳夂ｾｩ縺輔ｌ縺ｦ縺・↑縺・ｭ伜挨蟄舌〒縺吶\xc2\x80・[C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-a2o8j1\\cmTC_b2bc1.vcxproj]
+        繝励Ο繧ｸ繧ｧ繧ｯ繝・"C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-a2o8j1\\cmTC_b2bc1.vcxproj" (譌｢螳壹・繧ｿ繝ｼ繧ｲ繝・ヨ) 縺ｮ繝薙Ν繝峨′邨ゆｺ・＠縺ｾ縺励◆ -- 螟ｱ謨励\xc2\x80・
+        
+        繝薙Ν繝峨↓螟ｱ謨励＠縺ｾ縺励◆縲・
+        
+        "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-a2o8j1\\cmTC_b2bc1.vcxproj" (譌｢螳壹・繧ｿ繝ｼ繧ｲ繝・ヨ) (1) ->
+        (ClCompile 繧ｿ繝ｼ繧ｲ繝・ヨ) -> 
+          C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-a2o8j1\\OFF64_T.c(29,12): error C2065: 'off64_t': 螳夂ｾｩ縺輔ｌ縺ｦ縺・↑縺・ｭ伜挨蟄舌〒縺吶\xc2\x80・[C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-a2o8j1\\cmTC_b2bc1.vcxproj]
+          C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-a2o8j1\\OFF64_T.c(30,12): error C2065: 'off64_t': 螳夂ｾｩ縺輔ｌ縺ｦ縺・↑縺・ｭ伜挨蟄舌〒縺吶\xc2\x80・[C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-a2o8j1\\cmTC_b2bc1.vcxproj]
+          C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-a2o8j1\\OFF64_T.c(31,12): error C2065: 'off64_t': 螳夂ｾｩ縺輔ｌ縺ｦ縺・↑縺・ｭ伜挨蟄舌〒縺吶\xc2\x80・[C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-a2o8j1\\cmTC_b2bc1.vcxproj]
+          C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-a2o8j1\\OFF64_T.c(32,12): error C2065: 'off64_t': 螳夂ｾｩ縺輔ｌ縺ｦ縺・↑縺・ｭ伜挨蟄舌〒縺吶\xc2\x80・[C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-a2o8j1\\cmTC_b2bc1.vcxproj]
+          C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-a2o8j1\\OFF64_T.c(33,12): error C2065: 'off64_t': 螳夂ｾｩ縺輔ｌ縺ｦ縺・↑縺・ｭ伜挨蟄舌〒縺吶\xc2\x80・[C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-a2o8j1\\cmTC_b2bc1.vcxproj]
+        
+            0 蛟九・隴ｦ蜻・
+            5 繧ｨ繝ｩ繝ｼ
+        
+        邨碁℃譎る俣 00:00:00.29
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CheckFunctionExists.cmake:167 (try_compile)"
+      - "contrib/zlib/CMakeLists.txt:64 (check_function_exists)"
+    checks:
+      - "Looking for fseeko"
+    directories:
+      source: "C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-rt3a2j"
+      binary: "C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-rt3a2j"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/cmake-modules"
+    buildResult:
+      variable: "HAVE_FSEEKO"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-rt3a2j'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_5e791.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild 縺ｮ繝舌・繧ｸ繝ｧ繝ｳ 18.0.5+e22287bf1 (.NET Framework)
+        2025/11/25 17:38:42 縺ｫ繝薙Ν繝峨ｒ髢句ｧ九＠縺ｾ縺励◆縲・
+        
+        繝弱・繝・1 荳翫・繝励Ο繧ｸ繧ｧ繧ｯ繝・"C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-rt3a2j\\cmTC_5e791.vcxproj" (譌｢螳壹・繧ｿ繝ｼ繧ｲ繝・ヨ)縲・
+        PrepareForBuild:
+          讒矩\xc2\x80蛹門・蜉帙′譛牙柑縺ｫ縺ｪ縺｣縺ｦ縺・∪縺吶\xc2\x80ゅさ繝ｳ繝代う繝ｩ險ｺ譁ｭ縺ｮ譖ｸ蠑剰ｨｭ螳壹↓縺ｯ繧ｨ繝ｩ繝ｼ髫主ｱ､縺悟渚譏縺輔ｌ縺ｾ縺吶\xc2\x80りｩｳ邏ｰ縺ｫ縺､縺・※縺ｯ縲”ttps://aka.ms/cpp/structured-output 繧貞盾辣ｧ縺励※縺上□縺輔＞縲・
+          繝・ぅ繝ｬ繧ｯ繝医Μ "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-rt3a2j\\Debug\\" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+          繝・ぅ繝ｬ繧ｯ繝医Μ "cmTC_5e791.dir\\Debug\\cmTC_5e791.tlog\\" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+        InitializeBuildStatus:
+          "AlwaysCreate" 縺梧欠螳壹＆繧後◆縺溘ａ "cmTC_5e791.dir\\Debug\\cmTC_5e791.tlog\\unsuccessfulbuild" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+          "cmTC_5e791.dir\\Debug\\cmTC_5e791.tlog\\unsuccessfulbuild" 縺ｮ繧ｿ繝・メ 繧ｿ繧ｹ繧ｯ繧貞ｮ溯｡後＠縺ｦ縺・∪縺吶\xc2\x80・
+        VcpkgTripletSelection:
+          Using triplet "x64-windows" from "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\"
+          Using normalized configuration "Debug"
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=fseeko /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_5e791.dir\\Debug\\\\" /Fd"cmTC_5e791.dir\\Debug\\vc145.pdb" /external:W1 /TC /errorReport:queue "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-rt3a2j\\CheckFunctionExists.c"
+          Microsoft(R) C/C++ Optimizing Compiler Version 19.50.35718 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /I"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=fseeko /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_5e791.dir\\Debug\\\\" /Fd"cmTC_5e791.dir\\Debug\\vc145.pdb" /external:W1 /TC /errorReport:queue "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-rt3a2j\\CheckFunctionExists.c"
+          CheckFunctionExists.c
+        Link:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-rt3a2j\\Debug\\cmTC_5e791.exe" /INCREMENTAL /ILK:"cmTC_5e791.dir\\Debug\\cmTC_5e791.ilk" /NOLOGO /LIBPATH:"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\debug\\lib" /LIBPATH:"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\debug\\lib\\manual-link" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\debug\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-rt3a2j/Debug/cmTC_5e791.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-rt3a2j/Debug/cmTC_5e791.lib" /MACHINE:X64  /machine:x64 cmTC_5e791.dir\\Debug\\CheckFunctionExists.obj
+        CheckFunctionExists.obj : error LNK2019: 譛ｪ隗｣豎ｺ縺ｮ螟夜Κ繧ｷ繝ｳ繝懊Ν fseeko 縺碁未謨ｰ main 縺ｧ蜿ら・縺輔ｌ縺ｾ縺励◆ [C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-rt3a2j\\cmTC_5e791.vcxproj]
+        C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-rt3a2j\\Debug\\cmTC_5e791.exe : fatal error LNK1120: 1 莉ｶ縺ｮ譛ｪ隗｣豎ｺ縺ｮ螟夜Κ蜿ら・ [C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-rt3a2j\\cmTC_5e791.vcxproj]
+        繝励Ο繧ｸ繧ｧ繧ｯ繝・"C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-rt3a2j\\cmTC_5e791.vcxproj" (譌｢螳壹・繧ｿ繝ｼ繧ｲ繝・ヨ) 縺ｮ繝薙Ν繝峨′邨ゆｺ・＠縺ｾ縺励◆ -- 螟ｱ謨励\xc2\x80・
+        
+        繝薙Ν繝峨↓螟ｱ謨励＠縺ｾ縺励◆縲・
+        
+        "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-rt3a2j\\cmTC_5e791.vcxproj" (譌｢螳壹・繧ｿ繝ｼ繧ｲ繝・ヨ) (1) ->
+        (Link 繧ｿ繝ｼ繧ｲ繝・ヨ) -> 
+          CheckFunctionExists.obj : error LNK2019: 譛ｪ隗｣豎ｺ縺ｮ螟夜Κ繧ｷ繝ｳ繝懊Ν fseeko 縺碁未謨ｰ main 縺ｧ蜿ら・縺輔ｌ縺ｾ縺励◆ [C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-rt3a2j\\cmTC_5e791.vcxproj]
+          C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-rt3a2j\\Debug\\cmTC_5e791.exe : fatal error LNK1120: 1 莉ｶ縺ｮ譛ｪ隗｣豎ｺ縺ｮ螟夜Κ蜿ら・ [C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-rt3a2j\\cmTC_5e791.vcxproj]
+        
+            0 蛟九・隴ｦ蜻・
+            2 繧ｨ繝ｩ繝ｼ
+        
+        邨碁℃譎る俣 00:00:00.41
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.2/Modules/CheckIncludeFile.cmake:174 (try_compile)"
+      - "contrib/zlib/CMakeLists.txt:72 (check_include_file)"
+    checks:
+      - "Looking for unistd.h"
+    directories:
+      source: "C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-ge2ajh"
+      binary: "C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-ge2ajh"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/cmake-modules"
+    buildResult:
+      variable: "Z_HAVE_UNISTD_H"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/CMakeFiles/CMakeScratch/TryCompile-ge2ajh'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/18/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_4659c.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=18.0 /v:n
+        MSBuild 縺ｮ繝舌・繧ｸ繝ｧ繝ｳ 18.0.5+e22287bf1 (.NET Framework)
+        2025/11/25 17:38:42 縺ｫ繝薙Ν繝峨ｒ髢句ｧ九＠縺ｾ縺励◆縲・
+        
+        繝弱・繝・1 荳翫・繝励Ο繧ｸ繧ｧ繧ｯ繝・"C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-ge2ajh\\cmTC_4659c.vcxproj" (譌｢螳壹・繧ｿ繝ｼ繧ｲ繝・ヨ)縲・
+        PrepareForBuild:
+          讒矩\xc2\x80蛹門・蜉帙′譛牙柑縺ｫ縺ｪ縺｣縺ｦ縺・∪縺吶\xc2\x80ゅさ繝ｳ繝代う繝ｩ險ｺ譁ｭ縺ｮ譖ｸ蠑剰ｨｭ螳壹↓縺ｯ繧ｨ繝ｩ繝ｼ髫主ｱ､縺悟渚譏縺輔ｌ縺ｾ縺吶\xc2\x80りｩｳ邏ｰ縺ｫ縺､縺・※縺ｯ縲”ttps://aka.ms/cpp/structured-output 繧貞盾辣ｧ縺励※縺上□縺輔＞縲・
+          繝・ぅ繝ｬ繧ｯ繝医Μ "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-ge2ajh\\Debug\\" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+          繝・ぅ繝ｬ繧ｯ繝医Μ "cmTC_4659c.dir\\Debug\\cmTC_4659c.tlog\\" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+        InitializeBuildStatus:
+          "AlwaysCreate" 縺梧欠螳壹＆繧後◆縺溘ａ "cmTC_4659c.dir\\Debug\\cmTC_4659c.tlog\\unsuccessfulbuild" 繧剃ｽ懈・縺励※縺・∪縺吶\xc2\x80・
+          "cmTC_4659c.dir\\Debug\\cmTC_4659c.tlog\\unsuccessfulbuild" 縺ｮ繧ｿ繝・メ 繧ｿ繧ｹ繧ｯ繧貞ｮ溯｡後＠縺ｦ縺・∪縺吶\xc2\x80・
+        VcpkgTripletSelection:
+          Using triplet "x64-windows" from "C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\"
+          Using normalized configuration "Debug"
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_4659c.dir\\Debug\\\\" /Fd"cmTC_4659c.dir\\Debug\\vc145.pdb" /external:W1 /TC /errorReport:queue "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-ge2ajh\\CheckIncludeFile.c"
+          Microsoft(R) C/C++ Optimizing Compiler Version 19.50.35718 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /I"C:\\Users\\Unoryuto\\Documents\\GitHub\\UnoEngine\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_4659c.dir\\Debug\\\\" /Fd"cmTC_4659c.dir\\Debug\\vc145.pdb" /external:W1 /TC /errorReport:queue "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-ge2ajh\\CheckIncludeFile.c"
+          CheckIncludeFile.c
+        C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-ge2ajh\\CheckIncludeFile.c(1,10): error C1083: include 繝輔ぃ繧､繝ｫ繧帝幕縺代∪縺帙ｓ縲・unistd.h':No such file or directory [C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-ge2ajh\\cmTC_4659c.vcxproj]
+        繝励Ο繧ｸ繧ｧ繧ｯ繝・"C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-ge2ajh\\cmTC_4659c.vcxproj" (譌｢螳壹・繧ｿ繝ｼ繧ｲ繝・ヨ) 縺ｮ繝薙Ν繝峨′邨ゆｺ・＠縺ｾ縺励◆ -- 螟ｱ謨励\xc2\x80・
+        
+        繝薙Ν繝峨↓螟ｱ謨励＠縺ｾ縺励◆縲・
+        
+        "C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-ge2ajh\\cmTC_4659c.vcxproj" (譌｢螳壹・繧ｿ繝ｼ繧ｲ繝・ヨ) (1) ->
+        (ClCompile 繧ｿ繝ｼ繧ｲ繝・ヨ) -> 
+          C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-ge2ajh\\CheckIncludeFile.c(1,10): error C1083: include 繝輔ぃ繧､繝ｫ繧帝幕縺代∪縺帙ｓ縲・unistd.h':No such file or directory [C:\\Users\\Unoryuto\\Downloads\\assimp-6.0.2\\assimp-6.0.2\\bulid\\fbxbuild\\CMakeFiles\\CMakeScratch\\TryCompile-ge2ajh\\cmTC_4659c.vcxproj]
+        
+            0 蛟九・隴ｦ蜻・
+            1 繧ｨ繝ｩ繝ｼ
+        
+        邨碁℃譎る俣 00:00:00.27
+        
+      exitCode: 1
+...

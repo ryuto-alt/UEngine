@@ -1,0 +1,9 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/cmake_install.cmake",
+		"C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/contrib/zlib/cmake_install.cmake",
+		"C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/code/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

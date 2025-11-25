@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\CMakeFiles\873b38aefa9df168565da57c5510340c\INSTALL_force.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{DBB57D3F-4546-36F8-8E58-CFD00734BAAE}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

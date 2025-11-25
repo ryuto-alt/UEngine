@@ -1,0 +1,96 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib\adler32.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib\compress.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib\crc32.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib\deflate.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib\gzclose.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib\gzlib.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib\gzread.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib\gzwrite.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib\inflate.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib\infback.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib\inftrees.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib\inffast.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib\trees.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib\uncompr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib\zutil.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\contrib\zlib\zconf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib\zlib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib\crc32.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib\deflate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib\gzguts.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib\inffast.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib\inffixed.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib\inflate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib\inftrees.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib\trees.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib\zutil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{154D1BA7-ABDF-313E-8233-A145D87AFAB8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{40BA6BC6-3835-3358-92D4-11B3F6DC6341}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

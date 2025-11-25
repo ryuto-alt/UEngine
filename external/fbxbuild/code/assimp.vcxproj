@@ -1,0 +1,747 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{A98A8C1D-80CE-3433-AA47-442593EB9B4B}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>assimp</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\bin\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">assimp.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">assimp-vc145-mtd</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.dll</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\bin\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">assimp.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">assimp-vc145-mt</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.dll</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\bin\MinSizeRel\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">assimp.dir\MinSizeRel\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">assimp-vc145-mt</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.dll</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\bin\RelWithDebInfo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">assimp.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">assimp-vc145-mt</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.dll</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</GenerateManifest>
+  </PropertyGroup>
+  <PropertyGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\.;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\contrib\zlib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\pugixml\src;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\utf8cpp\source;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\rapidjson\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\unzip;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\openddlparser\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\code\..\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /bigobj /source-charset:utf-8</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <BufferSecurityCheck></BufferSecurityCheck>
+      <CallingConvention></CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4244</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FloatingPointModel></FloatingPointModel>
+      <ForceConformanceInForLoopScope></ForceConformanceInForLoopScope>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_DEBUG;ASSIMP_BUILD_DLL_EXPORT;ASSIMP_BUILD_NO_M3D_IMPORTER;ASSIMP_BUILD_NO_M3D_EXPORTER;ASSIMP_BUILD_NO_VRML_IMPORTER;WIN32_LEAN_AND_MEAN;UNICODE;_UNICODE;ASSIMP_BUILD_NO_C4D_IMPORTER;ASSIMP_BUILD_NO_AMF_IMPORTER;ASSIMP_BUILD_NO_3DS_IMPORTER;ASSIMP_BUILD_NO_AC_IMPORTER;ASSIMP_BUILD_NO_ASE_IMPORTER;ASSIMP_BUILD_NO_ASSBIN_IMPORTER;ASSIMP_BUILD_NO_B3D_IMPORTER;ASSIMP_BUILD_NO_BVH_IMPORTER;ASSIMP_BUILD_NO_COLLADA_IMPORTER;ASSIMP_BUILD_NO_DXF_IMPORTER;ASSIMP_BUILD_NO_CSM_IMPORTER;ASSIMP_BUILD_NO_HMP_IMPORTER;ASSIMP_BUILD_NO_IRRMESH_IMPORTER;ASSIMP_BUILD_NO_IQM_IMPORTER;ASSIMP_BUILD_NO_IRR_IMPORTER;ASSIMP_BUILD_NO_LWO_IMPORTER;ASSIMP_BUILD_NO_LWS_IMPORTER;ASSIMP_BUILD_NO_MD2_IMPORTER;ASSIMP_BUILD_NO_MD3_IMPORTER;ASSIMP_BUILD_NO_MD5_IMPORTER;ASSIMP_BUILD_NO_MDC_IMPORTER;ASSIMP_BUILD_NO_MDL_IMPORTER;ASSIMP_BUILD_NO_NFF_IMPORTER;ASSIMP_BUILD_NO_NDO_IMPORTER;ASSIMP_BUILD_NO_OFF_IMPORTER;ASSIMP_BUILD_NO_OGRE_IMPORTER;ASSIMP_BUILD_NO_OPENGEX_IMPORTER;ASSIMP_BUILD_NO_PLY_IMPORTER;ASSIMP_BUILD_NO_MS3D_IMPORTER;ASSIMP_BUILD_NO_COB_IMPORTER;ASSIMP_BUILD_NO_BLEND_IMPORTER;ASSIMP_BUILD_NO_IFC_IMPORTER;ASSIMP_BUILD_NO_XGL_IMPORTER;ASSIMP_BUILD_NO_OPENGEX_EXPORTER;ASSIMP_BUILD_NO_PLY_EXPORTER;ASSIMP_BUILD_NO_3DS_EXPORTER;ASSIMP_BUILD_NO_ASSBIN_EXPORTER;ASSIMP_BUILD_NO_ASSXML_EXPORTER;ASSIMP_BUILD_NO_COLLADA_EXPORTER;ASSIMP_BUILD_NO_STL_EXPORTER;ASSIMP_BUILD_NO_X_EXPORTER;ASSIMP_BUILD_NO_X3D_EXPORTER;ASSIMP_BUILD_NO_3MF_EXPORTER;ASSIMP_BUILD_NO_PBRT_EXPORTER;ASSIMP_BUILD_NO_ASSJSON_EXPORTER;ASSIMP_BUILD_NO_STEP_EXPORTER;ASSIMP_BUILD_NO_Q3D_IMPORTER;ASSIMP_BUILD_NO_Q3BSP_IMPORTER;ASSIMP_BUILD_NO_RAW_IMPORTER;ASSIMP_BUILD_NO_SIB_IMPORTER;ASSIMP_BUILD_NO_SMD_IMPORTER;ASSIMP_BUILD_NO_STL_IMPORTER;ASSIMP_BUILD_NO_TERRAGEN_IMPORTER;ASSIMP_BUILD_NO_3D_IMPORTER;ASSIMP_BUILD_NO_USD_IMPORTER;ASSIMP_BUILD_NO_X_IMPORTER;ASSIMP_BUILD_NO_X3D_IMPORTER;ASSIMP_BUILD_NO_3MF_IMPORTER;ASSIMP_BUILD_NO_MMD_IMPORTER;ASSIMP_IMPORTER_GLTF_USE_OPEN3DGC=1;RAPIDJSON_HAS_STDSTRING=1;RAPIDJSON_NOMEMBERITERATORCLASS;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;OPENDDLPARSER_BUILD;CMAKE_INTDIR="Debug";assimp_EXPORTS</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;ASSIMP_BUILD_DLL_EXPORT;ASSIMP_BUILD_NO_M3D_IMPORTER;ASSIMP_BUILD_NO_M3D_EXPORTER;ASSIMP_BUILD_NO_VRML_IMPORTER;WIN32_LEAN_AND_MEAN;UNICODE;_UNICODE;ASSIMP_BUILD_NO_C4D_IMPORTER;ASSIMP_BUILD_NO_AMF_IMPORTER;ASSIMP_BUILD_NO_3DS_IMPORTER;ASSIMP_BUILD_NO_AC_IMPORTER;ASSIMP_BUILD_NO_ASE_IMPORTER;ASSIMP_BUILD_NO_ASSBIN_IMPORTER;ASSIMP_BUILD_NO_B3D_IMPORTER;ASSIMP_BUILD_NO_BVH_IMPORTER;ASSIMP_BUILD_NO_COLLADA_IMPORTER;ASSIMP_BUILD_NO_DXF_IMPORTER;ASSIMP_BUILD_NO_CSM_IMPORTER;ASSIMP_BUILD_NO_HMP_IMPORTER;ASSIMP_BUILD_NO_IRRMESH_IMPORTER;ASSIMP_BUILD_NO_IQM_IMPORTER;ASSIMP_BUILD_NO_IRR_IMPORTER;ASSIMP_BUILD_NO_LWO_IMPORTER;ASSIMP_BUILD_NO_LWS_IMPORTER;ASSIMP_BUILD_NO_MD2_IMPORTER;ASSIMP_BUILD_NO_MD3_IMPORTER;ASSIMP_BUILD_NO_MD5_IMPORTER;ASSIMP_BUILD_NO_MDC_IMPORTER;ASSIMP_BUILD_NO_MDL_IMPORTER;ASSIMP_BUILD_NO_NFF_IMPORTER;ASSIMP_BUILD_NO_NDO_IMPORTER;ASSIMP_BUILD_NO_OFF_IMPORTER;ASSIMP_BUILD_NO_OGRE_IMPORTER;ASSIMP_BUILD_NO_OPENGEX_IMPORTER;ASSIMP_BUILD_NO_PLY_IMPORTER;ASSIMP_BUILD_NO_MS3D_IMPORTER;ASSIMP_BUILD_NO_COB_IMPORTER;ASSIMP_BUILD_NO_BLEND_IMPORTER;ASSIMP_BUILD_NO_IFC_IMPORTER;ASSIMP_BUILD_NO_XGL_IMPORTER;ASSIMP_BUILD_NO_OPENGEX_EXPORTER;ASSIMP_BUILD_NO_PLY_EXPORTER;ASSIMP_BUILD_NO_3DS_EXPORTER;ASSIMP_BUILD_NO_ASSBIN_EXPORTER;ASSIMP_BUILD_NO_ASSXML_EXPORTER;ASSIMP_BUILD_NO_COLLADA_EXPORTER;ASSIMP_BUILD_NO_STL_EXPORTER;ASSIMP_BUILD_NO_X_EXPORTER;ASSIMP_BUILD_NO_X3D_EXPORTER;ASSIMP_BUILD_NO_3MF_EXPORTER;ASSIMP_BUILD_NO_PBRT_EXPORTER;ASSIMP_BUILD_NO_ASSJSON_EXPORTER;ASSIMP_BUILD_NO_STEP_EXPORTER;ASSIMP_BUILD_NO_Q3D_IMPORTER;ASSIMP_BUILD_NO_Q3BSP_IMPORTER;ASSIMP_BUILD_NO_RAW_IMPORTER;ASSIMP_BUILD_NO_SIB_IMPORTER;ASSIMP_BUILD_NO_SMD_IMPORTER;ASSIMP_BUILD_NO_STL_IMPORTER;ASSIMP_BUILD_NO_TERRAGEN_IMPORTER;ASSIMP_BUILD_NO_3D_IMPORTER;ASSIMP_BUILD_NO_USD_IMPORTER;ASSIMP_BUILD_NO_X_IMPORTER;ASSIMP_BUILD_NO_X3D_IMPORTER;ASSIMP_BUILD_NO_3MF_IMPORTER;ASSIMP_BUILD_NO_MMD_IMPORTER;ASSIMP_IMPORTER_GLTF_USE_OPEN3DGC=1;RAPIDJSON_HAS_STDSTRING=1;RAPIDJSON_NOMEMBERITERATORCLASS;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;OPENDDLPARSER_BUILD;CMAKE_INTDIR=\"Debug\";assimp_EXPORTS</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\.;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\contrib\zlib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\pugixml\src;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\utf8cpp\source;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\rapidjson\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\unzip;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\openddlparser\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\code\..\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\.;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\contrib\zlib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\pugixml\src;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\utf8cpp\source;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\rapidjson\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\unzip;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\openddlparser\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\code\..\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>..\contrib\zlib\Debug\zlibstaticd.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <DataExecutionPrevention></DataExecutionPrevention>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImageHasSafeExceptionHandlers></ImageHasSafeExceptionHandlers>
+      <ImportLibrary>C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/lib/Debug/assimp-vc145-mtd.lib</ImportLibrary>
+      <LinkErrorReporting></LinkErrorReporting>
+      <ProgramDataBaseFile>C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/bin/Debug/assimp-vc145-mtd.pdb</ProgramDataBaseFile>
+      <RandomizedBaseAddress></RandomizedBaseAddress>
+      <SubSystem></SubSystem>
+      <Version>6.0</Version>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\.;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\contrib\zlib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\pugixml\src;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\utf8cpp\source;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\rapidjson\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\unzip;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\openddlparser\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\code\..\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /bigobj /source-charset:utf-8</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck></BufferSecurityCheck>
+      <CallingConvention></CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4244</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FloatingPointModel></FloatingPointModel>
+      <ForceConformanceInForLoopScope></ForceConformanceInForLoopScope>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;ASSIMP_BUILD_DLL_EXPORT;ASSIMP_BUILD_NO_M3D_IMPORTER;ASSIMP_BUILD_NO_M3D_EXPORTER;ASSIMP_BUILD_NO_VRML_IMPORTER;WIN32_LEAN_AND_MEAN;UNICODE;_UNICODE;ASSIMP_BUILD_NO_C4D_IMPORTER;ASSIMP_BUILD_NO_AMF_IMPORTER;ASSIMP_BUILD_NO_3DS_IMPORTER;ASSIMP_BUILD_NO_AC_IMPORTER;ASSIMP_BUILD_NO_ASE_IMPORTER;ASSIMP_BUILD_NO_ASSBIN_IMPORTER;ASSIMP_BUILD_NO_B3D_IMPORTER;ASSIMP_BUILD_NO_BVH_IMPORTER;ASSIMP_BUILD_NO_COLLADA_IMPORTER;ASSIMP_BUILD_NO_DXF_IMPORTER;ASSIMP_BUILD_NO_CSM_IMPORTER;ASSIMP_BUILD_NO_HMP_IMPORTER;ASSIMP_BUILD_NO_IRRMESH_IMPORTER;ASSIMP_BUILD_NO_IQM_IMPORTER;ASSIMP_BUILD_NO_IRR_IMPORTER;ASSIMP_BUILD_NO_LWO_IMPORTER;ASSIMP_BUILD_NO_LWS_IMPORTER;ASSIMP_BUILD_NO_MD2_IMPORTER;ASSIMP_BUILD_NO_MD3_IMPORTER;ASSIMP_BUILD_NO_MD5_IMPORTER;ASSIMP_BUILD_NO_MDC_IMPORTER;ASSIMP_BUILD_NO_MDL_IMPORTER;ASSIMP_BUILD_NO_NFF_IMPORTER;ASSIMP_BUILD_NO_NDO_IMPORTER;ASSIMP_BUILD_NO_OFF_IMPORTER;ASSIMP_BUILD_NO_OGRE_IMPORTER;ASSIMP_BUILD_NO_OPENGEX_IMPORTER;ASSIMP_BUILD_NO_PLY_IMPORTER;ASSIMP_BUILD_NO_MS3D_IMPORTER;ASSIMP_BUILD_NO_COB_IMPORTER;ASSIMP_BUILD_NO_BLEND_IMPORTER;ASSIMP_BUILD_NO_IFC_IMPORTER;ASSIMP_BUILD_NO_XGL_IMPORTER;ASSIMP_BUILD_NO_OPENGEX_EXPORTER;ASSIMP_BUILD_NO_PLY_EXPORTER;ASSIMP_BUILD_NO_3DS_EXPORTER;ASSIMP_BUILD_NO_ASSBIN_EXPORTER;ASSIMP_BUILD_NO_ASSXML_EXPORTER;ASSIMP_BUILD_NO_COLLADA_EXPORTER;ASSIMP_BUILD_NO_STL_EXPORTER;ASSIMP_BUILD_NO_X_EXPORTER;ASSIMP_BUILD_NO_X3D_EXPORTER;ASSIMP_BUILD_NO_3MF_EXPORTER;ASSIMP_BUILD_NO_PBRT_EXPORTER;ASSIMP_BUILD_NO_ASSJSON_EXPORTER;ASSIMP_BUILD_NO_STEP_EXPORTER;ASSIMP_BUILD_NO_Q3D_IMPORTER;ASSIMP_BUILD_NO_Q3BSP_IMPORTER;ASSIMP_BUILD_NO_RAW_IMPORTER;ASSIMP_BUILD_NO_SIB_IMPORTER;ASSIMP_BUILD_NO_SMD_IMPORTER;ASSIMP_BUILD_NO_STL_IMPORTER;ASSIMP_BUILD_NO_TERRAGEN_IMPORTER;ASSIMP_BUILD_NO_3D_IMPORTER;ASSIMP_BUILD_NO_USD_IMPORTER;ASSIMP_BUILD_NO_X_IMPORTER;ASSIMP_BUILD_NO_X3D_IMPORTER;ASSIMP_BUILD_NO_3MF_IMPORTER;ASSIMP_BUILD_NO_MMD_IMPORTER;ASSIMP_IMPORTER_GLTF_USE_OPEN3DGC=1;RAPIDJSON_HAS_STDSTRING=1;RAPIDJSON_NOMEMBERITERATORCLASS;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;OPENDDLPARSER_BUILD;CMAKE_INTDIR="Release";assimp_EXPORTS</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;ASSIMP_BUILD_DLL_EXPORT;ASSIMP_BUILD_NO_M3D_IMPORTER;ASSIMP_BUILD_NO_M3D_EXPORTER;ASSIMP_BUILD_NO_VRML_IMPORTER;WIN32_LEAN_AND_MEAN;UNICODE;_UNICODE;ASSIMP_BUILD_NO_C4D_IMPORTER;ASSIMP_BUILD_NO_AMF_IMPORTER;ASSIMP_BUILD_NO_3DS_IMPORTER;ASSIMP_BUILD_NO_AC_IMPORTER;ASSIMP_BUILD_NO_ASE_IMPORTER;ASSIMP_BUILD_NO_ASSBIN_IMPORTER;ASSIMP_BUILD_NO_B3D_IMPORTER;ASSIMP_BUILD_NO_BVH_IMPORTER;ASSIMP_BUILD_NO_COLLADA_IMPORTER;ASSIMP_BUILD_NO_DXF_IMPORTER;ASSIMP_BUILD_NO_CSM_IMPORTER;ASSIMP_BUILD_NO_HMP_IMPORTER;ASSIMP_BUILD_NO_IRRMESH_IMPORTER;ASSIMP_BUILD_NO_IQM_IMPORTER;ASSIMP_BUILD_NO_IRR_IMPORTER;ASSIMP_BUILD_NO_LWO_IMPORTER;ASSIMP_BUILD_NO_LWS_IMPORTER;ASSIMP_BUILD_NO_MD2_IMPORTER;ASSIMP_BUILD_NO_MD3_IMPORTER;ASSIMP_BUILD_NO_MD5_IMPORTER;ASSIMP_BUILD_NO_MDC_IMPORTER;ASSIMP_BUILD_NO_MDL_IMPORTER;ASSIMP_BUILD_NO_NFF_IMPORTER;ASSIMP_BUILD_NO_NDO_IMPORTER;ASSIMP_BUILD_NO_OFF_IMPORTER;ASSIMP_BUILD_NO_OGRE_IMPORTER;ASSIMP_BUILD_NO_OPENGEX_IMPORTER;ASSIMP_BUILD_NO_PLY_IMPORTER;ASSIMP_BUILD_NO_MS3D_IMPORTER;ASSIMP_BUILD_NO_COB_IMPORTER;ASSIMP_BUILD_NO_BLEND_IMPORTER;ASSIMP_BUILD_NO_IFC_IMPORTER;ASSIMP_BUILD_NO_XGL_IMPORTER;ASSIMP_BUILD_NO_OPENGEX_EXPORTER;ASSIMP_BUILD_NO_PLY_EXPORTER;ASSIMP_BUILD_NO_3DS_EXPORTER;ASSIMP_BUILD_NO_ASSBIN_EXPORTER;ASSIMP_BUILD_NO_ASSXML_EXPORTER;ASSIMP_BUILD_NO_COLLADA_EXPORTER;ASSIMP_BUILD_NO_STL_EXPORTER;ASSIMP_BUILD_NO_X_EXPORTER;ASSIMP_BUILD_NO_X3D_EXPORTER;ASSIMP_BUILD_NO_3MF_EXPORTER;ASSIMP_BUILD_NO_PBRT_EXPORTER;ASSIMP_BUILD_NO_ASSJSON_EXPORTER;ASSIMP_BUILD_NO_STEP_EXPORTER;ASSIMP_BUILD_NO_Q3D_IMPORTER;ASSIMP_BUILD_NO_Q3BSP_IMPORTER;ASSIMP_BUILD_NO_RAW_IMPORTER;ASSIMP_BUILD_NO_SIB_IMPORTER;ASSIMP_BUILD_NO_SMD_IMPORTER;ASSIMP_BUILD_NO_STL_IMPORTER;ASSIMP_BUILD_NO_TERRAGEN_IMPORTER;ASSIMP_BUILD_NO_3D_IMPORTER;ASSIMP_BUILD_NO_USD_IMPORTER;ASSIMP_BUILD_NO_X_IMPORTER;ASSIMP_BUILD_NO_X3D_IMPORTER;ASSIMP_BUILD_NO_3MF_IMPORTER;ASSIMP_BUILD_NO_MMD_IMPORTER;ASSIMP_IMPORTER_GLTF_USE_OPEN3DGC=1;RAPIDJSON_HAS_STDSTRING=1;RAPIDJSON_NOMEMBERITERATORCLASS;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;OPENDDLPARSER_BUILD;CMAKE_INTDIR=\"Release\";assimp_EXPORTS</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\.;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\contrib\zlib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\pugixml\src;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\utf8cpp\source;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\rapidjson\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\unzip;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\openddlparser\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\code\..\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\.;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\contrib\zlib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\pugixml\src;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\utf8cpp\source;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\rapidjson\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\unzip;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\openddlparser\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\code\..\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>..\contrib\zlib\Release\zlibstatic.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64 /PDBALTPATH:%%_PDB%%</AdditionalOptions>
+      <DataExecutionPrevention></DataExecutionPrevention>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImageHasSafeExceptionHandlers></ImageHasSafeExceptionHandlers>
+      <ImportLibrary>C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/lib/Release/assimp-vc145-mt.lib</ImportLibrary>
+      <LinkErrorReporting></LinkErrorReporting>
+      <OptimizeReferences>true</OptimizeReferences>
+      <ProgramDataBaseFile>C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/bin/Release/assimp-vc145-mt.pdb</ProgramDataBaseFile>
+      <RandomizedBaseAddress></RandomizedBaseAddress>
+      <SubSystem></SubSystem>
+      <Version>6.0</Version>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\.;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\contrib\zlib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\pugixml\src;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\utf8cpp\source;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\rapidjson\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\unzip;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\openddlparser\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\code\..\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /bigobj /source-charset:utf-8</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck></BufferSecurityCheck>
+      <CallingConvention></CallingConvention>
+      <DisableSpecificWarnings>4244</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FloatingPointModel></FloatingPointModel>
+      <ForceConformanceInForLoopScope></ForceConformanceInForLoopScope>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>MinSpace</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;ASSIMP_BUILD_DLL_EXPORT;ASSIMP_BUILD_NO_M3D_IMPORTER;ASSIMP_BUILD_NO_M3D_EXPORTER;ASSIMP_BUILD_NO_VRML_IMPORTER;WIN32_LEAN_AND_MEAN;UNICODE;_UNICODE;ASSIMP_BUILD_NO_C4D_IMPORTER;ASSIMP_BUILD_NO_AMF_IMPORTER;ASSIMP_BUILD_NO_3DS_IMPORTER;ASSIMP_BUILD_NO_AC_IMPORTER;ASSIMP_BUILD_NO_ASE_IMPORTER;ASSIMP_BUILD_NO_ASSBIN_IMPORTER;ASSIMP_BUILD_NO_B3D_IMPORTER;ASSIMP_BUILD_NO_BVH_IMPORTER;ASSIMP_BUILD_NO_COLLADA_IMPORTER;ASSIMP_BUILD_NO_DXF_IMPORTER;ASSIMP_BUILD_NO_CSM_IMPORTER;ASSIMP_BUILD_NO_HMP_IMPORTER;ASSIMP_BUILD_NO_IRRMESH_IMPORTER;ASSIMP_BUILD_NO_IQM_IMPORTER;ASSIMP_BUILD_NO_IRR_IMPORTER;ASSIMP_BUILD_NO_LWO_IMPORTER;ASSIMP_BUILD_NO_LWS_IMPORTER;ASSIMP_BUILD_NO_MD2_IMPORTER;ASSIMP_BUILD_NO_MD3_IMPORTER;ASSIMP_BUILD_NO_MD5_IMPORTER;ASSIMP_BUILD_NO_MDC_IMPORTER;ASSIMP_BUILD_NO_MDL_IMPORTER;ASSIMP_BUILD_NO_NFF_IMPORTER;ASSIMP_BUILD_NO_NDO_IMPORTER;ASSIMP_BUILD_NO_OFF_IMPORTER;ASSIMP_BUILD_NO_OGRE_IMPORTER;ASSIMP_BUILD_NO_OPENGEX_IMPORTER;ASSIMP_BUILD_NO_PLY_IMPORTER;ASSIMP_BUILD_NO_MS3D_IMPORTER;ASSIMP_BUILD_NO_COB_IMPORTER;ASSIMP_BUILD_NO_BLEND_IMPORTER;ASSIMP_BUILD_NO_IFC_IMPORTER;ASSIMP_BUILD_NO_XGL_IMPORTER;ASSIMP_BUILD_NO_OPENGEX_EXPORTER;ASSIMP_BUILD_NO_PLY_EXPORTER;ASSIMP_BUILD_NO_3DS_EXPORTER;ASSIMP_BUILD_NO_ASSBIN_EXPORTER;ASSIMP_BUILD_NO_ASSXML_EXPORTER;ASSIMP_BUILD_NO_COLLADA_EXPORTER;ASSIMP_BUILD_NO_STL_EXPORTER;ASSIMP_BUILD_NO_X_EXPORTER;ASSIMP_BUILD_NO_X3D_EXPORTER;ASSIMP_BUILD_NO_3MF_EXPORTER;ASSIMP_BUILD_NO_PBRT_EXPORTER;ASSIMP_BUILD_NO_ASSJSON_EXPORTER;ASSIMP_BUILD_NO_STEP_EXPORTER;ASSIMP_BUILD_NO_Q3D_IMPORTER;ASSIMP_BUILD_NO_Q3BSP_IMPORTER;ASSIMP_BUILD_NO_RAW_IMPORTER;ASSIMP_BUILD_NO_SIB_IMPORTER;ASSIMP_BUILD_NO_SMD_IMPORTER;ASSIMP_BUILD_NO_STL_IMPORTER;ASSIMP_BUILD_NO_TERRAGEN_IMPORTER;ASSIMP_BUILD_NO_3D_IMPORTER;ASSIMP_BUILD_NO_USD_IMPORTER;ASSIMP_BUILD_NO_X_IMPORTER;ASSIMP_BUILD_NO_X3D_IMPORTER;ASSIMP_BUILD_NO_3MF_IMPORTER;ASSIMP_BUILD_NO_MMD_IMPORTER;ASSIMP_IMPORTER_GLTF_USE_OPEN3DGC=1;RAPIDJSON_HAS_STDSTRING=1;RAPIDJSON_NOMEMBERITERATORCLASS;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;OPENDDLPARSER_BUILD;CMAKE_INTDIR="MinSizeRel";assimp_EXPORTS</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;ASSIMP_BUILD_DLL_EXPORT;ASSIMP_BUILD_NO_M3D_IMPORTER;ASSIMP_BUILD_NO_M3D_EXPORTER;ASSIMP_BUILD_NO_VRML_IMPORTER;WIN32_LEAN_AND_MEAN;UNICODE;_UNICODE;ASSIMP_BUILD_NO_C4D_IMPORTER;ASSIMP_BUILD_NO_AMF_IMPORTER;ASSIMP_BUILD_NO_3DS_IMPORTER;ASSIMP_BUILD_NO_AC_IMPORTER;ASSIMP_BUILD_NO_ASE_IMPORTER;ASSIMP_BUILD_NO_ASSBIN_IMPORTER;ASSIMP_BUILD_NO_B3D_IMPORTER;ASSIMP_BUILD_NO_BVH_IMPORTER;ASSIMP_BUILD_NO_COLLADA_IMPORTER;ASSIMP_BUILD_NO_DXF_IMPORTER;ASSIMP_BUILD_NO_CSM_IMPORTER;ASSIMP_BUILD_NO_HMP_IMPORTER;ASSIMP_BUILD_NO_IRRMESH_IMPORTER;ASSIMP_BUILD_NO_IQM_IMPORTER;ASSIMP_BUILD_NO_IRR_IMPORTER;ASSIMP_BUILD_NO_LWO_IMPORTER;ASSIMP_BUILD_NO_LWS_IMPORTER;ASSIMP_BUILD_NO_MD2_IMPORTER;ASSIMP_BUILD_NO_MD3_IMPORTER;ASSIMP_BUILD_NO_MD5_IMPORTER;ASSIMP_BUILD_NO_MDC_IMPORTER;ASSIMP_BUILD_NO_MDL_IMPORTER;ASSIMP_BUILD_NO_NFF_IMPORTER;ASSIMP_BUILD_NO_NDO_IMPORTER;ASSIMP_BUILD_NO_OFF_IMPORTER;ASSIMP_BUILD_NO_OGRE_IMPORTER;ASSIMP_BUILD_NO_OPENGEX_IMPORTER;ASSIMP_BUILD_NO_PLY_IMPORTER;ASSIMP_BUILD_NO_MS3D_IMPORTER;ASSIMP_BUILD_NO_COB_IMPORTER;ASSIMP_BUILD_NO_BLEND_IMPORTER;ASSIMP_BUILD_NO_IFC_IMPORTER;ASSIMP_BUILD_NO_XGL_IMPORTER;ASSIMP_BUILD_NO_OPENGEX_EXPORTER;ASSIMP_BUILD_NO_PLY_EXPORTER;ASSIMP_BUILD_NO_3DS_EXPORTER;ASSIMP_BUILD_NO_ASSBIN_EXPORTER;ASSIMP_BUILD_NO_ASSXML_EXPORTER;ASSIMP_BUILD_NO_COLLADA_EXPORTER;ASSIMP_BUILD_NO_STL_EXPORTER;ASSIMP_BUILD_NO_X_EXPORTER;ASSIMP_BUILD_NO_X3D_EXPORTER;ASSIMP_BUILD_NO_3MF_EXPORTER;ASSIMP_BUILD_NO_PBRT_EXPORTER;ASSIMP_BUILD_NO_ASSJSON_EXPORTER;ASSIMP_BUILD_NO_STEP_EXPORTER;ASSIMP_BUILD_NO_Q3D_IMPORTER;ASSIMP_BUILD_NO_Q3BSP_IMPORTER;ASSIMP_BUILD_NO_RAW_IMPORTER;ASSIMP_BUILD_NO_SIB_IMPORTER;ASSIMP_BUILD_NO_SMD_IMPORTER;ASSIMP_BUILD_NO_STL_IMPORTER;ASSIMP_BUILD_NO_TERRAGEN_IMPORTER;ASSIMP_BUILD_NO_3D_IMPORTER;ASSIMP_BUILD_NO_USD_IMPORTER;ASSIMP_BUILD_NO_X_IMPORTER;ASSIMP_BUILD_NO_X3D_IMPORTER;ASSIMP_BUILD_NO_3MF_IMPORTER;ASSIMP_BUILD_NO_MMD_IMPORTER;ASSIMP_IMPORTER_GLTF_USE_OPEN3DGC=1;RAPIDJSON_HAS_STDSTRING=1;RAPIDJSON_NOMEMBERITERATORCLASS;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;OPENDDLPARSER_BUILD;CMAKE_INTDIR=\"MinSizeRel\";assimp_EXPORTS</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\.;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\contrib\zlib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\pugixml\src;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\utf8cpp\source;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\rapidjson\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\unzip;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\openddlparser\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\code\..\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\.;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\contrib\zlib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\pugixml\src;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\utf8cpp\source;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\rapidjson\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\unzip;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\openddlparser\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\code\..\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>..\contrib\zlib\MinSizeRel\zlibstatic.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <DataExecutionPrevention></DataExecutionPrevention>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImageHasSafeExceptionHandlers></ImageHasSafeExceptionHandlers>
+      <ImportLibrary>C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/lib/MinSizeRel/assimp-vc145-mt.lib</ImportLibrary>
+      <LinkErrorReporting></LinkErrorReporting>
+      <ProgramDataBaseFile>C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/bin/MinSizeRel/assimp-vc145-mt.pdb</ProgramDataBaseFile>
+      <RandomizedBaseAddress></RandomizedBaseAddress>
+      <SubSystem></SubSystem>
+      <Version>6.0</Version>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\.;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\contrib\zlib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\pugixml\src;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\utf8cpp\source;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\rapidjson\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\unzip;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\openddlparser\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\code\..\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /bigobj /source-charset:utf-8</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck></BufferSecurityCheck>
+      <CallingConvention></CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4244</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FloatingPointModel></FloatingPointModel>
+      <ForceConformanceInForLoopScope></ForceConformanceInForLoopScope>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;ASSIMP_BUILD_DLL_EXPORT;ASSIMP_BUILD_NO_M3D_IMPORTER;ASSIMP_BUILD_NO_M3D_EXPORTER;ASSIMP_BUILD_NO_VRML_IMPORTER;WIN32_LEAN_AND_MEAN;UNICODE;_UNICODE;ASSIMP_BUILD_NO_C4D_IMPORTER;ASSIMP_BUILD_NO_AMF_IMPORTER;ASSIMP_BUILD_NO_3DS_IMPORTER;ASSIMP_BUILD_NO_AC_IMPORTER;ASSIMP_BUILD_NO_ASE_IMPORTER;ASSIMP_BUILD_NO_ASSBIN_IMPORTER;ASSIMP_BUILD_NO_B3D_IMPORTER;ASSIMP_BUILD_NO_BVH_IMPORTER;ASSIMP_BUILD_NO_COLLADA_IMPORTER;ASSIMP_BUILD_NO_DXF_IMPORTER;ASSIMP_BUILD_NO_CSM_IMPORTER;ASSIMP_BUILD_NO_HMP_IMPORTER;ASSIMP_BUILD_NO_IRRMESH_IMPORTER;ASSIMP_BUILD_NO_IQM_IMPORTER;ASSIMP_BUILD_NO_IRR_IMPORTER;ASSIMP_BUILD_NO_LWO_IMPORTER;ASSIMP_BUILD_NO_LWS_IMPORTER;ASSIMP_BUILD_NO_MD2_IMPORTER;ASSIMP_BUILD_NO_MD3_IMPORTER;ASSIMP_BUILD_NO_MD5_IMPORTER;ASSIMP_BUILD_NO_MDC_IMPORTER;ASSIMP_BUILD_NO_MDL_IMPORTER;ASSIMP_BUILD_NO_NFF_IMPORTER;ASSIMP_BUILD_NO_NDO_IMPORTER;ASSIMP_BUILD_NO_OFF_IMPORTER;ASSIMP_BUILD_NO_OGRE_IMPORTER;ASSIMP_BUILD_NO_OPENGEX_IMPORTER;ASSIMP_BUILD_NO_PLY_IMPORTER;ASSIMP_BUILD_NO_MS3D_IMPORTER;ASSIMP_BUILD_NO_COB_IMPORTER;ASSIMP_BUILD_NO_BLEND_IMPORTER;ASSIMP_BUILD_NO_IFC_IMPORTER;ASSIMP_BUILD_NO_XGL_IMPORTER;ASSIMP_BUILD_NO_OPENGEX_EXPORTER;ASSIMP_BUILD_NO_PLY_EXPORTER;ASSIMP_BUILD_NO_3DS_EXPORTER;ASSIMP_BUILD_NO_ASSBIN_EXPORTER;ASSIMP_BUILD_NO_ASSXML_EXPORTER;ASSIMP_BUILD_NO_COLLADA_EXPORTER;ASSIMP_BUILD_NO_STL_EXPORTER;ASSIMP_BUILD_NO_X_EXPORTER;ASSIMP_BUILD_NO_X3D_EXPORTER;ASSIMP_BUILD_NO_3MF_EXPORTER;ASSIMP_BUILD_NO_PBRT_EXPORTER;ASSIMP_BUILD_NO_ASSJSON_EXPORTER;ASSIMP_BUILD_NO_STEP_EXPORTER;ASSIMP_BUILD_NO_Q3D_IMPORTER;ASSIMP_BUILD_NO_Q3BSP_IMPORTER;ASSIMP_BUILD_NO_RAW_IMPORTER;ASSIMP_BUILD_NO_SIB_IMPORTER;ASSIMP_BUILD_NO_SMD_IMPORTER;ASSIMP_BUILD_NO_STL_IMPORTER;ASSIMP_BUILD_NO_TERRAGEN_IMPORTER;ASSIMP_BUILD_NO_3D_IMPORTER;ASSIMP_BUILD_NO_USD_IMPORTER;ASSIMP_BUILD_NO_X_IMPORTER;ASSIMP_BUILD_NO_X3D_IMPORTER;ASSIMP_BUILD_NO_3MF_IMPORTER;ASSIMP_BUILD_NO_MMD_IMPORTER;ASSIMP_IMPORTER_GLTF_USE_OPEN3DGC=1;RAPIDJSON_HAS_STDSTRING=1;RAPIDJSON_NOMEMBERITERATORCLASS;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;OPENDDLPARSER_BUILD;CMAKE_INTDIR="RelWithDebInfo";assimp_EXPORTS</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;ASSIMP_BUILD_DLL_EXPORT;ASSIMP_BUILD_NO_M3D_IMPORTER;ASSIMP_BUILD_NO_M3D_EXPORTER;ASSIMP_BUILD_NO_VRML_IMPORTER;WIN32_LEAN_AND_MEAN;UNICODE;_UNICODE;ASSIMP_BUILD_NO_C4D_IMPORTER;ASSIMP_BUILD_NO_AMF_IMPORTER;ASSIMP_BUILD_NO_3DS_IMPORTER;ASSIMP_BUILD_NO_AC_IMPORTER;ASSIMP_BUILD_NO_ASE_IMPORTER;ASSIMP_BUILD_NO_ASSBIN_IMPORTER;ASSIMP_BUILD_NO_B3D_IMPORTER;ASSIMP_BUILD_NO_BVH_IMPORTER;ASSIMP_BUILD_NO_COLLADA_IMPORTER;ASSIMP_BUILD_NO_DXF_IMPORTER;ASSIMP_BUILD_NO_CSM_IMPORTER;ASSIMP_BUILD_NO_HMP_IMPORTER;ASSIMP_BUILD_NO_IRRMESH_IMPORTER;ASSIMP_BUILD_NO_IQM_IMPORTER;ASSIMP_BUILD_NO_IRR_IMPORTER;ASSIMP_BUILD_NO_LWO_IMPORTER;ASSIMP_BUILD_NO_LWS_IMPORTER;ASSIMP_BUILD_NO_MD2_IMPORTER;ASSIMP_BUILD_NO_MD3_IMPORTER;ASSIMP_BUILD_NO_MD5_IMPORTER;ASSIMP_BUILD_NO_MDC_IMPORTER;ASSIMP_BUILD_NO_MDL_IMPORTER;ASSIMP_BUILD_NO_NFF_IMPORTER;ASSIMP_BUILD_NO_NDO_IMPORTER;ASSIMP_BUILD_NO_OFF_IMPORTER;ASSIMP_BUILD_NO_OGRE_IMPORTER;ASSIMP_BUILD_NO_OPENGEX_IMPORTER;ASSIMP_BUILD_NO_PLY_IMPORTER;ASSIMP_BUILD_NO_MS3D_IMPORTER;ASSIMP_BUILD_NO_COB_IMPORTER;ASSIMP_BUILD_NO_BLEND_IMPORTER;ASSIMP_BUILD_NO_IFC_IMPORTER;ASSIMP_BUILD_NO_XGL_IMPORTER;ASSIMP_BUILD_NO_OPENGEX_EXPORTER;ASSIMP_BUILD_NO_PLY_EXPORTER;ASSIMP_BUILD_NO_3DS_EXPORTER;ASSIMP_BUILD_NO_ASSBIN_EXPORTER;ASSIMP_BUILD_NO_ASSXML_EXPORTER;ASSIMP_BUILD_NO_COLLADA_EXPORTER;ASSIMP_BUILD_NO_STL_EXPORTER;ASSIMP_BUILD_NO_X_EXPORTER;ASSIMP_BUILD_NO_X3D_EXPORTER;ASSIMP_BUILD_NO_3MF_EXPORTER;ASSIMP_BUILD_NO_PBRT_EXPORTER;ASSIMP_BUILD_NO_ASSJSON_EXPORTER;ASSIMP_BUILD_NO_STEP_EXPORTER;ASSIMP_BUILD_NO_Q3D_IMPORTER;ASSIMP_BUILD_NO_Q3BSP_IMPORTER;ASSIMP_BUILD_NO_RAW_IMPORTER;ASSIMP_BUILD_NO_SIB_IMPORTER;ASSIMP_BUILD_NO_SMD_IMPORTER;ASSIMP_BUILD_NO_STL_IMPORTER;ASSIMP_BUILD_NO_TERRAGEN_IMPORTER;ASSIMP_BUILD_NO_3D_IMPORTER;ASSIMP_BUILD_NO_USD_IMPORTER;ASSIMP_BUILD_NO_X_IMPORTER;ASSIMP_BUILD_NO_X3D_IMPORTER;ASSIMP_BUILD_NO_3MF_IMPORTER;ASSIMP_BUILD_NO_MMD_IMPORTER;ASSIMP_IMPORTER_GLTF_USE_OPEN3DGC=1;RAPIDJSON_HAS_STDSTRING=1;RAPIDJSON_NOMEMBERITERATORCLASS;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;OPENDDLPARSER_BUILD;CMAKE_INTDIR=\"RelWithDebInfo\";assimp_EXPORTS</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\.;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\contrib\zlib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\pugixml\src;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\utf8cpp\source;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\rapidjson\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\unzip;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\openddlparser\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\code\..\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\.;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\zlib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\contrib\zlib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\pugixml\src;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\utf8cpp\source;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\rapidjson\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\unzip;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\contrib\openddlparser\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\code\..\include;C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>..\contrib\zlib\RelWithDebInfo\zlibstatic.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <DataExecutionPrevention></DataExecutionPrevention>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImageHasSafeExceptionHandlers></ImageHasSafeExceptionHandlers>
+      <ImportLibrary>C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/lib/RelWithDebInfo/assimp-vc145-mt.lib</ImportLibrary>
+      <LinkErrorReporting></LinkErrorReporting>
+      <ProgramDataBaseFile>C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/bin/RelWithDebInfo/assimp-vc145-mt.pdb</ProgramDataBaseFile>
+      <RandomizedBaseAddress></RandomizedBaseAddress>
+      <SubSystem></SubSystem>
+      <Version>6.0</Version>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/code/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2 -BC:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild --check-stamp-file C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/code/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\code\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/code/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2 -BC:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild --check-stamp-file C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/code/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\code\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/code/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2 -BC:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild --check-stamp-file C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/code/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\code\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/code/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2 -BC:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild --check-stamp-file C:/Users/Unoryuto/Downloads/assimp-6.0.2/assimp-6.0.2/bulid/fbxbuild/code/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\code\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\Assimp.cpp" />
+    <ResourceCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\res\assimp.rc" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\CApi\CInterfaceIOWrapper.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\CApi\CInterfaceIOWrapper.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\StbCommon.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\Compression.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\Compression.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\BaseImporter.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\BaseProcess.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\BaseProcess.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\Importer.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\ScenePrivate.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\PostStepRegistry.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\ImporterRegistry.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\DefaultProgressHandler.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\DefaultIOStream.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\IOSystem.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\DefaultIOSystem.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\ZipArchiveIOSystem.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\PolyTools.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\Maybe.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\Importer.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\IFF.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\SGSpatialSort.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\VertexTriangleAdjacency.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\VertexTriangleAdjacency.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\SpatialSort.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\SceneCombiner.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\ScenePreprocessor.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\ScenePreprocessor.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\SkeletonMeshBuilder.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\StackAllocator.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\StackAllocator.inl" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\StandardShapes.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\TargetAnimation.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\TargetAnimation.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\RemoveComments.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\Subdivision.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\scene.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\Bitmap.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\Version.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\CreateAnimMesh.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\simd.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\simd.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\material.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\AssertHandler.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\Exceptional.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\Base64.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Geometry\GeometryUtils.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Geometry\GeometryUtils.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\DefaultLogger.hpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\LogStream.hpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\Logger.hpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\NullLogger.hpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\Win32DebugLogStream.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\DefaultLogger.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\FileLogStream.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\StdOStreamLogStream.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Common\Exporter.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\CApi\AssimpCExport.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\BlobIOSystem.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\CalcTangentsProcess.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\CalcTangentsProcess.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\ComputeUVMappingProcess.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\ComputeUVMappingProcess.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\ConvertToLHProcess.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\ConvertToLHProcess.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\EmbedTexturesProcess.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\EmbedTexturesProcess.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\FindDegenerates.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\FindDegenerates.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\FindInstancesProcess.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\FindInstancesProcess.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\FindInvalidDataProcess.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\FindInvalidDataProcess.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\FixNormalsStep.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\FixNormalsStep.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\DropFaceNormalsProcess.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\DropFaceNormalsProcess.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\GenFaceNormalsProcess.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\GenFaceNormalsProcess.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\GenVertexNormalsProcess.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\GenVertexNormalsProcess.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\PretransformVertices.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\PretransformVertices.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\ImproveCacheLocality.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\ImproveCacheLocality.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\JoinVerticesProcess.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\JoinVerticesProcess.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\LimitBoneWeightsProcess.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\LimitBoneWeightsProcess.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\RemoveRedundantMaterials.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\RemoveRedundantMaterials.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\RemoveVCProcess.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\RemoveVCProcess.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\SortByPTypeProcess.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\SortByPTypeProcess.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\SplitLargeMeshes.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\SplitLargeMeshes.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\TextureTransform.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\TextureTransform.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\TriangulateProcess.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\TriangulateProcess.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\ValidateDataStructure.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\ValidateDataStructure.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\OptimizeGraph.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\OptimizeGraph.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\OptimizeMeshes.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\OptimizeMeshes.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\DeboneProcess.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\DeboneProcess.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\ProcessHelper.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\ProcessHelper.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\MakeVerboseFormat.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\MakeVerboseFormat.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\ScaleProcess.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\ScaleProcess.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\ArmaturePopulate.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\ArmaturePopulate.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\GenBoundingBoxesProcess.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\GenBoundingBoxesProcess.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\SplitByBoneCountProcess.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\PostProcessing\SplitByBoneCountProcess.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Material\MaterialSystem.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\Material\MaterialSystem.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\STEPParser\STEPFileReader.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\STEPParser\STEPFileReader.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\STEPParser\STEPFileEncoding.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\STEPParser\STEPFileEncoding.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\glTFCommon\glTFCommon.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\glTFCommon\glTFCommon.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\Obj\ObjFileData.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\Obj\ObjFileImporter.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\Obj\ObjFileImporter.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\Obj\ObjFileMtlImporter.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\Obj\ObjFileMtlImporter.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\Obj\ObjFileParser.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\Obj\ObjFileParser.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\Obj\ObjTools.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXImporter.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXCompileConfig.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXImporter.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXParser.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXParser.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXTokenizer.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXTokenizer.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXImportSettings.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXConverter.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXConverter.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXUtil.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXUtil.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXDocument.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXDocument.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXProperties.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXProperties.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXMeshGeometry.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXMeshGeometry.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXMaterial.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXModel.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXAnimation.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXNodeAttribute.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXDeformer.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXBinaryTokenizer.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXDocumentUtil.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXCommon.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\glTF\glTFAsset.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\glTF\glTFAsset.inl" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\glTF\glTFAssetWriter.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\glTF\glTFAssetWriter.inl" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\glTF\glTFImporter.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\glTF\glTFImporter.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\glTF2\glTF2Asset.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\glTF2\glTF2Asset.inl" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\glTF2\glTF2AssetWriter.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\glTF2\glTF2AssetWriter.inl" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\glTF2\glTF2Importer.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\glTF2\glTF2Importer.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\Obj\ObjExporter.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\Obj\ObjExporter.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXExporter.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXExporter.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXExportNode.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXExportNode.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXExportProperty.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\FBX\FBXExportProperty.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\glTF\glTFExporter.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\glTF\glTFExporter.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\glTF2\glTF2Exporter.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\code\AssetLib\glTF2\glTF2Exporter.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\unzip\crypt.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\unzip\ioapi.c" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\unzip\ioapi.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\unzip\unzip.c" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\unzip\unzip.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\poly2tri\poly2tri\common\shapes.cc" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\poly2tri\poly2tri\common\shapes.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\poly2tri\poly2tri\common\utils.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\poly2tri\poly2tri\sweep\advancing_front.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\poly2tri\poly2tri\sweep\advancing_front.cc" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\poly2tri\poly2tri\sweep\cdt.cc" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\poly2tri\poly2tri\sweep\cdt.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\poly2tri\poly2tri\sweep\sweep.cc" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\poly2tri\poly2tri\sweep\sweep.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\poly2tri\poly2tri\sweep\sweep_context.cc" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\poly2tri\poly2tri\sweep\sweep_context.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\clipper\clipper.hpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\clipper\clipper.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\openddlparser\code\OpenDDLParser.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\openddlparser\code\DDLNode.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\openddlparser\code\OpenDDLCommon.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\openddlparser\code\OpenDDLExport.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\openddlparser\code\Value.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\openddlparser\code\OpenDDLStream.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\openddlparser\include\openddlparser\OpenDDLParser.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\openddlparser\include\openddlparser\OpenDDLParserUtils.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\openddlparser\include\openddlparser\OpenDDLCommon.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\openddlparser\include\openddlparser\OpenDDLExport.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\openddlparser\include\openddlparser\OpenDDLStream.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\openddlparser\include\openddlparser\DDLNode.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\openddlparser\include\openddlparser\Value.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcAdjacencyInfo.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcArithmeticCodec.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcArithmeticCodec.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcBinaryStream.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcCommon.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcDVEncodeParams.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcDynamicVectorDecoder.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcDynamicVectorDecoder.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcDynamicVectorEncoder.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcDynamicVectorEncoder.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcDynamicVector.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcFIFO.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcIndexedFaceSet.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcIndexedFaceSet.inl" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcSC3DMCDecoder.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcSC3DMCDecoder.inl" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcSC3DMCEncodeParams.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcSC3DMCEncoder.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcSC3DMCEncoder.inl" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcTimer.h" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcTools.cpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcTriangleFans.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcTriangleFans.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcTriangleListDecoder.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcTriangleListDecoder.inl" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcTriangleListEncoder.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcTriangleListEncoder.inl" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcVector.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\Open3DGC\o3dgcVector.inl" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\pugixml\src\pugiconfig.hpp" />
+    <ClCompile Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\pugixml\src\pugixml.cpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\pugixml\src\pugixml.hpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\contrib\stb\stb_image.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\anim.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\aabb.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\ai_assert.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\camera.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\color4.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\color4.inl" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\include\assimp\config.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\ColladaMetaData.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\commonMetaData.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\defs.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\cfileio.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\light.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\material.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\material.inl" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\matrix3x3.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\matrix3x3.inl" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\matrix4x4.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\matrix4x4.inl" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\mesh.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\ObjMaterial.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\pbrmaterial.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\GltfMaterial.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\postprocess.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\quaternion.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\quaternion.inl" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\scene.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\metadata.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\texture.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\types.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\vector2.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\vector2.inl" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\vector3.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\vector3.inl" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\version.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\cimport.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\AssertHandler.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\importerdesc.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\Importer.hpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\ProgressHandler.hpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\IOStream.hpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\IOSystem.hpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\cexport.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\Exporter.hpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\DefaultIOStream.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\DefaultIOSystem.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\ZipArchiveIOSystem.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\SceneCombiner.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\fast_atof.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\qnan.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\BaseImporter.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\Hash.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\MemoryIOWrapper.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\ParsingUtils.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\StreamReader.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\StreamWriter.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\StringComparison.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\StringUtils.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\SGSpatialSort.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\GenericProperty.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\SpatialSort.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\SkeletonMeshBuilder.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\SmallVector.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\SmoothingGroups.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\SmoothingGroups.inl" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\StandardShapes.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\RemoveComments.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\Subdivision.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\Vertex.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\LineSplitter.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\TinyFormatter.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\Profiler.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\LogAux.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\Bitmap.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\XMLTools.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\IOStreamBuffer.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\CreateAnimMesh.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\XmlParser.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\MathFunctions.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\Exceptional.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\ByteSwapper.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\Base64.hpp" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\Compiler\pushpack1.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\Compiler\poppack1.h" />
+    <ClInclude Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\include\assimp\Compiler\pstdint.h" />
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\ZERO_CHECK.vcxproj">
+      <Project>{B138CDE2-05DF-38FD-A32A-3658F2351A93}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\Unoryuto\Downloads\assimp-6.0.2\assimp-6.0.2\bulid\fbxbuild\contrib\zlib\zlibstatic.vcxproj">
+      <Project>{155B04C6-2DBB-38F2-92D3-FA524C17487F}</Project>
+      <Name>zlibstatic</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

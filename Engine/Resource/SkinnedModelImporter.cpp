@@ -211,35 +211,61 @@ std::shared_ptr<Skeleton> ExtractSkeleton(const aiScene* scene,
             }
             
             // 平行移動成分もスケーリング（cm→m変換）
-            float posScale = 1.0f / avgScale;
-            matFloat.m[3][0] *= posScale;
-            matFloat.m[3][1] *= posScale;
-            matFloat.m[3][2] *= posScale;
+            // offsetMatrixの平行移動は回転スケールの影響を受けるため、
+            // スケールの2乗で割る必要がある（単位：cm² → m²）
+            float posScale = 1.0f / (avgScale * avgScale);
+            
+            if (index == 0) {
+                char dbg[256];
+                sprintf_s(dbg, "Translation scale: avgScale=%.1f, posScale=%.8f\n", avgScale, posScale);
+                OutputDebugStringA(dbg);
+            }
+            
+            matFloat.m[0][3] *= posScale;
+            matFloat.m[1][3] *= posScale;
+            matFloat.m[2][3] *= posScale;
+            
+            if (index == 0) {
+                char dbg[256];
+                sprintf_s(dbg, "RESULT: m[1][3]=%.6f (should be ~-0.005)\n", matFloat.m[1][3]);
+                OutputDebugStringA(dbg);
+            }
+            
             // m[3][3]は常に1.0であるべき
             matFloat.m[3][3] = 1.0f;
             
             // 行列を再構築
-            offsetMatrix = Matrix4x4(DirectX::XMLoadFloat4x4(&matFloat));
+            DirectX::XMMATRIX newMat = DirectX::XMLoadFloat4x4(&matFloat);
+            offsetMatrix = Matrix4x4(newMat);
             
-            // デバッグ: 最初のボーンの補正結果を出力
+            // 再構築後の確認
             if (index == 0) {
-                char debugMsg[1024];
-                sprintf_s(debugMsg, "Bone0 scale removed: avgScale=%.3f\n"
-                         "  Row0: [%.3f, %.3f, %.3f, %.3f]\n"
-                         "  Row1: [%.3f, %.3f, %.3f, %.3f]\n"
-                         "  Row2: [%.3f, %.3f, %.3f, %.3f]\n"
-                         "  Row3: [%.3f, %.3f, %.3f, %.3f]\n",
-                         avgScale,
-                         offsetMatrix.GetElement(0, 0), offsetMatrix.GetElement(0, 1),
-                         offsetMatrix.GetElement(0, 2), offsetMatrix.GetElement(0, 3),
-                         offsetMatrix.GetElement(1, 0), offsetMatrix.GetElement(1, 1),
-                         offsetMatrix.GetElement(1, 2), offsetMatrix.GetElement(1, 3),
-                         offsetMatrix.GetElement(2, 0), offsetMatrix.GetElement(2, 1),
-                         offsetMatrix.GetElement(2, 2), offsetMatrix.GetElement(2, 3),
-                         offsetMatrix.GetElement(3, 0), offsetMatrix.GetElement(3, 1),
-                         offsetMatrix.GetElement(3, 2), offsetMatrix.GetElement(3, 3));
-                OutputDebugStringA(debugMsg);
+                DirectX::XMFLOAT4X4 verify;
+                DirectX::XMStoreFloat4x4(&verify, newMat);
+                char dbg[512];
+                sprintf_s(dbg, "After reconstruct: verify.m[1][3]=%.3f\n", verify.m[1][3]);
+                OutputDebugStringA(dbg);
             }
+        }
+        
+        // デバッグ: 最初のボーンの補正結果を出力（スケーリング後）
+        if (index == 0) {
+            char debugMsg[1024];
+            sprintf_s(debugMsg, "Bone0 AFTER scale: avgScale=%.3f\n"
+                     "  Row0: [%.3f, %.3f, %.3f, %.3f]\n"
+                     "  Row1: [%.3f, %.3f, %.3f, %.3f]\n"
+                     "  Row2: [%.3f, %.3f, %.3f, %.3f]\n"
+                     "  Row3: [%.3f, %.3f, %.3f, %.3f]\n",
+                     avgScale,
+                     offsetMatrix.GetElement(0, 0), offsetMatrix.GetElement(0, 1),
+                     offsetMatrix.GetElement(0, 2), offsetMatrix.GetElement(0, 3),
+                     offsetMatrix.GetElement(1, 0), offsetMatrix.GetElement(1, 1),
+                     offsetMatrix.GetElement(1, 2), offsetMatrix.GetElement(1, 3),
+                     offsetMatrix.GetElement(2, 0), offsetMatrix.GetElement(2, 1),
+                     offsetMatrix.GetElement(2, 2), offsetMatrix.GetElement(2, 3),
+                     offsetMatrix.GetElement(3, 0), offsetMatrix.GetElement(3, 1),
+                     offsetMatrix.GetElement(3, 2), offsetMatrix.GetElement(3, 3));
+            OutputDebugStringA(debugMsg);
         }
 
         Matrix4x4 localBindPose = Matrix4x4::Identity();
@@ -266,6 +292,42 @@ std::vector<std::shared_ptr<AnimationClip>> ExtractAnimations(const aiScene* sce
                                                               const std::unordered_map<std::string, int32>& boneMapping) {
     std::vector<std::shared_ptr<AnimationClip>> clips;
 
+    // ルートノードのスケールを取得（GLTFの場合、Armatureノードに0.01スケールが設定されている）
+    float rootScale = 1.0f;
+
+    // Armatureノードを再帰的に探す
+    std::function<const aiNode*(const aiNode*)> findArmature = [&](const aiNode* node) -> const aiNode* {
+        if (!node) return nullptr;
+
+        std::string nodeName = node->mName.C_Str();
+        if (nodeName.find("Armature") != std::string::npos || nodeName.find("armature") != std::string::npos) {
+            return node;
+        }
+
+        for (uint32 i = 0; i < node->mNumChildren; ++i) {
+            const aiNode* found = findArmature(node->mChildren[i]);
+            if (found) return found;
+        }
+        return nullptr;
+    };
+
+    const aiNode* armatureNode = findArmature(scene->mRootNode);
+    if (armatureNode) {
+        aiVector3D scale, pos;
+        aiQuaternion rot;
+        armatureNode->mTransformation.Decompose(scale, rot, pos);
+
+        float avgScale = (scale.x + scale.y + scale.z) / 3.0f;
+        if (avgScale < 1.0f && avgScale > 0.0001f) {
+            rootScale = avgScale;
+            char debugMsg[256];
+            sprintf_s(debugMsg, "Root scale detected: %.6f from node '%s'\n", rootScale, armatureNode->mName.C_Str());
+            OutputDebugStringA(debugMsg);
+        }
+    } else {
+        OutputDebugStringA("WARNING: Armature node not found, using default scale 1.0\n");
+    }
+
     for (uint32 a = 0; a < scene->mNumAnimations; ++a) {
         const aiAnimation* aiAnim = scene->mAnimations[a];
 
@@ -289,7 +351,8 @@ std::vector<std::shared_ptr<AnimationClip>> ExtractAnimations(const aiScene* sce
                 Keyframe<Vector3> key;
                 key.time = static_cast<float>(channel->mPositionKeys[k].mTime);
                 key.value = ConvertVector3(channel->mPositionKeys[k].mValue);
-                // AI_CONFIG_GLOBAL_SCALE_FACTOR_KEYにより自動スケーリング済み
+                // ルートノードのスケールを適用
+                key.value = key.value * rootScale;
                 boneAnim.positionKeys.push_back(key);
             }
 
@@ -331,10 +394,12 @@ SkinnedMesh ProcessSkinnedMesh(const aiMesh* aiMesh, const aiScene* scene,
 
     vertices.resize(aiMesh->mNumVertices);
 
+    // Assimpはメッシュ頂点にノードtransformを自動適用しないため、
+    // ここでは元の頂点座標をそのまま使用（スケールはアニメーション側で統一）
+
     for (uint32 i = 0; i < aiMesh->mNumVertices; ++i) {
         SkinnedVertex& vertex = vertices[i];
 
-        // AI_CONFIG_GLOBAL_SCALE_FACTOR_KEYにより自動スケーリング済み
         vertex.px = aiMesh->mVertices[i].x;
         vertex.py = aiMesh->mVertices[i].y;
         vertex.pz = aiMesh->mVertices[i].z;
@@ -454,12 +519,10 @@ SkinnedModelData SkinnedModelImporter::Load(GraphicsDevice* graphics, ID3D12Grap
     unsigned int flags = aiProcess_Triangulate | aiProcess_FlipUVs |
                         aiProcess_CalcTangentSpace | aiProcess_GenNormals |
                         aiProcess_LimitBoneWeights |
-                        aiProcess_MakeLeftHanded | aiProcess_FlipWindingOrder |
-                        aiProcess_GlobalScale;
-
-    // GLTFが100倍のスケール（cm単位）の場合、0.01倍してメートル単位に変換
-    // AI_CONFIG_GLOBAL_SCALE_FACTOR_KEYはモデル全体に適用される
-    importer.SetPropertyFloat(AI_CONFIG_GLOBAL_SCALE_FACTOR_KEY, 0.01f);
+                        aiProcess_MakeLeftHanded | aiProcess_FlipWindingOrder;
+    
+    // aiProcess_GlobalScaleは使用しない（不完全な実装のため）
+    // すべて手動でスケーリングする
 
     const aiScene* scene = importer.ReadFile(filepath, flags);
 

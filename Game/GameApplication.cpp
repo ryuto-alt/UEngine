@@ -2,6 +2,7 @@
 #include "Scenes/GameScene.h"
 #include "../Engine/Resource/ResourceLoader.h"
 #include "../Engine/Rendering/RenderSystem.h"
+#include "../Engine/Rendering/SkinnedRenderItem.h"
 
 namespace UnoEngine {
 
@@ -27,9 +28,15 @@ void GameApplication::OnRender() {
 
         auto items = renderSystem_->CollectRenderables(scene, view);
 
+        // スキンメッシュアイテムを取得
+        std::vector<SkinnedRenderItem> skinnedItems;
+        GameScene* gameScene = dynamic_cast<GameScene*>(scene);
+        if (gameScene) {
+            skinnedItems = gameScene->GetSkinnedRenderItems();
+        }
+
 #ifdef _DEBUG
         // GameSceneの場合はRenderTextureに描画 (Debug builds only)
-        GameScene* gameScene = dynamic_cast<GameScene*>(scene);
         if (gameScene) {
             auto* editorUI = gameScene->GetEditorUI();
 
@@ -37,35 +44,37 @@ void GameApplication::OnRender() {
             auto* gameViewTex = editorUI->GetGameViewTexture();
             if (gameViewTex && gameViewTex->GetResource()) {
                 renderer_->DrawToTexture(
-                gameViewTex->GetResource(),
-                gameViewTex->GetRTVHandle(),
-                gameViewTex->GetDSVHandle(),
-                view,
-                items,
-                lightManager_.get()
-            );
+                    gameViewTex->GetResource(),
+                    gameViewTex->GetRTVHandle(),
+                    gameViewTex->GetDSVHandle(),
+                    view,
+                    items,
+                    lightManager_.get(),
+                    skinnedItems
+                );
             }
 
             // Scene Viewに描画
             auto* sceneViewTex = editorUI->GetSceneViewTexture();
             if (sceneViewTex && sceneViewTex->GetResource()) {
                 renderer_->DrawToTexture(
-                sceneViewTex->GetResource(),
-                sceneViewTex->GetRTVHandle(),
-                sceneViewTex->GetDSVHandle(),
-                view,
-                items,
-                lightManager_.get()
-            );
+                    sceneViewTex->GetResource(),
+                    sceneViewTex->GetRTVHandle(),
+                    sceneViewTex->GetDSVHandle(),
+                    view,
+                    items,
+                    lightManager_.get(),
+                    skinnedItems
+                );
             }
 
             // メインウィンドウのレンダーターゲットを再設定
             graphics_->SetBackBufferAsRenderTarget();
+
+            // UIのみ描画（メッシュは描画しない）
+            renderer_->RenderUIOnly(scene);
         }
 #endif
-
-        // メインウィンドウに描画
-        renderer_->Draw(view, items, lightManager_.get(), scene);
     }
 
     graphics_->EndFrame();

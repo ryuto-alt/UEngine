@@ -13,6 +13,7 @@ void Renderer::Initialize(GraphicsDevice* graphics, Window* window) {
 
     auto* device = graphics_->GetDevice();
 
+    // PBR Pipeline
     Shader vertexShader;
     vertexShader.CompileFromFile(L"Shaders/PBRVS.hlsl", ShaderStage::Vertex);
 
@@ -21,9 +22,19 @@ void Renderer::Initialize(GraphicsDevice* graphics, Window* window) {
 
     pipeline_.Initialize(device, vertexShader, pixelShader, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
 
+    // Skinned Pipeline
+    Shader skinnedVS;
+    skinnedVS.CompileFromFile(L"Shaders/SkinnedVS.hlsl", ShaderStage::Vertex);
+
+    Shader skinnedPS;
+    skinnedPS.CompileFromFile(L"Shaders/SkinnedPS.hlsl", ShaderStage::Pixel);
+
+    skinnedPipeline_.Initialize(device, skinnedVS, skinnedPS, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
+
     constantBuffer_.Create(device);
     lightBuffer_.Create(device);
     materialBuffer_.Create(device);
+    boneBuffer_.Create(device);
 
     imguiManager_ = MakeUnique<ImGuiManager>();
     imguiManager_->Initialize(graphics_, window_, 2);
@@ -128,9 +139,15 @@ void Renderer::RenderUI(Scene* scene) {
     imguiManager_->Render(cmdList);
 }
 
-void Renderer::DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle, 
-                             D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle, const RenderView& view, 
-                             const std::vector<RenderItem>& items, LightManager* lightManager) {
+void Renderer::RenderUIOnly(Scene* scene) {
+    SetupViewport();
+    RenderUI(scene);
+}
+
+void Renderer::DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle,
+                             D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle, const RenderView& view,
+                             const std::vector<RenderItem>& items, LightManager* lightManager,
+                             const std::vector<SkinnedRenderItem>& skinnedItems) {
     if (!view.camera) return;
 
     auto* cmdList = graphics_->GetCommandList();
@@ -170,10 +187,108 @@ void Renderer::DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_
     UpdateLighting(view, lightManager);
     RenderMeshes(view, items);
 
+    // Render skinned meshes
+    if (!skinnedItems.empty()) {
+        RenderSkinnedMeshes(view, skinnedItems);
+    }
+
     // Resource barrier: RENDER_TARGET -> PIXEL_SHADER_RESOURCE
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
     cmdList->ResourceBarrier(1, &barrier);
+}
+
+void Renderer::DrawSkinnedMeshes(const RenderView& view, const std::vector<SkinnedRenderItem>& items, LightManager* lights) {
+    if (!view.camera) return;
+
+    SetupViewport();
+    UpdateLighting(view, lights);
+    RenderSkinnedMeshes(view, items);
+}
+
+void Renderer::RenderSkinnedMeshes(const RenderView& view, const std::vector<SkinnedRenderItem>& items) {
+    auto* cmdList = graphics_->GetCommandList();
+    auto* heap = graphics_->GetSRVHeap();
+
+    // デバッグ出力
+    char debugMsg[256];
+    sprintf_s(debugMsg, "RenderSkinnedMeshes: %zu items\n", items.size());
+    OutputDebugStringA(debugMsg);
+
+    cmdList->SetPipelineState(skinnedPipeline_.GetPipelineState());
+    cmdList->SetGraphicsRootSignature(skinnedPipeline_.GetRootSignature());
+
+    ID3D12DescriptorHeap* heaps[] = {heap};
+    cmdList->SetDescriptorHeaps(1, heaps);
+    cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    cmdList->SetGraphicsRootConstantBufferView(2, lightBuffer_.GetGPUAddress());
+
+    auto viewMatrix = view.camera->GetViewMatrix();
+    auto projection = view.camera->GetProjectionMatrix();
+
+    for (const auto& item : items) {
+        if (!item.mesh) continue;
+
+        // Transform
+        TransformCB transformData;
+        auto mvp = item.worldMatrix * viewMatrix * projection;
+        DirectX::XMStoreFloat4x4(&transformData.world, DirectX::XMMatrixTranspose(item.worldMatrix.GetXMMatrix()));
+        DirectX::XMStoreFloat4x4(&transformData.view, DirectX::XMMatrixTranspose(viewMatrix.GetXMMatrix()));
+        DirectX::XMStoreFloat4x4(&transformData.projection, DirectX::XMMatrixTranspose(projection.GetXMMatrix()));
+        DirectX::XMStoreFloat4x4(&transformData.mvp, DirectX::XMMatrixTranspose(mvp.GetXMMatrix()));
+        constantBuffer_.Update(transformData);
+        cmdList->SetGraphicsRootConstantBufferView(0, constantBuffer_.GetGPUAddress());
+
+        // Texture
+        if (item.material) {
+            cmdList->SetGraphicsRootDescriptorTable(1, item.material->GetAlbedoSRV(heap));
+        }
+
+        // Material
+        MaterialCB materialData;
+        if (item.material) {
+            const auto& matData = item.material->GetData();
+            materialData.albedo = DirectX::XMFLOAT3(matData.albedo[0], matData.albedo[1], matData.albedo[2]);
+            materialData.metallic = matData.metallic;
+            materialData.roughness = matData.roughness;
+        } else {
+            materialData.albedo = DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f);
+            materialData.metallic = 0.0f;
+            materialData.roughness = 0.5f;
+        }
+        materialBuffer_.Update(materialData);
+        cmdList->SetGraphicsRootConstantBufferView(3, materialBuffer_.GetGPUAddress());
+
+        // Bone matrices
+        BoneMatricesCB boneData = {};
+        if (item.boneMatrices) {
+            size_t numBones = (std::min)(item.boneMatrices->size(), static_cast<size_t>(MAX_BONES));
+            for (size_t i = 0; i < numBones; ++i) {
+                DirectX::XMStoreFloat4x4(&boneData.bones[i],
+                    DirectX::XMMatrixTranspose((*item.boneMatrices)[i].GetXMMatrix()));
+            }
+        } else {
+            for (int i = 0; i < MAX_BONES; ++i) {
+                DirectX::XMStoreFloat4x4(&boneData.bones[i], DirectX::XMMatrixIdentity());
+            }
+        }
+        boneBuffer_.Update(boneData);
+        cmdList->SetGraphicsRootConstantBufferView(4, boneBuffer_.GetGPUAddress());
+
+        // Draw
+        auto vbView = item.mesh->GetVertexBuffer().GetView();
+        cmdList->IASetVertexBuffers(0, 1, &vbView);
+        auto ibView = item.mesh->GetIndexBuffer().GetView();
+        cmdList->IASetIndexBuffer(&ibView);
+
+        uint32 indexCount = item.mesh->GetIndexBuffer().GetIndexCount();
+        char drawDebug[256];
+        sprintf_s(drawDebug, "Drawing skinned mesh: %u indices\n", indexCount);
+        OutputDebugStringA(drawDebug);
+
+        cmdList->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
+    }
 }
 
 } // namespace UnoEngine

@@ -201,6 +201,13 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClCompile Include="Game\Systems\PlayerSystem.cpp" />
     <ClCompile Include="Game\UI\EditorUI.cpp" />
     <ClCompile Include="Engine\UI\ImGuiManager.cpp" />
+    <ClCompile Include="Engine\Graphics\SkinnedMesh.cpp" />
+    <ClCompile Include="Engine\Graphics\SkinnedPipeline.cpp" />
+    <ClCompile Include="Engine\Resource\SkinnedModelImporter.cpp" />
+    <ClCompile Include="Engine\Animation\Skeleton.cpp" />
+    <ClCompile Include="Engine\Animation\AnimationClip.cpp" />
+    <ClCompile Include="Engine\Animation\AnimationState.cpp" />
+    <ClCompile Include="Engine\Animation\Animator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Core\Application.h" />
@@ -255,6 +262,15 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClInclude Include="Game\UI\EditorUI.h" />
     <ClInclude Include="Engine\Graphics\d3dx12.h" />
     <ClInclude Include="Engine\UI\ImGuiManager.h" />
+    <ClInclude Include="Engine\Graphics\SkinnedMesh.h" />
+    <ClInclude Include="Engine\Graphics\SkinnedPipeline.h" />
+    <ClInclude Include="Engine\Graphics\SkinnedVertex.h" />
+    <ClInclude Include="Engine\Resource\SkinnedModelImporter.h" />
+    <ClInclude Include="Engine\Rendering\SkinnedRenderItem.h" />
+    <ClInclude Include="Engine\Animation\Skeleton.h" />
+    <ClInclude Include="Engine\Animation\AnimationClip.h" />
+    <ClInclude Include="Engine\Animation\AnimationState.h" />
+    <ClInclude Include="Engine\Animation\Animator.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -286,6 +302,16 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
       <EntryPointName>main</EntryPointName>
     </FxCompile>
     <FxCompile Include="Shaders\SpritePS.hlsl">
+      <ShaderType>Pixel</ShaderType>
+      <ShaderModel>6.5</ShaderModel>
+      <EntryPointName>main</EntryPointName>
+    </FxCompile>
+    <FxCompile Include="Shaders\SkinnedVS.hlsl">
+      <ShaderType>Vertex</ShaderType>
+      <ShaderModel>6.5</ShaderModel>
+      <EntryPointName>main</EntryPointName>
+    </FxCompile>
+    <FxCompile Include="Shaders\SkinnedPS.hlsl">
       <ShaderType>Pixel</ShaderType>
       <ShaderModel>6.5</ShaderModel>
       <EntryPointName>main</EntryPointName>

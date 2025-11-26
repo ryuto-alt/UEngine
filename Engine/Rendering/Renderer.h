@@ -2,8 +2,10 @@
 
 #include "../Graphics/GraphicsDevice.h"
 #include "../Graphics/Pipeline.h"
+#include "../Graphics/SkinnedPipeline.h"
 #include "../Graphics/ConstantBuffer.h"
 #include "RenderItem.h"
+#include "SkinnedRenderItem.h"
 #include "RenderView.h"
 #include "LightManager.h"
 #include "../Window/Window.h"
@@ -47,11 +49,15 @@ public:
 
     void Initialize(GraphicsDevice* graphics, Window* window);
     void Draw(const RenderView& view, const std::vector<RenderItem>& renderItems, LightManager* lightManager, Scene* scene = nullptr);
-    void DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle, 
-                       D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle, const RenderView& view, 
-                       const std::vector<RenderItem>& items, LightManager* lightManager);
+    void DrawSkinnedMeshes(const RenderView& view, const std::vector<SkinnedRenderItem>& items, LightManager* lightManager);
+    void DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle,
+                       D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle, const RenderView& view,
+                       const std::vector<RenderItem>& items, LightManager* lightManager,
+                       const std::vector<SkinnedRenderItem>& skinnedItems = {});
+    void RenderUIOnly(Scene* scene);
 
     Pipeline* GetPipeline() { return &pipeline_; }
+    SkinnedPipeline* GetSkinnedPipeline() { return &skinnedPipeline_; }
     ImGuiManager* GetImGuiManager() { return imguiManager_.get(); }
 
 protected:
@@ -61,15 +67,18 @@ private:
     void SetupViewport();
     void UpdateLighting(const RenderView& view, LightManager* lightManager);
     void RenderMeshes(const RenderView& view, const std::vector<RenderItem>& items);
+    void RenderSkinnedMeshes(const RenderView& view, const std::vector<SkinnedRenderItem>& items);
 
 private:
     GraphicsDevice* graphics_ = nullptr;
     Window* window_ = nullptr;
     Pipeline pipeline_;
+    SkinnedPipeline skinnedPipeline_;
 
     ConstantBuffer<TransformCB> constantBuffer_;
     ConstantBuffer<LightCB> lightBuffer_;
     ConstantBuffer<MaterialCB> materialBuffer_;
+    ConstantBuffer<BoneMatricesCB> boneBuffer_;
 
     UniquePtr<ImGuiManager> imguiManager_;
 };

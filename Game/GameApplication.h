@@ -20,6 +20,8 @@ public:
 
     PlayerSystem& GetPlayerSystem() { return playerSystem_; }
     GraphicsDevice* GetGraphicsDevice() { return graphics_.get(); }
+    Renderer* GetRenderer() { return renderer_.get(); }
+    LightManager* GetLightManager() { return lightManager_.get(); }
 
 protected:
     void OnInit() override;

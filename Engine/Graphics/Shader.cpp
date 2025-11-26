@@ -1,5 +1,6 @@
 #include "Shader.h"
 #include <stdexcept>
+#include <Windows.h>
 
 namespace UnoEngine {
 
@@ -35,11 +36,31 @@ void Shader::CompileFromFile(const std::wstring& filepath, ShaderStage stage, co
     );
 
     if (FAILED(hr)) {
+        std::string errorMessage = "Shader compilation failed";
+
+        // ファイルパスを追加 (WideCharToMultiByte使用)
+        int size = WideCharToMultiByte(CP_UTF8, 0, filepath.c_str(), -1, nullptr, 0, nullptr, nullptr);
+        if (size > 0) {
+            std::string pathStr(size - 1, '\0');
+            WideCharToMultiByte(CP_UTF8, 0, filepath.c_str(), -1, &pathStr[0], size, nullptr, nullptr);
+            errorMessage += "\nFile: " + pathStr;
+        }
+
         if (errorBlob) {
             const char* errorMsg = static_cast<const char*>(errorBlob->GetBufferPointer());
-            throw std::runtime_error(std::string("Shader compilation failed: ") + errorMsg);
+            errorMessage += "\nError: ";
+            errorMessage += errorMsg;
+        } else {
+            errorMessage += "\nNo error details (file may not exist)";
         }
-        throw std::runtime_error("Shader compilation failed");
+
+        // デバッグ出力
+        OutputDebugStringA(errorMessage.c_str());
+
+        // メッセージボックスで詳細表示
+        MessageBoxA(nullptr, errorMessage.c_str(), "Shader Error", MB_OK | MB_ICONERROR);
+
+        throw std::runtime_error(errorMessage);
     }
 }
 

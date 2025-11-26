@@ -16,4 +16,9 @@ Quaternion Quaternion::LookRotation(const Vector3& forward, const Vector3& up) {
     return FromRotationMatrix(lookMat);
 }
 
+// Matrix4x4::CreateFromQuaternion の実装
+Matrix4x4 Matrix4x4::CreateFromQuaternion(const Quaternion& q) {
+    return q.ToMatrix();
+}
+
 } // namespace UnoEngine

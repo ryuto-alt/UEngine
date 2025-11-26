@@ -29,6 +29,10 @@ public:
     void WaitForGPU();
     void OnResize(uint32 width, uint32 height);
 
+    // リソースアップロード（初期化時のテクスチャ/バッファロード用）
+    void BeginResourceUpload();
+    void EndResourceUpload();
+
     // アクセサ
     ID3D12Device* GetDevice() const { return device_.Get(); }
     ID3D12CommandQueue* GetCommandQueue() const { return commandQueue_.Get(); }

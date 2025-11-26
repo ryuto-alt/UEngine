@@ -12,6 +12,19 @@ public:
     Matrix4x4() : mat_(DirectX::XMMatrixIdentity()) {}
     explicit Matrix4x4(DirectX::FXMMATRIX m) : mat_(m) {}
 
+    // 16要素コンストラクタ (行優先)
+    Matrix4x4(float m00, float m01, float m02, float m03,
+              float m10, float m11, float m12, float m13,
+              float m20, float m21, float m22, float m23,
+              float m30, float m31, float m32, float m33) {
+        mat_ = DirectX::XMMatrixSet(
+            m00, m01, m02, m03,
+            m10, m11, m12, m13,
+            m20, m21, m22, m23,
+            m30, m31, m32, m33
+        );
+    }
+
     // 行列演算
     Matrix4x4 operator*(const Matrix4x4& rhs) const { return Matrix4x4(DirectX::XMMatrixMultiply(mat_, rhs.mat_)); }
     Matrix4x4& operator*=(const Matrix4x4& rhs) { mat_ = DirectX::XMMatrixMultiply(mat_, rhs.mat_); return *this; }
@@ -76,6 +89,31 @@ public:
 
     static Matrix4x4 Scale(const Vector3& scale) {
         return Scaling(scale);
+    }
+
+    // Aliasメソッド (AnimationClip互換)
+    static Matrix4x4 CreateScale(const Vector3& scale) {
+        return Scaling(scale);
+    }
+
+    static Matrix4x4 CreateTranslation(const Vector3& pos) {
+        return Translation(pos);
+    }
+
+    static Matrix4x4 CreateFromQuaternion(const class Quaternion& q);
+
+    // 線形補間
+    static Matrix4x4 Lerp(const Matrix4x4& a, const Matrix4x4& b, float t) {
+        // 行列の要素ごとに線形補間
+        DirectX::XMFLOAT4X4 ma, mb, result;
+        DirectX::XMStoreFloat4x4(&ma, a.mat_);
+        DirectX::XMStoreFloat4x4(&mb, b.mat_);
+        for (int i = 0; i < 4; ++i) {
+            for (int j = 0; j < 4; ++j) {
+                result.m[i][j] = ma.m[i][j] + (mb.m[i][j] - ma.m[i][j]) * t;
+            }
+        }
+        return Matrix4x4(DirectX::XMLoadFloat4x4(&result));
     }
 
     static Matrix4x4 RotationX(float radians) {

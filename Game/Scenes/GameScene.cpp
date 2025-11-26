@@ -6,6 +6,7 @@
 #include "../../Engine/Graphics/MeshRenderer.h"
 #include "../../Engine/Graphics/DirectionalLightComponent.h"
 #include "../../Engine/Math/Math.h"
+#include "../../Engine/Rendering/SkinnedRenderItem.h"
 
 #ifdef _DEBUG
 #include <imgui.h>
@@ -16,18 +17,16 @@ namespace UnoEngine {
 void GameScene::OnLoad() {
     SetActiveCamera(nullptr);
 
-    // Camera setup
+    // Camera setup - gltfモデル用に調整
     auto camera = MakeUnique<Camera>();
-    camera->SetPosition(Vector3(0.0f, 5.0f, 10.0f));
-    camera->SetRotation(Quaternion::LookRotation(Vector3(0.0f, -0.5f, -1.0f).Normalize(), Vector3::UnitY()));
+    camera->SetPosition(Vector3(0.0f, 1.0f, 3.0f));  // 近くに配置
+    camera->SetRotation(Quaternion::LookRotation(Vector3(0.0f, 0.0f, -1.0f).Normalize(), Vector3::UnitY()));
     SetActiveCamera(camera.release());
 
-    // Player setup
+    // Player setup (カメラ操作用)
     player_ = CreateGameObject("Player");
-    auto* app = static_cast<GameApplication*>(GetApplication());
-    auto* mesh = app->LoadMesh("assets/model/testmodel/testmodel.obj");
-    player_->AddComponent<MeshRenderer>(mesh, const_cast<Material*>(mesh->GetMaterial()));
     player_->AddComponent<Player>();
+    auto* app = static_cast<GameApplication*>(GetApplication());
 
     // Light setup
     auto* light = CreateGameObject("DirectionalLight");
@@ -37,11 +36,30 @@ void GameScene::OnLoad() {
     lightComp->SetIntensity(1.0f);
     lightComp->UseTransformDirection(false);
 
+    // リソースアップロード開始（コマンドリストを開く）
+    auto* graphics = app->GetGraphicsDevice();
+    graphics->BeginResourceUpload();
+
+    // Load skinned model (walk.gltf)
+    auto* commandList = graphics->GetCommandList();
+    skinnedModel_ = SkinnedModelImporter::Load(graphics, commandList, "assets/model/testmodel/walk.gltf");
+
+    // Initialize bone matrices with bind pose
+    if (skinnedModel_.skeleton) {
+        skinnedModel_.skeleton->ComputeBindPoseMatrices(boneMatrices_);
+    }
+
 #ifdef _DEBUG
     // EditorUI初期化 (Debug builds only)
-    editorUI_.Initialize(app->GetGraphicsDevice());
+    editorUI_.Initialize(graphics);
     editorUI_.AddConsoleMessage("[Scene] GameScene loaded successfully");
+    if (!skinnedModel_.meshes.empty()) {
+        editorUI_.AddConsoleMessage("[Scene] Skinned model loaded: walk.gltf");
+    }
 #endif
+
+    // リソースアップロード完了（GPUにコマンドを送信して待機）
+    graphics->EndResourceUpload();
 }
 
 void GameScene::OnUpdate(float deltaTime) {
@@ -54,19 +72,11 @@ void GameScene::OnUpdate(float deltaTime) {
     editorUI_.GetSceneViewTexture()->Resize(app->GetGraphicsDevice(), sceneW, sceneH);
 #endif
 
-    // Rotate player
-    if (player_) {
-        auto& transform = player_->GetTransform();
-        Quaternion currentRotation = transform.GetLocalRotation();
-        Quaternion deltaRotation = Quaternion::RotationAxis(Vector3::UnitY(), Math::ToRadians(30.0f) * deltaTime);
-        transform.SetLocalRotation(deltaRotation * currentRotation);
-    }
-
-    // Update camera input via player system
+    // PlayerSystemでカメラ移動を処理
     Camera* camera = GetActiveCamera();
-    if (camera && player_) {
-        auto* playerComp = player_->GetComponent<Player>();
+    if (camera && player_ && input_) {
         auto* app = static_cast<GameApplication*>(GetApplication());
+        auto* playerComp = player_->GetComponent<Player>();
         app->GetPlayerSystem().Update(camera, playerComp, input_, deltaTime);
     }
 }
@@ -89,12 +99,28 @@ void GameScene::OnImGui() {
 void GameScene::OnRender(RenderView& view) {
     Camera* camera = GetActiveCamera();
     if (!camera) return;
-    
+
     view.camera = camera;
     view.layerMask = Layers::DEFAULT | Layers::PLAYER | Layers::ENEMY;
     view.viewName = "MainView";
+    // スキンメッシュの描画はGameApplication::OnRenderで行う
+}
 
+std::vector<SkinnedRenderItem> GameScene::GetSkinnedRenderItems() const {
+    std::vector<SkinnedRenderItem> items;
 
+    if (!skinnedModel_.meshes.empty()) {
+        for (const auto& mesh : skinnedModel_.meshes) {
+            SkinnedRenderItem item;
+            item.mesh = const_cast<SkinnedMesh*>(&mesh);
+            item.worldMatrix = Matrix4x4::Identity();
+            item.material = const_cast<Material*>(mesh.GetMaterial());
+            item.boneMatrices = const_cast<std::vector<Matrix4x4>*>(&boneMatrices_);
+            items.push_back(item);
+        }
+    }
+
+    return items;
 }
 
 } // namespace UnoEngine

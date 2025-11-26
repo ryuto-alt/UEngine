@@ -371,6 +371,35 @@ void GraphicsDevice::WaitForGPU() {
     WaitForSingleObject(fenceEvent_, INFINITE);
 }
 
+void GraphicsDevice::BeginResourceUpload() {
+    // コマンドアロケータをリセット
+    ThrowIfFailed(
+        commandAllocators_[0]->Reset(),
+        "Failed to reset command allocator for resource upload"
+    );
+
+    // コマンドリストをリセット（開く）
+    ThrowIfFailed(
+        commandList_->Reset(commandAllocators_[0].Get(), nullptr),
+        "Failed to reset command list for resource upload"
+    );
+}
+
+void GraphicsDevice::EndResourceUpload() {
+    // コマンドリストをクローズ
+    ThrowIfFailed(
+        commandList_->Close(),
+        "Failed to close command list after resource upload"
+    );
+
+    // コマンドキューに投入
+    ID3D12CommandList* cmdLists[] = { commandList_.Get() };
+    commandQueue_->ExecuteCommandLists(1, cmdLists);
+
+    // GPU完了を待つ
+    WaitForGPU();
+}
+
 void GraphicsDevice::OnResize(uint32 width, uint32 height) {
     if (width == 0 || height == 0) return;
 

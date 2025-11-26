@@ -161,54 +161,86 @@ std::shared_ptr<Skeleton> ExtractSkeleton(const aiScene* scene,
     std::sort(sortedBones.begin(), sortedBones.end(),
               [](const auto& a, const auto& b) { return a.second < b.second; });
 
-    // ルートノードのスケールを取得して正規化に使用
-    aiVector3D rootScale, rootPos;
-    aiQuaternion rootRot;
-    scene->mRootNode->mTransformation.Decompose(rootScale, rootRot, rootPos);
-    float scaleFactor = rootScale.x;  // 通常x,y,zは同じスケール
-
-    char debugMsg[256];
-    sprintf_s(debugMsg, "Root scale factor: %.3f\n", scaleFactor);
-    OutputDebugStringA(debugMsg);
-
     for (const auto& [name, index] : sortedBones) {
         int32 parentIndex = findParentBone(name);
 
-        // OffsetMatrixを分解してスケールを正規化
-        aiMatrix4x4 aiOffset = boneOffsets[name];
-        aiVector3D offsetScale, offsetPos;
-        aiQuaternion offsetRot;
-        aiOffset.Decompose(offsetScale, offsetRot, offsetPos);
-
-        // 最初のボーンだけデバッグ出力
-        if (index == 0) {
-            char boneDebug[256];
-            sprintf_s(boneDebug, "Bone0 original offset scale: [%.3f, %.3f, %.3f]\n",
-                     offsetScale.x, offsetScale.y, offsetScale.z);
-            OutputDebugStringA(boneDebug);
+        // OffsetMatrixを取得
+        Matrix4x4 offsetMatrix = ConvertMatrix(boneOffsets[name]);
+        
+        // aiProcess_GlobalScaleはinverseBindMatricesに影響しないため、
+        // 手動でスケールを除去する必要がある
+        // 各列ベクトルの長さを計算してスケールを検出
+        float scaleX = 0.0f, scaleY = 0.0f, scaleZ = 0.0f;
+        for (int row = 0; row < 3; ++row) {
+            float x = offsetMatrix.GetElement(row, 0);
+            float y = offsetMatrix.GetElement(row, 1);
+            float z = offsetMatrix.GetElement(row, 2);
+            scaleX += x * x;
+            scaleY += y * y;
+            scaleZ += z * z;
         }
-
-        // OffsetMatrixのスケールが1でない場合は正規化
-        // glTFでは100倍スケールが含まれることがある
-        float offsetScaleFactor = offsetScale.x;
-        if (offsetScaleFactor > 1.1f || offsetScaleFactor < 0.9f) {
-            // スケールを1に正規化
-            offsetScale = aiVector3D(1.0f, 1.0f, 1.0f);
-            // 位置もスケールで調整
-            offsetPos /= offsetScaleFactor;
+        scaleX = std::sqrt(scaleX);
+        scaleY = std::sqrt(scaleY);
+        scaleZ = std::sqrt(scaleZ);
+        
+        // 平均スケールが100に近い場合（cm→m変換）、正規化
+        float avgScale = (scaleX + scaleY + scaleZ) / 3.0f;
+        if (avgScale > 10.0f) { // スケールが大きい場合のみ正規化
+            // DirectXMath経由で行列要素を変更
+            DirectX::XMFLOAT4X4 matFloat;
+            DirectX::XMStoreFloat4x4(&matFloat, offsetMatrix.GetXMMatrix());
+            
+            // 回転成分の各列ベクトルを正規化
+            if (scaleX > 0.0001f) {
+                float invScale = 1.0f / scaleX;
+                for (int row = 0; row < 3; ++row) {
+                    matFloat.m[row][0] *= invScale;
+                }
+            }
+            if (scaleY > 0.0001f) {
+                float invScale = 1.0f / scaleY;
+                for (int row = 0; row < 3; ++row) {
+                    matFloat.m[row][1] *= invScale;
+                }
+            }
+            if (scaleZ > 0.0001f) {
+                float invScale = 1.0f / scaleZ;
+                for (int row = 0; row < 3; ++row) {
+                    matFloat.m[row][2] *= invScale;
+                }
+            }
+            
+            // 平行移動成分もスケーリング（cm→m変換）
+            float posScale = 1.0f / avgScale;
+            matFloat.m[3][0] *= posScale;
+            matFloat.m[3][1] *= posScale;
+            matFloat.m[3][2] *= posScale;
+            // m[3][3]は常に1.0であるべき
+            matFloat.m[3][3] = 1.0f;
+            
+            // 行列を再構築
+            offsetMatrix = Matrix4x4(DirectX::XMLoadFloat4x4(&matFloat));
+            
+            // デバッグ: 最初のボーンの補正結果を出力
+            if (index == 0) {
+                char debugMsg[1024];
+                sprintf_s(debugMsg, "Bone0 scale removed: avgScale=%.3f\n"
+                         "  Row0: [%.3f, %.3f, %.3f, %.3f]\n"
+                         "  Row1: [%.3f, %.3f, %.3f, %.3f]\n"
+                         "  Row2: [%.3f, %.3f, %.3f, %.3f]\n"
+                         "  Row3: [%.3f, %.3f, %.3f, %.3f]\n",
+                         avgScale,
+                         offsetMatrix.GetElement(0, 0), offsetMatrix.GetElement(0, 1),
+                         offsetMatrix.GetElement(0, 2), offsetMatrix.GetElement(0, 3),
+                         offsetMatrix.GetElement(1, 0), offsetMatrix.GetElement(1, 1),
+                         offsetMatrix.GetElement(1, 2), offsetMatrix.GetElement(1, 3),
+                         offsetMatrix.GetElement(2, 0), offsetMatrix.GetElement(2, 1),
+                         offsetMatrix.GetElement(2, 2), offsetMatrix.GetElement(2, 3),
+                         offsetMatrix.GetElement(3, 0), offsetMatrix.GetElement(3, 1),
+                         offsetMatrix.GetElement(3, 2), offsetMatrix.GetElement(3, 3));
+                OutputDebugStringA(debugMsg);
+            }
         }
-
-        // 正規化された行列を再構築 (glTF: Scale * Rotation * Translation)
-        // Assimpの行列構築は列ベクトル形式なので S * R * T の順
-        aiMatrix4x4 scaleMat, rotMat, transMat;
-        aiMatrix4x4::Scaling(offsetScale, scaleMat);
-        rotMat = aiMatrix4x4(offsetRot.GetMatrix());
-        aiMatrix4x4::Translation(offsetPos, transMat);
-
-        // Assimp列ベクトル: 最終 = T * R * S
-        aiMatrix4x4 normalizedOffset = transMat * rotMat * scaleMat;
-
-        Matrix4x4 offsetMatrix = ConvertMatrix(normalizedOffset);
 
         Matrix4x4 localBindPose = Matrix4x4::Identity();
         if (boneNodes[name]) {
@@ -257,6 +289,7 @@ std::vector<std::shared_ptr<AnimationClip>> ExtractAnimations(const aiScene* sce
                 Keyframe<Vector3> key;
                 key.time = static_cast<float>(channel->mPositionKeys[k].mTime);
                 key.value = ConvertVector3(channel->mPositionKeys[k].mValue);
+                // AI_CONFIG_GLOBAL_SCALE_FACTOR_KEYにより自動スケーリング済み
                 boneAnim.positionKeys.push_back(key);
             }
 
@@ -301,6 +334,7 @@ SkinnedMesh ProcessSkinnedMesh(const aiMesh* aiMesh, const aiScene* scene,
     for (uint32 i = 0; i < aiMesh->mNumVertices; ++i) {
         SkinnedVertex& vertex = vertices[i];
 
+        // AI_CONFIG_GLOBAL_SCALE_FACTOR_KEYにより自動スケーリング済み
         vertex.px = aiMesh->mVertices[i].x;
         vertex.py = aiMesh->mVertices[i].y;
         vertex.pz = aiMesh->mVertices[i].z;
@@ -335,6 +369,16 @@ SkinnedMesh ProcessSkinnedMesh(const aiMesh* aiMesh, const aiScene* scene,
 
     for (auto& v : vertices) {
         v.NormalizeWeights();
+    }
+
+    // デバッグ: 最初の頂点のボーンデータ
+    if (!vertices.empty()) {
+        const auto& v0 = vertices[0];
+        char boneDebug[512];
+        sprintf_s(boneDebug, "Vertex[0] bones=[%u,%u,%u,%u], weights=[%.3f,%.3f,%.3f,%.3f]\n",
+                 v0.boneIndices[0], v0.boneIndices[1], v0.boneIndices[2], v0.boneIndices[3],
+                 v0.boneWeights[0], v0.boneWeights[1], v0.boneWeights[2], v0.boneWeights[3]);
+        OutputDebugStringA(boneDebug);
     }
 
     // デバッグ: 頂点座標の範囲を出力
@@ -411,10 +455,11 @@ SkinnedModelData SkinnedModelImporter::Load(GraphicsDevice* graphics, ID3D12Grap
                         aiProcess_CalcTangentSpace | aiProcess_GenNormals |
                         aiProcess_LimitBoneWeights |
                         aiProcess_MakeLeftHanded | aiProcess_FlipWindingOrder |
-                        aiProcess_GlobalScale;  // スケール正規化
+                        aiProcess_GlobalScale;
 
-    // glTFのスケールを1.0に正規化
-    importer.SetPropertyFloat(AI_CONFIG_GLOBAL_SCALE_FACTOR_KEY, 1.0f);
+    // GLTFが100倍のスケール（cm単位）の場合、0.01倍してメートル単位に変換
+    // AI_CONFIG_GLOBAL_SCALE_FACTOR_KEYはモデル全体に適用される
+    importer.SetPropertyFloat(AI_CONFIG_GLOBAL_SCALE_FACTOR_KEY, 0.01f);
 
     const aiScene* scene = importer.ReadFile(filepath, flags);
 

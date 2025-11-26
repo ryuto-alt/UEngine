@@ -173,14 +173,15 @@ void Animator::UpdateBoneMatrices() {
     currentState_->GetClip()->Sample(time, *skeleton_, currentLocalTransforms_);
     skeleton_->ComputeBoneMatrices(currentLocalTransforms_, finalBoneMatrices_);
 
-    // 60フレームに1回だけデバッグ出力（約1秒に1回）
-    if (updateCount++ % 60 == 0 && !finalBoneMatrices_.empty()) {
+    // 30フレームに1回だけデバッグ出力
+    if (updateCount++ % 30 == 0 && !finalBoneMatrices_.empty()) {
         char msg[512];
         const auto& m = finalBoneMatrices_[0];
         float duration = currentState_->GetClip()->GetDuration();
         float tps = currentState_->GetClip()->GetTicksPerSecond();
-        sprintf_s(msg, "Animator - time=%.3f, duration=%.3f, tps=%.1f, bone0=[%.3f,%.3f,%.3f,%.3f]\n",
-                 time, duration, tps, m.GetElement(0,0), m.GetElement(0,1), m.GetElement(0,2), m.GetElement(0,3));
+        float normTime = currentState_->GetNormalizedTime();
+        sprintf_s(msg, "Animator - normTime=%.4f, time=%.3f, dur=%.1f, tps=%.1f, bone0=[%.3f,%.3f,%.3f,%.3f]\n",
+                 normTime, time, duration, tps, m.GetElement(0,0), m.GetElement(0,1), m.GetElement(0,2), m.GetElement(0,3));
         OutputDebugStringA(msg);
     }
 }

@@ -22,7 +22,11 @@ void AnimationState::Update(float deltaTime) {
         return;
     }
 
-    float normalizedDelta = (deltaTime * speed_) / duration;
+    // deltaTimeは秒単位、durationはticks単位
+    // ticksPerSecondを使ってdeltaTimeをticks単位に変換
+    float ticksPerSecond = clip_->GetTicksPerSecond();
+    float deltaInTicks = deltaTime * speed_ * ticksPerSecond;
+    float normalizedDelta = deltaInTicks / duration;
     normalizedTime_ += normalizedDelta;
 
     switch (wrapMode_) {

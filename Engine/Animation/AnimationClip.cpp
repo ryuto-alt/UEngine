@@ -77,7 +77,8 @@ Matrix4x4 BoneAnimation::GetLocalTransform(float time) const {
     Matrix4x4 rotationMatrix = Matrix4x4::CreateFromQuaternion(rotation);
     Matrix4x4 translationMatrix = Matrix4x4::CreateTranslation(position);
 
-    return scaleMatrix * rotationMatrix * translationMatrix;
+    // DirectX行優先: T * R * S の順序
+    return translationMatrix * rotationMatrix * scaleMatrix;
 }
 
 void AnimationClip::AddBoneAnimation(const BoneAnimation& boneAnim) {

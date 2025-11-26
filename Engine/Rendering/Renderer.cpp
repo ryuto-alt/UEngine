@@ -260,8 +260,19 @@ void Renderer::RenderSkinnedMeshes(const RenderView& view, const std::vector<Ski
         if (item.boneMatrices) {
             size_t numBones = (std::min)(item.boneMatrices->size(), static_cast<size_t>(MAX_BONES));
             for (size_t i = 0; i < numBones; ++i) {
-                DirectX::XMStoreFloat4x4(&boneData.bones[i],
-                    DirectX::XMMatrixTranspose((*item.boneMatrices)[i].GetXMMatrix()));
+                // 転置なしで直接格納 (DirectXMathとHLSL両方が行優先)
+                DirectX::XMStoreFloat4x4(&boneData.bones[i], (*item.boneMatrices)[i].GetXMMatrix());
+            }
+
+            // 最初のボーン行列をデバッグ出力(1回だけ)
+            static bool printed = false;
+            if (!printed && numBones > 0) {
+                printed = true;
+                char msg[512];
+                sprintf_s(msg, "Renderer Bone0 - m[3][0-3]=[%.3f,%.3f,%.3f,%.3f]\n",
+                         boneData.bones[0].m[3][0], boneData.bones[0].m[3][1],
+                         boneData.bones[0].m[3][2], boneData.bones[0].m[3][3]);
+                OutputDebugStringA(msg);
             }
         } else {
             for (int i = 0; i < MAX_BONES; ++i) {
@@ -278,10 +289,6 @@ void Renderer::RenderSkinnedMeshes(const RenderView& view, const std::vector<Ski
         cmdList->IASetIndexBuffer(&ibView);
 
         uint32 indexCount = item.mesh->GetIndexBuffer().GetIndexCount();
-        char drawDebug[256];
-        sprintf_s(drawDebug, "Drawing skinned mesh: %u indices\n", indexCount);
-        OutputDebugStringA(drawDebug);
-
         cmdList->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
     }
 }

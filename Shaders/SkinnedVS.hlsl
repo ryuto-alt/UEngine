@@ -31,18 +31,41 @@ struct VSOutput {
 VSOutput main(VSInput input) {
     VSOutput output;
 
-    // デバッグ: スキニングをバイパス、生の頂点位置を使用
-    float4 localPos = float4(input.position, 1.0f);
+    // GPUスキニング: ボーン行列による頂点変換
+    // DirectXMathとHLSL両方が行優先なので、行ベクトル形式で乗算
+    float4 skinnedPos = float4(0.0f, 0.0f, 0.0f, 0.0f);
+    float3 skinnedNormal = float3(0.0f, 0.0f, 0.0f);
+
+    // 各ボーンの影響を加算
+    [unroll]
+    for (int i = 0; i < 4; i++) {
+        uint boneIdx = input.boneIndices[i];
+        float weight = input.boneWeights[i];
+
+        if (weight > 0.0f) {
+            matrix boneMat = bones[boneIdx];
+            // 行ベクトル形式: mul(vec, matrix)
+            skinnedPos += weight * mul(float4(input.position, 1.0f), boneMat);
+            skinnedNormal += weight * mul(input.normal, (float3x3)boneMat);
+        }
+    }
+
+    // ウェイトの合計が0の場合はバインドポーズを使用
+    float totalWeight = input.boneWeights.x + input.boneWeights.y + input.boneWeights.z + input.boneWeights.w;
+    if (totalWeight < 0.001f) {
+        skinnedPos = float4(input.position, 1.0f);
+        skinnedNormal = input.normal;
+    }
 
     // ワールド空間位置
-    float4 worldPos = mul(localPos, world);
+    float4 worldPos = mul(skinnedPos, world);
     output.worldPos = worldPos.xyz;
 
     // クリップ空間位置
-    output.position = mul(localPos, mvp);
+    output.position = mul(skinnedPos, mvp);
 
     // ワールド空間法線
-    output.normal = normalize(mul(input.normal, (float3x3)world));
+    output.normal = normalize(mul(skinnedNormal, (float3x3)world));
 
     output.uv = input.uv;
 

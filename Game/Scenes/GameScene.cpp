@@ -7,6 +7,7 @@
 #include "../../Engine/Graphics/DirectionalLightComponent.h"
 #include "../../Engine/Math/Math.h"
 #include "../../Engine/Rendering/SkinnedRenderItem.h"
+#include "../../Engine/Animation/AnimatorComponent.h"
 
 #ifdef _DEBUG
 #include <imgui.h>
@@ -44,9 +45,22 @@ void GameScene::OnLoad() {
     auto* commandList = graphics->GetCommandList();
     skinnedModel_ = SkinnedModelImporter::Load(graphics, commandList, "assets/model/testmodel/walk.gltf");
 
-    // Initialize bone matrices with bind pose
+    // Create animated character GameObject
+    animatedCharacter_ = CreateGameObject("AnimatedCharacter");
+    auto* animatorComp = animatedCharacter_->AddComponent<AnimatorComponent>();
+    
+    // Initialize animator with skeleton and animations
     if (skinnedModel_.skeleton) {
-        skinnedModel_.skeleton->ComputeBindPoseMatrices(boneMatrices_);
+        animatorComp->Initialize(skinnedModel_.skeleton, skinnedModel_.animations);
+        
+        // Play first animation if available
+        if (!skinnedModel_.animations.empty()) {
+            std::string animName = skinnedModel_.animations[0]->GetName();
+            if (animName.empty()) {
+                animName = "Animation_0";
+            }
+            animatorComp->Play(animName, true);
+        }
     }
 
 #ifdef _DEBUG
@@ -76,8 +90,11 @@ void GameScene::OnUpdate(float deltaTime) {
     Camera* camera = GetActiveCamera();
     if (camera && player_ && input_) {
         auto* app = static_cast<GameApplication*>(GetApplication());
-        auto* playerComp = player_->GetComponent<Player>();
-        app->GetPlayerSystem().Update(camera, playerComp, input_, deltaTime);
+        auto* playerSystem = app->GetPlayerSystem();
+        if (playerSystem) {
+            auto* playerComp = player_->GetComponent<Player>();
+            playerSystem->Update(camera, playerComp, input_, deltaTime);
+        }
     }
 }
 
@@ -109,13 +126,20 @@ void GameScene::OnRender(RenderView& view) {
 std::vector<SkinnedRenderItem> GameScene::GetSkinnedRenderItems() const {
     std::vector<SkinnedRenderItem> items;
 
-    if (!skinnedModel_.meshes.empty()) {
+    if (!skinnedModel_.meshes.empty() && animatedCharacter_) {
+        auto* animatorComp = animatedCharacter_->GetComponent<AnimatorComponent>();
+        
         for (const auto& mesh : skinnedModel_.meshes) {
             SkinnedRenderItem item;
             item.mesh = const_cast<SkinnedMesh*>(&mesh);
-            item.worldMatrix = Matrix4x4::Identity();
+            item.worldMatrix = animatedCharacter_->GetTransform().GetWorldMatrix();
             item.material = const_cast<Material*>(mesh.GetMaterial());
-            item.boneMatrices = const_cast<std::vector<Matrix4x4>*>(&boneMatrices_);
+            
+            // Get bone matrices from AnimatorComponent
+            if (animatorComp) {
+                item.boneMatrices = const_cast<std::vector<Matrix4x4>*>(&animatorComp->GetBoneMatrices());
+            }
+            
             items.push_back(item);
         }
     }

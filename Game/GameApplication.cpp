@@ -7,7 +7,9 @@
 namespace UnoEngine {
 
 void GameApplication::OnInit() {
-    // Game-specific initialization
+    // Register systems
+    GetSystemManager()->RegisterSystem<AnimationSystem>();
+    GetSystemManager()->RegisterSystem<PlayerSystem>();
 }
 
 Mesh* GameApplication::LoadMesh(const std::string& path) {

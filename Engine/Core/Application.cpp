@@ -75,6 +75,13 @@ void Application::MainLoop() {
 
         // 更新
         sceneManager_->Update(deltaTime);
+        
+        // システム更新
+        Scene* activeScene = sceneManager_->GetActiveScene();
+        if (activeScene) {
+            systemManager_.Update(activeScene, deltaTime);
+        }
+        
         OnUpdate(deltaTime);
 
         // 描画

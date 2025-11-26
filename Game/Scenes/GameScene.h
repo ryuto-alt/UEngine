@@ -31,10 +31,10 @@ public:
 
 private:
     GameObject* player_ = nullptr;
+    GameObject* animatedCharacter_ = nullptr;
 
     // Skinned model data
     SkinnedModelData skinnedModel_;
-    std::vector<Matrix4x4> boneMatrices_;
 
 #ifdef _DEBUG
     EditorUI editorUI_;

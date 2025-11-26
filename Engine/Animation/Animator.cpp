@@ -1,6 +1,12 @@
+// Windows.hを先にインクルードしてからマクロを解除
+#include <Windows.h>
+#undef GetCurrentTime
+
 #include "Animator.h"
 
 namespace UnoEngine {
+
+static int updateCount = 0;
 
 void Animator::OnUpdate(float deltaTime) {
     if (!isPlaying_ || !skeleton_) {
@@ -166,6 +172,17 @@ void Animator::UpdateBoneMatrices() {
     float time = currentState_->GetCurrentTime();
     currentState_->GetClip()->Sample(time, *skeleton_, currentLocalTransforms_);
     skeleton_->ComputeBoneMatrices(currentLocalTransforms_, finalBoneMatrices_);
+
+    // 60フレームに1回だけデバッグ出力（約1秒に1回）
+    if (updateCount++ % 60 == 0 && !finalBoneMatrices_.empty()) {
+        char msg[512];
+        const auto& m = finalBoneMatrices_[0];
+        float duration = currentState_->GetClip()->GetDuration();
+        float tps = currentState_->GetClip()->GetTicksPerSecond();
+        sprintf_s(msg, "Animator - time=%.3f, duration=%.3f, tps=%.1f, bone0=[%.3f,%.3f,%.3f,%.3f]\n",
+                 time, duration, tps, m.GetElement(0,0), m.GetElement(0,1), m.GetElement(0,2), m.GetElement(0,3));
+        OutputDebugStringA(msg);
+    }
 }
 
 void Animator::CheckTransitions() {

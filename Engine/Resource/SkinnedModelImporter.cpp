@@ -161,9 +161,54 @@ std::shared_ptr<Skeleton> ExtractSkeleton(const aiScene* scene,
     std::sort(sortedBones.begin(), sortedBones.end(),
               [](const auto& a, const auto& b) { return a.second < b.second; });
 
+    // ルートノードのスケールを取得して正規化に使用
+    aiVector3D rootScale, rootPos;
+    aiQuaternion rootRot;
+    scene->mRootNode->mTransformation.Decompose(rootScale, rootRot, rootPos);
+    float scaleFactor = rootScale.x;  // 通常x,y,zは同じスケール
+
+    char debugMsg[256];
+    sprintf_s(debugMsg, "Root scale factor: %.3f\n", scaleFactor);
+    OutputDebugStringA(debugMsg);
+
     for (const auto& [name, index] : sortedBones) {
         int32 parentIndex = findParentBone(name);
-        Matrix4x4 offsetMatrix = ConvertMatrix(boneOffsets[name]);
+
+        // OffsetMatrixを分解してスケールを正規化
+        aiMatrix4x4 aiOffset = boneOffsets[name];
+        aiVector3D offsetScale, offsetPos;
+        aiQuaternion offsetRot;
+        aiOffset.Decompose(offsetScale, offsetRot, offsetPos);
+
+        // 最初のボーンだけデバッグ出力
+        if (index == 0) {
+            char boneDebug[256];
+            sprintf_s(boneDebug, "Bone0 original offset scale: [%.3f, %.3f, %.3f]\n",
+                     offsetScale.x, offsetScale.y, offsetScale.z);
+            OutputDebugStringA(boneDebug);
+        }
+
+        // OffsetMatrixのスケールが1でない場合は正規化
+        // glTFでは100倍スケールが含まれることがある
+        float offsetScaleFactor = offsetScale.x;
+        if (offsetScaleFactor > 1.1f || offsetScaleFactor < 0.9f) {
+            // スケールを1に正規化
+            offsetScale = aiVector3D(1.0f, 1.0f, 1.0f);
+            // 位置もスケールで調整
+            offsetPos /= offsetScaleFactor;
+        }
+
+        // 正規化された行列を再構築 (glTF: Scale * Rotation * Translation)
+        // Assimpの行列構築は列ベクトル形式なので S * R * T の順
+        aiMatrix4x4 scaleMat, rotMat, transMat;
+        aiMatrix4x4::Scaling(offsetScale, scaleMat);
+        rotMat = aiMatrix4x4(offsetRot.GetMatrix());
+        aiMatrix4x4::Translation(offsetPos, transMat);
+
+        // Assimp列ベクトル: 最終 = T * R * S
+        aiMatrix4x4 normalizedOffset = transMat * rotMat * scaleMat;
+
+        Matrix4x4 offsetMatrix = ConvertMatrix(normalizedOffset);
 
         Matrix4x4 localBindPose = Matrix4x4::Identity();
         if (boneNodes[name]) {
@@ -173,15 +218,14 @@ std::shared_ptr<Skeleton> ExtractSkeleton(const aiScene* scene,
         skeleton->AddBone(name, parentIndex, offsetMatrix, localBindPose);
     }
 
-    // シーンルートノードの逆変換行列を設定
-    // これはモデル空間からシーン空間への変換の逆
-    aiMatrix4x4 rootTransform = scene->mRootNode->mTransformation;
-    rootTransform.Inverse();
-    skeleton->SetGlobalInverseTransform(ConvertMatrix(rootTransform));
+    // glTFの場合、ルートノードにスケール（例: 100）が含まれることがある
+    // スキニングでは単位行列を使用し、OffsetMatrixで処理する
+    // これにより、ボーン行列が正しく計算される
+    skeleton->SetGlobalInverseTransform(Matrix4x4::Identity());
 
-    char debugMsg[256];
-    sprintf_s(debugMsg, "Skeleton created: %u bones\\n", skeleton->GetBoneCount());
-    OutputDebugStringA(debugMsg);
+    char skelDebug[256];
+    sprintf_s(skelDebug, "Skeleton created: %u bones\\n", skeleton->GetBoneCount());
+    OutputDebugStringA(skelDebug);
 
     return skeleton;
 }
@@ -366,7 +410,11 @@ SkinnedModelData SkinnedModelImporter::Load(GraphicsDevice* graphics, ID3D12Grap
     unsigned int flags = aiProcess_Triangulate | aiProcess_FlipUVs |
                         aiProcess_CalcTangentSpace | aiProcess_GenNormals |
                         aiProcess_LimitBoneWeights |
-                        aiProcess_MakeLeftHanded | aiProcess_FlipWindingOrder;
+                        aiProcess_MakeLeftHanded | aiProcess_FlipWindingOrder |
+                        aiProcess_GlobalScale;  // スケール正規化
+
+    // glTFのスケールを1.0に正規化
+    importer.SetPropertyFloat(AI_CONFIG_GLOBAL_SCALE_FACTOR_KEY, 1.0f);
 
     const aiScene* scene = importer.ReadFile(filepath, flags);
 

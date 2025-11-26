@@ -208,6 +208,9 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClCompile Include="Engine\Animation\AnimationClip.cpp" />
     <ClCompile Include="Engine\Animation\AnimationState.cpp" />
     <ClCompile Include="Engine\Animation\Animator.cpp" />
+    <ClCompile Include="Engine\Animation\AnimatorComponent.cpp" />
+    <ClCompile Include="Engine\Animation\AnimationSystem.cpp" />
+    <ClCompile Include="Engine\Systems\SystemManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Core\Application.h" />
@@ -271,6 +274,9 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClInclude Include="Engine\Animation\AnimationClip.h" />
     <ClInclude Include="Engine\Animation\AnimationState.h" />
     <ClInclude Include="Engine\Animation\Animator.h" />
+    <ClInclude Include="Engine\Animation\AnimatorComponent.h" />
+    <ClInclude Include="Engine\Animation\AnimationSystem.h" />
+    <ClInclude Include="Engine\Systems\SystemManager.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -210,11 +210,6 @@ void Renderer::RenderSkinnedMeshes(const RenderView& view, const std::vector<Ski
     auto* cmdList = graphics_->GetCommandList();
     auto* heap = graphics_->GetSRVHeap();
 
-    // デバッグ出力
-    char debugMsg[256];
-    sprintf_s(debugMsg, "RenderSkinnedMeshes: %zu items\n", items.size());
-    OutputDebugStringA(debugMsg);
-
     cmdList->SetPipelineState(skinnedPipeline_.GetPipelineState());
     cmdList->SetGraphicsRootSignature(skinnedPipeline_.GetRootSignature());
 

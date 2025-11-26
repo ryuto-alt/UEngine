@@ -9,6 +9,7 @@
 #include "../Rendering/LightManager.h"
 #include "../Input/InputManager.h"
 #include "../Rendering/Renderer.h"
+#include "../Systems/SystemManager.h"
 
 namespace UnoEngine {
 
@@ -32,6 +33,7 @@ public:
     GraphicsDevice* GetGraphics() const { return graphics_.get(); }
     InputManager* GetInput() const { return input_.get(); }
     SceneManager* GetSceneManager() const { return sceneManager_.get(); }
+    SystemManager* GetSystemManager() { return &systemManager_; }
 
 protected:
     // オーバーライド可能なライフサイクル
@@ -44,6 +46,7 @@ protected:
     UniquePtr<RenderSystem> renderSystem_;
     UniquePtr<LightManager> lightManager_;
     UniquePtr<Renderer> renderer_;
+    SystemManager systemManager_;
 
 private:
     void Initialize();

@@ -3,7 +3,7 @@
 #include "../Engine/Core/Application.h"
 #include "../Engine/Animation/AnimationSystem.h"
 #include "../Engine/Resource/ResourceManager.h"
-#include "Systems/PlayerSystem.h"
+#include "Systems/CameraSystem.h"
 #include <memory>
 
 namespace UnoEngine {
@@ -22,7 +22,7 @@ public:
     Material* LoadMaterial(const std::string& name);
 
     // Accessors
-    PlayerSystem* GetPlayerSystem() { return GetSystemManager()->GetSystem<PlayerSystem>(); }
+    CameraSystem* GetCameraSystem() { return GetSystemManager()->GetSystem<CameraSystem>(); }
     GraphicsDevice* GetGraphicsDevice() { return graphics_.get(); }
     Renderer* GetRenderer() { return renderer_.get(); }
     LightManager* GetLightManager() { return lightManager_.get(); }

@@ -14,7 +14,7 @@ void GameApplication::OnInit() {
 
     // Register systems
     GetSystemManager()->RegisterSystem<AnimationSystem>();
-    GetSystemManager()->RegisterSystem<PlayerSystem>();
+    GetSystemManager()->RegisterSystem<CameraSystem>();
 }
 
 Mesh* GameApplication::LoadMesh(const std::string& path) {

@@ -116,10 +116,10 @@ void GameScene::OnUpdate(float deltaTime) {
     Camera* camera = GetActiveCamera();
     if (camera && player_ && input_) {
         auto* app = static_cast<GameApplication*>(GetApplication());
-        auto* playerSystem = app->GetPlayerSystem();
-        if (playerSystem) {
+        auto* cameraSystem = app->GetCameraSystem();
+        if (cameraSystem) {
             auto* playerComp = player_->GetComponent<Player>();
-            playerSystem->Update(camera, playerComp, input_, deltaTime);
+            cameraSystem->Update(camera, playerComp, input_, deltaTime);
         }
     }
 }

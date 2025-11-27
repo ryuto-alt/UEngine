@@ -9,7 +9,7 @@ class InputManager;
 class Camera;
 struct Player;
 
-class PlayerSystem : public ISystem {
+class CameraSystem : public ISystem {
 public:
     void OnUpdate(Scene* scene, float deltaTime) override;
     int GetPriority() const override { return 50; }

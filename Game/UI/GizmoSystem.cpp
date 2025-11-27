@@ -15,17 +15,22 @@ bool GizmoSystem::RenderGizmo(GameObject* selectedObject, Camera* camera,
         return false;
     }
 
+    // 右クリック中はギズモを無効化（カメラ操作を優先）
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.MouseDown[1]) {
+        return false;
+    }
+
     // ギズモの描画領域を設定
-    // 注意: SetDrawlist(nullptr)でWindowDrawListを使用（マウスイベントを受け取るため）
     ImGuizmo::SetDrawlist();
     ImGuizmo::SetRect(viewportX, viewportY, viewportWidth, viewportHeight);
     ImGuizmo::SetOrthographic(false);
     ImGuizmo::Enable(true);
 
-    // ギズモのサイズを大きく設定（デフォルト0.1、大きくするには値を増やす）
+    // ギズモのサイズを大きく設定
     ImGuizmo::SetGizmoSizeClipSpace(0.25f);
 
-    // カメラ行列を取得（非constメソッドなのでキャスト）
+    // カメラ行列を取得
     float viewMatrix[16];
     float projMatrix[16];
     const_cast<Camera*>(camera)->GetViewMatrix().ToFloatArray(viewMatrix);
@@ -67,24 +72,30 @@ bool GizmoSystem::RenderGizmo(GameObject* selectedObject, Camera* camera,
         snapPtr
     );
 
-    // 操作があった場合、Transformを更新
+    // 操作があった場合、Transformを更新（操作タイプに応じて必要な値のみ更新）
     if (manipulated) {
-        // 行列を分解してTransformに適用
         float translation[3], rotation[3], scale[3];
         ImGuizmo::DecomposeMatrixToComponents(objectMatrix, translation, rotation, scale);
 
-        // 位置を設定
-        transform.SetLocalPosition(Vector3(translation[0], translation[1], translation[2]));
-
-        // 回転を設定（度からラジアンに変換）
-        float radX = rotation[0] * 3.14159265f / 180.0f;
-        float radY = rotation[1] * 3.14159265f / 180.0f;
-        float radZ = rotation[2] * 3.14159265f / 180.0f;
-        Quaternion quat = Quaternion::RotationRollPitchYaw(radX, radY, radZ);
-        transform.SetLocalRotation(quat);
-
-        // スケールを設定
-        transform.SetLocalScale(Vector3(scale[0], scale[1], scale[2]));
+        switch (operation_) {
+            case GizmoOperation::Translate:
+                transform.SetLocalPosition(Vector3(translation[0], translation[1], translation[2]));
+                break;
+            case GizmoOperation::Rotate: {
+                // 回転のみ更新（度からラジアンに変換）
+                constexpr float DEG_TO_RAD = 3.14159265f / 180.0f;
+                Quaternion quat = Quaternion::RotationRollPitchYaw(
+                    rotation[0] * DEG_TO_RAD,
+                    rotation[1] * DEG_TO_RAD,
+                    rotation[2] * DEG_TO_RAD
+                );
+                transform.SetLocalRotation(quat);
+                break;
+            }
+            case GizmoOperation::Scale:
+                transform.SetLocalScale(Vector3(scale[0], scale[1], scale[2]));
+                break;
+        }
     }
 
     return manipulated;

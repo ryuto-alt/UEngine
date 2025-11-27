@@ -3,47 +3,70 @@
 #include <imgui.h>
 #include <cmath>
 
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+
 namespace UnoEngine {
 
 void EditorCamera::Update(float deltaTime) {
     if (!camera_) return;
 
+    ImGuiIO& io = ImGui::GetIO();
+    bool rightMouseDown = io.MouseDown[1];
+
     // Viewport内でのみ操作を受け付ける
     if (!viewportHovered_) {
         isControlling_ = false;
-        rightMousePressed_ = false;
+        if (rightMousePressed_) {
+            rightMousePressed_ = false;
+            while (ShowCursor(TRUE) < 0);
+        }
         return;
     }
-
-    ImGuiIO& io = ImGui::GetIO();
-
-    // 右クリック状態の更新
-    bool rightMouseDown = io.MouseDown[1];  // ImGuiMouseButton_Right
 
     if (rightMouseDown && !rightMousePressed_) {
         // 右クリック開始
         rightMousePressed_ = true;
-        lastMousePosX_ = io.MousePos.x;
-        lastMousePosY_ = io.MousePos.y;
         isControlling_ = true;
+        while (ShowCursor(FALSE) >= 0);
+
+        // マウス位置を記憶
+        GetCursorPos(&lockMousePos_);
     } else if (!rightMouseDown && rightMousePressed_) {
         // 右クリック終了
         rightMousePressed_ = false;
         isControlling_ = false;
+        while (ShowCursor(TRUE) < 0);
     }
 
     // カメラ操作
     if (rightMousePressed_) {
+        // 現在のマウス位置を取得
+        POINT currentPos;
+        GetCursorPos(&currentPos);
+
+        // 移動量を計算
+        float deltaX = static_cast<float>(currentPos.x - lockMousePos_.x);
+        float deltaY = static_cast<float>(currentPos.y - lockMousePos_.y);
+
+        // マウスを固定位置に戻す
+        SetCursorPos(lockMousePos_.x, lockMousePos_.y);
+
+        // カメラ回転
+        if (std::abs(deltaX) > 0.001f || std::abs(deltaY) > 0.001f) {
+            float yaw = deltaX * rotateSpeed_ * deltaTime;
+            float pitch = deltaY * rotateSpeed_ * deltaTime;
+
+            Quaternion yawRot = Quaternion::RotationAxis(Vector3::UnitY(), yaw);
+            Quaternion pitchRot = Quaternion::RotationAxis(camera_->GetRight(), pitch);
+            camera_->Rotate(yawRot * pitchRot);
+        }
+
         HandleFreeCameraMovement(deltaTime);
-        HandleMouseRotation(deltaTime);
     }
 
     // スクロールズーム（右クリック不要）
     HandleScrollZoom(deltaTime);
-
-    // マウス位置を更新
-    lastMousePosX_ = io.MousePos.x;
-    lastMousePosY_ = io.MousePos.y;
 }
 
 void EditorCamera::HandleFreeCameraMovement(float deltaTime) {
@@ -100,15 +123,15 @@ void EditorCamera::HandleMouseRotation(float deltaTime) {
     float deltaY = io.MousePos.y - lastMousePosY_;
 
     if (std::abs(deltaX) > 0.001f || std::abs(deltaY) > 0.001f) {
-        // Yaw（左右回転）- Y軸周り
-        float yaw = -deltaX * rotateSpeed_ * deltaTime;
-        // Pitch（上下回転）- X軸周り
-        float pitch = -deltaY * rotateSpeed_ * deltaTime;
+        // Yaw（左右回転）- マウス右で右向き
+        float yaw = deltaX * rotateSpeed_ * deltaTime;
+        // Pitch（上下回転）- マウス上で上向き
+        float pitch = deltaY * rotateSpeed_ * deltaTime;
 
         // Quaternionで回転を適用
         Quaternion yawRot = Quaternion::RotationAxis(Vector3::UnitY(), yaw);
         Quaternion pitchRot = Quaternion::RotationAxis(camera_->GetRight(), pitch);
-        
+
         camera_->Rotate(yawRot * pitchRot);
     }
 }

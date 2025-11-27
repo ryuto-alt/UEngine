@@ -278,13 +278,11 @@ void EditorUI::RenderSceneView() {
 
     ImGui::Begin("Scene", &showSceneView_);
 
-    // ギズモ使用中はカメラ操作を無効化
-    bool gizmoInUse = gizmoSystem_.IsUsing();
-
-    // Scene Viewのホバー状態でカメラ操作（ギズモ使用中は無効）
-    bool sceneHovered = ImGui::IsWindowHovered() && !gizmoInUse;
+    // Scene Viewのホバー状態でカメラ操作
+    // 右クリック中はカメラ操作を優先（ギズモは右クリック中は無効化される）
+    bool sceneHovered = ImGui::IsWindowHovered();
     editorCamera_.SetViewportHovered(sceneHovered);
-    editorCamera_.SetViewportFocused(ImGui::IsWindowFocused() && !gizmoInUse);
+    editorCamera_.SetViewportFocused(ImGui::IsWindowFocused());
 
     ImVec2 availableSize = ImGui::GetContentRegionAvail();
     if (availableSize.x > 0 && availableSize.y > 0) {
@@ -317,6 +315,9 @@ void EditorUI::RenderSceneView() {
         sceneViewPosY_ = imageMin.y;
         sceneViewSizeX_ = imageMax.x - imageMin.x;
         sceneViewSizeY_ = imageMax.y - imageMin.y;
+
+        // エディタカメラにビューポート矩形を設定（マウスクリップ用）
+        editorCamera_.SetViewportRect(sceneViewPosX_, sceneViewPosY_, sceneViewSizeX_, sceneViewSizeY_);
 
         // ギズモ描画（Edit/Pauseモードかつオブジェクトが選択されている場合）
         if (editorMode_ != EditorMode::Play && selectedObject_ && editorCamera_.GetCamera()) {

@@ -2,6 +2,8 @@
 
 #include "../../Engine/Core/Camera.h"
 
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
 
 namespace UnoEngine {
 
@@ -32,6 +34,11 @@ public:
     void SetViewportHovered(bool hovered) { viewportHovered_ = hovered; }
     void SetViewportFocused(bool focused) { viewportFocused_ = focused; }
 
+    // ビューポートの矩形を設定（マウスクリップ用）
+    void SetViewportRect(float x, float y, float w, float h) {
+        viewportRect_ = { x, y, w, h };
+    }
+
     // カメラ操作中かどうか
     bool IsControlling() const { return isControlling_; }
 
@@ -50,7 +57,7 @@ private:
 
     // 設定
     float moveSpeed_ = 5.0f;
-    float rotateSpeed_ = 0.3f;
+    float rotateSpeed_ = 1.4f;
     float scrollSpeed_ = 1.0f;
 
     // 状態
@@ -62,6 +69,10 @@ private:
     float lastMousePosX_ = 0.0f;
     float lastMousePosY_ = 0.0f;
     bool rightMousePressed_ = false;
+    POINT lockMousePos_ = { 0, 0 };  // 右クリック時の固定位置
+
+    // ビューポート矩形（マウスクリップ用）
+    struct { float x, y, w, h; } viewportRect_ = { 0, 0, 0, 0 };
 };
 
 } // namespace UnoEngine

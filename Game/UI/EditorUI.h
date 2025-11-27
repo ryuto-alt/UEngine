@@ -17,7 +17,12 @@ struct EditorContext {
     Camera* camera = nullptr;
     const std::vector<UniquePtr<GameObject>>* gameObjects = nullptr;
     float fps = 0.0f;
-    float frameTime = 0.0f; 
+    float frameTime = 0.0f;
+
+    // ロードされたアセット情報
+    std::vector<std::string> loadedModels;
+    std::vector<std::string> loadedTextures;
+    std::string currentSceneName;
 };
 
 // Editor UI管理クラス
@@ -58,7 +63,7 @@ private:
     void RenderHierarchy(const EditorContext& context);
     void RenderStats(const EditorContext& context);
     void RenderConsole();
-    void RenderProject();
+    void RenderProject(const EditorContext& context);
     void RenderProfiler();
 
 private:

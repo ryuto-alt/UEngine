@@ -108,6 +108,15 @@ void GameScene::OnImGui() {
     context.fps = ImGui::GetIO().Framerate;
     context.frameTime = 1000.0f / ImGui::GetIO().Framerate;
 
+    // ロードされたアセット情報を設定
+    if (!skinnedModel_.meshes.empty()) {
+        context.loadedModels.push_back("walk.gltf");
+    }
+    if (!skinnedModel_.meshes.empty() && skinnedModel_.meshes[0].GetMaterial()) {
+        context.loadedTextures.push_back("white.png");
+    }
+    context.currentSceneName = "GameScene";
+
     // EditorUIに描画を委譲
     editorUI_.Render(context);
 #endif

@@ -23,7 +23,7 @@ void EditorUI::Render(const EditorContext& context) {
     RenderHierarchy(context);
     RenderStats(context);
     RenderConsole();
-    RenderProject();
+    RenderProject(context);
     RenderProfiler();
 }
 
@@ -358,7 +358,7 @@ void EditorUI::RenderConsole() {
     ImGui::End();
 }
 
-void EditorUI::RenderProject() {
+void EditorUI::RenderProject(const EditorContext& context) {
     if (!showProject_) return;
 
     ImGui::Begin("Project", &showProject_);
@@ -367,17 +367,33 @@ void EditorUI::RenderProject() {
     ImGui::Separator();
 
     if (ImGui::TreeNode("Models")) {
-        ImGui::Selectable("testmodel.obj");
+        if (context.loadedModels.empty()) {
+            ImGui::TextDisabled("(none)");
+        } else {
+            for (const auto& model : context.loadedModels) {
+                ImGui::Selectable(model.c_str());
+            }
+        }
         ImGui::TreePop();
     }
 
     if (ImGui::TreeNode("Textures")) {
-        ImGui::Selectable("ruru6.png");
+        if (context.loadedTextures.empty()) {
+            ImGui::TextDisabled("(none)");
+        } else {
+            for (const auto& texture : context.loadedTextures) {
+                ImGui::Selectable(texture.c_str());
+            }
+        }
         ImGui::TreePop();
     }
 
     if (ImGui::TreeNode("Scenes")) {
-        ImGui::Selectable("GameScene");
+        if (context.currentSceneName.empty()) {
+            ImGui::TextDisabled("(none)");
+        } else {
+            ImGui::Selectable(context.currentSceneName.c_str());
+        }
         ImGui::TreePop();
     }
 

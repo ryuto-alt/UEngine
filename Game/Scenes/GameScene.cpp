@@ -3,11 +3,11 @@
 #include "../GameApplication.h"
 #include "../../Engine/Core/GameObject.h"
 #include "../../Engine/Core/Camera.h"
-#include "../../Engine/Graphics/MeshRenderer.h"
+#include "../../Engine/Core/Logger.h"
 #include "../../Engine/Graphics/DirectionalLightComponent.h"
-#include "../../Engine/Math/Math.h"
-#include "../../Engine/Rendering/SkinnedRenderItem.h"
+#include "../../Engine/Rendering/SkinnedMeshRenderer.h"
 #include "../../Engine/Animation/AnimatorComponent.h"
+#include "../../Engine/Resource/ResourceManager.h"
 
 #ifdef _DEBUG
 #include <imgui.h>
@@ -16,69 +16,95 @@
 namespace UnoEngine {
 
 void GameScene::OnLoad() {
-    SetActiveCamera(nullptr);
+    Logger::Info("GameScene: Loading...");
 
-    // Camera setup - gltfモデル用に調整
+    SetupCamera();
+    SetupPlayer();
+    SetupLighting();
+    SetupAnimatedCharacter();
+
+#ifdef _DEBUG
+    auto* app = static_cast<GameApplication*>(GetApplication());
+    editorUI_.Initialize(app->GetGraphicsDevice());
+    editorUI_.AddConsoleMessage("[Scene] GameScene loaded successfully");
+#endif
+
+    Logger::Info("GameScene: Load complete");
+}
+
+void GameScene::SetupCamera() {
     auto camera = MakeUnique<Camera>();
-    camera->SetPosition(Vector3(0.0f, 1.0f, 3.0f));  // 近くに配置
+    camera->SetPosition(Vector3(0.0f, 1.0f, 3.0f));
     camera->SetRotation(Quaternion::LookRotation(Vector3(0.0f, 0.0f, -1.0f).Normalize(), Vector3::UnitY()));
     SetActiveCamera(camera.release());
+}
 
-    // Player setup (カメラ操作用)
+void GameScene::SetupPlayer() {
     player_ = CreateGameObject("Player");
     player_->AddComponent<Player>();
-    auto* app = static_cast<GameApplication*>(GetApplication());
+}
 
-    // Light setup
+void GameScene::SetupLighting() {
     auto* light = CreateGameObject("DirectionalLight");
     auto* lightComp = light->AddComponent<DirectionalLightComponent>();
     lightComp->SetDirection(Vector3(0.0f, -1.0f, 0.0f));
     lightComp->SetColor(Vector3(1.0f, 1.0f, 1.0f));
     lightComp->SetIntensity(1.0f);
     lightComp->UseTransformDirection(false);
+}
 
-    // リソースアップロード開始（コマンドリストを開く）
-    auto* graphics = app->GetGraphicsDevice();
-    graphics->BeginResourceUpload();
+void GameScene::SetupAnimatedCharacter() {
+    auto* app = static_cast<GameApplication*>(GetApplication());
+    auto* resourceManager = app->GetResourceManager();
 
-    // Load skinned model (walk.gltf)
-    auto* commandList = graphics->GetCommandList();
-    skinnedModel_ = SkinnedModelImporter::Load(graphics, commandList, "assets/model/testmodel/walk.gltf");
+    // Load model via ResourceManager
+    resourceManager->BeginUpload();
+    
+    loadedModelPath_ = "assets/model/testmodel/walk.gltf";
+    auto* modelData = resourceManager->LoadSkinnedModel(loadedModelPath_);
+    
+    resourceManager->EndUpload();
 
-    // Create animated character GameObject
+    if (!modelData) {
+        Logger::Error("GameScene: Failed to load model: {}", loadedModelPath_);
+        return;
+    }
+
+    // Create animated character with components
     animatedCharacter_ = CreateGameObject("AnimatedCharacter");
-    auto* animatorComp = animatedCharacter_->AddComponent<AnimatorComponent>();
+
+    // Add SkinnedMeshRenderer component
+    auto* renderer = animatedCharacter_->AddComponent<SkinnedMeshRenderer>();
+    renderer->SetModel(modelData);
+
+    // Add AnimatorComponent
+    auto* animator = animatedCharacter_->AddComponent<AnimatorComponent>();
     
     // Initialize animator with skeleton and animations
-    if (skinnedModel_.skeleton) {
-        animatorComp->Initialize(skinnedModel_.skeleton, skinnedModel_.animations);
+    if (modelData->skeleton) {
+        animator->Initialize(modelData->skeleton, modelData->animations);
         
-        // Play first animation if available
-        if (!skinnedModel_.animations.empty()) {
-            std::string animName = skinnedModel_.animations[0]->GetName();
+        // Play first animation
+        if (!modelData->animations.empty()) {
+            std::string animName = modelData->animations[0]->GetName();
             if (animName.empty()) {
                 animName = "Animation_0";
             }
-            animatorComp->Play(animName, true);
+            animator->Play(animName, true);
+            Logger::Info("GameScene: Playing animation: {}", animName);
         }
     }
 
 #ifdef _DEBUG
-    // EditorUI初期化 (Debug builds only)
-    editorUI_.Initialize(graphics);
-    editorUI_.AddConsoleMessage("[Scene] GameScene loaded successfully");
-    if (!skinnedModel_.meshes.empty()) {
-        editorUI_.AddConsoleMessage("[Scene] Skinned model loaded: walk.gltf");
-    }
+    editorUI_.AddConsoleMessage("[Scene] Skinned model loaded: " + loadedModelPath_);
 #endif
-
-    // リソースアップロード完了（GPUにコマンドを送信して待機）
-    graphics->EndResourceUpload();
 }
 
 void GameScene::OnUpdate(float deltaTime) {
+    // Call base class OnUpdate (processes Start() and updates GameObjects)
+    Scene::OnUpdate(deltaTime);
+
 #ifdef _DEBUG
-    // 前のフレームで記録したサイズでRenderTextureをリサイズ（描画前に実行）
     auto* app = static_cast<GameApplication*>(GetApplication());
     uint32 gameW, gameH, sceneW, sceneH;
     editorUI_.GetDesiredViewportSizes(gameW, gameH, sceneW, sceneH);
@@ -86,7 +112,7 @@ void GameScene::OnUpdate(float deltaTime) {
     editorUI_.GetSceneViewTexture()->Resize(app->GetGraphicsDevice(), sceneW, sceneH);
 #endif
 
-    // PlayerSystemでカメラ移動を処理
+    // Player camera control
     Camera* camera = GetActiveCamera();
     if (camera && player_ && input_) {
         auto* app = static_cast<GameApplication*>(GetApplication());
@@ -100,7 +126,6 @@ void GameScene::OnUpdate(float deltaTime) {
 
 void GameScene::OnImGui() {
 #ifdef _DEBUG
-    // EditorContextを構築
     EditorContext context;
     context.player = player_;
     context.camera = GetActiveCamera();
@@ -108,16 +133,11 @@ void GameScene::OnImGui() {
     context.fps = ImGui::GetIO().Framerate;
     context.frameTime = 1000.0f / ImGui::GetIO().Framerate;
 
-    // ロードされたアセット情報を設定
-    if (!skinnedModel_.meshes.empty()) {
-        context.loadedModels.push_back("walk.gltf");
-    }
-    if (!skinnedModel_.meshes.empty() && skinnedModel_.meshes[0].GetMaterial()) {
-        context.loadedTextures.push_back("white.png");
+    if (!loadedModelPath_.empty()) {
+        context.loadedModels.push_back(loadedModelPath_);
     }
     context.currentSceneName = "GameScene";
 
-    // EditorUIに描画を委譲
     editorUI_.Render(context);
 #endif
 }
@@ -129,36 +149,7 @@ void GameScene::OnRender(RenderView& view) {
     view.camera = camera;
     view.layerMask = Layers::DEFAULT | Layers::PLAYER | Layers::ENEMY;
     view.viewName = "MainView";
-    // スキンメッシュの描画はGameApplication::OnRenderで行う
-}
-
-std::vector<SkinnedRenderItem> GameScene::GetSkinnedRenderItems() const {
-    std::vector<SkinnedRenderItem> items;
-
-    if (!skinnedModel_.meshes.empty() && animatedCharacter_) {
-        auto* animatorComp = animatedCharacter_->GetComponent<AnimatorComponent>();
-        
-        for (const auto& mesh : skinnedModel_.meshes) {
-            SkinnedRenderItem item;
-            item.mesh = const_cast<SkinnedMesh*>(&mesh);
-            
-            // Get base world matrix with X-axis rotation to stand the model up
-            // glTF models are often lying down, rotate -90 degrees around X to stand up
-            Matrix4x4 standUpRotation = Matrix4x4::RotationX(Math::PI / 2.0f);
-            item.worldMatrix = standUpRotation * animatedCharacter_->GetTransform().GetWorldMatrix();
-            
-            item.material = const_cast<Material*>(mesh.GetMaterial());
-            
-            // Get bone matrices from AnimatorComponent
-            if (animatorComp) {
-                item.boneMatrixPairs = const_cast<std::vector<BoneMatrixPair>*>(&animatorComp->GetBoneMatrixPairs());
-            }
-            
-            items.push_back(item);
-        }
-    }
-
-    return items;
+    // Skinned mesh rendering is handled by RenderSystem in GameApplication
 }
 
 } // namespace UnoEngine

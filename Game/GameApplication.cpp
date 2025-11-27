@@ -3,10 +3,15 @@
 #include "../Engine/Resource/ResourceLoader.h"
 #include "../Engine/Rendering/RenderSystem.h"
 #include "../Engine/Rendering/SkinnedRenderItem.h"
+#include "../Engine/Core/Logger.h"
 
 namespace UnoEngine {
 
 void GameApplication::OnInit() {
+    // Initialize ResourceManager
+    resourceManager_ = std::make_unique<ResourceManager>(graphics_.get());
+    Logger::Info("GameApplication: ResourceManager initialized");
+
     // Register systems
     GetSystemManager()->RegisterSystem<AnimationSystem>();
     GetSystemManager()->RegisterSystem<PlayerSystem>();
@@ -28,17 +33,18 @@ void GameApplication::OnRender() {
         RenderView view;
         scene->OnRender(view);
 
+        // Collect render items via RenderSystem
         auto items = renderSystem_->CollectRenderables(scene, view);
-
-        // スキンメッシュアイテムを取得
-        std::vector<SkinnedRenderItem> skinnedItems;
-        GameScene* gameScene = dynamic_cast<GameScene*>(scene);
-        if (gameScene) {
-            skinnedItems = gameScene->GetSkinnedRenderItems();
+        auto skinnedItems = renderSystem_->CollectSkinnedRenderables(scene, view);
+        
+        static bool loggedOnce = false;
+        if (!loggedOnce) {
+            Logger::Info("GameApplication::OnRender: skinnedItems.size() = {}", skinnedItems.size());
+            loggedOnce = true;
         }
 
 #ifdef _DEBUG
-        // GameSceneの場合はRenderTextureに描画 (Debug builds only)
+        GameScene* gameScene = dynamic_cast<GameScene*>(scene);
         if (gameScene) {
             auto* editorUI = gameScene->GetEditorUI();
 
@@ -73,9 +79,12 @@ void GameApplication::OnRender() {
             // メインウィンドウのレンダーターゲットを再設定
             graphics_->SetBackBufferAsRenderTarget();
 
-            // UIのみ描画（メッシュは描画しない）
+            // UIのみ描画
             renderer_->RenderUIOnly(scene);
         }
+#else
+        // Release: Draw directly to back buffer
+        renderer_->Draw(view, items, lightManager_.get(), scene, skinnedItems);
 #endif
     }
 

@@ -61,6 +61,7 @@ public:
 
     // For Scene lifecycle management
     const std::vector<std::unique_ptr<Component>>& GetComponents() const { return components_; }
+    std::vector<std::unique_ptr<Component>>& GetComponents() { return components_; }
 
 private:
     std::string name_;

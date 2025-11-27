@@ -48,7 +48,7 @@ void Scene::ProcessPendingStarts() {
     for (auto& obj : gameObjects_) {
         if (!obj->IsActive()) continue;
         
-        for (const auto& comp : obj->GetComponents()) {
+        for (auto& comp : obj->GetComponents()) {
             if (comp->IsAwakeCalled() && !comp->HasStarted() && comp->IsEnabled()) {
                 comp->Start();
                 comp->MarkStarted();

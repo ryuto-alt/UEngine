@@ -12,10 +12,23 @@ void SkinnedMeshRenderer::Awake() {
 }
 
 void SkinnedMeshRenderer::Start() {
+    // Re-attempt to link animator if not already linked
+    // (AnimatorComponent might have been added after this component)
+    if (!animator_) {
+        LinkAnimator();
+        if (animator_) {
+            Logger::Info("SkinnedMeshRenderer::Start: Animator linked successfully");
+        } else {
+            Logger::Warning("SkinnedMeshRenderer::Start: No AnimatorComponent found on GameObject");
+        }
+    }
+    
     // Initialize animator with model data if needed
     if (needsAnimatorInit_ && animator_ && modelData_) {
         InitializeAnimator();
     }
+    
+    Logger::Debug("SkinnedMeshRenderer::Start: HasModel={}, HasAnimator={}", HasModel(), HasAnimator());
 }
 
 void SkinnedMeshRenderer::OnDestroy() {

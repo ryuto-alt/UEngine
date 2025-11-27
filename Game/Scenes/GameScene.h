@@ -1,10 +1,8 @@
 #pragma once
 
 #include "../../Engine/Core/Scene.h"
-#include "../../Engine/Resource/SkinnedModelImporter.h"
-#include "../../Engine/Rendering/SkinnedRenderItem.h"
-#include "../../Engine/Math/Matrix.h"
 #include <vector>
+#include <string>
 
 #ifdef _DEBUG
 #include "../UI/EditorUI.h"
@@ -21,20 +19,21 @@ public:
 
     GameObject* GetPlayer() const { return player_; }
 
-    // スキンメッシュアイテムの取得
-    std::vector<SkinnedRenderItem> GetSkinnedRenderItems() const;
-
 #ifdef _DEBUG
-    // EditorUIへのアクセス (Debug builds only)
     EditorUI* GetEditorUI() { return &editorUI_; }
 #endif
 
 private:
+    void SetupCamera();
+    void SetupLighting();
+    void SetupPlayer();
+    void SetupAnimatedCharacter();
+
     GameObject* player_ = nullptr;
     GameObject* animatedCharacter_ = nullptr;
 
-    // Skinned model data
-    SkinnedModelData skinnedModel_;
+    // Model path for editor display
+    std::string loadedModelPath_;
 
 #ifdef _DEBUG
     EditorUI editorUI_;

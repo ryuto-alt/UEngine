@@ -344,8 +344,6 @@ void Renderer::CreateBoneMatrixPairBuffer(ID3D12Device* device) {
     
     boneMatrixPairSRV_ = graphics_->GetSRVHeap()->GetGPUDescriptorHandleForHeapStart();
     boneMatrixPairSRV_.ptr += boneMatrixPairSRVIndex_ * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-    
-    OutputDebugStringA("Bone matrix pair StructuredBuffer created\n");
 }
 
 } // namespace UnoEngine

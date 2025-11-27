@@ -63,10 +63,6 @@ Matrix4x4 ConvertLocalTransform(const aiMatrix4x4& m, const std::string& nodeNam
     bool hasAbnormalScale = (scale.x < 0.1f || scale.y < 0.1f || scale.z < 0.1f);
 
     if (isMixamoHips && hasAbnormalScale) {
-        char debugMsg[256];
-        sprintf_s(debugMsg, "Mixamo scale fix: %s scale=(%.4f,%.4f,%.4f) -> (1,1,1)\n",
-                 nodeName.c_str(), scale.x, scale.y, scale.z);
-        OutputDebugStringA(debugMsg);
         scale = aiVector3D(1.0f, 1.0f, 1.0f);
     }
 
@@ -213,10 +209,6 @@ std::shared_ptr<Skeleton> ExtractSkeleton(const aiScene* scene,
         bool hasAbnormalScale = (scale.x > 10.0f || scale.y > 10.0f || scale.z > 10.0f ||
                                  scale.x < 0.1f || scale.y < 0.1f || scale.z < 0.1f);
         if (hasAbnormalScale) {
-            char debugMsg[256];
-            sprintf_s(debugMsg, "BindPose scale fix: %s scale=(%.4f,%.4f,%.4f) -> (1,1,1)\n",
-                     name.c_str(), scale.x, scale.y, scale.z);
-            OutputDebugStringA(debugMsg);
             scale = aiVector3D(1.0f, 1.0f, 1.0f);
         }
 
@@ -246,10 +238,6 @@ std::shared_ptr<Skeleton> ExtractSkeleton(const aiScene* scene,
     // (ogldevチュートリアル参照)
     Matrix4x4 rootTransform = ConvertMatrix(scene->mRootNode->mTransformation);
     skeleton->SetGlobalInverseTransform(rootTransform.Inverse());
-
-    char skelDebug[256];
-    sprintf_s(skelDebug, "Skeleton created: %u bones\\n", skeleton->GetBoneCount());
-    OutputDebugStringA(skelDebug);
 
     return skeleton;
 }
@@ -286,12 +274,7 @@ std::vector<std::shared_ptr<AnimationClip>> ExtractAnimations(const aiScene* sce
         float avgScale = (scale.x + scale.y + scale.z) / 3.0f;
         if (avgScale < 1.0f && avgScale > 0.0001f) {
             rootScale = avgScale;
-            char debugMsg[256];
-            sprintf_s(debugMsg, "Root scale detected: %.6f from node '%s'\n", rootScale, armatureNode->mName.C_Str());
-            OutputDebugStringA(debugMsg);
         }
-    } else {
-        OutputDebugStringA("WARNING: Armature node not found, using default scale 1.0\n");
     }
 
     for (uint32 a = 0; a < scene->mNumAnimations; ++a) {
@@ -344,12 +327,6 @@ std::vector<std::shared_ptr<AnimationClip>> ExtractAnimations(const aiScene* sce
         }
 
         clips.push_back(clip);
-
-        char debugMsg[256];
-        sprintf_s(debugMsg, "Animation loaded: %s (%.2f sec, %u channels)\n",
-                 clip->GetName().c_str(), clip->GetDuration() / clip->GetTicksPerSecond(),
-                 aiAnim->mNumChannels);
-        OutputDebugStringA(debugMsg);
     }
 
     return clips;
@@ -408,32 +385,6 @@ SkinnedMesh ProcessSkinnedMesh(const aiMesh* aiMesh, const aiScene* scene,
         v.NormalizeWeights();
     }
 
-    // デバッグ: 最初の頂点のボーンデータ
-    if (!vertices.empty()) {
-        const auto& v0 = vertices[0];
-        char boneDebug[512];
-        sprintf_s(boneDebug, "Vertex[0] bones=[%u,%u,%u,%u], weights=[%.3f,%.3f,%.3f,%.3f]\n",
-                 v0.boneIndices[0], v0.boneIndices[1], v0.boneIndices[2], v0.boneIndices[3],
-                 v0.boneWeights[0], v0.boneWeights[1], v0.boneWeights[2], v0.boneWeights[3]);
-        OutputDebugStringA(boneDebug);
-    }
-
-    // デバッグ: 頂点座標の範囲を出力
-    float minX = FLT_MAX, minY = FLT_MAX, minZ = FLT_MAX;
-    float maxX = -FLT_MAX, maxY = -FLT_MAX, maxZ = -FLT_MAX;
-    for (const auto& v : vertices) {
-        minX = (std::min)(minX, v.px);
-        minY = (std::min)(minY, v.py);
-        minZ = (std::min)(minZ, v.pz);
-        maxX = (std::max)(maxX, v.px);
-        maxY = (std::max)(maxY, v.py);
-        maxZ = (std::max)(maxZ, v.pz);
-    }
-    char boundsMsg[256];
-    sprintf_s(boundsMsg, "Mesh bounds: X[%.3f, %.3f] Y[%.3f, %.3f] Z[%.3f, %.3f]\n",
-              minX, maxX, minY, maxY, minZ, maxZ);
-    OutputDebugStringA(boundsMsg);
-
     for (uint32 i = 0; i < aiMesh->mNumFaces; ++i) {
         const aiFace& face = aiMesh->mFaces[i];
         if (face.mNumIndices == 3) {
@@ -461,11 +412,6 @@ SkinnedMesh ProcessSkinnedMesh(const aiMesh* aiMesh, const aiScene* scene,
         MaterialData materialData = ConvertMaterial(aiMat, baseDirectory);
         mesh.LoadMaterial(materialData, graphics, commandList, baseDirectory, 0);
     }
-
-    char debugMsg[256];
-    sprintf_s(debugMsg, "SkinnedMesh loaded: %s - %zu vertices, %zu indices, %u bones\n",
-             meshName.c_str(), vertices.size(), indices.size(), aiMesh->mNumBones);
-    OutputDebugStringA(debugMsg);
 
     return mesh;
 }
@@ -551,17 +497,6 @@ SkinnedModelData SkinnedModelImporter::Load(GraphicsDevice* graphics, ID3D12Grap
 
     ProcessNode(scene->mRootNode, scene, graphics, commandList,
                baseDirectory, boneMapping, result.meshes);
-
-    const size_t lastSlash = filepath.find_last_of("/\\");
-    const std::string name = (lastSlash != std::string::npos)
-        ? filepath.substr(lastSlash + 1)
-        : filepath;
-
-    char debugMsg[512];
-    sprintf_s(debugMsg, "SkinnedModel Loaded: %s - %zu meshes, %u bones, %zu animations\n",
-             name.c_str(), result.meshes.size(), result.skeleton->GetBoneCount(),
-             result.animations.size());
-    OutputDebugStringA(debugMsg);
 
     return result;
 }

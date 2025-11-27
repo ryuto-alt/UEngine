@@ -1,7 +1,6 @@
 #include "AnimationClip.h"
 #include "Skeleton.h"
 #include <algorithm>
-#include <Windows.h>
 
 namespace UnoEngine {
 
@@ -79,26 +78,7 @@ Matrix4x4 BoneAnimation::GetLocalTransform(float time) const {
     Matrix4x4 R = Matrix4x4::CreateFromQuaternion(rotation);
     Matrix4x4 T = Matrix4x4::CreateTranslation(position);
 
-    Matrix4x4 result = S * R * T;
-
-    // デバッグ出力（最初の1回のみ）
-    static bool debugOnce = false;
-    if (!debugOnce && boneName == "mixamorig:Hips") {
-        debugOnce = true;
-        char msg[512];
-        sprintf_s(msg, "Bone[%s] time=%.3f: S=[%.2f,%.2f,%.2f] R=[%.3f,%.3f,%.3f,%.3f] T=[%.2f,%.2f,%.2f]\n",
-                 boneName.c_str(), time,
-                 scale.GetX(), scale.GetY(), scale.GetZ(),
-                 rotation.GetX(), rotation.GetY(), rotation.GetZ(), rotation.GetW(),
-                 position.GetX(), position.GetY(), position.GetZ());
-        OutputDebugStringA(msg);
-
-        sprintf_s(msg, "Result[3]: [%.3f, %.3f, %.3f, %.3f]\n",
-                 result.GetElement(3,0), result.GetElement(3,1), result.GetElement(3,2), result.GetElement(3,3));
-        OutputDebugStringA(msg);
-    }
-
-    return result;
+    return S * R * T;
 }
 
 void AnimationClip::AddBoneAnimation(const BoneAnimation& boneAnim) {
@@ -119,8 +99,6 @@ void AnimationClip::Sample(float time, const Skeleton& skeleton,
     uint32 boneCount = skeleton.GetBoneCount();
     outLocalTransforms.resize(boneCount);
 
-    static bool debugOnce = false;
-
     for (uint32 i = 0; i < boneCount; ++i) {
         const Bone* bone = skeleton.GetBone(static_cast<int32>(i));
         if (!bone) continue;
@@ -130,16 +108,8 @@ void AnimationClip::Sample(float time, const Skeleton& skeleton,
             outLocalTransforms[i] = anim->GetLocalTransform(time);
         } else {
             outLocalTransforms[i] = bone->localBindPose;
-
-            // デバッグ: アニメーションがないボーンを出力
-            if (!debugOnce) {
-                char msg[256];
-                sprintf_s(msg, "No animation for bone[%d]: %s\n", i, bone->name.c_str());
-                OutputDebugStringA(msg);
-            }
         }
     }
-    debugOnce = true;
 }
 
 } // namespace UnoEngine

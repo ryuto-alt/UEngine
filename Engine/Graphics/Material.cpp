@@ -10,15 +10,11 @@ void Material::LoadFromData(const MaterialData& data, GraphicsDevice* graphics,
     data_ = data;
     device_ = graphics->GetDevice();
 
-    char debugMsg[512];
-    sprintf_s(debugMsg, "Material::LoadFromData - TexturePath='%s', BaseDir='%s', SRVIndex=%u\n", data_.diffuseTexturePath.c_str(), baseDirectory.c_str(), srvIndex);
-    OutputDebugStringA(debugMsg);
-
     if (!data_.diffuseTexturePath.empty()) {
         namespace fs = std::filesystem;
-        
+
         fs::path texturePath(data_.diffuseTexturePath);
-        
+
         if (!texturePath.is_absolute()) {
             texturePath = fs::path(baseDirectory) / texturePath;
         } else {
@@ -29,14 +25,6 @@ void Material::LoadFromData(const MaterialData& data, GraphicsDevice* graphics,
         if (fs::exists(texturePath)) {
             diffuseTexture_ = std::make_unique<Texture2D>();
             diffuseTexture_->LoadFromFile(graphics, commandList, texturePath.wstring(), srvIndex);
-            
-            char successMsg[512];
-            sprintf_s(successMsg, "Material: Texture loaded successfully from '%s'\n", texturePath.string().c_str());
-            OutputDebugStringA(successMsg);
-        } else {
-            char errorMsg[512];
-            sprintf_s(errorMsg, "Material: Texture file NOT FOUND: '%s'\n", texturePath.string().c_str());
-            OutputDebugStringA(errorMsg);
         }
     }
 }

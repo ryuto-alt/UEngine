@@ -89,8 +89,11 @@
     <ClCompile Include="Engine\Core\SceneManager.cpp">
       <Filter>Engine\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\OrbitController.cpp">
-      <Filter>Engine\Core</Filter>
+    <ClCompile Include="Engine\\Core\\OrbitController.cpp">
+      <Filter>Engine\\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\\Core\\Logger.cpp">
+      <Filter>Engine\\Core</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Graphics\GraphicsDevice.cpp">
       <Filter>Engine\Graphics</Filter>
@@ -235,8 +238,11 @@
     <ClInclude Include="Engine\Core\SceneManager.h">
       <Filter>Engine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\OrbitController.h">
-      <Filter>Engine\Core</Filter>
+    <ClInclude Include="Engine\\Core\\OrbitController.h">
+      <Filter>Engine\\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\\Core\\Logger.h">
+      <Filter>Engine\\Core</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\ConstantBuffer.h">
       <Filter>Engine\Graphics</Filter>
@@ -280,8 +286,11 @@
     <ClInclude Include="Engine\Math\Quaternion.h">
       <Filter>Engine\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Math\Vector.h">
-      <Filter>Engine\Math</Filter>
+    <ClInclude Include="Engine\\Math\\Vector.h">
+      <Filter>Engine\\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\\Math\\BoundingVolume.h">
+      <Filter>Engine\\Math</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Input\Keyboard.h">
       <Filter>Engine\Input</Filter>

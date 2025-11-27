@@ -170,7 +170,8 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClCompile Include="Engine\Core\GameObject.cpp" />
     <ClCompile Include="Engine\Core\Scene.cpp" />
     <ClCompile Include="Engine\Core\SceneManager.cpp" />
-    <ClCompile Include="Engine\Core\OrbitController.cpp" />
+    <ClCompile Include="Engine\\Core\\OrbitController.cpp" />
+    <ClCompile Include="Engine\\Core\\Logger.cpp" />
     <ClCompile Include="Engine\Rendering\RenderSystem.cpp" />
     <ClCompile Include="Engine\Rendering\LightManager.cpp" />
     <ClCompile Include="Engine\Graphics\GraphicsDevice.cpp" />
@@ -220,7 +221,8 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClInclude Include="Engine\Core\GameObject.h" />
     <ClInclude Include="Engine\Core\Scene.h" />
     <ClInclude Include="Engine\Core\SceneManager.h" />
-    <ClInclude Include="Engine\Core\OrbitController.h" />
+    <ClInclude Include="Engine\\Core\\OrbitController.h" />
+    <ClInclude Include="Engine\\Core\\Logger.h" />
     <ClInclude Include="Engine\Rendering\RenderSystem.h" />
     <ClInclude Include="Engine\Rendering\LightManager.h" />
     <ClInclude Include="Engine\Rendering\RenderView.h" />
@@ -240,7 +242,8 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClInclude Include="Engine\Math\MathUtils.h" />
     <ClInclude Include="Engine\Math\Matrix.h" />
     <ClInclude Include="Engine\Math\Quaternion.h" />
-    <ClInclude Include="Engine\Math\Vector.h" />
+    <ClInclude Include="Engine\\Math\\Vector.h" />
+    <ClInclude Include="Engine\\Math\\BoundingVolume.h" />
     <ClInclude Include="Engine\Input\Keyboard.h" />
     <ClInclude Include="Engine\Input\Mouse.h" />
     <ClInclude Include="Engine\Input\InputManager.h" />

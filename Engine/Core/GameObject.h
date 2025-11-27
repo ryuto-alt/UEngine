@@ -34,7 +34,7 @@ public:
     using Layer = uint32;
     
     GameObject(const std::string& name = "GameObject");
-    ~GameObject() = default;
+    ~GameObject();
 
     void OnUpdate(float deltaTime);
 
@@ -59,6 +59,9 @@ public:
     Layer GetLayer() const { return layer_; }
     void SetLayer(Layer layer) { layer_ = layer; }
 
+    // For Scene lifecycle management
+    const std::vector<std::unique_ptr<Component>>& GetComponents() const { return components_; }
+
 private:
     std::string name_;
     Transform transform_;
@@ -78,6 +81,10 @@ T* GameObject::AddComponent(Args&&... args) {
 
     componentMap_[std::type_index(typeid(T))] = ptr;
     components_.push_back(std::move(component));
+
+    // Call Awake immediately after adding
+    ptr->Awake();
+    ptr->MarkAwakeCalled();
 
     return ptr;
 }
@@ -102,6 +109,10 @@ void GameObject::RemoveComponent() {
     if (mapIt == componentMap_.end()) return;
 
     Component* compPtr = mapIt->second;
+    
+    // Call OnDestroy before removing
+    compPtr->OnDestroy();
+    
     componentMap_.erase(mapIt);
 
     components_.erase(

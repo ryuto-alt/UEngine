@@ -40,12 +40,16 @@ public:
 protected:
     InputManager* input_ = nullptr;
 
+    // Call Start() on all components that haven't started yet
+    void ProcessPendingStarts();
+
 private:
     std::string name_;
     std::vector<std::unique_ptr<GameObject>> gameObjects_;
     std::vector<GameObject*> pendingDestroy_;
     Camera* activeCamera_ = nullptr;
     Application* app_ = nullptr;
+    bool isLoaded_ = false;
 };
 
 } // namespace UnoEngine

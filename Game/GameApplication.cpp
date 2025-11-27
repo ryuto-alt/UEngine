@@ -84,7 +84,10 @@ void GameApplication::OnRender() {
         }
 #else
         // Release: Draw directly to back buffer
-        renderer_->Draw(view, items, lightManager_.get(), scene, skinnedItems);
+        renderer_->Draw(view, items, lightManager_.get(), scene);
+        if (!skinnedItems.empty()) {
+            renderer_->DrawSkinnedMeshes(view, skinnedItems, lightManager_.get());
+        }
 #endif
     }
 

@@ -48,6 +48,12 @@ public:
     // オービットターゲット設定
     void SetOrbitTarget(const Vector3& target) { orbitTarget_ = target; hasOrbitTarget_ = true; }
 
+    // オービットターゲットをクリア（フリーカメラに戻る）
+    void ClearOrbitTarget() { hasOrbitTarget_ = false; }
+
+    // オービットターゲットがあるか
+    bool HasOrbitTarget() const { return hasOrbitTarget_; }
+
 private:
     // フリーカメラ操作（右クリック + WASD）
     void HandleFreeCameraMovement(float deltaTime);
@@ -74,6 +80,10 @@ private:
     // マウス
     bool rightMousePressed_ = false;
     POINT lockMousePos_ = { 0, 0 };
+
+    // フリーカメラ用
+    float yaw_ = 0.0f;
+    float pitch_ = 0.0f;
 
     // オービット用
     Vector3 orbitTarget_ = Vector3::Zero();

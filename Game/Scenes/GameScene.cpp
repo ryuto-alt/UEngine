@@ -127,16 +127,22 @@ void GameScene::OnUpdate(float deltaTime) {
     editorUI_.GetSceneViewTexture()->Resize(app->GetGraphicsDevice(), sceneW, sceneH);
 #endif
 
-    // Player camera control
-    Camera* camera = GetActiveCamera();
-    if (camera && player_ && input_) {
-        auto* app = static_cast<GameApplication*>(GetApplication());
-        auto* cameraSystem = app->GetCameraSystem();
-        if (cameraSystem) {
-            auto* playerComp = player_->GetComponent<Player>();
-            cameraSystem->Update(camera, playerComp, input_, deltaTime);
+    // Player camera control (Playモードでのみ有効)
+#ifdef _DEBUG
+    if (editorUI_.IsPlaying()) {
+#endif
+        Camera* camera = GetActiveCamera();
+        if (camera && player_ && input_) {
+            auto* app = static_cast<GameApplication*>(GetApplication());
+            auto* cameraSystem = app->GetCameraSystem();
+            if (cameraSystem) {
+                auto* playerComp = player_->GetComponent<Player>();
+                cameraSystem->Update(camera, playerComp, input_, deltaTime);
+            }
         }
+#ifdef _DEBUG
     }
+#endif
 }
 
 void GameScene::OnImGui() {

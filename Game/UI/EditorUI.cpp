@@ -278,12 +278,6 @@ void EditorUI::RenderSceneView() {
 
     ImGui::Begin("Scene", &showSceneView_);
 
-    // Scene Viewのホバー状態でカメラ操作
-    // 右クリック中はカメラ操作を優先（ギズモは右クリック中は無効化される）
-    bool sceneHovered = ImGui::IsWindowHovered();
-    editorCamera_.SetViewportHovered(sceneHovered);
-    editorCamera_.SetViewportFocused(ImGui::IsWindowFocused());
-
     ImVec2 availableSize = ImGui::GetContentRegionAvail();
     if (availableSize.x > 0 && availableSize.y > 0) {
         const float aspectRatio = 16.0f / 9.0f;
@@ -306,6 +300,11 @@ void EditorUI::RenderSceneView() {
         desiredSceneViewHeight_ = static_cast<uint32>(imageSize.y);
 
         ImGui::Image((ImTextureID)sceneViewTexture_.GetSRVHandle().ptr, imageSize);
+
+        // Scene View画像のホバー状態でカメラ操作を有効化
+        bool sceneHovered = ImGui::IsItemHovered();
+        editorCamera_.SetViewportHovered(sceneHovered);
+        editorCamera_.SetViewportFocused(ImGui::IsWindowFocused());
 
         // 画像の実際のスクリーン位置を計算（ギズモ用）
         // GetItemRectMin()で直前に描画したImage の正確なスクリーン座標を取得

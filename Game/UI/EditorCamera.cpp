@@ -14,12 +14,17 @@ void EditorCamera::Update(float deltaTime) {
     ImGuiIO& io = ImGui::GetIO();
     bool rightMouseDown = io.MouseDown[1];
 
-    if (!viewportHovered_) {
+    // 右クリック中はホバー状態に関係なく操作を継続
+    if (!viewportHovered_ && !rightMousePressed_) {
         isControlling_ = false;
-        if (rightMousePressed_) {
-            rightMousePressed_ = false;
-            while (ShowCursor(TRUE) < 0);
-        }
+        return;
+    }
+
+    if (!viewportHovered_ && rightMousePressed_ && !rightMouseDown) {
+        // ビューポート外で右クリックを離した
+        rightMousePressed_ = false;
+        isControlling_ = false;
+        while (ShowCursor(TRUE) < 0);
         return;
     }
 
@@ -30,7 +35,12 @@ void EditorCamera::Update(float deltaTime) {
         while (ShowCursor(FALSE) >= 0);
         GetCursorPos(&lockMousePos_);
 
-        // オービットターゲットがある場合、現在の角度を計算
+        // 現在のカメラの向きからyaw/pitchを計算
+        Vector3 forward = camera_->GetForward();
+        yaw_ = std::atan2(forward.GetX(), forward.GetZ());
+        pitch_ = std::asin(-forward.GetY());
+
+        // オービットターゲットがある場合、オービット用の角度も計算
         if (hasOrbitTarget_) {
             Vector3 toCamera = camera_->GetPosition() - orbitTarget_;
             orbitDistance_ = toCamera.Length();
@@ -85,31 +95,51 @@ void EditorCamera::Update(float deltaTime) {
             Matrix4x4 viewMat = Matrix4x4::LookAtLH(newPos, orbitTarget_, Vector3::UnitY());
             Quaternion rot = Quaternion::FromRotationMatrix(viewMat.Inverse());
             camera_->SetRotation(rot);
-        }
+        } else {
+            // フリーカメラ回転
+            yaw_ += deltaX * rotateSpeed_ * deltaTime;
+            pitch_ += deltaY * rotateSpeed_ * deltaTime;
 
-        HandleFreeCameraMovement(deltaTime);
+            // ピッチ制限
+            const float maxPitch = 1.5f;
+            if (pitch_ > maxPitch) pitch_ = maxPitch;
+            if (pitch_ < -maxPitch) pitch_ = -maxPitch;
+
+            // Quaternionで回転を設定
+            Quaternion rot = Quaternion::RotationRollPitchYaw(pitch_, yaw_, 0.0f);
+            camera_->SetRotation(rot);
+        }
     }
 
+    // WASD移動は常に有効（右クリック不要）
+    HandleFreeCameraMovement(deltaTime);
     HandleScrollZoom(deltaTime);
 }
 
 void EditorCamera::HandleFreeCameraMovement(float deltaTime) {
-    if (!camera_ || hasOrbitTarget_) return;
+    if (!camera_) return;
 
     ImGuiIO& io = ImGui::GetIO();
-    if (io.WantCaptureKeyboard) return;
+    
+    // Scene Viewがホバーされていない場合はWASD移動を無効化
+    if (!viewportHovered_) return;
 
     float speed = moveSpeed_;
     if (io.KeyShift) speed *= 2.0f;
 
-    Vector3 forward = camera_->GetForward();
-    Vector3 right = camera_->GetRight();
+    // カメラの実際の向きから移動方向を計算（FPSスタイル）
+    Vector3 camForward = camera_->GetForward();
 
-    forward = Vector3(forward.GetX(), 0.0f, forward.GetZ());
-    right = Vector3(right.GetX(), 0.0f, right.GetZ());
+    // 水平面に投影して正規化
+    Vector3 forward(camForward.GetX(), 0.0f, camForward.GetZ());
+    if (forward.Length() > 0.001f) {
+        forward = forward.Normalize();
+    } else {
+        forward = Vector3(0.0f, 0.0f, 1.0f);
+    }
 
-    if (forward.Length() > 0.001f) forward = forward.Normalize();
-    if (right.Length() > 0.001f) right = right.Normalize();
+    // 右方向はY軸との外積で求める
+    Vector3 right = Vector3::UnitY().Cross(forward).Normalize();
 
     Vector3 movement(0.0f, 0.0f, 0.0f);
 
@@ -117,10 +147,14 @@ void EditorCamera::HandleFreeCameraMovement(float deltaTime) {
     if (ImGui::IsKeyDown(ImGuiKey_S)) movement = movement - forward;
     if (ImGui::IsKeyDown(ImGuiKey_A)) movement = movement - right;
     if (ImGui::IsKeyDown(ImGuiKey_D)) movement = movement + right;
-    if (ImGui::IsKeyDown(ImGuiKey_Space)) movement = movement + Vector3::UnitY();
-    if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl)) movement = movement - Vector3::UnitY();
+    if (ImGui::IsKeyDown(ImGuiKey_E) || ImGui::IsKeyDown(ImGuiKey_Space)) movement = movement + Vector3::UnitY();
+    if (ImGui::IsKeyDown(ImGuiKey_Q) || ImGui::IsKeyDown(ImGuiKey_LeftCtrl)) movement = movement - Vector3::UnitY();
 
     if (movement.Length() > 0.001f) {
+        // WASD移動時はオービットモードを解除してフリーカメラに戻る
+        if (hasOrbitTarget_) {
+            hasOrbitTarget_ = false;
+        }
         movement = movement.Normalize() * speed * deltaTime;
         camera_->Translate(movement);
     }

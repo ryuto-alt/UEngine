@@ -42,6 +42,9 @@ public:
     // カメラ操作中かどうか
     bool IsControlling() const { return isControlling_; }
 
+    // オブジェクトにフォーカス（カメラをオブジェクトに向ける）
+    void FocusOn(const Vector3& targetPosition, float distance = 5.0f);
+
 private:
     // フリーカメラ操作（右クリック + WASD）
     void HandleFreeCameraMovement(float deltaTime);

@@ -148,4 +148,13 @@ void EditorCamera::HandleScrollZoom(float deltaTime) {
     }
 }
 
+void EditorCamera::FocusOn(const Vector3& targetPosition, float distance) {
+    if (!camera_) return;
+
+    // 現在のカメラ方向を維持したまま、ターゲットから一定距離に配置
+    Vector3 forward = camera_->GetForward();
+    Vector3 newCameraPos = targetPosition - forward * distance;
+    camera_->SetPosition(newCameraPos);
+}
+
 } // namespace UnoEngine

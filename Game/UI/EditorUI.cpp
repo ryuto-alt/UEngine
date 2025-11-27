@@ -442,6 +442,12 @@ void EditorUI::RenderHierarchy(const EditorContext& context) {
             // クリックで選択
             if (ImGui::IsItemClicked()) {
                 selectedObject_ = obj;
+                // 選択したオブジェクトにカメラをフォーカス（ワールド行列から位置を取得）
+                Matrix4x4 worldMatrix = obj->GetTransform().GetWorldMatrix();
+                float m[16];
+                worldMatrix.ToFloatArray(m);
+                Vector3 targetPos(m[12], m[13], m[14]);
+                editorCamera_.FocusOn(targetPos, 5.0f);
             }
             ImGui::PopID();
         }

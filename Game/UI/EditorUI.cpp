@@ -97,8 +97,8 @@ void EditorUI::RenderDockSpace() {
         // 上部を左(20%) | 右(80%)に分割
         dock_left = ImGui::DockBuilderSplitNode(dock_top, ImGuiDir_Left, 0.20f, nullptr, &dock_right);
 
-        // 右上部を左右に分割（Game View 50% | Debug View 50%）
-        dock_game_view = ImGui::DockBuilderSplitNode(dock_right, ImGuiDir_Left, 0.5f, nullptr, &dock_debug_view);
+        // 右上部を左右に分割（Debug View 50% | Game View 50%）
+        dock_debug_view = ImGui::DockBuilderSplitNode(dock_right, ImGuiDir_Left, 0.5f, nullptr, &dock_game_view);
 
         // 下部を左右に分割（Project 20% | Console 80%）
         dock_project = ImGui::DockBuilderSplitNode(dock_bottom, ImGuiDir_Left, 0.20f, nullptr, &dock_console);
@@ -110,9 +110,9 @@ void EditorUI::RenderDockSpace() {
         ImGui::DockBuilderDockWindow("Stats", dock_left);
         ImGui::DockBuilderDockWindow("Profiler", dock_left);
 
-        // 右上: Game View（左）、Debug View（右）
-        ImGui::DockBuilderDockWindow("Game View", dock_game_view);
+        // 右上: Debug View（左）、Game View（右）
         ImGui::DockBuilderDockWindow("Debug View", dock_debug_view);
+        ImGui::DockBuilderDockWindow("Game View", dock_game_view);
 
         // 下部: Project（左）、Console（右）
         ImGui::DockBuilderDockWindow("Project", dock_project);

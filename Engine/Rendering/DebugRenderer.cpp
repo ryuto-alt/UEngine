@@ -102,17 +102,13 @@ void DebugRenderer::DrawBones(
     const Matrix4x4& worldMatrix
 ) {
     if (!showBones_ || !skeleton) {
-        Logger::Info("[DebugRenderer] DrawBones: showBones={}, skeleton={}", showBones_, skeleton != nullptr);
         return;
     }
 
     const auto& bones = skeleton->GetBones();
     const uint32 boneCount = skeleton->GetBoneCount();
 
-    Logger::Info("[DebugRenderer] DrawBones: boneCount={}, localTransforms.size()={}", boneCount, localTransforms.size());
-
     if (localTransforms.size() != boneCount) {
-        Logger::Info("[DebugRenderer] localTransforms size mismatch: {} vs {}", localTransforms.size(), boneCount);
         return;
     }
 
@@ -218,8 +214,6 @@ void DebugRenderer::Render(
     const Matrix4x4& viewMatrix,
     const Matrix4x4& projectionMatrix
 ) {
-    Logger::Info("[DebugRenderer] Render: vertices.size()={}", vertices_.size());
-    
     if (vertices_.empty()) {
         return;
     }

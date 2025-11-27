@@ -222,8 +222,6 @@ void Renderer::DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_
                 }
             }
         }
-        Logger::Info("[Renderer] デバッグボーン描画: skinnedItems={}, animatorCount={}", skinnedItems.size(), animatorCount);
-
         debugRenderer_->Render(
             cmdList,
             view.camera->GetViewMatrix(),

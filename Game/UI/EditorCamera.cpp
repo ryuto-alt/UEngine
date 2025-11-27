@@ -69,32 +69,49 @@ void EditorCamera::Update(float deltaTime) {
         SetCursorPos(lockMousePos_.x, lockMousePos_.y);
 
         if (hasOrbitTarget_) {
-            // オービット回転
-            orbitYaw_ += deltaX * rotateSpeed_ * deltaTime;
-            orbitPitch_ += deltaY * rotateSpeed_ * deltaTime;
+            // SHIFT+右クリック: オービットターゲットの高さを調整
+            if (io.KeyShift) {
+                // マウスの上下移動でターゲットのY座標を調整
+                float heightAdjust = deltaY * moveSpeed_ * deltaTime * 0.5f;
+                orbitTarget_.SetY(orbitTarget_.GetY() + heightAdjust);
+                
+                // カメラ位置もY方向に同じだけ移動（オービット角度は保持）
+                Vector3 currentPos = camera_->GetPosition();
+                currentPos.SetY(currentPos.GetY() + heightAdjust);
+                camera_->SetPosition(currentPos);
+                
+                // カメラをターゲットに向ける
+                Matrix4x4 viewMat = Matrix4x4::LookAtLH(currentPos, orbitTarget_, Vector3::UnitY());
+                Quaternion rot = Quaternion::FromRotationMatrix(viewMat.Inverse());
+                camera_->SetRotation(rot);
+            } else {
+                // 通常のオービット回転
+                orbitYaw_ += deltaX * rotateSpeed_ * deltaTime;
+                orbitPitch_ += deltaY * rotateSpeed_ * deltaTime;
 
-            // ピッチ制限
-            const float maxPitch = 1.5f;
-            if (orbitPitch_ > maxPitch) orbitPitch_ = maxPitch;
-            if (orbitPitch_ < -maxPitch) orbitPitch_ = -maxPitch;
+                // ピッチ制限
+                const float maxPitch = 1.5f;
+                if (orbitPitch_ > maxPitch) orbitPitch_ = maxPitch;
+                if (orbitPitch_ < -maxPitch) orbitPitch_ = -maxPitch;
 
-            // 球面座標からカメラ位置を計算
-            float x = orbitDistance_ * std::cos(orbitPitch_) * std::sin(orbitYaw_);
-            float y = orbitDistance_ * std::sin(orbitPitch_);
-            float z = orbitDistance_ * std::cos(orbitPitch_) * std::cos(orbitYaw_);
+                // 球面座標からカメラ位置を計算
+                float x = orbitDistance_ * std::cos(orbitPitch_) * std::sin(orbitYaw_);
+                float y = orbitDistance_ * std::sin(orbitPitch_);
+                float z = orbitDistance_ * std::cos(orbitPitch_) * std::cos(orbitYaw_);
 
-            Vector3 newPos = orbitTarget_ + Vector3(x, y, z);
-            camera_->SetPosition(newPos);
+                Vector3 newPos = orbitTarget_ + Vector3(x, y, z);
+                camera_->SetPosition(newPos);
 
-            // カメラをターゲットに向ける
-            Vector3 lookDir = (orbitTarget_ - newPos).Normalize();
-            Vector3 right = Vector3::UnitY().Cross(lookDir).Normalize();
-            Vector3 up = lookDir.Cross(right).Normalize();
+                // カメラをターゲットに向ける
+                Vector3 lookDir = (orbitTarget_ - newPos).Normalize();
+                Vector3 right = Vector3::UnitY().Cross(lookDir).Normalize();
+                Vector3 up = lookDir.Cross(right).Normalize();
 
-            // View行列から回転を設定
-            Matrix4x4 viewMat = Matrix4x4::LookAtLH(newPos, orbitTarget_, Vector3::UnitY());
-            Quaternion rot = Quaternion::FromRotationMatrix(viewMat.Inverse());
-            camera_->SetRotation(rot);
+                // View行列から回転を設定
+                Matrix4x4 viewMat = Matrix4x4::LookAtLH(newPos, orbitTarget_, Vector3::UnitY());
+                Quaternion rot = Quaternion::FromRotationMatrix(viewMat.Inverse());
+                camera_->SetRotation(rot);
+            }
         } else {
             // フリーカメラ回転
             yaw_ += deltaX * rotateSpeed_ * deltaTime;

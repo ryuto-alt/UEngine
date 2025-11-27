@@ -75,7 +75,18 @@ void GameScene::SetupAnimatedCharacter() {
     }
 
     // Create animated character with components
-    animatedCharacter_ = CreateGameObject("AnimatedCharacter");
+    // モデルファイル名をGameObject名に使用
+    std::string modelName = loadedModelPath_;
+    size_t lastSlash = modelName.find_last_of("/\\");
+    if (lastSlash != std::string::npos) {
+        modelName = modelName.substr(lastSlash + 1);
+    }
+    // 拡張子を除去
+    size_t lastDot = modelName.find_last_of('.');
+    if (lastDot != std::string::npos) {
+        modelName = modelName.substr(0, lastDot);
+    }
+    animatedCharacter_ = CreateGameObject(modelName);
 
     // Add SkinnedMeshRenderer component
     auto* renderer = animatedCharacter_->AddComponent<SkinnedMeshRenderer>();

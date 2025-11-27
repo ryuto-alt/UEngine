@@ -203,6 +203,8 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClCompile Include="Game\Systems\CameraSystem.cpp" />
     <ClCompile Include="Game\UI\EditorUI.cpp" />
     <ClCompile Include="Game\UI\EditorCamera.cpp" />
+    <ClCompile Include="Game\UI\GizmoSystem.cpp" />
+    <ClCompile Include="Game\UI\ImGuizmo.cpp" />
     <ClCompile Include="Engine\UI\ImGuiManager.cpp" />
     <ClCompile Include="Engine\UI\imgui_toggle.cpp" />
     <ClCompile Include="Engine\UI\imgui_toggle_presets.cpp" />
@@ -276,6 +278,9 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClInclude Include="Game\Systems\CameraSystem.h" />
     <ClInclude Include="Game\UI\EditorUI.h" />
     <ClInclude Include="Game\UI\EditorCamera.h" />
+    <ClInclude Include="Game\UI\GizmoSystem.h" />
+    <ClInclude Include="Game\UI\ImGuizmo.h" />
+    <ClInclude Include="Game\UI\ImViewGuizmo.h" />
     <ClInclude Include="Engine\Graphics\d3dx12.h" />
     <ClInclude Include="Engine\UI\ImGuiManager.h" />
     <ClInclude Include="Engine\Graphics\SkinnedMesh.h" />

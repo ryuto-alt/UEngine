@@ -6,6 +6,7 @@
 #include <imgui_internal.h>
 #include "../../Engine/UI/imgui_toggle.h"
 #include "../../Engine/UI/imgui_toggle_presets.h"
+#include "ImGuizmo.h"
 
 namespace UnoEngine {
 
@@ -14,12 +15,19 @@ void EditorUI::Initialize(GraphicsDevice* graphics) {
     gameViewTexture_.Create(graphics, 1280, 720, 3);
     sceneViewTexture_.Create(graphics, 1280, 720, 4);
 
+    // ギズモシステム初期化
+    gizmoSystem_.Initialize();
+
     // Console初期ログ
     consoleMessages_.push_back("[System] UnoEngine Editor Initialized");
     consoleMessages_.push_back("[Info] Press ~ to toggle console");
+    consoleMessages_.push_back("[Info] Q: Translate, E: Rotate, R: Scale");
 }
 
 void EditorUI::Render(const EditorContext& context) {
+    // ImGuizmoフレーム開始
+    ImGuizmo::BeginFrame();
+
     // カメラを設定（毎フレーム）
     if (context.camera) {
         editorCamera_.SetCamera(context.camera);
@@ -269,11 +277,14 @@ void EditorUI::RenderSceneView() {
     if (!showSceneView_) return;
 
     ImGui::Begin("Scene", &showSceneView_);
-    
-    // Scene Viewのホバー状態でカメラ操作
-    bool sceneHovered = ImGui::IsWindowHovered();
+
+    // ギズモ使用中はカメラ操作を無効化
+    bool gizmoInUse = gizmoSystem_.IsUsing();
+
+    // Scene Viewのホバー状態でカメラ操作（ギズモ使用中は無効）
+    bool sceneHovered = ImGui::IsWindowHovered() && !gizmoInUse;
     editorCamera_.SetViewportHovered(sceneHovered);
-    editorCamera_.SetViewportFocused(ImGui::IsWindowFocused());
+    editorCamera_.SetViewportFocused(ImGui::IsWindowFocused() && !gizmoInUse);
 
     ImVec2 availableSize = ImGui::GetContentRegionAvail();
     if (availableSize.x > 0 && availableSize.y > 0) {
@@ -297,6 +308,27 @@ void EditorUI::RenderSceneView() {
         desiredSceneViewHeight_ = static_cast<uint32>(imageSize.y);
 
         ImGui::Image((ImTextureID)sceneViewTexture_.GetSRVHandle().ptr, imageSize);
+
+        // 画像の実際のスクリーン位置を計算（ギズモ用）
+        // GetItemRectMin()で直前に描画したImage の正確なスクリーン座標を取得
+        ImVec2 imageMin = ImGui::GetItemRectMin();
+        ImVec2 imageMax = ImGui::GetItemRectMax();
+        sceneViewPosX_ = imageMin.x;
+        sceneViewPosY_ = imageMin.y;
+        sceneViewSizeX_ = imageMax.x - imageMin.x;
+        sceneViewSizeY_ = imageMax.y - imageMin.y;
+
+        // ギズモ描画（Edit/Pauseモードかつオブジェクトが選択されている場合）
+        if (editorMode_ != EditorMode::Play && selectedObject_ && editorCamera_.GetCamera()) {
+            gizmoSystem_.RenderGizmo(
+                selectedObject_,
+                editorCamera_.GetCamera(),
+                sceneViewPosX_,
+                sceneViewPosY_,
+                sceneViewSizeX_,
+                sceneViewSizeY_
+            );
+        }
     }
 
     ImGui::End();
@@ -392,10 +424,25 @@ void EditorUI::RenderHierarchy(const EditorContext& context) {
     ImGui::Begin("Hierarchy", &showHierarchy_);
 
     if (context.gameObjects) {
-        for (const auto& obj : *context.gameObjects) {
-            if (ImGui::Selectable(obj->GetName().c_str(), selectedObject_ == obj.get())) {
-                selectedObject_ = obj.get();
+        for (size_t i = 0; i < context.gameObjects->size(); ++i) {
+            GameObject* obj = (*context.gameObjects)[i].get();
+
+            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf |
+                                       ImGuiTreeNodeFlags_NoTreePushOnOpen |
+                                       ImGuiTreeNodeFlags_SpanAvailWidth;
+            if (selectedObject_ == obj) {
+                flags |= ImGuiTreeNodeFlags_Selected;
             }
+
+            // ユニークIDを生成（同じ名前のオブジェクトがあっても区別できるように）
+            ImGui::PushID(static_cast<int>(i));
+            ImGui::TreeNodeEx(obj->GetName().c_str(), flags);
+
+            // クリックで選択
+            if (ImGui::IsItemClicked()) {
+                selectedObject_ = obj;
+            }
+            ImGui::PopID();
         }
     }
 
@@ -615,6 +662,35 @@ void EditorUI::ProcessHotkeys() {
     // F2: Game View表示トグル
     if (ImGui::IsKeyPressed(ImGuiKey_F2, false)) {
         showGameView_ = !showGameView_;
+    }
+
+    // Q: 移動ギズモ
+    if (ImGui::IsKeyPressed(ImGuiKey_Q, false) && !io.KeyCtrl) {
+        gizmoSystem_.SetOperation(GizmoOperation::Translate);
+        consoleMessages_.push_back("[Editor] Gizmo: Translate");
+    }
+
+    // E: 回転ギズモ
+    if (ImGui::IsKeyPressed(ImGuiKey_E, false) && !io.KeyCtrl) {
+        gizmoSystem_.SetOperation(GizmoOperation::Rotate);
+        consoleMessages_.push_back("[Editor] Gizmo: Rotate");
+    }
+
+    // R: スケールギズモ（Ctrl+Rはレイアウトリセット用なので除外）
+    if (ImGui::IsKeyPressed(ImGuiKey_R, false) && !io.KeyCtrl && !io.KeyShift) {
+        gizmoSystem_.SetOperation(GizmoOperation::Scale);
+        consoleMessages_.push_back("[Editor] Gizmo: Scale");
+    }
+
+    // G: Local/World切り替え
+    if (ImGui::IsKeyPressed(ImGuiKey_G, false)) {
+        if (gizmoSystem_.GetMode() == GizmoMode::World) {
+            gizmoSystem_.SetMode(GizmoMode::Local);
+            consoleMessages_.push_back("[Editor] Gizmo Mode: Local");
+        } else {
+            gizmoSystem_.SetMode(GizmoMode::World);
+            consoleMessages_.push_back("[Editor] Gizmo Mode: World");
+        }
     }
 
     // F10: Step（一時停止中のみ）

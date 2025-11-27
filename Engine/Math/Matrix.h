@@ -61,6 +61,28 @@ public:
         return m.m[row][col];
     }
 
+    // float配列への変換（ImGuizmo用）
+    void ToFloatArray(float* out) const {
+        DirectX::XMFLOAT4X4 m;
+        DirectX::XMStoreFloat4x4(&m, mat_);
+        for (int i = 0; i < 4; ++i) {
+            for (int j = 0; j < 4; ++j) {
+                out[i * 4 + j] = m.m[i][j];
+            }
+        }
+    }
+
+    // float配列からの変換
+    static Matrix4x4 FromFloatArray(const float* data) {
+        DirectX::XMFLOAT4X4 m;
+        for (int i = 0; i < 4; ++i) {
+            for (int j = 0; j < 4; ++j) {
+                m.m[i][j] = data[i * 4 + j];
+            }
+        }
+        return Matrix4x4(DirectX::XMLoadFloat4x4(&m));
+    }
+
     // DirectXMathへの変換
     DirectX::XMMATRIX GetXMMatrix() const { return mat_; }
 

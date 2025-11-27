@@ -188,6 +188,15 @@
     <ClCompile Include="Game\UI\EditorUI.cpp">
       <Filter>Game\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Game\UI\EditorCamera.cpp">
+      <Filter>Game\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\UI\GizmoSystem.cpp">
+      <Filter>Game\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\UI\ImGuizmo.cpp">
+      <Filter>Game\UI</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Graphics\SkinnedMesh.cpp">
       <Filter>Engine\Graphics</Filter>
     </ClCompile>
@@ -383,6 +392,18 @@
       <Filter>Game\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Game\UI\EditorUI.h">
+      <Filter>Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\UI\EditorCamera.h">
+      <Filter>Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\UI\GizmoSystem.h">
+      <Filter>Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\UI\ImGuizmo.h">
+      <Filter>Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\UI\ImViewGuizmo.h">
       <Filter>Game\UI</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\SkinnedMesh.h">

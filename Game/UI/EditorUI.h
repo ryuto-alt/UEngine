@@ -5,6 +5,7 @@
 #include "../../Engine/Core/Camera.h"
 #include "../../Engine/Core/Types.h"
 #include "EditorCamera.h"
+#include "GizmoSystem.h"
 #include <vector>
 #include <string>
 
@@ -90,6 +91,13 @@ public:
     void SetEditorCamera(Camera* camera) { editorCamera_.SetCamera(camera); }
     EditorCamera& GetEditorCamera() { return editorCamera_; }
 
+    // ギズモシステム
+    GizmoSystem& GetGizmoSystem() { return gizmoSystem_; }
+
+    // オブジェクト選択
+    void SetSelectedObject(GameObject* obj) { selectedObject_ = obj; }
+    GameObject* GetSelectedObject() const { return selectedObject_; }
+
 private:
     // 各パネルの描画メソッド
     void RenderDockSpace();
@@ -143,6 +151,15 @@ private:
 
     // エディタカメラ
     EditorCamera editorCamera_;
+
+    // ギズモシステム
+    GizmoSystem gizmoSystem_;
+
+    // Scene Viewの位置・サイズ（ギズモ用）
+    float sceneViewPosX_ = 0.0f;
+    float sceneViewPosY_ = 0.0f;
+    float sceneViewSizeX_ = 0.0f;
+    float sceneViewSizeY_ = 0.0f;
 
     // アニメーションシステム参照
     AnimationSystem* animationSystem_ = nullptr;

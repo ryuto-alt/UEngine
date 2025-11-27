@@ -56,7 +56,7 @@ std::vector<SkinnedRenderItem> RenderSystem::CollectSkinnedRenderables(Scene* sc
         if (!skinnedRenderer) continue;
         
         if (!skinnedRenderer->HasModel()) {
-            Logger::Warning("RenderSystem: SkinnedMeshRenderer on '{}' has no model", go->GetName());
+            Logger::Warning("[描画] '{}' の SkinnedMeshRenderer にモデルがありません", go->GetName());
             continue;
         }
         
@@ -70,7 +70,7 @@ std::vector<SkinnedRenderItem> RenderSystem::CollectSkinnedRenderables(Scene* sc
         
         // Create render item for each mesh
         const auto& meshes = skinnedRenderer->GetMeshes();
-        Logger::Debug("RenderSystem: Collecting {} meshes from '{}'", meshes.size(), go->GetName());
+        Logger::Debug("[描画] '{}' から {}個のメッシュを収集", go->GetName(), meshes.size());
         
         for (const auto& mesh : meshes) {
             SkinnedRenderItem item;
@@ -89,7 +89,7 @@ std::vector<SkinnedRenderItem> RenderSystem::CollectSkinnedRenderables(Scene* sc
         }
     }
     
-    Logger::Debug("RenderSystem: Collected {} skinned render items total", items.size());
+    Logger::Debug("[描画] スキンメッシュ合計 {}個 収集完了", items.size());
     
     // Sort by material for batching
     std::sort(items.begin(), items.end(),

@@ -22,7 +22,7 @@ SkinnedModelData* ResourceManager::LoadSkinnedModel(const std::string& path) {
     }
 
     // Load new model
-    Logger::Info("ResourceManager: Loading skinned model: {}", path);
+    Logger::Info("[リソース] スキンモデル読み込み中: {}", path);
     
     if (!isUploading_) {
         Logger::Warning("ResourceManager: BeginUpload() not called before loading resources");
@@ -33,14 +33,14 @@ SkinnedModelData* ResourceManager::LoadSkinnedModel(const std::string& path) {
     *modelData = SkinnedModelImporter::Load(device_, commandList, path);
 
     if (modelData->meshes.empty()) {
-        Logger::Error("ResourceManager: Failed to load skinned model: {}", path);
+        Logger::Error("[リソース] スキンモデル読み込み失敗: {}", path);
         return nullptr;
     }
 
     SkinnedModelData* ptr = modelData.get();
     skinnedModels_[path] = std::move(modelData);
 
-    Logger::Info("ResourceManager: Loaded skinned model with {} meshes, {} animations",
+    Logger::Info("[リソース] スキンモデル読み込み完了 (メッシュ: {}個, アニメーション: {}個)",
                  ptr->meshes.size(), ptr->animations.size());
 
     return ptr;

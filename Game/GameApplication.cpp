@@ -10,11 +10,12 @@ namespace UnoEngine {
 void GameApplication::OnInit() {
     // Initialize ResourceManager
     resourceManager_ = std::make_unique<ResourceManager>(graphics_.get());
-    Logger::Info("GameApplication: ResourceManager initialized");
+    Logger::Info("[初期化] ResourceManager 準備完了");
 
     // Register systems
     GetSystemManager()->RegisterSystem<AnimationSystem>();
     GetSystemManager()->RegisterSystem<CameraSystem>();
+    Logger::Info("[初期化] システム登録完了 (Animation, Camera)");
 }
 
 Mesh* GameApplication::LoadMesh(const std::string& path) {
@@ -39,7 +40,7 @@ void GameApplication::OnRender() {
         
         static bool loggedOnce = false;
         if (!loggedOnce) {
-            Logger::Info("GameApplication::OnRender: skinnedItems.size() = {}", skinnedItems.size());
+            Logger::Info("[描画] スキンメッシュ {}個 収集完了", skinnedItems.size());
             loggedOnce = true;
         }
 

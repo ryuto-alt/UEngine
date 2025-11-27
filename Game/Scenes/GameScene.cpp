@@ -16,7 +16,7 @@
 namespace UnoEngine {
 
 void GameScene::OnLoad() {
-    Logger::Info("GameScene: Loading...");
+    Logger::Info("[シーン] GameScene 読み込み開始...");
 
     SetupCamera();
     SetupPlayer();
@@ -26,10 +26,10 @@ void GameScene::OnLoad() {
 #ifdef _DEBUG
     auto* app = static_cast<GameApplication*>(GetApplication());
     editorUI_.Initialize(app->GetGraphicsDevice());
-    editorUI_.AddConsoleMessage("[Scene] GameScene loaded successfully");
+    editorUI_.AddConsoleMessage("[シーン] GameScene 読み込み完了");
 #endif
 
-    Logger::Info("GameScene: Load complete");
+    Logger::Info("[シーン] GameScene 読み込み完了");
 }
 
 void GameScene::SetupCamera() {
@@ -66,7 +66,7 @@ void GameScene::SetupAnimatedCharacter() {
     resourceManager->EndUpload();
 
     if (!modelData) {
-        Logger::Error("GameScene: Failed to load model: {}", loadedModelPath_);
+        Logger::Error("[エラー] モデル読み込み失敗: {}", loadedModelPath_);
         return;
     }
 
@@ -91,7 +91,7 @@ void GameScene::SetupAnimatedCharacter() {
                 animName = "Animation_0";
             }
             animator->Play(animName, true);
-            Logger::Info("GameScene: Playing animation: {}", animName);
+            Logger::Info("[アニメーション] '{}' 再生開始", animName);
         }
     }
 

@@ -17,9 +17,9 @@ void SkinnedMeshRenderer::Start() {
     if (!animator_) {
         LinkAnimator();
         if (animator_) {
-            Logger::Info("SkinnedMeshRenderer::Start: Animator linked successfully");
+            Logger::Info("[コンポーネント] SkinnedMeshRenderer と Animator 連携完了");
         } else {
-            Logger::Warning("SkinnedMeshRenderer::Start: No AnimatorComponent found on GameObject");
+            Logger::Warning("[警告] SkinnedMeshRenderer: AnimatorComponent が見つかりません");
         }
     }
     
@@ -28,7 +28,8 @@ void SkinnedMeshRenderer::Start() {
         InitializeAnimator();
     }
     
-    Logger::Debug("SkinnedMeshRenderer::Start: HasModel={}, HasAnimator={}", HasModel(), HasAnimator());
+    Logger::Debug("[コンポーネント] SkinnedMeshRenderer 状態: モデル={}, Animator={}", 
+              HasModel() ? "あり" : "なし", HasAnimator() ? "あり" : "なし");
 }
 
 void SkinnedMeshRenderer::OnDestroy() {
@@ -60,7 +61,7 @@ void SkinnedMeshRenderer::SetModel(SkinnedModelData* modelData) {
             needsAnimatorInit_ = true;
         }
         
-        Logger::Info("SkinnedMeshRenderer: Model set with {} meshes", modelData_->meshes.size());
+        Logger::Info("[コンポーネント] SkinnedMeshRenderer モデル設定 (メッシュ: {}個)", modelData_->meshes.size());
     }
 }
 

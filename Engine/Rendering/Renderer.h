@@ -54,7 +54,8 @@ public:
     void DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle,
                        D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle, const RenderView& view,
                        const std::vector<RenderItem>& items, LightManager* lightManager,
-                       const std::vector<SkinnedRenderItem>& skinnedItems = {});
+                       const std::vector<SkinnedRenderItem>& skinnedItems = {},
+                       bool enableDebugDraw = false);
     void RenderUIOnly(Scene* scene);
 
     Pipeline* GetPipeline() { return &pipeline_; }

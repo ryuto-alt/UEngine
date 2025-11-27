@@ -116,11 +116,6 @@ void DebugRenderer::DrawBones(
         return;
     }
 
-    // テスト用: 固定位置に線を描画
-    AddLine(Vector3(0, 0, 0), Vector3(0, 2, 0), Vector4(1, 0, 0, 1));  // 赤い縦線
-    AddLine(Vector3(0, 0, 0), Vector3(2, 0, 0), Vector4(0, 1, 0, 1));  // 緑の横線
-    AddLine(Vector3(0, 0, 0), Vector3(0, 0, 2), Vector4(0, 0, 1, 1));  // 青い奥行き線
-
     // グローバル変換を計算
     std::vector<Matrix4x4> globalTransforms(boneCount);
 

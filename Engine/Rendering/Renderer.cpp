@@ -156,7 +156,8 @@ void Renderer::RenderUIOnly(Scene* scene) {
 void Renderer::DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle,
                              D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle, const RenderView& view,
                              const std::vector<RenderItem>& items, LightManager* lightManager,
-                             const std::vector<SkinnedRenderItem>& skinnedItems) {
+                             const std::vector<SkinnedRenderItem>& skinnedItems,
+                             bool enableDebugDraw) {
     if (!view.camera) return;
 
     auto* cmdList = graphics_->GetCommandList();
@@ -199,30 +200,35 @@ void Renderer::DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_
     // Render skinned meshes
     if (!skinnedItems.empty()) {
         RenderSkinnedMeshes(view, skinnedItems);
+    }
 
-        // デバッグボーン描画
-        if (debugRenderer_ && debugRenderer_->GetShowBones()) {
-            debugRenderer_->BeginFrame();
-            
-            int animatorCount = 0;
-            for (const auto& item : skinnedItems) {
-                if (item.animator) {
-                    animatorCount++;
-                    auto* skeleton = item.animator->GetSkeleton();
-                    const auto& localTransforms = item.animator->GetCurrentLocalTransforms();
-                    if (skeleton && !localTransforms.empty()) {
-                        debugRenderer_->DrawBones(skeleton, localTransforms, item.worldMatrix);
-                    }
+    // デバッグ描画（enableDebugDrawがtrueの場合のみ）
+    if (enableDebugDraw && debugRenderer_ && debugRenderer_->GetShowBones()) {
+        debugRenderer_->BeginFrame();
+
+        // テスト用: 原点に軸を描画（パイプライン動作確認）
+        debugRenderer_->AddLine(Vector3(0, 0, 0), Vector3(0, 2, 0), Vector4(1, 0, 0, 1));  // 赤Y軸
+        debugRenderer_->AddLine(Vector3(0, 0, 0), Vector3(2, 0, 0), Vector4(0, 1, 0, 1));  // 緑X軸
+        debugRenderer_->AddLine(Vector3(0, 0, 0), Vector3(0, 0, 2), Vector4(0, 0, 1, 1));  // 青Z軸
+
+        int animatorCount = 0;
+        for (const auto& item : skinnedItems) {
+            if (item.animator) {
+                animatorCount++;
+                auto* skeleton = item.animator->GetSkeleton();
+                const auto& localTransforms = item.animator->GetCurrentLocalTransforms();
+                if (skeleton && !localTransforms.empty()) {
+                    debugRenderer_->DrawBones(skeleton, localTransforms, item.worldMatrix);
                 }
             }
-            Logger::Info("[Renderer] デバッグボーン描画: skinnedItems={}, animatorCount={}", skinnedItems.size(), animatorCount);
-            
-            debugRenderer_->Render(
-                cmdList,
-                view.camera->GetViewMatrix(),
-                view.camera->GetProjectionMatrix()
-            );
         }
+        Logger::Info("[Renderer] デバッグボーン描画: skinnedItems={}, animatorCount={}", skinnedItems.size(), animatorCount);
+
+        debugRenderer_->Render(
+            cmdList,
+            view.camera->GetViewMatrix(),
+            view.camera->GetProjectionMatrix()
+        );
     }
 
     // Resource barrier: RENDER_TARGET -> PIXEL_SHADER_RESOURCE

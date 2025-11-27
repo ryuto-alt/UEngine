@@ -49,7 +49,7 @@ void GameApplication::OnRender() {
         if (gameScene) {
             auto* editorUI = gameScene->GetEditorUI();
 
-            // Game Viewに描画
+            // Game Viewに描画（デバッグ描画なし）
             auto* gameViewTex = editorUI->GetGameViewTexture();
             if (gameViewTex && gameViewTex->GetResource()) {
                 renderer_->DrawToTexture(
@@ -59,11 +59,12 @@ void GameApplication::OnRender() {
                     view,
                     items,
                     lightManager_.get(),
-                    skinnedItems
+                    skinnedItems,
+                    false  // デバッグ描画無効
                 );
             }
 
-            // Scene Viewに描画
+            // Debug Viewに描画（デバッグ描画あり）
             auto* sceneViewTex = editorUI->GetSceneViewTexture();
             if (sceneViewTex && sceneViewTex->GetResource()) {
                 renderer_->DrawToTexture(
@@ -73,7 +74,8 @@ void GameApplication::OnRender() {
                     view,
                     items,
                     lightManager_.get(),
-                    skinnedItems
+                    skinnedItems,
+                    true  // デバッグ描画有効
                 );
             }
 

@@ -42,8 +42,11 @@ public:
     // カメラ操作中かどうか
     bool IsControlling() const { return isControlling_; }
 
-    // オブジェクトにフォーカス（カメラをオブジェクトに向ける）
+    // オブジェクトにフォーカス（オービットの中心を設定）
     void FocusOn(const Vector3& targetPosition, float distance = 5.0f);
+
+    // オービットターゲット設定
+    void SetOrbitTarget(const Vector3& target) { orbitTarget_ = target; hasOrbitTarget_ = true; }
 
 private:
     // フリーカメラ操作（右クリック + WASD）
@@ -68,17 +71,18 @@ private:
     bool viewportFocused_ = false;
     bool isControlling_ = false;
 
-    // マウス位置
-    float lastMousePosX_ = 0.0f;
-    float lastMousePosY_ = 0.0f;
+    // マウス
     bool rightMousePressed_ = false;
     POINT lockMousePos_ = { 0, 0 };
 
-    // カメラ角度（累積）
-    float yaw_ = 0.0f;
-    float pitch_ = 0.0f;
+    // オービット用
+    Vector3 orbitTarget_ = Vector3::Zero();
+    float orbitDistance_ = 5.0f;
+    float orbitYaw_ = 0.0f;
+    float orbitPitch_ = 0.0f;
+    bool hasOrbitTarget_ = false;
 
-    // ビューポート矩形（マウスクリップ用）
+    // ビューポート矩形
     struct { float x, y, w, h; } viewportRect_ = { 0, 0, 0, 0 };
 };
 

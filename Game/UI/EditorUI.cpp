@@ -20,15 +20,84 @@ void EditorUI::Initialize(GraphicsDevice* graphics) {
 }
 
 void EditorUI::Render(const EditorContext& context) {
+    // カメラを設定（毎フレーム）
+    if (context.camera) {
+        editorCamera_.SetCamera(context.camera);
+    }
+
+    // アニメーションシステムを設定
+    if (context.animationSystem) {
+        animationSystem_ = context.animationSystem;
+    }
+
+    // ホットキー処理
+    ProcessHotkeys();
+
     RenderDockSpace();
-    RenderGameView();
     RenderSceneView();
+    RenderGameView();
     RenderInspector(context);
     RenderHierarchy(context);
     RenderStats(context);
     RenderConsole();
     RenderProject(context);
     RenderProfiler();
+
+    // エディタカメラの更新（Edit/Pauseモードのみ）
+    if (editorMode_ != EditorMode::Play) {
+        float deltaTime = ImGui::GetIO().DeltaTime;
+        editorCamera_.Update(deltaTime);
+    }
+
+    // ステップフレームをリセット
+    stepFrame_ = false;
+}
+
+void EditorUI::Play() {
+    if (editorMode_ == EditorMode::Edit) {
+        editorMode_ = EditorMode::Play;
+        // アニメーション再生開始
+        if (animationSystem_) {
+            animationSystem_->SetPlaying(true);
+        }
+        consoleMessages_.push_back("[Editor] Play mode started");
+    } else if (editorMode_ == EditorMode::Pause) {
+        editorMode_ = EditorMode::Play;
+        // アニメーション再開
+        if (animationSystem_) {
+            animationSystem_->SetPlaying(true);
+        }
+        consoleMessages_.push_back("[Editor] Resumed");
+    }
+}
+
+void EditorUI::Pause() {
+    if (editorMode_ == EditorMode::Play) {
+        editorMode_ = EditorMode::Pause;
+        // アニメーション一時停止
+        if (animationSystem_) {
+            animationSystem_->SetPlaying(false);
+        }
+        consoleMessages_.push_back("[Editor] Paused");
+    }
+}
+
+void EditorUI::Stop() {
+    if (editorMode_ != EditorMode::Edit) {
+        editorMode_ = EditorMode::Edit;
+        // アニメーション停止
+        if (animationSystem_) {
+            animationSystem_->SetPlaying(false);
+        }
+        consoleMessages_.push_back("[Editor] Stopped - returned to Edit mode");
+    }
+}
+
+void EditorUI::Step() {
+    if (editorMode_ == EditorMode::Pause) {
+        stepFrame_ = true;
+        consoleMessages_.push_back("[Editor] Step frame");
+    }
 }
 
 void EditorUI::RenderDockSpace() {
@@ -57,8 +126,8 @@ void EditorUI::RenderDockSpace() {
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("View")) {
             ImGui::SeparatorText("Viewports");
-            ImGui::MenuItem("Game View", nullptr, &showGameView_);
-            ImGui::MenuItem("Debug View", nullptr, &showSceneView_);
+            ImGui::MenuItem("Scene View", "F1", &showSceneView_);
+            ImGui::MenuItem("Game View", "F2", &showGameView_);
 
             ImGui::SeparatorText("Tools");
             ImGui::MenuItem("Inspector", nullptr, &showInspector_);
@@ -77,6 +146,74 @@ void EditorUI::RenderDockSpace() {
 
             ImGui::EndMenu();
         }
+
+        // Play/Pause/Stop ボタンをメニューバー中央に配置
+        float menuBarWidth = ImGui::GetWindowWidth();
+        float buttonWidth = 28.0f;
+        float totalWidth = buttonWidth * 3 + 8.0f;
+        float startX = (menuBarWidth - totalWidth) * 0.5f;
+        
+        ImGui::SetCursorPosX(startX);
+        
+        bool isPlaying = (editorMode_ == EditorMode::Play);
+        bool isPaused = (editorMode_ == EditorMode::Pause);
+        
+        // Play/Pauseボタン
+        if (isPlaying) {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.6f, 0.2f, 1.0f));
+        }
+        if (ImGui::Button(isPlaying ? "||##PlayBtn" : ">##PlayBtn", ImVec2(buttonWidth, 0))) {
+            if (isPlaying) {
+                Pause();
+            } else {
+                Play();
+            }
+        }
+        if (isPlaying) {
+            ImGui::PopStyleColor();
+        }
+        
+        ImGui::SameLine();
+        
+        // Stopボタン
+        bool canStop = (editorMode_ != EditorMode::Edit);
+        if (!canStop) {
+            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
+        }
+        if (ImGui::Button("[]##StopBtn", ImVec2(buttonWidth, 0)) && canStop) {
+            Stop();
+        }
+        if (!canStop) {
+            ImGui::PopStyleVar();
+        }
+        
+        ImGui::SameLine();
+        
+        // Stepボタン
+        bool canStep = isPaused;
+        if (!canStep) {
+            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
+        }
+        if (ImGui::Button(">|##StepBtn", ImVec2(buttonWidth, 0)) && canStep) {
+            Step();
+        }
+        if (!canStep) {
+            ImGui::PopStyleVar();
+        }
+        
+        // モード表示
+        ImGui::SameLine();
+        const char* modeText = "Edit";
+        ImVec4 modeColor = ImVec4(0.6f, 0.6f, 0.6f, 1.0f);
+        if (isPlaying) {
+            modeText = "Playing";
+            modeColor = ImVec4(0.2f, 0.8f, 0.2f, 1.0f);
+        } else if (isPaused) {
+            modeText = "Paused";
+            modeColor = ImVec4(0.8f, 0.8f, 0.2f, 1.0f);
+        }
+        ImGui::TextColored(modeColor, "%s", modeText);
+
         ImGui::EndMenuBar();
     }
 
@@ -92,17 +229,17 @@ void EditorUI::RenderDockSpace() {
         // ドックスペースを分割
         ImGuiID dock_top, dock_bottom;
         ImGuiID dock_left, dock_right;
-        ImGuiID dock_game_view, dock_debug_view;
+        ImGuiID dock_scene, dock_game;
         ImGuiID dock_project, dock_console;
 
-        // 上(55%) | 下(45%)
-        dock_top = ImGui::DockBuilderSplitNode(dockspaceID, ImGuiDir_Up, 0.55f, nullptr, &dock_bottom);
+        // 上(65%) | 下(35%)
+        dock_top = ImGui::DockBuilderSplitNode(dockspaceID, ImGuiDir_Up, 0.65f, nullptr, &dock_bottom);
 
         // 上部を左(20%) | 右(80%)に分割
         dock_left = ImGui::DockBuilderSplitNode(dock_top, ImGuiDir_Left, 0.20f, nullptr, &dock_right);
 
-        // 右上部を左右に分割（Debug View 50% | Game View 50%）
-        dock_debug_view = ImGui::DockBuilderSplitNode(dock_right, ImGuiDir_Left, 0.5f, nullptr, &dock_game_view);
+        // 右上部を左右に分割（Scene 50% | Game 50%）
+        dock_scene = ImGui::DockBuilderSplitNode(dock_right, ImGuiDir_Left, 0.5f, nullptr, &dock_game);
 
         // 下部を左右に分割（Project 20% | Console 80%）
         dock_project = ImGui::DockBuilderSplitNode(dock_bottom, ImGuiDir_Left, 0.20f, nullptr, &dock_console);
@@ -114,9 +251,9 @@ void EditorUI::RenderDockSpace() {
         ImGui::DockBuilderDockWindow("Stats", dock_left);
         ImGui::DockBuilderDockWindow("Profiler", dock_left);
 
-        // 右上: Debug View（左）、Game View（右）
-        ImGui::DockBuilderDockWindow("Debug View", dock_debug_view);
-        ImGui::DockBuilderDockWindow("Game View", dock_game_view);
+        // 中央: Scene（左）、Game（右）
+        ImGui::DockBuilderDockWindow("Scene", dock_scene);
+        ImGui::DockBuilderDockWindow("Game", dock_game);
 
         // 下部: Project（左）、Console（右）
         ImGui::DockBuilderDockWindow("Project", dock_project);
@@ -128,77 +265,70 @@ void EditorUI::RenderDockSpace() {
     ImGui::End();
 }
 
-void EditorUI::RenderGameView() {
-    if (!showGameView_) return;
+void EditorUI::RenderSceneView() {
+    if (!showSceneView_) return;
 
-    ImGui::Begin("Game View", &showGameView_);
+    ImGui::Begin("Scene", &showSceneView_);
+    
+    // Scene Viewのホバー状態でカメラ操作
+    bool sceneHovered = ImGui::IsWindowHovered();
+    editorCamera_.SetViewportHovered(sceneHovered);
+    editorCamera_.SetViewportFocused(ImGui::IsWindowFocused());
+
     ImVec2 availableSize = ImGui::GetContentRegionAvail();
-
     if (availableSize.x > 0 && availableSize.y > 0) {
-        // 16:9のアスペクト比を維持した最適なサイズを計算
         const float aspectRatio = 16.0f / 9.0f;
         ImVec2 imageSize;
 
-        // 幅基準で高さを計算
         imageSize.x = availableSize.x;
         imageSize.y = availableSize.x / aspectRatio;
 
-        // 高さが利用可能スペースを超える場合は、高さ基準で計算
         if (imageSize.y > availableSize.y) {
             imageSize.y = availableSize.y;
             imageSize.x = availableSize.y * aspectRatio;
         }
 
-        // 中央配置のための余白を計算
         ImVec2 cursorPos = ImGui::GetCursorPos();
         cursorPos.x += (availableSize.x - imageSize.x) * 0.5f;
         cursorPos.y += (availableSize.y - imageSize.y) * 0.5f;
         ImGui::SetCursorPos(cursorPos);
 
-        // 次のフレームで適用するサイズを記録（16:9を維持）
-        desiredGameViewWidth_ = static_cast<uint32>(imageSize.x);
-        desiredGameViewHeight_ = static_cast<uint32>(imageSize.y);
+        desiredSceneViewWidth_ = static_cast<uint32>(imageSize.x);
+        desiredSceneViewHeight_ = static_cast<uint32>(imageSize.y);
 
-        // テクスチャを表示
-        ImGui::Image((ImTextureID)gameViewTexture_.GetSRVHandle().ptr, imageSize);
+        ImGui::Image((ImTextureID)sceneViewTexture_.GetSRVHandle().ptr, imageSize);
     }
 
     ImGui::End();
 }
 
-void EditorUI::RenderSceneView() {
-    if (!showSceneView_) return;
+void EditorUI::RenderGameView() {
+    if (!showGameView_) return;
 
-    ImGui::Begin("Debug View", &showSceneView_);
+    ImGui::Begin("Game", &showGameView_);
+
     ImVec2 availableSize = ImGui::GetContentRegionAvail();
-
     if (availableSize.x > 0 && availableSize.y > 0) {
-        // 16:9のアスペクト比を維持した最適なサイズを計算
         const float aspectRatio = 16.0f / 9.0f;
         ImVec2 imageSize;
 
-        // 幅基準で高さを計算
         imageSize.x = availableSize.x;
         imageSize.y = availableSize.x / aspectRatio;
 
-        // 高さが利用可能スペースを超える場合は、高さ基準で計算
         if (imageSize.y > availableSize.y) {
             imageSize.y = availableSize.y;
             imageSize.x = availableSize.y * aspectRatio;
         }
 
-        // 中央配置のための余白を計算
         ImVec2 cursorPos = ImGui::GetCursorPos();
         cursorPos.x += (availableSize.x - imageSize.x) * 0.5f;
         cursorPos.y += (availableSize.y - imageSize.y) * 0.5f;
         ImGui::SetCursorPos(cursorPos);
 
-        // 次のフレームで適用するサイズを記録（16:9を維持）
-        desiredSceneViewWidth_ = static_cast<uint32>(imageSize.x);
-        desiredSceneViewHeight_ = static_cast<uint32>(imageSize.y);
+        desiredGameViewWidth_ = static_cast<uint32>(imageSize.x);
+        desiredGameViewHeight_ = static_cast<uint32>(imageSize.y);
 
-        // テクスチャを表示
-        ImGui::Image((ImTextureID)sceneViewTexture_.GetSRVHandle().ptr, imageSize);
+        ImGui::Image((ImTextureID)gameViewTexture_.GetSRVHandle().ptr, imageSize);
     }
 
     ImGui::End();
@@ -451,6 +581,61 @@ void EditorUI::RenderProfiler() {
     ImGui::Text("Triangles: N/A");
 
     ImGui::End();
+}
+
+void EditorUI::ProcessHotkeys() {
+    ImGuiIO& io = ImGui::GetIO();
+    
+    // テキスト入力中はホットキーを無効化
+    if (io.WantTextInput) return;
+
+    // F5: Play/Pause切り替え
+    if (ImGui::IsKeyPressed(ImGuiKey_F5, false) && !io.KeyShift) {
+        if (editorMode_ == EditorMode::Edit) {
+            Play();
+        } else if (editorMode_ == EditorMode::Play) {
+            Pause();
+        } else if (editorMode_ == EditorMode::Pause) {
+            Play();
+        }
+    }
+
+    // Escape: Stop（再生中/一時停止中）
+    if (ImGui::IsKeyPressed(ImGuiKey_Escape, false)) {
+        if (editorMode_ != EditorMode::Edit) {
+            Stop();
+        }
+    }
+
+    // F1: Scene View表示トグル
+    if (ImGui::IsKeyPressed(ImGuiKey_F1, false)) {
+        showSceneView_ = !showSceneView_;
+    }
+
+    // F2: Game View表示トグル
+    if (ImGui::IsKeyPressed(ImGuiKey_F2, false)) {
+        showGameView_ = !showGameView_;
+    }
+
+    // F10: Step（一時停止中のみ）
+    if (ImGui::IsKeyPressed(ImGuiKey_F10, false)) {
+        if (editorMode_ == EditorMode::Pause) {
+            Step();
+        }
+    }
+
+    // Ctrl+Shift+R: レイアウトリセット
+    if (io.KeyCtrl && io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_R, false)) {
+        dockingLayoutInitialized_ = false;
+        consoleMessages_.push_back("[Editor] Layout reset");
+    }
+
+    // Shift+F5: 停止（VSスタイル）
+    if (io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_F5, false)) {
+        if (editorMode_ != EditorMode::Edit) {
+            Stop();
+        }
+    }
 }
 
 } // namespace UnoEngine

@@ -49,34 +49,39 @@ void GameApplication::OnRender() {
         if (gameScene) {
             auto* editorUI = gameScene->GetEditorUI();
 
-            // Game Viewに描画（デバッグ描画なし）
-            auto* gameViewTex = editorUI->GetGameViewTexture();
-            if (gameViewTex && gameViewTex->GetResource()) {
-                renderer_->DrawToTexture(
-                    gameViewTex->GetResource(),
-                    gameViewTex->GetRTVHandle(),
-                    gameViewTex->GetDSVHandle(),
-                    view,
-                    items,
-                    lightManager_.get(),
-                    skinnedItems,
-                    false  // デバッグ描画無効
-                );
+            // アクティブなViewのみ描画（パフォーマンス改善）
+            if (editorUI->ShouldRenderGameView()) {
+                // Game Viewに描画（デバッグ描画なし）
+                auto* gameViewTex = editorUI->GetGameViewTexture();
+                if (gameViewTex && gameViewTex->GetResource()) {
+                    renderer_->DrawToTexture(
+                        gameViewTex->GetResource(),
+                        gameViewTex->GetRTVHandle(),
+                        gameViewTex->GetDSVHandle(),
+                        view,
+                        items,
+                        lightManager_.get(),
+                        skinnedItems,
+                        false  // デバッグ描画無効
+                    );
+                }
             }
 
-            // Debug Viewに描画（デバッグ描画あり）
-            auto* sceneViewTex = editorUI->GetSceneViewTexture();
-            if (sceneViewTex && sceneViewTex->GetResource()) {
-                renderer_->DrawToTexture(
-                    sceneViewTex->GetResource(),
-                    sceneViewTex->GetRTVHandle(),
-                    sceneViewTex->GetDSVHandle(),
-                    view,
-                    items,
-                    lightManager_.get(),
-                    skinnedItems,
-                    true  // デバッグ描画有効
-                );
+            if (editorUI->ShouldRenderSceneView()) {
+                // Scene Viewに描画（デバッグ描画あり）
+                auto* sceneViewTex = editorUI->GetSceneViewTexture();
+                if (sceneViewTex && sceneViewTex->GetResource()) {
+                    renderer_->DrawToTexture(
+                        sceneViewTex->GetResource(),
+                        sceneViewTex->GetRTVHandle(),
+                        sceneViewTex->GetDSVHandle(),
+                        view,
+                        items,
+                        lightManager_.get(),
+                        skinnedItems,
+                        true  // デバッグ描画有効
+                    );
+                }
             }
 
             // メインウィンドウのレンダーターゲットを再設定

@@ -46,14 +46,14 @@ void Skeleton::ComputeBoneMatrices(const std::vector<Matrix4x4>& localTransforms
     for (uint32 i = 0; i < boneCount; ++i) {
         const Bone& bone = bones_[i];
 
-        // prohと同じ: Global = Local * Parent
+        // : Global = Local * Parent
         if (bone.parentIndex == INVALID_BONE_INDEX) {
             globalTransforms[i] = localTransforms[i];
         } else {
             globalTransforms[i] = localTransforms[i] * globalTransforms[bone.parentIndex];
         }
 
-        // prohと同じ: Final = InverseBindPose * Global
+        // : Final = InverseBindPose * Global
         outFinalMatrices[i] = bone.offsetMatrix * globalTransforms[i];
     }
 }
@@ -68,14 +68,14 @@ void Skeleton::ComputeBoneMatricesWithInverseTranspose(const std::vector<Matrix4
     for (uint32 i = 0; i < boneCount; ++i) {
         const Bone& bone = bones_[i];
 
-        // prohと同じ: Global = Local * Parent
+        // : Global = Local * Parent
         if (bone.parentIndex == INVALID_BONE_INDEX) {
             globalTransforms[i] = localTransforms[i];
         } else {
             globalTransforms[i] = localTransforms[i] * globalTransforms[bone.parentIndex];
         }
 
-        // prohと同じ: Final = InverseBindPose * Global
+        // : Final = InverseBindPose * Global
         outBoneMatrices[i].skeletonSpaceMatrix = bone.offsetMatrix * globalTransforms[i];
 
         // InverseTranspose行列を計算（法線変換用）

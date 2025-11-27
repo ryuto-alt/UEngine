@@ -299,41 +299,49 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
       <ShaderType>Vertex</ShaderType>
       <ShaderModel>6.5</ShaderModel>
       <EntryPointName>main</EntryPointName>
+      <AdditionalOptions>/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
     </FxCompile>
     <FxCompile Include="Shaders\BasicPS.hlsl">
       <ShaderType>Pixel</ShaderType>
       <ShaderModel>6.5</ShaderModel>
       <EntryPointName>main</EntryPointName>
+      <AdditionalOptions>/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
     </FxCompile>
     <FxCompile Include="Shaders\PBRVS.hlsl">
       <ShaderType>Vertex</ShaderType>
       <ShaderModel>6.5</ShaderModel>
       <EntryPointName>main</EntryPointName>
+      <AdditionalOptions>/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
     </FxCompile>
     <FxCompile Include="Shaders\PBRPS.hlsl">
       <ShaderType>Pixel</ShaderType>
       <ShaderModel>6.5</ShaderModel>
       <EntryPointName>main</EntryPointName>
+      <AdditionalOptions>/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
     </FxCompile>
     <FxCompile Include="Shaders\SpriteVS.hlsl">
       <ShaderType>Vertex</ShaderType>
       <ShaderModel>6.5</ShaderModel>
       <EntryPointName>main</EntryPointName>
+      <AdditionalOptions>/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
     </FxCompile>
     <FxCompile Include="Shaders\SpritePS.hlsl">
       <ShaderType>Pixel</ShaderType>
       <ShaderModel>6.5</ShaderModel>
       <EntryPointName>main</EntryPointName>
+      <AdditionalOptions>/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
     </FxCompile>
     <FxCompile Include="Shaders\SkinnedVS.hlsl">
       <ShaderType>Vertex</ShaderType>
       <ShaderModel>6.5</ShaderModel>
       <EntryPointName>main</EntryPointName>
+      <AdditionalOptions>/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
     </FxCompile>
     <FxCompile Include="Shaders\SkinnedPS.hlsl">
       <ShaderType>Pixel</ShaderType>
       <ShaderModel>6.5</ShaderModel>
       <EntryPointName>main</EntryPointName>
+      <AdditionalOptions>/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
     </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

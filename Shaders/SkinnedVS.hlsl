@@ -42,7 +42,7 @@ SkinnedVertex Skinning(VSInput input) {
     SkinnedVertex skinned;
 
     // スキニング計算：各ボーンの影響を加重平均
-    // prohと同じ: mul(vector, matrix)形式
+    // : mul(vector, matrix)形式
     skinned.position = mul(float4(input.position, 1.0f), gMatrixPalette[input.boneIndices.x].skeletonSpaceMatrix) * input.boneWeights.x;
     skinned.position += mul(float4(input.position, 1.0f), gMatrixPalette[input.boneIndices.y].skeletonSpaceMatrix) * input.boneWeights.y;
     skinned.position += mul(float4(input.position, 1.0f), gMatrixPalette[input.boneIndices.z].skeletonSpaceMatrix) * input.boneWeights.z;

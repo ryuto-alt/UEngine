@@ -73,7 +73,7 @@ Matrix4x4 BoneAnimation::GetLocalTransform(float time) const {
     Quaternion rotation = InterpolateRotation(time);
     Vector3 scale = InterpolateScale(time);
 
-    // DirectXMath: S * R * T の順序で構築（prohと同じ意図）
+    // DirectXMath: S * R * T の順序で構築（意図）
     Matrix4x4 S = Matrix4x4::CreateScale(scale);
     Matrix4x4 R = Matrix4x4::CreateFromQuaternion(rotation);
     Matrix4x4 T = Matrix4x4::CreateTranslation(position);

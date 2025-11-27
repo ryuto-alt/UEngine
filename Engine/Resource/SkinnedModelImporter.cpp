@@ -49,7 +49,6 @@ Matrix4x4 ConvertMatrix(const aiMatrix4x4& m) {
 }
 
 // ローカル変換行列を変換
-// prohと同じ座標変換を適用
 Matrix4x4 ConvertLocalTransform(const aiMatrix4x4& m, const std::string& nodeName = "", float rootScale = 1.0f) {
     // 行列を分解
     aiVector3D scale, translate;
@@ -66,7 +65,7 @@ Matrix4x4 ConvertLocalTransform(const aiMatrix4x4& m, const std::string& nodeNam
         scale = aiVector3D(1.0f, 1.0f, 1.0f);
     }
 
-    // prohと同じ座標変換: 回転のY,Z成分を反転、位置のX座標を反転
+    // 座標変換: 回転のY,Z成分を反転、位置のX座標を反転
     Vector3 s(scale.x, scale.y, scale.z);
     Quaternion r(rotation.x, -rotation.y, -rotation.z, rotation.w);
     Vector3 t(-translate.x * rootScale, translate.y * rootScale, translate.z * rootScale);
@@ -193,7 +192,7 @@ std::shared_ptr<Skeleton> ExtractSkeleton(const aiScene* scene,
     for (const auto& [name, index] : sortedBones) {
         int32 parentIndex = findParentBone(name);
 
-        // prohと同じアプローチ: InverseBindPose行列を分解して座標変換を適用
+        // アプローチ: InverseBindPose行列を分解して座標変換を適用
         const aiMatrix4x4& offsetMat = boneOffsets[name];
 
         // 1. InverseBindPoseの逆行列（BindPose）を取得
@@ -212,7 +211,7 @@ std::shared_ptr<Skeleton> ExtractSkeleton(const aiScene* scene,
             scale = aiVector3D(1.0f, 1.0f, 1.0f);
         }
 
-        // 3. prohと同じ座標変換: 回転のY,Z成分を反転、位置のX座標を反転
+        // 3. 座標変換: 回転のY,Z成分を反転、位置のX座標を反転
         Vector3 s(scale.x, scale.y, scale.z);
         Quaternion r(rotation.x, -rotation.y, -rotation.z, rotation.w);
         Vector3 t(-translate.x, translate.y, translate.z);
@@ -300,7 +299,7 @@ std::vector<std::shared_ptr<AnimationClip>> ExtractAnimations(const aiScene* sce
                 Keyframe<Vector3> key;
                 key.time = static_cast<float>(channel->mPositionKeys[k].mTime);
                 const auto& p = channel->mPositionKeys[k].mValue;
-                // prohと同じ座標変換: X座標を反転、ルートスケールを適用
+                // 座標変換: X座標を反転、ルートスケールを適用
                 key.value = Vector3(-p.x * rootScale, p.y * rootScale, p.z * rootScale);
                 boneAnim.positionKeys.push_back(key);
             }
@@ -309,7 +308,7 @@ std::vector<std::shared_ptr<AnimationClip>> ExtractAnimations(const aiScene* sce
                 Keyframe<Quaternion> key;
                 key.time = static_cast<float>(channel->mRotationKeys[k].mTime);
                 const auto& q = channel->mRotationKeys[k].mValue;
-                // prohと同じ座標変換: Y,Z成分を反転
+                // 座標変換: Y,Z成分を反転
                 key.value = Quaternion(q.x, -q.y, -q.z, q.w);
                 boneAnim.rotationKeys.push_back(key);
             }
@@ -341,13 +340,12 @@ SkinnedMesh ProcessSkinnedMesh(const aiMesh* aiMesh, const aiScene* scene,
 
     vertices.resize(aiMesh->mNumVertices);
 
-    // Assimpはメッシュ頂点にノードtransformを自動適用しないため、
-    // ここでは元の頂点座標をそのまま使用（スケールはアニメーション側で統一）
+    // Assimpはメッシュ頂点にノードtransformを自動適用しない
 
     for (uint32 i = 0; i < aiMesh->mNumVertices; ++i) {
         SkinnedVertex& vertex = vertices[i];
 
-        // prohと同じ座標変換: X座標を反転
+        // 座標変換: X座標を反転
         vertex.px = -aiMesh->mVertices[i].x;
         vertex.py = aiMesh->mVertices[i].y;
         vertex.pz = aiMesh->mVertices[i].z;
@@ -388,7 +386,7 @@ SkinnedMesh ProcessSkinnedMesh(const aiMesh* aiMesh, const aiScene* scene,
     for (uint32 i = 0; i < aiMesh->mNumFaces; ++i) {
         const aiFace& face = aiMesh->mFaces[i];
         if (face.mNumIndices == 3) {
-            // prohと同じ: X軸反転により巻き順を反転（0, 2, 1の順序）
+            // : X軸反転により巻き順を反転（0, 2, 1の順序）
             indices.push_back(face.mIndices[0]);
             indices.push_back(face.mIndices[2]);
             indices.push_back(face.mIndices[1]);
@@ -441,7 +439,7 @@ SkinnedModelData SkinnedModelImporter::Load(GraphicsDevice* graphics, ID3D12Grap
                                             const std::string& filepath) {
     Assimp::Importer importer;
 
-    // prohと同じフラグを使用（aiProcess_MakeLeftHandedは使わない）
+    // フラグを使用（aiProcess_MakeLeftHandedは使わない）
     // 座標変換は手動で行う
     unsigned int flags = aiProcess_Triangulate | aiProcess_FlipUVs |
                         aiProcess_LimitBoneWeights |

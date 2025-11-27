@@ -12,8 +12,8 @@ namespace UnoEngine {
 
 template<typename T>
 struct Keyframe {
-    float time;
-    T value;
+    float time = 0.0f;
+    T value{};
 };
 
 struct BoneAnimation {

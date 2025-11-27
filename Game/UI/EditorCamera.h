@@ -72,7 +72,11 @@ private:
     float lastMousePosX_ = 0.0f;
     float lastMousePosY_ = 0.0f;
     bool rightMousePressed_ = false;
-    POINT lockMousePos_ = { 0, 0 };  // 右クリック時の固定位置
+    POINT lockMousePos_ = { 0, 0 };
+
+    // カメラ角度（累積）
+    float yaw_ = 0.0f;
+    float pitch_ = 0.0f;
 
     // ビューポート矩形（マウスクリップ用）
     struct { float x, y, w, h; } viewportRect_ = { 0, 0, 0, 0 };

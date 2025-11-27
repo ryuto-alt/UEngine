@@ -32,6 +32,11 @@ void EditorCamera::Update(float deltaTime) {
 
         // マウス位置を記憶
         GetCursorPos(&lockMousePos_);
+
+        // 現在のカメラ回転からyaw/pitchを取得
+        Vector3 forward = camera_->GetForward();
+        yaw_ = std::atan2(forward.GetX(), forward.GetZ());
+        pitch_ = std::asin(-forward.GetY());
     } else if (!rightMouseDown && rightMousePressed_) {
         // 右クリック終了
         rightMousePressed_ = false;
@@ -41,26 +46,25 @@ void EditorCamera::Update(float deltaTime) {
 
     // カメラ操作
     if (rightMousePressed_) {
-        // 現在のマウス位置を取得
         POINT currentPos;
         GetCursorPos(&currentPos);
 
-        // 移動量を計算
         float deltaX = static_cast<float>(currentPos.x - lockMousePos_.x);
         float deltaY = static_cast<float>(currentPos.y - lockMousePos_.y);
 
-        // マウスを固定位置に戻す
         SetCursorPos(lockMousePos_.x, lockMousePos_.y);
 
-        // カメラ回転
-        if (std::abs(deltaX) > 0.001f || std::abs(deltaY) > 0.001f) {
-            float yaw = deltaX * rotateSpeed_ * deltaTime;
-            float pitch = deltaY * rotateSpeed_ * deltaTime;
+        // 角度を累積（Pitchは上下89度に制限）
+        yaw_ += deltaX * rotateSpeed_ * deltaTime;
+        pitch_ -= deltaY * rotateSpeed_ * deltaTime;
+        const float maxPitch = 1.55f; // 約89度
+        if (pitch_ > maxPitch) pitch_ = maxPitch;
+        if (pitch_ < -maxPitch) pitch_ = -maxPitch;
 
-            Quaternion yawRot = Quaternion::RotationAxis(Vector3::UnitY(), yaw);
-            Quaternion pitchRot = Quaternion::RotationAxis(camera_->GetRight(), pitch);
-            camera_->Rotate(yawRot * pitchRot);
-        }
+        // Yaw→Pitchの順で回転（ロールなし）
+        Quaternion yawRot = Quaternion::RotationAxis(Vector3::UnitY(), yaw_);
+        Quaternion pitchRot = Quaternion::RotationAxis(Vector3::UnitX(), pitch_);
+        camera_->SetRotation(yawRot * pitchRot);
 
         HandleFreeCameraMovement(deltaTime);
     }
@@ -73,39 +77,33 @@ void EditorCamera::HandleFreeCameraMovement(float deltaTime) {
     if (!camera_) return;
 
     ImGuiIO& io = ImGui::GetIO();
-    
-    // ImGuiがキーボードを使用していない時のみ
     if (io.WantCaptureKeyboard) return;
 
-    Vector3 movement(0.0f, 0.0f, 0.0f);
     float speed = moveSpeed_;
+    if (io.KeyShift) speed *= 2.0f;
 
-    // Shiftで加速
-    if (io.KeyShift) {
-        speed *= 2.0f;
-    }
+    // 移動方向を計算（Y軸固定で水平移動）
+    Vector3 forward = camera_->GetForward();
+    Vector3 right = camera_->GetRight();
 
-    // WASDで移動
-    if (ImGui::IsKeyDown(ImGuiKey_W)) {
-        movement = movement + camera_->GetForward();
-    }
-    if (ImGui::IsKeyDown(ImGuiKey_S)) {
-        movement = movement - camera_->GetForward();
-    }
-    if (ImGui::IsKeyDown(ImGuiKey_A)) {
-        movement = movement - camera_->GetRight();
-    }
-    if (ImGui::IsKeyDown(ImGuiKey_D)) {
-        movement = movement + camera_->GetRight();
-    }
+    // 水平成分のみ使用
+    forward = Vector3(forward.GetX(), 0.0f, forward.GetZ());
+    right = Vector3(right.GetX(), 0.0f, right.GetZ());
 
-    // Q/Eで上下移動
-    if (ImGui::IsKeyDown(ImGuiKey_Q)) {
-        movement = movement - camera_->GetUp();
-    }
-    if (ImGui::IsKeyDown(ImGuiKey_E)) {
-        movement = movement + camera_->GetUp();
-    }
+    if (forward.Length() > 0.001f) forward = forward.Normalize();
+    if (right.Length() > 0.001f) right = right.Normalize();
+
+    Vector3 movement(0.0f, 0.0f, 0.0f);
+
+    // WASD移動
+    if (ImGui::IsKeyDown(ImGuiKey_W)) movement = movement + forward;
+    if (ImGui::IsKeyDown(ImGuiKey_S)) movement = movement - forward;
+    if (ImGui::IsKeyDown(ImGuiKey_A)) movement = movement - right;
+    if (ImGui::IsKeyDown(ImGuiKey_D)) movement = movement + right;
+
+    // Space/Ctrlで上下移動
+    if (ImGui::IsKeyDown(ImGuiKey_Space)) movement = movement + Vector3::UnitY();
+    if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl)) movement = movement - Vector3::UnitY();
 
     // 移動を適用
     if (movement.Length() > 0.001f) {

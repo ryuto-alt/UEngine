@@ -89,11 +89,11 @@
     <ClCompile Include="Engine\Core\SceneManager.cpp">
       <Filter>Engine\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\\Core\\OrbitController.cpp">
-      <Filter>Engine\\Core</Filter>
+    <ClCompile Include="Engine\Core\OrbitController.cpp">
+      <Filter>Engine\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\\Core\\Logger.cpp">
-      <Filter>Engine\\Core</Filter>
+    <ClCompile Include="Engine\Core\Logger.cpp">
+      <Filter>Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Graphics\GraphicsDevice.cpp">
       <Filter>Engine\Graphics</Filter>
@@ -176,6 +176,9 @@
     <ClCompile Include="Engine\Rendering\Renderer.cpp">
       <Filter>Engine\Rendering</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Rendering\SkinnedMeshRenderer.cpp">
+      <Filter>Engine\Rendering</Filter>
+    </ClCompile>
     <ClCompile Include="Game\GameApplication.cpp">
       <Filter>Game</Filter>
     </ClCompile>
@@ -192,6 +195,9 @@
       <Filter>Engine\Graphics</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Resource\SkinnedModelImporter.cpp">
+      <Filter>Engine\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Resource\ResourceManager.cpp">
       <Filter>Engine\Resource</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Animation\Skeleton.cpp">
@@ -238,11 +244,11 @@
     <ClInclude Include="Engine\Core\SceneManager.h">
       <Filter>Engine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\\Core\\OrbitController.h">
-      <Filter>Engine\\Core</Filter>
+    <ClInclude Include="Engine\Core\OrbitController.h">
+      <Filter>Engine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\\Core\\Logger.h">
-      <Filter>Engine\\Core</Filter>
+    <ClInclude Include="Engine\Core\Logger.h">
+      <Filter>Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\ConstantBuffer.h">
       <Filter>Engine\Graphics</Filter>
@@ -286,11 +292,11 @@
     <ClInclude Include="Engine\Math\Quaternion.h">
       <Filter>Engine\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\\Math\\Vector.h">
-      <Filter>Engine\\Math</Filter>
+    <ClInclude Include="Engine\Math\Vector.h">
+      <Filter>Engine\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\\Math\\BoundingVolume.h">
-      <Filter>Engine\\Math</Filter>
+    <ClInclude Include="Engine\Math\BoundingVolume.h">
+      <Filter>Engine\Math</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Input\Keyboard.h">
       <Filter>Engine\Input</Filter>
@@ -391,7 +397,19 @@
     <ClInclude Include="Engine\Resource\SkinnedModelImporter.h">
       <Filter>Engine\Resource</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Resource\ResourceManager.h">
+      <Filter>Engine\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Resource\ImportOptions.h">
+      <Filter>Engine\Resource</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Rendering\SkinnedRenderItem.h">
+      <Filter>Engine\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Rendering\MeshRendererBase.h">
+      <Filter>Engine\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Rendering\SkinnedMeshRenderer.h">
       <Filter>Engine\Rendering</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Animation\Skeleton.h">

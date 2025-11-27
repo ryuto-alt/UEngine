@@ -170,8 +170,8 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClCompile Include="Engine\Core\GameObject.cpp" />
     <ClCompile Include="Engine\Core\Scene.cpp" />
     <ClCompile Include="Engine\Core\SceneManager.cpp" />
-    <ClCompile Include="Engine\\Core\\OrbitController.cpp" />
-    <ClCompile Include="Engine\\Core\\Logger.cpp" />
+    <ClCompile Include="Engine\Core\OrbitController.cpp" />
+    <ClCompile Include="Engine\Core\Logger.cpp" />
     <ClCompile Include="Engine\Rendering\RenderSystem.cpp" />
     <ClCompile Include="Engine\Rendering\LightManager.cpp" />
     <ClCompile Include="Engine\Graphics\GraphicsDevice.cpp" />
@@ -198,6 +198,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClCompile Include="Game\Scenes\GameScene.cpp" />
     <ClCompile Include="Game\Components\PlayerController.cpp" />
     <ClCompile Include="Engine\Rendering\Renderer.cpp" />
+    <ClCompile Include="Engine\Rendering\SkinnedMeshRenderer.cpp" />
     <ClCompile Include="Game\GameApplication.cpp" />
     <ClCompile Include="Game\Systems\PlayerSystem.cpp" />
     <ClCompile Include="Game\UI\EditorUI.cpp" />
@@ -205,6 +206,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClCompile Include="Engine\Graphics\SkinnedMesh.cpp" />
     <ClCompile Include="Engine\Graphics\SkinnedPipeline.cpp" />
     <ClCompile Include="Engine\Resource\SkinnedModelImporter.cpp" />
+    <ClCompile Include="Engine\Resource\ResourceManager.cpp" />
     <ClCompile Include="Engine\Animation\Skeleton.cpp" />
     <ClCompile Include="Engine\Animation\AnimationClip.cpp" />
     <ClCompile Include="Engine\Animation\AnimationState.cpp" />
@@ -221,8 +223,8 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClInclude Include="Engine\Core\GameObject.h" />
     <ClInclude Include="Engine\Core\Scene.h" />
     <ClInclude Include="Engine\Core\SceneManager.h" />
-    <ClInclude Include="Engine\\Core\\OrbitController.h" />
-    <ClInclude Include="Engine\\Core\\Logger.h" />
+    <ClInclude Include="Engine\Core\OrbitController.h" />
+    <ClInclude Include="Engine\Core\Logger.h" />
     <ClInclude Include="Engine\Rendering\RenderSystem.h" />
     <ClInclude Include="Engine\Rendering\LightManager.h" />
     <ClInclude Include="Engine\Rendering\RenderView.h" />
@@ -242,8 +244,8 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClInclude Include="Engine\Math\MathUtils.h" />
     <ClInclude Include="Engine\Math\Matrix.h" />
     <ClInclude Include="Engine\Math\Quaternion.h" />
-    <ClInclude Include="Engine\\Math\\Vector.h" />
-    <ClInclude Include="Engine\\Math\\BoundingVolume.h" />
+    <ClInclude Include="Engine\Math\Vector.h" />
+    <ClInclude Include="Engine\Math\BoundingVolume.h" />
     <ClInclude Include="Engine\Input\Keyboard.h" />
     <ClInclude Include="Engine\Input\Mouse.h" />
     <ClInclude Include="Engine\Input\InputManager.h" />
@@ -272,7 +274,11 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClInclude Include="Engine\Graphics\SkinnedPipeline.h" />
     <ClInclude Include="Engine\Graphics\SkinnedVertex.h" />
     <ClInclude Include="Engine\Resource\SkinnedModelImporter.h" />
+    <ClInclude Include="Engine\Resource\ResourceManager.h" />
+    <ClInclude Include="Engine\Resource\ImportOptions.h" />
     <ClInclude Include="Engine\Rendering\SkinnedRenderItem.h" />
+    <ClInclude Include="Engine\Rendering\MeshRendererBase.h" />
+    <ClInclude Include="Engine\Rendering\SkinnedMeshRenderer.h" />
     <ClInclude Include="Engine\Animation\Skeleton.h" />
     <ClInclude Include="Engine\Animation\AnimationClip.h" />
     <ClInclude Include="Engine\Animation\AnimationState.h" />

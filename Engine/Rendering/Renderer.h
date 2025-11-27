@@ -68,6 +68,7 @@ private:
     void UpdateLighting(const RenderView& view, LightManager* lightManager);
     void RenderMeshes(const RenderView& view, const std::vector<RenderItem>& items);
     void RenderSkinnedMeshes(const RenderView& view, const std::vector<SkinnedRenderItem>& items);
+    void CreateBoneMatrixPairBuffer(ID3D12Device* device);
 
 private:
     GraphicsDevice* graphics_ = nullptr;
@@ -79,6 +80,11 @@ private:
     ConstantBuffer<LightCB> lightBuffer_;
     ConstantBuffer<MaterialCB> materialBuffer_;
     ConstantBuffer<BoneMatricesCB> boneBuffer_;
+    
+    // StructuredBuffer for bone matrices
+    ComPtr<ID3D12Resource> boneMatrixPairBuffer_;
+    D3D12_GPU_DESCRIPTOR_HANDLE boneMatrixPairSRV_;
+    uint32 boneMatrixPairSRVIndex_ = 0;
 
     UniquePtr<ImGuiManager> imguiManager_;
 };

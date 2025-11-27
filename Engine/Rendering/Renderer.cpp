@@ -35,6 +35,9 @@ void Renderer::Initialize(GraphicsDevice* graphics, Window* window) {
     lightBuffer_.Create(device);
     materialBuffer_.Create(device);
     boneBuffer_.Create(device);
+    
+    // StructuredBuffer for bone matrices (BoneMatrixPair)
+    CreateBoneMatrixPairBuffer(device);
 
     imguiManager_ = MakeUnique<ImGuiManager>();
     imguiManager_->Initialize(graphics_, window_, 2);
@@ -235,9 +238,9 @@ void Renderer::RenderSkinnedMeshes(const RenderView& view, const std::vector<Ski
         constantBuffer_.Update(transformData);
         cmdList->SetGraphicsRootConstantBufferView(0, constantBuffer_.GetGPUAddress());
 
-        // Texture
+        // Texture (moved to slot 4)
         if (item.material) {
-            cmdList->SetGraphicsRootDescriptorTable(1, item.material->GetAlbedoSRV(heap));
+            cmdList->SetGraphicsRootDescriptorTable(4, item.material->GetAlbedoSRV(heap));
         }
 
         // Material
@@ -256,31 +259,30 @@ void Renderer::RenderSkinnedMeshes(const RenderView& view, const std::vector<Ski
         cmdList->SetGraphicsRootConstantBufferView(3, materialBuffer_.GetGPUAddress());
 
         // Bone matrices
-        BoneMatricesCB boneData = {};
-        if (item.boneMatrices) {
-            size_t numBones = (std::min)(item.boneMatrices->size(), static_cast<size_t>(MAX_BONES));
+        if (item.boneMatrixPairs && boneMatrixPairBuffer_) {
+            // Use BoneMatrixPair (StructuredBuffer)
+            size_t numBones = (std::min)(item.boneMatrixPairs->size(), static_cast<size_t>(MAX_BONES));
+            
+            // Map and update
+            BoneMatrixPair* mappedData = nullptr;
+            boneMatrixPairBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&mappedData));
+            
             for (size_t i = 0; i < numBones; ++i) {
-                // 転置なしで直接格納 (DirectXMathとHLSL両方が行優先)
-                DirectX::XMStoreFloat4x4(&boneData.bones[i], (*item.boneMatrices)[i].GetXMMatrix());
-            }
+                const auto& pair = (*item.boneMatrixPairs)[i];
 
-            // 最初のボーン行列をデバッグ出力(1回だけ)
-            static bool printed = false;
-            if (!printed && numBones > 0) {
-                printed = true;
-                char msg[512];
-                sprintf_s(msg, "Renderer Bone0 - m[3][0-3]=[%.3f,%.3f,%.3f,%.3f]\n",
-                         boneData.bones[0].m[3][0], boneData.bones[0].m[3][1],
-                         boneData.bones[0].m[3][2], boneData.bones[0].m[3][3]);
-                OutputDebugStringA(msg);
+                // HLSLのmatrixはcolumn-major、DirectXMathはrow-major
+                // 転置して渡す
+                DirectX::XMStoreFloat4x4(reinterpret_cast<DirectX::XMFLOAT4X4*>(&mappedData[i].skeletonSpaceMatrix),
+                                         DirectX::XMMatrixTranspose(pair.skeletonSpaceMatrix.GetXMMatrix()));
+                DirectX::XMStoreFloat4x4(reinterpret_cast<DirectX::XMFLOAT4X4*>(&mappedData[i].skeletonSpaceInverseTransposeMatrix),
+                                         DirectX::XMMatrixTranspose(pair.skeletonSpaceInverseTransposeMatrix.GetXMMatrix()));
             }
-        } else {
-            for (int i = 0; i < MAX_BONES; ++i) {
-                DirectX::XMStoreFloat4x4(&boneData.bones[i], DirectX::XMMatrixIdentity());
-            }
+            
+            boneMatrixPairBuffer_->Unmap(0, nullptr);
+            
+            // Set StructuredBuffer SRV (t0)
+            cmdList->SetGraphicsRootDescriptorTable(1, boneMatrixPairSRV_);
         }
-        boneBuffer_.Update(boneData);
-        cmdList->SetGraphicsRootConstantBufferView(4, boneBuffer_.GetGPUAddress());
 
         // Draw
         auto vbView = item.mesh->GetVertexBuffer().GetView();
@@ -291,6 +293,59 @@ void Renderer::RenderSkinnedMeshes(const RenderView& view, const std::vector<Ski
         uint32 indexCount = item.mesh->GetIndexBuffer().GetIndexCount();
         cmdList->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
     }
+}
+
+void Renderer::CreateBoneMatrixPairBuffer(ID3D12Device* device) {
+    // StructuredBuffer for bone matrices (MAX_BONES * sizeof(BoneMatrixPair))
+    D3D12_HEAP_PROPERTIES heapProp = {};
+    heapProp.Type = D3D12_HEAP_TYPE_UPLOAD;
+    
+    D3D12_RESOURCE_DESC resourceDesc = {};
+    resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+    resourceDesc.Width = sizeof(BoneMatrixPair) * MAX_BONES;
+    resourceDesc.Height = 1;
+    resourceDesc.DepthOrArraySize = 1;
+    resourceDesc.MipLevels = 1;
+    resourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+    resourceDesc.SampleDesc.Count = 1;
+    resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+    
+    HRESULT hr = device->CreateCommittedResource(
+        &heapProp,
+        D3D12_HEAP_FLAG_NONE,
+        &resourceDesc,
+        D3D12_RESOURCE_STATE_GENERIC_READ,
+        nullptr,
+        IID_PPV_ARGS(&boneMatrixPairBuffer_)
+    );
+    
+    if (FAILED(hr)) {
+        OutputDebugStringA("Failed to create bone matrix pair buffer\n");
+        return;
+    }
+    
+    // Use a fixed SRV index (e.g., last slot in the heap)
+    // Assuming textures use indices 0-2047, we use 2048 for bone matrices
+    boneMatrixPairSRVIndex_ = 2048;
+    
+    // Create SRV
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    srvDesc.Buffer.FirstElement = 0;
+    srvDesc.Buffer.NumElements = MAX_BONES;
+    srvDesc.Buffer.StructureByteStride = sizeof(BoneMatrixPair);
+    
+    auto cpuHandle = graphics_->GetSRVHeap()->GetCPUDescriptorHandleForHeapStart();
+    cpuHandle.ptr += boneMatrixPairSRVIndex_ * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    
+    device->CreateShaderResourceView(boneMatrixPairBuffer_.Get(), &srvDesc, cpuHandle);
+    
+    boneMatrixPairSRV_ = graphics_->GetSRVHeap()->GetGPUDescriptorHandleForHeapStart();
+    boneMatrixPairSRV_.ptr += boneMatrixPairSRVIndex_ * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    
+    OutputDebugStringA("Bone matrix pair StructuredBuffer created\n");
 }
 
 } // namespace UnoEngine

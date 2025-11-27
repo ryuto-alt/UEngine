@@ -45,6 +45,7 @@ void Animator::SetSkeleton(std::shared_ptr<Skeleton> skeleton) {
     if (skeleton_) {
         uint32 boneCount = skeleton_->GetBoneCount();
         finalBoneMatrices_.resize(boneCount);
+        finalBoneMatrixPairs_.resize(boneCount);
         currentLocalTransforms_.resize(boneCount);
         nextLocalTransforms_.resize(boneCount);
 
@@ -171,6 +172,11 @@ void Animator::UpdateBoneMatrices() {
 
     float time = currentState_->GetCurrentTime();
     currentState_->GetClip()->Sample(time, *skeleton_, currentLocalTransforms_);
+    
+    // 新しいメソッドを使用してInverseTranspose行列も計算
+    skeleton_->ComputeBoneMatricesWithInverseTranspose(currentLocalTransforms_, finalBoneMatrixPairs_);
+    
+    // 後方互換性のため、従来のmatrix配列も更新
     skeleton_->ComputeBoneMatrices(currentLocalTransforms_, finalBoneMatrices_);
 
     // 30フレームに1回だけデバッグ出力

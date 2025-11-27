@@ -14,13 +14,21 @@ void SkinnedPipeline::Initialize(
 }
 
 void SkinnedPipeline::CreateRootSignature(ID3D12Device* device) {
-    // ディスクリプタレンジ: テクスチャ (t0)
-    D3D12_DESCRIPTOR_RANGE descRange = {};
-    descRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-    descRange.NumDescriptors = 1;
-    descRange.BaseShaderRegister = 0;
-    descRange.RegisterSpace = 0;
-    descRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+    // ディスクリプタレンジ1: StructuredBuffer (t0) - BoneMatrixPair
+    D3D12_DESCRIPTOR_RANGE descRange1 = {};
+    descRange1.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+    descRange1.NumDescriptors = 1;
+    descRange1.BaseShaderRegister = 0;
+    descRange1.RegisterSpace = 0;
+    descRange1.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+    // ディスクリプタレンジ2: テクスチャ (t1)
+    D3D12_DESCRIPTOR_RANGE descRange2 = {};
+    descRange2.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+    descRange2.NumDescriptors = 1;
+    descRange2.BaseShaderRegister = 1;
+    descRange2.RegisterSpace = 0;
+    descRange2.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
     // ルートパラメータ (5つ)
     D3D12_ROOT_PARAMETER rootParams[5] = {};
@@ -31,11 +39,11 @@ void SkinnedPipeline::CreateRootSignature(ID3D12Device* device) {
     rootParams[0].Descriptor.RegisterSpace = 0;
     rootParams[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-    // テクスチャディスクリプタテーブル (t0)
+    // StructuredBufferディスクリプタテーブル (t0) - BoneMatrixPair
     rootParams[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
     rootParams[1].DescriptorTable.NumDescriptorRanges = 1;
-    rootParams[1].DescriptorTable.pDescriptorRanges = &descRange;
-    rootParams[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+    rootParams[1].DescriptorTable.pDescriptorRanges = &descRange1;
+    rootParams[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 
     // 定数バッファ (b1) - Light
     rootParams[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
@@ -49,11 +57,11 @@ void SkinnedPipeline::CreateRootSignature(ID3D12Device* device) {
     rootParams[3].Descriptor.RegisterSpace = 0;
     rootParams[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
-    // 定数バッファ (b3) - BoneMatrices (頂点シェーダー用)
-    rootParams[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-    rootParams[4].Descriptor.ShaderRegister = 3;
-    rootParams[4].Descriptor.RegisterSpace = 0;
-    rootParams[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+    // テクスチャディスクリプタテーブル (t1)
+    rootParams[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+    rootParams[4].DescriptorTable.NumDescriptorRanges = 1;
+    rootParams[4].DescriptorTable.pDescriptorRanges = &descRange2;
+    rootParams[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
     // スタティックサンプラー (s0)
     D3D12_STATIC_SAMPLER_DESC sampler = {};

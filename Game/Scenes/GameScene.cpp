@@ -132,12 +132,15 @@ std::vector<SkinnedRenderItem> GameScene::GetSkinnedRenderItems() const {
         for (const auto& mesh : skinnedModel_.meshes) {
             SkinnedRenderItem item;
             item.mesh = const_cast<SkinnedMesh*>(&mesh);
+            
+            // Get base world matrix (no rotation needed - coordinate conversion handles orientation)
             item.worldMatrix = animatedCharacter_->GetTransform().GetWorldMatrix();
+            
             item.material = const_cast<Material*>(mesh.GetMaterial());
             
             // Get bone matrices from AnimatorComponent
             if (animatorComp) {
-                item.boneMatrices = const_cast<std::vector<Matrix4x4>*>(&animatorComp->GetBoneMatrices());
+                item.boneMatrixPairs = const_cast<std::vector<BoneMatrixPair>*>(&animatorComp->GetBoneMatrixPairs());
             }
             
             items.push_back(item);

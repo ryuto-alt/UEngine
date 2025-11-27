@@ -20,6 +20,12 @@ struct Bone {
     Matrix4x4 localBindPose;     // ローカルバインドポーズ
 };
 
+// GPUに送信するボーン行列データ
+struct BoneMatrixPair {
+    Matrix4x4 skeletonSpaceMatrix;
+    Matrix4x4 skeletonSpaceInverseTransposeMatrix;
+};
+
 class Skeleton {
 public:
     Skeleton() = default;
@@ -40,6 +46,9 @@ public:
 
     void ComputeBoneMatrices(const std::vector<Matrix4x4>& localTransforms,
                              std::vector<Matrix4x4>& outFinalMatrices) const;
+    
+    void ComputeBoneMatricesWithInverseTranspose(const std::vector<Matrix4x4>& localTransforms,
+                                                 std::vector<BoneMatrixPair>& outBoneMatrices) const;
 
     void ComputeBindPoseMatrices(std::vector<Matrix4x4>& outFinalMatrices) const;
 

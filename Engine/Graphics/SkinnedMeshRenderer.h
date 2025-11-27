@@ -26,6 +26,10 @@ public:
     const std::vector<Matrix4x4>* GetBoneMatrices() const {
         return animator_ ? &animator_->GetBoneMatrices() : nullptr;
     }
+    
+    const std::vector<BoneMatrixPair>* GetBoneMatrixPairs() const {
+        return animator_ ? &animator_->GetBoneMatrixPairs() : nullptr;
+    }
 
 private:
     std::vector<SkinnedMesh> meshes_;

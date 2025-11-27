@@ -80,28 +80,53 @@ void Skeleton::ComputeBoneMatrices(const std::vector<Matrix4x4>& localTransforms
     for (uint32 i = 0; i < boneCount; ++i) {
         const Bone& bone = bones_[i];
 
-        // DirectX行ベクトル規約: Child = Parent * Local
+        // prohと同じ: Global = Local * Parent
         if (bone.parentIndex == INVALID_BONE_INDEX) {
             globalTransforms[i] = localTransforms[i];
         } else {
-            globalTransforms[i] = globalTransforms[bone.parentIndex] * localTransforms[i];
+            globalTransforms[i] = localTransforms[i] * globalTransforms[bone.parentIndex];
         }
 
-        // glTF用: FinalMatrix = GlobalTransform * OffsetMatrix
-        // (GlobalInverseTransformは単位行列に設定済み)
-        outFinalMatrices[i] = globalTransforms[i] * bone.offsetMatrix;
+        // prohと同じ: Final = InverseBindPose * Global
+        outFinalMatrices[i] = bone.offsetMatrix * globalTransforms[i];
 
-        // 最初のボーンだけ詳細デバッグ
-        if (!detailDebugPrinted && i == 0) {
-            detailDebugPrinted = true;
+        // 最初の2つのボーンの詳細デバッグ
+        if (!detailDebugPrinted && i <= 1) {
             char msg[512];
-            sprintf_s(msg, "Bone0 - Global[3,0-3]=[%.3f,%.3f,%.3f,%.3f], Final[3,0-3]=[%.3f,%.3f,%.3f,%.3f]\n",
-                     globalTransforms[i].GetElement(3,0), globalTransforms[i].GetElement(3,1),
-                     globalTransforms[i].GetElement(3,2), globalTransforms[i].GetElement(3,3),
-                     outFinalMatrices[i].GetElement(3,0), outFinalMatrices[i].GetElement(3,1),
-                     outFinalMatrices[i].GetElement(3,2), outFinalMatrices[i].GetElement(3,3));
+            sprintf_s(msg, "Bone%d (parent=%d) - Local[3]=[%.3f,%.3f,%.3f], Global[3]=[%.3f,%.3f,%.3f], Final[0,0]=%.3f\n",
+                     i, bone.parentIndex,
+                     localTransforms[i].GetElement(3,0), localTransforms[i].GetElement(3,1), localTransforms[i].GetElement(3,2),
+                     globalTransforms[i].GetElement(3,0), globalTransforms[i].GetElement(3,1), globalTransforms[i].GetElement(3,2),
+                     outFinalMatrices[i].GetElement(0,0));
             OutputDebugStringA(msg);
+            if (i == 1) detailDebugPrinted = true;
         }
+    }
+}
+
+void Skeleton::ComputeBoneMatricesWithInverseTranspose(const std::vector<Matrix4x4>& localTransforms,
+                                                       std::vector<BoneMatrixPair>& outBoneMatrices) const {
+    const uint32 boneCount = GetBoneCount();
+    outBoneMatrices.resize(boneCount);
+
+    std::vector<Matrix4x4> globalTransforms(boneCount);
+
+    for (uint32 i = 0; i < boneCount; ++i) {
+        const Bone& bone = bones_[i];
+
+        // prohと同じ: Global = Local * Parent
+        if (bone.parentIndex == INVALID_BONE_INDEX) {
+            globalTransforms[i] = localTransforms[i];
+        } else {
+            globalTransforms[i] = localTransforms[i] * globalTransforms[bone.parentIndex];
+        }
+
+        // prohと同じ: Final = InverseBindPose * Global
+        outBoneMatrices[i].skeletonSpaceMatrix = bone.offsetMatrix * globalTransforms[i];
+
+        // InverseTranspose行列を計算（法線変換用）
+        outBoneMatrices[i].skeletonSpaceInverseTransposeMatrix =
+            outBoneMatrices[i].skeletonSpaceMatrix.Inverse().Transpose();
     }
 }
 

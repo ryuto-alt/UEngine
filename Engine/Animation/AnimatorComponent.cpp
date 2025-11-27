@@ -70,6 +70,10 @@ const std::vector<Matrix4x4>& AnimatorComponent::GetBoneMatrices() const {
     return animator_.GetBoneMatrices();
 }
 
+const std::vector<BoneMatrixPair>& AnimatorComponent::GetBoneMatrixPairs() const {
+    return animator_.GetBoneMatrixPairs();
+}
+
 uint32 AnimatorComponent::GetBoneCount() const {
     return animator_.GetBoneCount();
 }

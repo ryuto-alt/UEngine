@@ -27,26 +27,58 @@ void LogImportError(const std::string& message, const std::string& file) {
     MessageBoxW(nullptr, wideMessage.c_str(), L"スキンモデル読み込みエラー", MB_OK | MB_ICONERROR);
 }
 
-Matrix4x4 ConvertMatrix(const aiMatrix4x4& m) {
-    // Assimpは行優先（row-major）で格納、列ベクトル規約（v' = M * v）
-    // DirectXも行優先だが行ベクトル規約（v' = v * M）
-    // 直接コピーしてHLSL cbufferに書き込むと、
-    // HLSLがcolumn-majorとして解釈するため自動的に転置される
-    // これにより列ベクトル→行ベクトル変換が行われる
-    return Matrix4x4(
-        m.a1, m.a2, m.a3, m.a4,  // Row 0
-        m.b1, m.b2, m.b3, m.b4,  // Row 1
-        m.c1, m.c2, m.c3, m.c4,  // Row 2
-        m.d1, m.d2, m.d3, m.d4   // Row 3
-    );
-}
-
 Vector3 ConvertVector3(const aiVector3D& v) {
     return Vector3(v.x, v.y, v.z);
 }
 
 Quaternion ConvertQuaternion(const aiQuaternion& q) {
     return Quaternion(q.x, q.y, q.z, q.w);
+}
+
+Matrix4x4 ConvertMatrix(const aiMatrix4x4& m) {
+    // AssimpのaiMatrix4x4: a1-a4が1行目, b1-b4が2行目, c1-c4が3行目, d1-d4が4行目
+    // aiProcess_MakeLeftHandedで左手座標系に変換済み
+    // しかしAssimpはcolumn-vector規約 (M*v)、DirectXはrow-vector規約 (v*M)
+    // 規約変換のため転置が必要
+    return Matrix4x4(
+        m.a1, m.b1, m.c1, m.d1,
+        m.a2, m.b2, m.c2, m.d2,
+        m.a3, m.b3, m.c3, m.d3,
+        m.a4, m.b4, m.c4, m.d4
+    );
+}
+
+// ローカル変換行列を変換
+// prohと同じ座標変換を適用
+Matrix4x4 ConvertLocalTransform(const aiMatrix4x4& m, const std::string& nodeName = "", float rootScale = 1.0f) {
+    // 行列を分解
+    aiVector3D scale, translate;
+    aiQuaternion rotation;
+    m.Decompose(scale, rotation, translate);
+
+    // Mixamo対応: Hipsボーンまたはmixamorig:Hipsの異常なスケールを検出して修正
+    bool isMixamoHips = (nodeName.find("Hips") != std::string::npos ||
+                         nodeName.find("hips") != std::string::npos ||
+                         nodeName.find("mixamorig") != std::string::npos);
+    bool hasAbnormalScale = (scale.x < 0.1f || scale.y < 0.1f || scale.z < 0.1f);
+
+    if (isMixamoHips && hasAbnormalScale) {
+        char debugMsg[256];
+        sprintf_s(debugMsg, "Mixamo scale fix: %s scale=(%.4f,%.4f,%.4f) -> (1,1,1)\n",
+                 nodeName.c_str(), scale.x, scale.y, scale.z);
+        OutputDebugStringA(debugMsg);
+        scale = aiVector3D(1.0f, 1.0f, 1.0f);
+    }
+
+    // prohと同じ座標変換: 回転のY,Z成分を反転、位置のX座標を反転
+    Vector3 s(scale.x, scale.y, scale.z);
+    Quaternion r(rotation.x, -rotation.y, -rotation.z, rotation.w);
+    Vector3 t(-translate.x * rootScale, translate.y * rootScale, translate.z * rootScale);
+
+    // S*R*T形式で構築
+    return Matrix4x4::CreateScale(s) *
+           Matrix4x4::CreateFromQuaternion(r) *
+           Matrix4x4::CreateTranslation(t);
 }
 
 MaterialData ConvertMaterial(const aiMaterial* aiMat, const std::string& baseDirectory) {
@@ -105,7 +137,8 @@ void ProcessBoneHierarchy(const aiNode* node, const aiScene* scene,
 }
 
 std::shared_ptr<Skeleton> ExtractSkeleton(const aiScene* scene,
-                                          std::unordered_map<std::string, int32>& boneMapping) {
+                                          std::unordered_map<std::string, int32>& boneMapping,
+                                          float rootScale) {
     auto skeleton = std::make_shared<Skeleton>();
 
     std::unordered_map<std::string, aiMatrix4x4> boneOffsets;
@@ -164,122 +197,55 @@ std::shared_ptr<Skeleton> ExtractSkeleton(const aiScene* scene,
     for (const auto& [name, index] : sortedBones) {
         int32 parentIndex = findParentBone(name);
 
-        // OffsetMatrixを取得
-        Matrix4x4 offsetMatrix = ConvertMatrix(boneOffsets[name]);
-        
-        // aiProcess_GlobalScaleはinverseBindMatricesに影響しないため、
-        // 手動でスケールを除去する必要がある
-        // 各列ベクトルの長さを計算してスケールを検出
-        float scaleX = 0.0f, scaleY = 0.0f, scaleZ = 0.0f;
-        for (int row = 0; row < 3; ++row) {
-            float x = offsetMatrix.GetElement(row, 0);
-            float y = offsetMatrix.GetElement(row, 1);
-            float z = offsetMatrix.GetElement(row, 2);
-            scaleX += x * x;
-            scaleY += y * y;
-            scaleZ += z * z;
-        }
-        scaleX = std::sqrt(scaleX);
-        scaleY = std::sqrt(scaleY);
-        scaleZ = std::sqrt(scaleZ);
-        
-        // 平均スケールが100に近い場合（cm→m変換）、正規化
-        float avgScale = (scaleX + scaleY + scaleZ) / 3.0f;
-        if (avgScale > 10.0f) { // スケールが大きい場合のみ正規化
-            // DirectXMath経由で行列要素を変更
-            DirectX::XMFLOAT4X4 matFloat;
-            DirectX::XMStoreFloat4x4(&matFloat, offsetMatrix.GetXMMatrix());
-            
-            // 回転成分の各列ベクトルを正規化
-            if (scaleX > 0.0001f) {
-                float invScale = 1.0f / scaleX;
-                for (int row = 0; row < 3; ++row) {
-                    matFloat.m[row][0] *= invScale;
-                }
-            }
-            if (scaleY > 0.0001f) {
-                float invScale = 1.0f / scaleY;
-                for (int row = 0; row < 3; ++row) {
-                    matFloat.m[row][1] *= invScale;
-                }
-            }
-            if (scaleZ > 0.0001f) {
-                float invScale = 1.0f / scaleZ;
-                for (int row = 0; row < 3; ++row) {
-                    matFloat.m[row][2] *= invScale;
-                }
-            }
-            
-            // 平行移動成分もスケーリング（cm→m変換）
-            // offsetMatrixの平行移動は回転スケールの影響を受けるため、
-            // スケールの2乗で割る必要がある（単位：cm² → m²）
-            float posScale = 1.0f / (avgScale * avgScale);
-            
-            if (index == 0) {
-                char dbg[256];
-                sprintf_s(dbg, "Translation scale: avgScale=%.1f, posScale=%.8f\n", avgScale, posScale);
-                OutputDebugStringA(dbg);
-            }
-            
-            matFloat.m[0][3] *= posScale;
-            matFloat.m[1][3] *= posScale;
-            matFloat.m[2][3] *= posScale;
-            
-            if (index == 0) {
-                char dbg[256];
-                sprintf_s(dbg, "RESULT: m[1][3]=%.6f (should be ~-0.005)\n", matFloat.m[1][3]);
-                OutputDebugStringA(dbg);
-            }
-            
-            // m[3][3]は常に1.0であるべき
-            matFloat.m[3][3] = 1.0f;
-            
-            // 行列を再構築
-            DirectX::XMMATRIX newMat = DirectX::XMLoadFloat4x4(&matFloat);
-            offsetMatrix = Matrix4x4(newMat);
-            
-            // 再構築後の確認
-            if (index == 0) {
-                DirectX::XMFLOAT4X4 verify;
-                DirectX::XMStoreFloat4x4(&verify, newMat);
-                char dbg[512];
-                sprintf_s(dbg, "After reconstruct: verify.m[1][3]=%.3f\n", verify.m[1][3]);
-                OutputDebugStringA(dbg);
-            }
-        }
-        
-        // デバッグ: 最初のボーンの補正結果を出力（スケーリング後）
-        if (index == 0) {
-            char debugMsg[1024];
-            sprintf_s(debugMsg, "Bone0 AFTER scale: avgScale=%.3f\n"
-                     "  Row0: [%.3f, %.3f, %.3f, %.3f]\n"
-                     "  Row1: [%.3f, %.3f, %.3f, %.3f]\n"
-                     "  Row2: [%.3f, %.3f, %.3f, %.3f]\n"
-                     "  Row3: [%.3f, %.3f, %.3f, %.3f]\n",
-                     avgScale,
-                     offsetMatrix.GetElement(0, 0), offsetMatrix.GetElement(0, 1),
-                     offsetMatrix.GetElement(0, 2), offsetMatrix.GetElement(0, 3),
-                     offsetMatrix.GetElement(1, 0), offsetMatrix.GetElement(1, 1),
-                     offsetMatrix.GetElement(1, 2), offsetMatrix.GetElement(1, 3),
-                     offsetMatrix.GetElement(2, 0), offsetMatrix.GetElement(2, 1),
-                     offsetMatrix.GetElement(2, 2), offsetMatrix.GetElement(2, 3),
-                     offsetMatrix.GetElement(3, 0), offsetMatrix.GetElement(3, 1),
-                     offsetMatrix.GetElement(3, 2), offsetMatrix.GetElement(3, 3));
+        // prohと同じアプローチ: InverseBindPose行列を分解して座標変換を適用
+        const aiMatrix4x4& offsetMat = boneOffsets[name];
+
+        // 1. InverseBindPoseの逆行列（BindPose）を取得
+        aiMatrix4x4 bindPoseMatrix = offsetMat;
+        bindPoseMatrix.Inverse();
+
+        // 2. BindPoseを分解
+        aiVector3D scale, translate;
+        aiQuaternion rotation;
+        bindPoseMatrix.Decompose(scale, rotation, translate);
+
+        // Mixamo対応: 異常なスケール（100倍など）を検出して修正
+        bool hasAbnormalScale = (scale.x > 10.0f || scale.y > 10.0f || scale.z > 10.0f ||
+                                 scale.x < 0.1f || scale.y < 0.1f || scale.z < 0.1f);
+        if (hasAbnormalScale) {
+            char debugMsg[256];
+            sprintf_s(debugMsg, "BindPose scale fix: %s scale=(%.4f,%.4f,%.4f) -> (1,1,1)\n",
+                     name.c_str(), scale.x, scale.y, scale.z);
             OutputDebugStringA(debugMsg);
+            scale = aiVector3D(1.0f, 1.0f, 1.0f);
         }
+
+        // 3. prohと同じ座標変換: 回転のY,Z成分を反転、位置のX座標を反転
+        Vector3 s(scale.x, scale.y, scale.z);
+        Quaternion r(rotation.x, -rotation.y, -rotation.z, rotation.w);
+        Vector3 t(-translate.x, translate.y, translate.z);
+
+        Matrix4x4 bindPoseConverted = Matrix4x4::CreateScale(s) *
+                                      Matrix4x4::CreateFromQuaternion(r) *
+                                      Matrix4x4::CreateTranslation(t);
+
+        // 4. 変換後のBindPoseの逆行列がInverseBindPose
+        Matrix4x4 offsetMatrix = bindPoseConverted.Inverse();
+
+
 
         Matrix4x4 localBindPose = Matrix4x4::Identity();
         if (boneNodes[name]) {
-            localBindPose = ConvertMatrix(boneNodes[name]->mTransformation);
+            localBindPose = ConvertLocalTransform(boneNodes[name]->mTransformation, name, rootScale);
         }
 
         skeleton->AddBone(name, parentIndex, offsetMatrix, localBindPose);
     }
 
-    // glTFの場合、ルートノードにスケール（例: 100）が含まれることがある
-    // スキニングでは単位行列を使用し、OffsetMatrixで処理する
-    // これにより、ボーン行列が正しく計算される
-    skeleton->SetGlobalInverseTransform(Matrix4x4::Identity());
+    // GlobalInverseTransform = ルートノードの変換行列の逆行列
+    // (ogldevチュートリアル参照)
+    Matrix4x4 rootTransform = ConvertMatrix(scene->mRootNode->mTransformation);
+    skeleton->SetGlobalInverseTransform(rootTransform.Inverse());
 
     char skelDebug[256];
     sprintf_s(skelDebug, "Skeleton created: %u bones\\n", skeleton->GetBoneCount());
@@ -350,23 +316,27 @@ std::vector<std::shared_ptr<AnimationClip>> ExtractAnimations(const aiScene* sce
             for (uint32 k = 0; k < channel->mNumPositionKeys; ++k) {
                 Keyframe<Vector3> key;
                 key.time = static_cast<float>(channel->mPositionKeys[k].mTime);
-                key.value = ConvertVector3(channel->mPositionKeys[k].mValue);
-                // ルートノードのスケールを適用
-                key.value = key.value * rootScale;
+                const auto& p = channel->mPositionKeys[k].mValue;
+                // prohと同じ座標変換: X座標を反転、ルートスケールを適用
+                key.value = Vector3(-p.x * rootScale, p.y * rootScale, p.z * rootScale);
                 boneAnim.positionKeys.push_back(key);
             }
 
             for (uint32 k = 0; k < channel->mNumRotationKeys; ++k) {
                 Keyframe<Quaternion> key;
                 key.time = static_cast<float>(channel->mRotationKeys[k].mTime);
-                key.value = ConvertQuaternion(channel->mRotationKeys[k].mValue);
+                const auto& q = channel->mRotationKeys[k].mValue;
+                // prohと同じ座標変換: Y,Z成分を反転
+                key.value = Quaternion(q.x, -q.y, -q.z, q.w);
                 boneAnim.rotationKeys.push_back(key);
             }
 
             for (uint32 k = 0; k < channel->mNumScalingKeys; ++k) {
                 Keyframe<Vector3> key;
                 key.time = static_cast<float>(channel->mScalingKeys[k].mTime);
-                key.value = ConvertVector3(channel->mScalingKeys[k].mValue);
+                // スケールは座標系に依存しないので変換不要
+                const auto& s = channel->mScalingKeys[k].mValue;
+                key.value = Vector3(s.x, s.y, s.z);
                 boneAnim.scaleKeys.push_back(key);
             }
 
@@ -400,12 +370,14 @@ SkinnedMesh ProcessSkinnedMesh(const aiMesh* aiMesh, const aiScene* scene,
     for (uint32 i = 0; i < aiMesh->mNumVertices; ++i) {
         SkinnedVertex& vertex = vertices[i];
 
-        vertex.px = aiMesh->mVertices[i].x;
+        // prohと同じ座標変換: X座標を反転
+        vertex.px = -aiMesh->mVertices[i].x;
         vertex.py = aiMesh->mVertices[i].y;
         vertex.pz = aiMesh->mVertices[i].z;
 
         if (aiMesh->HasNormals()) {
-            vertex.nx = aiMesh->mNormals[i].x;
+            // 法線もX成分を反転
+            vertex.nx = -aiMesh->mNormals[i].x;
             vertex.ny = aiMesh->mNormals[i].y;
             vertex.nz = aiMesh->mNormals[i].z;
         }
@@ -464,8 +436,15 @@ SkinnedMesh ProcessSkinnedMesh(const aiMesh* aiMesh, const aiScene* scene,
 
     for (uint32 i = 0; i < aiMesh->mNumFaces; ++i) {
         const aiFace& face = aiMesh->mFaces[i];
-        for (uint32 j = 0; j < face.mNumIndices; ++j) {
-            indices.push_back(face.mIndices[j]);
+        if (face.mNumIndices == 3) {
+            // prohと同じ: X軸反転により巻き順を反転（0, 2, 1の順序）
+            indices.push_back(face.mIndices[0]);
+            indices.push_back(face.mIndices[2]);
+            indices.push_back(face.mIndices[1]);
+        } else {
+            for (uint32 j = 0; j < face.mNumIndices; ++j) {
+                indices.push_back(face.mIndices[j]);
+            }
         }
     }
 
@@ -516,10 +495,11 @@ SkinnedModelData SkinnedModelImporter::Load(GraphicsDevice* graphics, ID3D12Grap
                                             const std::string& filepath) {
     Assimp::Importer importer;
 
+    // prohと同じフラグを使用（aiProcess_MakeLeftHandedは使わない）
+    // 座標変換は手動で行う
     unsigned int flags = aiProcess_Triangulate | aiProcess_FlipUVs |
-                        aiProcess_CalcTangentSpace | aiProcess_GenNormals |
                         aiProcess_LimitBoneWeights |
-                        aiProcess_MakeLeftHanded | aiProcess_FlipWindingOrder;
+                        aiProcess_PopulateArmatureData;
     
     // aiProcess_GlobalScaleは使用しない（不完全な実装のため）
     // すべて手動でスケーリングする
@@ -539,8 +519,33 @@ SkinnedModelData SkinnedModelImporter::Load(GraphicsDevice* graphics, ID3D12Grap
 
     SkinnedModelData result;
 
+    // ルートスケールを計算（GLTFの場合、Armatureノードに0.01スケールが設定されている）
+    float rootScale = 1.0f;
+    std::function<const aiNode*(const aiNode*)> findArmature = [&](const aiNode* node) -> const aiNode* {
+        if (!node) return nullptr;
+        std::string nodeName = node->mName.C_Str();
+        if (nodeName.find("Armature") != std::string::npos || nodeName.find("armature") != std::string::npos) {
+            return node;
+        }
+        for (uint32 i = 0; i < node->mNumChildren; ++i) {
+            const aiNode* found = findArmature(node->mChildren[i]);
+            if (found) return found;
+        }
+        return nullptr;
+    };
+    const aiNode* armatureNode = findArmature(scene->mRootNode);
+    if (armatureNode) {
+        aiVector3D scale, pos;
+        aiQuaternion rot;
+        armatureNode->mTransformation.Decompose(scale, rot, pos);
+        float avgScale = (scale.x + scale.y + scale.z) / 3.0f;
+        if (avgScale < 1.0f && avgScale > 0.0001f) {
+            rootScale = avgScale;
+        }
+    }
+
     std::unordered_map<std::string, int32> boneMapping;
-    result.skeleton = ExtractSkeleton(scene, boneMapping);
+    result.skeleton = ExtractSkeleton(scene, boneMapping, rootScale);
 
     result.animations = ExtractAnimations(scene, boneMapping);
 

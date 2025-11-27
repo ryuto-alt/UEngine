@@ -30,6 +30,9 @@ public:
     // Get bone matrices for rendering
     const std::vector<Matrix4x4>& GetBoneMatrices() const;
     
+    // Get bone matrix pairs (with inverse transpose for normals)
+    const std::vector<BoneMatrixPair>& GetBoneMatrixPairs() const;
+    
     // Get bone count
     uint32 GetBoneCount() const;
 

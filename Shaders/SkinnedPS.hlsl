@@ -1,6 +1,6 @@
 // Skinned Pixel Shader - Lambert Lighting
 
-Texture2D diffuseTexture : register(t0);
+Texture2D diffuseTexture : register(t1);
 SamplerState samplerState : register(s0);
 
 cbuffer Light : register(b1) {

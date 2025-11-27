@@ -39,6 +39,7 @@ public:
     float GetNormalizedTime() const;
 
     const std::vector<Matrix4x4>& GetBoneMatrices() const { return finalBoneMatrices_; }
+    const std::vector<BoneMatrixPair>& GetBoneMatrixPairs() const { return finalBoneMatrixPairs_; }
     uint32 GetBoneCount() const { return skeleton_ ? skeleton_->GetBoneCount() : 0; }
 
     void SetParameter(const std::string& name, float value);
@@ -67,6 +68,7 @@ private:
     bool isPlaying_ = false;
 
     std::vector<Matrix4x4> finalBoneMatrices_;
+    std::vector<BoneMatrixPair> finalBoneMatrixPairs_;
     std::vector<Matrix4x4> currentLocalTransforms_;
     std::vector<Matrix4x4> nextLocalTransforms_;
 

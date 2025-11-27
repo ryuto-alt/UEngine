@@ -8,6 +8,7 @@
 #include "SkinnedRenderItem.h"
 #include "RenderView.h"
 #include "LightManager.h"
+#include "DebugRenderer.h"
 #include "../Window/Window.h"
 #include "../UI/ImGuiManager.h"
 #include <DirectXMath.h>
@@ -59,6 +60,7 @@ public:
     Pipeline* GetPipeline() { return &pipeline_; }
     SkinnedPipeline* GetSkinnedPipeline() { return &skinnedPipeline_; }
     ImGuiManager* GetImGuiManager() { return imguiManager_.get(); }
+    DebugRenderer* GetDebugRenderer() { return debugRenderer_.get(); }
 
 protected:
     virtual void RenderUI(Scene* scene);
@@ -87,6 +89,7 @@ private:
     uint32 boneMatrixPairSRVIndex_ = 0;
 
     UniquePtr<ImGuiManager> imguiManager_;
+    UniquePtr<DebugRenderer> debugRenderer_;
 };
 
 } // namespace UnoEngine

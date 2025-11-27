@@ -85,6 +85,11 @@ std::vector<SkinnedRenderItem> RenderSystem::CollectSkinnedRenderables(Scene* sc
             
             item.boneMatrixPairs = bonePairs;
             
+            // デバッグ描画用にAnimatorを設定
+            if (auto* animatorComp = skinnedRenderer->GetAnimator()) {
+                item.animator = animatorComp->GetAnimator();
+            }
+            
             items.push_back(item);
         }
     }

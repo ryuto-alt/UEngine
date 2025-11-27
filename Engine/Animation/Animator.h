@@ -40,6 +40,7 @@ public:
 
     const std::vector<Matrix4x4>& GetBoneMatrices() const { return finalBoneMatrices_; }
     const std::vector<BoneMatrixPair>& GetBoneMatrixPairs() const { return finalBoneMatrixPairs_; }
+    const std::vector<Matrix4x4>& GetCurrentLocalTransforms() const { return currentLocalTransforms_; }
     uint32 GetBoneCount() const { return skeleton_ ? skeleton_->GetBoneCount() : 0; }
 
     void SetParameter(const std::string& name, float value);

@@ -205,6 +205,8 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClCompile Include="Engine\UI\ImGuiManager.cpp" />
     <ClCompile Include="Engine\Graphics\SkinnedMesh.cpp" />
     <ClCompile Include="Engine\Graphics\SkinnedPipeline.cpp" />
+    <ClCompile Include="Engine\Graphics\DebugLinePipeline.cpp" />
+    <ClCompile Include="Engine\Rendering\DebugRenderer.cpp" />
     <ClCompile Include="Engine\Resource\SkinnedModelImporter.cpp" />
     <ClCompile Include="Engine\Resource\ResourceManager.cpp" />
     <ClCompile Include="Engine\Animation\Skeleton.cpp" />
@@ -272,6 +274,8 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClInclude Include="Engine\UI\ImGuiManager.h" />
     <ClInclude Include="Engine\Graphics\SkinnedMesh.h" />
     <ClInclude Include="Engine\Graphics\SkinnedPipeline.h" />
+    <ClInclude Include="Engine\Graphics\DebugLinePipeline.h" />
+    <ClInclude Include="Engine\Rendering\DebugRenderer.h" />
     <ClInclude Include="Engine\Graphics\SkinnedVertex.h" />
     <ClInclude Include="Engine\Resource\SkinnedModelImporter.h" />
     <ClInclude Include="Engine\Resource\ResourceManager.h" />

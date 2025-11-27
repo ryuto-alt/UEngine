@@ -1,7 +1,9 @@
 #include "Renderer.h"
 #include "../Core/Scene.h"
+#include "../Core/Logger.h"
 #include "../Graphics/DirectionalLightComponent.h"
 #include "../Graphics/Shader.h"
+#include "../Animation/Animator.h"
 #include <imgui.h>
 #include <Windows.h>
 
@@ -41,6 +43,10 @@ void Renderer::Initialize(GraphicsDevice* graphics, Window* window) {
 
     imguiManager_ = MakeUnique<ImGuiManager>();
     imguiManager_->Initialize(graphics_, window_, 2);
+
+    // デバッグレンダラー初期化
+    debugRenderer_ = MakeUnique<DebugRenderer>();
+    debugRenderer_->Initialize(graphics_);
 }
 
 void Renderer::Draw(const RenderView& view, const std::vector<RenderItem>& items, LightManager* lights, Scene* scene) {
@@ -193,6 +199,30 @@ void Renderer::DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_
     // Render skinned meshes
     if (!skinnedItems.empty()) {
         RenderSkinnedMeshes(view, skinnedItems);
+
+        // デバッグボーン描画
+        if (debugRenderer_ && debugRenderer_->GetShowBones()) {
+            debugRenderer_->BeginFrame();
+            
+            int animatorCount = 0;
+            for (const auto& item : skinnedItems) {
+                if (item.animator) {
+                    animatorCount++;
+                    auto* skeleton = item.animator->GetSkeleton();
+                    const auto& localTransforms = item.animator->GetCurrentLocalTransforms();
+                    if (skeleton && !localTransforms.empty()) {
+                        debugRenderer_->DrawBones(skeleton, localTransforms, item.worldMatrix);
+                    }
+                }
+            }
+            Logger::Info("[Renderer] デバッグボーン描画: skinnedItems={}, animatorCount={}", skinnedItems.size(), animatorCount);
+            
+            debugRenderer_->Render(
+                cmdList,
+                view.camera->GetViewMatrix(),
+                view.camera->GetProjectionMatrix()
+            );
+        }
     }
 
     // Resource barrier: RENDER_TARGET -> PIXEL_SHADER_RESOURCE
@@ -207,6 +237,27 @@ void Renderer::DrawSkinnedMeshes(const RenderView& view, const std::vector<Skinn
     SetupViewport();
     UpdateLighting(view, lights);
     RenderSkinnedMeshes(view, items);
+
+    // デバッグボーン描画
+    if (debugRenderer_ && debugRenderer_->GetShowBones()) {
+        debugRenderer_->BeginFrame();
+        
+        for (const auto& item : items) {
+            if (item.animator) {
+                auto* skeleton = item.animator->GetSkeleton();
+                const auto& localTransforms = item.animator->GetCurrentLocalTransforms();
+                if (skeleton && !localTransforms.empty()) {
+                    debugRenderer_->DrawBones(skeleton, localTransforms, item.worldMatrix);
+                }
+            }
+        }
+        
+        debugRenderer_->Render(
+            graphics_->GetCommandList(),
+            view.camera->GetViewMatrix(),
+            view.camera->GetProjectionMatrix()
+        );
+    }
 }
 
 void Renderer::RenderSkinnedMeshes(const RenderView& view, const std::vector<SkinnedRenderItem>& items) {

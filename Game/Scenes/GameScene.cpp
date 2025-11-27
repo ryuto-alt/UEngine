@@ -133,8 +133,10 @@ std::vector<SkinnedRenderItem> GameScene::GetSkinnedRenderItems() const {
             SkinnedRenderItem item;
             item.mesh = const_cast<SkinnedMesh*>(&mesh);
             
-            // Get base world matrix (no rotation needed - coordinate conversion handles orientation)
-            item.worldMatrix = animatedCharacter_->GetTransform().GetWorldMatrix();
+            // Get base world matrix with X-axis rotation to stand the model up
+            // glTF models are often lying down, rotate -90 degrees around X to stand up
+            Matrix4x4 standUpRotation = Matrix4x4::RotationX(Math::PI / 2.0f);
+            item.worldMatrix = standUpRotation * animatedCharacter_->GetTransform().GetWorldMatrix();
             
             item.material = const_cast<Material*>(mesh.GetMaterial());
             

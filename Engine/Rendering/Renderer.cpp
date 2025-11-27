@@ -207,9 +207,9 @@ void Renderer::DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_
         debugRenderer_->BeginFrame();
 
         // テスト用: 原点に軸を描画（パイプライン動作確認）
-        debugRenderer_->AddLine(Vector3(0, 0, 0), Vector3(0, 2, 0), Vector4(1, 0, 0, 1));  // 赤Y軸
-        debugRenderer_->AddLine(Vector3(0, 0, 0), Vector3(2, 0, 0), Vector4(0, 1, 0, 1));  // 緑X軸
-        debugRenderer_->AddLine(Vector3(0, 0, 0), Vector3(0, 0, 2), Vector4(0, 0, 1, 1));  // 青Z軸
+        debugRenderer_->AddLine(Vector3(0, 0, 0), Vector3(0, 0.3f, 0), Vector4(1, 0, 0, 1));  // 赤Y軸
+        debugRenderer_->AddLine(Vector3(0, 0, 0), Vector3(0.3f, 0, 0), Vector4(0, 1, 0, 1));  // 緑X軸
+        debugRenderer_->AddLine(Vector3(0, 0, 0), Vector3(0, 0, 0.3f), Vector4(0, 0, 1, 1));  // 青Z軸
 
         int animatorCount = 0;
         for (const auto& item : skinnedItems) {

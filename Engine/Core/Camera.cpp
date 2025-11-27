@@ -12,7 +12,7 @@ Camera::Camera()
     , aspect_(16.0f / 9.0f)
     , width_(1280.0f)
     , height_(720.0f)
-    , nearZ_(0.1f)
+    , nearZ_(0.01f)
     , farZ_(1000.0f)
     , dirtyView_(true) {
 

@@ -203,6 +203,10 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClCompile Include="Game\Systems\CameraSystem.cpp" />
     <ClCompile Include="Game\UI\EditorUI.cpp" />
     <ClCompile Include="Engine\UI\ImGuiManager.cpp" />
+    <ClCompile Include="Engine\UI\imgui_toggle.cpp" />
+    <ClCompile Include="Engine\UI\imgui_toggle_presets.cpp" />
+    <ClCompile Include="Engine\UI\imgui_toggle_renderer.cpp" />
+    <ClCompile Include="Engine\UI\imgui_toggle_palette.cpp" />
     <ClCompile Include="Engine\Graphics\SkinnedMesh.cpp" />
     <ClCompile Include="Engine\Graphics\SkinnedPipeline.cpp" />
     <ClCompile Include="Engine\Graphics\DebugLinePipeline.cpp" />

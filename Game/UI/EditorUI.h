@@ -10,6 +10,8 @@
 namespace UnoEngine {
 
 class GraphicsDevice;
+class DebugRenderer;
+class AnimationSystem;
 
 // EditorUIに渡す情報をまとめた構造体
 struct EditorContext {
@@ -23,6 +25,10 @@ struct EditorContext {
     std::vector<std::string> loadedModels;
     std::vector<std::string> loadedTextures;
     std::string currentSceneName;
+
+    // デバッグ表示設定
+    DebugRenderer* debugRenderer = nullptr;
+    AnimationSystem* animationSystem = nullptr;
 };
 
 // Editor UI管理クラス

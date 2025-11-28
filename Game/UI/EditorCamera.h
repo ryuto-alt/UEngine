@@ -33,6 +33,9 @@ public:
     // Viewport内でのみカメラ操作を有効にする
     void SetViewportHovered(bool hovered) { viewportHovered_ = hovered; }
     void SetViewportFocused(bool focused) { viewportFocused_ = focused; }
+    
+    // WASD移動を有効/無効にする（オブジェクト選択中は無効にする）
+    void SetMovementEnabled(bool enabled) { movementEnabled_ = enabled; }
 
     // ビューポートの矩形を設定（マウスクリップ用）
     void SetViewportRect(float x, float y, float w, float h) {
@@ -76,6 +79,7 @@ private:
     bool viewportHovered_ = false;
     bool viewportFocused_ = false;
     bool isControlling_ = false;
+    bool movementEnabled_ = true;  // WASD移動が有効か
 
     // マウス
     bool rightMousePressed_ = false;

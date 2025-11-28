@@ -68,7 +68,19 @@ void EditorCamera::Update(float deltaTime) {
 
         SetCursorPos(lockMousePos_.x, lockMousePos_.y);
 
-        if (hasOrbitTarget_) {
+        // CTRL+右クリック: カメラを上下移動（マウス上→カメラ上、マウス下→カメラ下）
+        if (io.KeyCtrl) {
+            // マウス上がdeltaY負、カメラは下に移動
+            float heightMove = deltaY * moveSpeed_ * deltaTime * 0.5f;
+            Vector3 camPos = camera_->GetPosition();
+            camPos.SetY(camPos.GetY() + heightMove);
+            camera_->SetPosition(camPos);
+            
+            // オービットターゲットがある場合、ターゲットも同じだけ移動
+            if (hasOrbitTarget_) {
+                orbitTarget_.SetY(orbitTarget_.GetY() + heightMove);
+            }
+        } else if (hasOrbitTarget_) {
             // SHIFT+右クリック: オービットターゲットの高さを調整
             if (io.KeyShift) {
                 // マウスの上下移動でターゲットのY座標を調整
@@ -140,6 +152,9 @@ void EditorCamera::HandleFreeCameraMovement(float deltaTime) {
     
     // Scene Viewがホバーされていない場合はWASD移動を無効化
     if (!viewportHovered_) return;
+    
+    // オブジェクト選択中はWASD移動を無効化
+    if (!movementEnabled_) return;
 
     // カメラの実際の向きから移動方向を計算（FPSスタイル）
     Vector3 camForward = camera_->GetForward();

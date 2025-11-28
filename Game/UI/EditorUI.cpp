@@ -65,6 +65,8 @@ namespace UnoEngine {
 		// エディタカメラの更新（Edit/Pauseモードのみ）
 		if (editorMode_ != EditorMode::Play) {
 			float deltaTime = ImGui::GetIO().DeltaTime;
+			// オブジェクト選択中はWASD移動を無効化
+			editorCamera_.SetMovementEnabled(selectedObject_ == nullptr);
 			editorCamera_.Update(deltaTime);
 		}
 
@@ -832,10 +834,13 @@ namespace UnoEngine {
 			}
 		}
 
-		// Escape: Stop（再生中/一時停止中）
+		// Escape: Stop（再生中/一時停止中）または選択解除（編集モード）
 		if (ImGui::IsKeyPressed(ImGuiKey_Escape, false)) {
 			if (editorMode_ != EditorMode::Edit) {
 				Stop();
+			} else {
+				// 編集モードでは選択をクリア
+				selectedObject_ = nullptr;
 			}
 		}
 

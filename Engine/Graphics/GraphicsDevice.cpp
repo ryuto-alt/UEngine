@@ -1,4 +1,5 @@
 #include "GraphicsDevice.h"
+#include "../Core/Logger.h"
 #include <stdexcept>
 
 namespace UnoEngine {
@@ -30,6 +31,15 @@ void GraphicsDevice::Initialize(Window* window) {
             "Failed to create command allocator"
         );
     }
+
+    // リソースアップロード専用のコマンドアロケータ
+    ThrowIfFailed(
+        device_->CreateCommandAllocator(
+            D3D12_COMMAND_LIST_TYPE_DIRECT,
+            IID_PPV_ARGS(&uploadCommandAllocator_)
+        ),
+        "Failed to create upload command allocator"
+    );
 
     ThrowIfFailed(
         device_->CreateCommandList(
@@ -372,32 +382,58 @@ void GraphicsDevice::WaitForGPU() {
 }
 
 void GraphicsDevice::BeginResourceUpload() {
-    // コマンドアロケータをリセット
+    Logger::Debug("[GraphicsDevice] BeginResourceUpload: GPUを同期中...");
+
+    // GPUが前回のコマンドを完了するまで待つ
+    WaitForGPU();
+
+    Logger::Debug("[GraphicsDevice] BeginResourceUpload: アップロード用コマンドアロケータをリセット中...");
+
+    // アップロード専用コマンドアロケータをリセット
     ThrowIfFailed(
-        commandAllocators_[0]->Reset(),
-        "Failed to reset command allocator for resource upload"
+        uploadCommandAllocator_->Reset(),
+        "Failed to reset upload command allocator"
     );
 
+    Logger::Debug("[GraphicsDevice] BeginResourceUpload: コマンドリストをリセット中...");
+
     // コマンドリストをリセット（開く）
-    ThrowIfFailed(
-        commandList_->Reset(commandAllocators_[0].Get(), nullptr),
-        "Failed to reset command list for resource upload"
-    );
+    // Note: Resetが失敗する場合、コマンドリストが既に開いている
+    HRESULT hr = commandList_->Reset(uploadCommandAllocator_.Get(), nullptr);
+    if (FAILED(hr)) {
+        Logger::Warning("[GraphicsDevice] コマンドリストが既に開いています。クローズしてリトライします。");
+        // コマンドリストが既に開いている場合、先にクローズしてからリセット
+        commandList_->Close();
+        WaitForGPU();
+        uploadCommandAllocator_->Reset();
+        hr = commandList_->Reset(uploadCommandAllocator_.Get(), nullptr);
+        ThrowIfFailed(hr, "Failed to reset command list for resource upload after close");
+    }
+
+    Logger::Debug("[GraphicsDevice] BeginResourceUpload: 完了");
 }
 
 void GraphicsDevice::EndResourceUpload() {
+    Logger::Debug("[GraphicsDevice] EndResourceUpload: コマンドリストをクローズ中...");
+
     // コマンドリストをクローズ
     ThrowIfFailed(
         commandList_->Close(),
         "Failed to close command list after resource upload"
     );
 
+    Logger::Debug("[GraphicsDevice] EndResourceUpload: コマンドキューに投入中...");
+
     // コマンドキューに投入
     ID3D12CommandList* cmdLists[] = { commandList_.Get() };
     commandQueue_->ExecuteCommandLists(1, cmdLists);
 
+    Logger::Debug("[GraphicsDevice] EndResourceUpload: GPUの完了を待機中...");
+
     // GPU完了を待つ
     WaitForGPU();
+
+    Logger::Debug("[GraphicsDevice] EndResourceUpload: 完了");
 }
 
 void GraphicsDevice::OnResize(uint32 width, uint32 height) {

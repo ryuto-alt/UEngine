@@ -47,12 +47,23 @@ void Scene::ProcessPendingStarts() {
     // Call Start() on components that have been Awake'd but not Started
     for (auto& obj : gameObjects_) {
         if (!obj->IsActive()) continue;
-        
+
         for (auto& comp : obj->GetComponents()) {
             if (comp->IsAwakeCalled() && !comp->HasStarted() && comp->IsEnabled()) {
                 comp->Start();
                 comp->MarkStarted();
             }
+        }
+    }
+}
+
+void Scene::StartGameObject(GameObject* obj) {
+    if (!obj || !obj->IsActive()) return;
+
+    for (auto& comp : obj->GetComponents()) {
+        if (comp->IsAwakeCalled() && !comp->HasStarted() && comp->IsEnabled()) {
+            comp->Start();
+            comp->MarkStarted();
         }
     }
 }

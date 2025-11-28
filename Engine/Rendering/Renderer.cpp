@@ -38,6 +38,10 @@ void Renderer::Initialize(GraphicsDevice* graphics, Window* window) {
     materialBuffer_.Create(device);
     boneBuffer_.Create(device);
     
+    // スキンメッシュ用ダイナミックバッファ（フレーム内で複数回更新可能）
+    skinnedTransformBuffer_.Create(device, 256);  // 最大256個のスキンメッシュ/フレーム
+    skinnedMaterialBuffer_.Create(device, 256);
+    
     // StructuredBuffer for bone matrices (BoneMatrixPair)
     CreateBoneMatrixPairBuffer(device);
 
@@ -290,25 +294,47 @@ void Renderer::RenderSkinnedMeshes(const RenderView& view, const std::vector<Ski
     auto viewMatrix = view.camera->GetViewMatrix();
     auto projection = view.camera->GetProjectionMatrix();
 
+    // ダイナミックバッファをリセット
+    skinnedTransformBuffer_.Reset();
+    skinnedMaterialBuffer_.Reset();
+    currentBoneSlot_ = 0;
+
+    // ボーン行列バッファ全体を一度だけマップ
+    BoneMatrixPair* mappedBoneData = nullptr;
+    if (boneMatrixPairBuffer_) {
+        boneMatrixPairBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&mappedBoneData));
+    }
+
     for (const auto& item : items) {
         if (!item.mesh) continue;
 
-        // Transform
+        // boneMatrixPairsがない場合は描画をスキップ
+        if (!item.boneMatrixPairs || item.boneMatrixPairs->empty()) {
+            continue;
+        }
+
+        // スロット数を超えた場合はスキップ
+        if (currentBoneSlot_ >= MAX_SKINNED_OBJECTS) {
+            Logger::Warning("[Renderer] Max skinned objects ({}) exceeded, skipping", MAX_SKINNED_OBJECTS);
+            break;
+        }
+
+        // Transform（ダイナミックバッファを使用）
         TransformCB transformData;
         auto mvp = item.worldMatrix * viewMatrix * projection;
         DirectX::XMStoreFloat4x4(&transformData.world, DirectX::XMMatrixTranspose(item.worldMatrix.GetXMMatrix()));
         DirectX::XMStoreFloat4x4(&transformData.view, DirectX::XMMatrixTranspose(viewMatrix.GetXMMatrix()));
         DirectX::XMStoreFloat4x4(&transformData.projection, DirectX::XMMatrixTranspose(projection.GetXMMatrix()));
         DirectX::XMStoreFloat4x4(&transformData.mvp, DirectX::XMMatrixTranspose(mvp.GetXMMatrix()));
-        constantBuffer_.Update(transformData);
-        cmdList->SetGraphicsRootConstantBufferView(0, constantBuffer_.GetGPUAddress());
+        auto transformGpuAddr = skinnedTransformBuffer_.Update(transformData);
+        cmdList->SetGraphicsRootConstantBufferView(0, transformGpuAddr);
 
-        // Texture (moved to slot 4)
+        // Texture
         if (item.material) {
             cmdList->SetGraphicsRootDescriptorTable(4, item.material->GetAlbedoSRV(heap));
         }
 
-        // Material
+        // Material（ダイナミックバッファを使用）
         MaterialCB materialData;
         if (item.material) {
             const auto& matData = item.material->GetData();
@@ -320,33 +346,27 @@ void Renderer::RenderSkinnedMeshes(const RenderView& view, const std::vector<Ski
             materialData.metallic = 0.0f;
             materialData.roughness = 0.5f;
         }
-        materialBuffer_.Update(materialData);
-        cmdList->SetGraphicsRootConstantBufferView(3, materialBuffer_.GetGPUAddress());
+        auto materialGpuAddr = skinnedMaterialBuffer_.Update(materialData);
+        cmdList->SetGraphicsRootConstantBufferView(3, materialGpuAddr);
 
-        // Bone matrices
-        if (item.boneMatrixPairs && boneMatrixPairBuffer_) {
-            // Use BoneMatrixPair (StructuredBuffer)
+        // Bone matrices（現在のスロットに書き込み）
+        if (mappedBoneData && item.boneMatrixPairs) {
             size_t numBones = (std::min)(item.boneMatrixPairs->size(), static_cast<size_t>(MAX_BONES));
             
-            // Map and update
-            BoneMatrixPair* mappedData = nullptr;
-            boneMatrixPairBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&mappedData));
+            // このスロットのオフセット
+            BoneMatrixPair* slotData = mappedBoneData + (currentBoneSlot_ * MAX_BONES);
             
             for (size_t i = 0; i < numBones; ++i) {
                 const auto& pair = (*item.boneMatrixPairs)[i];
-
-                // HLSLのmatrixはcolumn-major、DirectXMathはrow-major
-                // 転置して渡す
-                DirectX::XMStoreFloat4x4(reinterpret_cast<DirectX::XMFLOAT4X4*>(&mappedData[i].skeletonSpaceMatrix),
+                DirectX::XMStoreFloat4x4(reinterpret_cast<DirectX::XMFLOAT4X4*>(&slotData[i].skeletonSpaceMatrix),
                                          DirectX::XMMatrixTranspose(pair.skeletonSpaceMatrix.GetXMMatrix()));
-                DirectX::XMStoreFloat4x4(reinterpret_cast<DirectX::XMFLOAT4X4*>(&mappedData[i].skeletonSpaceInverseTransposeMatrix),
+                DirectX::XMStoreFloat4x4(reinterpret_cast<DirectX::XMFLOAT4X4*>(&slotData[i].skeletonSpaceInverseTransposeMatrix),
                                          DirectX::XMMatrixTranspose(pair.skeletonSpaceInverseTransposeMatrix.GetXMMatrix()));
             }
             
-            boneMatrixPairBuffer_->Unmap(0, nullptr);
-            
-            // Set StructuredBuffer SRV (t0)
-            cmdList->SetGraphicsRootDescriptorTable(1, boneMatrixPairSRV_);
+            // このスロット用のSRVをバインド
+            cmdList->SetGraphicsRootDescriptorTable(1, boneMatrixPairSRVs_[currentBoneSlot_]);
+            currentBoneSlot_++;
         }
 
         // Draw
@@ -358,16 +378,26 @@ void Renderer::RenderSkinnedMeshes(const RenderView& view, const std::vector<Ski
         uint32 indexCount = item.mesh->GetIndexBuffer().GetIndexCount();
         cmdList->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
     }
+
+    // ボーン行列バッファのアンマップ
+    if (boneMatrixPairBuffer_) {
+        boneMatrixPairBuffer_->Unmap(0, nullptr);
+    }
 }
 
 void Renderer::CreateBoneMatrixPairBuffer(ID3D12Device* device) {
-    // StructuredBuffer for bone matrices (MAX_BONES * sizeof(BoneMatrixPair))
+    // StructuredBuffer for bone matrices（複数モデル対応）
+    // MAX_SKINNED_OBJECTS個のスロットを持つ大きなバッファを作成
     D3D12_HEAP_PROPERTIES heapProp = {};
     heapProp.Type = D3D12_HEAP_TYPE_UPLOAD;
     
+    // 各スロットに MAX_BONES 個のボーン行列を格納
+    const size_t slotSize = sizeof(BoneMatrixPair) * MAX_BONES;
+    const size_t totalSize = slotSize * MAX_SKINNED_OBJECTS;
+    
     D3D12_RESOURCE_DESC resourceDesc = {};
     resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-    resourceDesc.Width = sizeof(BoneMatrixPair) * MAX_BONES;
+    resourceDesc.Width = totalSize;
     resourceDesc.Height = 1;
     resourceDesc.DepthOrArraySize = 1;
     resourceDesc.MipLevels = 1;
@@ -389,26 +419,28 @@ void Renderer::CreateBoneMatrixPairBuffer(ID3D12Device* device) {
         return;
     }
     
-    // Use a fixed SRV index (e.g., last slot in the heap)
-    // Assuming textures use indices 0-2047, we use 2048 for bone matrices
-    boneMatrixPairSRVIndex_ = 2048;
+    // 各スロット用のSRVを作成（インデックス2048から開始）
+    boneMatrixPairSRVBaseIndex_ = 2048;
     
-    // Create SRV
-    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-    srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    srvDesc.Buffer.FirstElement = 0;
-    srvDesc.Buffer.NumElements = MAX_BONES;
-    srvDesc.Buffer.StructureByteStride = sizeof(BoneMatrixPair);
+    auto descriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     
-    auto cpuHandle = graphics_->GetSRVHeap()->GetCPUDescriptorHandleForHeapStart();
-    cpuHandle.ptr += boneMatrixPairSRVIndex_ * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-    
-    device->CreateShaderResourceView(boneMatrixPairBuffer_.Get(), &srvDesc, cpuHandle);
-    
-    boneMatrixPairSRV_ = graphics_->GetSRVHeap()->GetGPUDescriptorHandleForHeapStart();
-    boneMatrixPairSRV_.ptr += boneMatrixPairSRVIndex_ * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    for (uint32 slot = 0; slot < MAX_SKINNED_OBJECTS; ++slot) {
+        D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+        srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+        srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        srvDesc.Buffer.FirstElement = slot * MAX_BONES;  // 各スロットのオフセット
+        srvDesc.Buffer.NumElements = MAX_BONES;
+        srvDesc.Buffer.StructureByteStride = sizeof(BoneMatrixPair);
+        
+        auto cpuHandle = graphics_->GetSRVHeap()->GetCPUDescriptorHandleForHeapStart();
+        cpuHandle.ptr += (boneMatrixPairSRVBaseIndex_ + slot) * descriptorSize;
+        
+        device->CreateShaderResourceView(boneMatrixPairBuffer_.Get(), &srvDesc, cpuHandle);
+        
+        boneMatrixPairSRVs_[slot] = graphics_->GetSRVHeap()->GetGPUDescriptorHandleForHeapStart();
+        boneMatrixPairSRVs_[slot].ptr += (boneMatrixPairSRVBaseIndex_ + slot) * descriptorSize;
+    }
 }
 
 } // namespace UnoEngine

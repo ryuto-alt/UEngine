@@ -42,12 +42,50 @@ void GameScene::OnLoad() {
             SetupLighting();
             SetupAnimatedCharacter();
         } else {
-            // ロード成功時はplayerとanimatedCharacterのポインタを更新
+            // ロード成功時はモデルを再ロードしてポインタを更新
+            auto* app = static_cast<GameApplication*>(GetApplication());
+            auto* resourceManager = app->GetResourceManager();
+
+            // 各モデルを個別にロード（複数モデルを1つのアップロードコンテキストで処理すると描画バグが発生）
             for (auto& obj : GetGameObjects()) {
                 if (obj->GetName() == "Player") {
                     player_ = obj.get();
-                } else if (obj->GetComponent<SkinnedMeshRenderer>()) {
-                    animatedCharacter_ = obj.get();
+                }
+
+                // SkinnedMeshRendererを持つオブジェクトのモデルを再ロード
+                auto* renderer = obj->GetComponent<SkinnedMeshRenderer>();
+                if (renderer) {
+                    std::string modelPath = renderer->GetModelPath();
+                    if (!modelPath.empty()) {
+                        // このモデル専用のアップロードコンテキスト
+                        resourceManager->BeginUpload();
+
+                        auto* modelData = resourceManager->LoadSkinnedModel(modelPath);
+
+                        resourceManager->EndUpload();
+
+                        if (modelData) {
+                            renderer->SetModel(modelData);
+
+                            // Animatorを再初期化
+                            auto* animator = obj->GetComponent<AnimatorComponent>();
+                            if (!animator) {
+                                animator = obj->AddComponent<AnimatorComponent>();
+                            }
+
+                            if (modelData->skeleton) {
+                                animator->Initialize(modelData->skeleton, modelData->animations);
+                                if (!modelData->animations.empty()) {
+                                    animator->Play(modelData->animations[0]->GetName(), true);
+                                }
+                            }
+
+                            animatedCharacter_ = obj.get();
+                            Logger::Info("[シーン] モデル再ロード完了: {}", modelPath);
+                        } else {
+                            Logger::Warning("[シーン] モデル再ロード失敗: {}", modelPath);
+                        }
+                    }
                 }
             }
         }
@@ -63,9 +101,15 @@ void GameScene::OnLoad() {
     auto* app = static_cast<GameApplication*>(GetApplication());
     editorUI_.Initialize(app->GetGraphicsDevice());
     editorUI_.SetGameObjects(&GetGameObjects());
+    editorUI_.SetResourceManager(app->GetResourceManager());
+    editorUI_.SetScene(this);
     if (sceneFileExists) {
         editorUI_.AddConsoleMessage("[シーン] 保存されたシーンをロード: " + sceneFilePath);
     }
+
+    // D&Dでキューに入れられたモデルを読み込む
+    editorUI_.ProcessPendingLoads();
+
     editorUI_.AddConsoleMessage("[シーン] GameScene 読み込み完了");
 #endif
 
@@ -152,11 +196,17 @@ void GameScene::SetupAnimatedCharacter() {
 }
 
 void GameScene::OnUpdate(float deltaTime) {
+#ifdef _DEBUG
+    auto* app = static_cast<GameApplication*>(GetApplication());
+
+    // D&Dでキューに入れられたモデルを即座にロード
+    editorUI_.ProcessPendingLoads();
+#endif
+
     // Call base class OnUpdate (processes Start() and updates GameObjects)
     Scene::OnUpdate(deltaTime);
 
 #ifdef _DEBUG
-    auto* app = static_cast<GameApplication*>(GetApplication());
     uint32 gameW, gameH, sceneW, sceneH;
     editorUI_.GetDesiredViewportSizes(gameW, gameH, sceneW, sceneH);
     editorUI_.GetGameViewTexture()->Resize(app->GetGraphicsDevice(), gameW, gameH);

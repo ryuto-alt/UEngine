@@ -4,63 +4,7 @@
             "active": true,
             "components": [],
             "layer": 1,
-            "name": "Player",
-            "transform": {
-                "position": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "rotation": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    1.0
-                ],
-                "scale": [
-                    1.0,
-                    1.0,
-                    1.0
-                ]
-            }
-        },
-        {
-            "active": true,
-            "components": [],
-            "layer": 1,
             "name": "DirectionalLight",
-            "transform": {
-                "position": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "rotation": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    1.0
-                ],
-                "scale": [
-                    1.0,
-                    1.0,
-                    1.0
-                ]
-            }
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "modelPath": "",
-                    "type": "SkinnedMeshRenderer"
-                },
-                {
-                    "type": "AnimatorComponent"
-                }
-            ],
-            "layer": 1,
-            "name": "walk",
             "transform": {
                 "position": [
                     0.0,

@@ -116,6 +116,15 @@ public:
     // GameObjectsリストへの参照を設定（保存/ロード用）
     void SetGameObjects(std::vector<UniquePtr<GameObject>>* gameObjects) { gameObjects_ = gameObjects; }
 
+    // ResourceManagerへの参照を設定（モデル読み込み用）
+    void SetResourceManager(class ResourceManager* resourceManager) { resourceManager_ = resourceManager; }
+
+    // Sceneへの参照を設定（Start呼び出し用）
+    void SetScene(class Scene* scene) { scene_ = scene; }
+
+    // 遅延ロード処理（D&Dしたモデルをロード）
+    void ProcessPendingLoads();
+
 private:
     // 各パネルの描画メソッド
     void RenderDockSpace();
@@ -197,6 +206,23 @@ private:
 
     // GameObjectsリスト（保存/ロード用）
     std::vector<UniquePtr<GameObject>>* gameObjects_ = nullptr;
+
+    // ResourceManager（モデル読み込み用）
+    class ResourceManager* resourceManager_ = nullptr;
+
+    // Scene（Start呼び出し用）
+    class Scene* scene_ = nullptr;
+
+    // モデルパスキャッシュ（D&D用）
+    std::vector<std::string> cachedModelPaths_;
+    void RefreshModelPaths();
+
+    // 遅延ロード用キュー
+    std::vector<std::string> pendingModelLoads_;
+
+    // D&D処理用ヘルパー
+    void HandleModelDragDrop(const std::string& modelPath);
+    void HandleModelDragDropByIndex(size_t modelIndex);
 };
 
 } // namespace UnoEngine

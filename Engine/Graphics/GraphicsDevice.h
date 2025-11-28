@@ -65,6 +65,7 @@ private:
 
     // コマンドリスト
     ComPtr<ID3D12CommandAllocator> commandAllocators_[BACK_BUFFER_COUNT];
+    ComPtr<ID3D12CommandAllocator> uploadCommandAllocator_;  // リソースアップロード専用
     ComPtr<ID3D12GraphicsCommandList> commandList_;
 
     // レンダーターゲット

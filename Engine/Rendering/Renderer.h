@@ -4,6 +4,7 @@
 #include "../Graphics/Pipeline.h"
 #include "../Graphics/SkinnedPipeline.h"
 #include "../Graphics/ConstantBuffer.h"
+#include "../Graphics/DynamicConstantBuffer.h"
 #include "RenderItem.h"
 #include "SkinnedRenderItem.h"
 #include "RenderView.h"
@@ -79,15 +80,22 @@ private:
     Pipeline pipeline_;
     SkinnedPipeline skinnedPipeline_;
 
+    // スキンメッシュ用のダイナミックバッファ（フレーム内で複数回更新可能）
+    DynamicConstantBuffer<TransformCB> skinnedTransformBuffer_;
+    DynamicConstantBuffer<MaterialCB> skinnedMaterialBuffer_;
+    
+    // 通常メッシュ用（互換性のため保持）
     ConstantBuffer<TransformCB> constantBuffer_;
     ConstantBuffer<LightCB> lightBuffer_;
     ConstantBuffer<MaterialCB> materialBuffer_;
     ConstantBuffer<BoneMatricesCB> boneBuffer_;
     
-    // StructuredBuffer for bone matrices
+    // StructuredBuffer for bone matrices（複数モデル対応のリングバッファ）
+    static constexpr uint32 MAX_SKINNED_OBJECTS = 16;  // 1フレームで描画可能な最大スキンモデル数
     ComPtr<ID3D12Resource> boneMatrixPairBuffer_;
-    D3D12_GPU_DESCRIPTOR_HANDLE boneMatrixPairSRV_;
-    uint32 boneMatrixPairSRVIndex_ = 0;
+    D3D12_GPU_DESCRIPTOR_HANDLE boneMatrixPairSRVs_[MAX_SKINNED_OBJECTS];  // 各スロット用のSRV
+    uint32 boneMatrixPairSRVBaseIndex_ = 0;
+    uint32 currentBoneSlot_ = 0;  // 現在使用中のスロット
 
     UniquePtr<ImGuiManager> imguiManager_;
     UniquePtr<DebugRenderer> debugRenderer_;

@@ -52,6 +52,9 @@ void Animator::SetSkeleton(std::shared_ptr<Skeleton> skeleton) {
             currentLocalTransforms_[i] = bones[i].localBindPose;
             nextLocalTransforms_[i] = bones[i].localBindPose;
         }
+
+        // BoneMatrixPairsもバインドポーズで初期化（アニメーション再生前の描画で爆発しないように）
+        skeleton_->ComputeBoneMatricesWithInverseTranspose(currentLocalTransforms_, finalBoneMatrixPairs_);
     }
 }
 

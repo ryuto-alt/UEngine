@@ -14,7 +14,8 @@ public:
     VertexBuffer& operator=(VertexBuffer&&) = default;
 
     // 作成
-    void Create(ID3D12Device* device, const void* data, uint32 size, uint32 stride);
+    void Create(ID3D12Device* device, ID3D12GraphicsCommandList* commandList,
+                const void* data, uint32 size, uint32 stride);
 
     // アクセサ
     D3D12_VERTEX_BUFFER_VIEW GetView() const { return view_; }
@@ -22,6 +23,7 @@ public:
 
 private:
     ComPtr<ID3D12Resource> buffer_;
+    ComPtr<ID3D12Resource> uploadBuffer_;  // アップロード用の中間バッファ
     D3D12_VERTEX_BUFFER_VIEW view_ = {};
     uint32 vertexCount_ = 0;
 };

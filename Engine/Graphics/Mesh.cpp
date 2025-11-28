@@ -13,7 +13,7 @@ void Mesh::Create(ID3D12Device* device, ID3D12GraphicsCommandList* commandList,
 
     name_ = name;
 
-    vertexBuffer_.Create(device, vertices.data(),
+    vertexBuffer_.Create(device, commandList, vertices.data(),
                         static_cast<uint32>(vertices.size() * sizeof(Vertex)),
                         sizeof(Vertex));
 

@@ -38,6 +38,9 @@ public:
     
     void SetInputManager(InputManager* input) { input_ = input; }
 
+    // Call Start() on a specific GameObject's components (useful for runtime-created objects)
+    void StartGameObject(GameObject* obj);
+
 protected:
     InputManager* input_ = nullptr;
 

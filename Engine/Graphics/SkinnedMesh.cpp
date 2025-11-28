@@ -10,7 +10,7 @@ void SkinnedMesh::Create(ID3D12Device* device, ID3D12GraphicsCommandList* comman
                          const std::string& name) {
     name_ = name;
 
-    vertexBuffer_.Create(device, vertices.data(),
+    vertexBuffer_.Create(device, commandList, vertices.data(),
                         static_cast<uint32>(vertices.size() * sizeof(SkinnedVertex)),
                         sizeof(SkinnedVertex));
     indexBuffer_.Create(device, commandList, indices.data(),

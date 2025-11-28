@@ -42,6 +42,10 @@ public:
     ID3D12DescriptorHeap* GetDSVHeap() const { return dsvHeap_.Get(); }
     ID3D12DescriptorHeap* GetSRVHeap() const { return srvHeap_.Get(); }
     void CreateSRV(ID3D12Resource* resource, uint32 index);
+    
+    // SRVインデックス自動割り当て（テクスチャ等に使用）
+    uint32 AllocateSRVIndex();
+    uint32 GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type) const;
 
 private:
     void EnableDebugLayer();
@@ -81,6 +85,7 @@ private:
     ComPtr<ID3D12DescriptorHeap> srvHeap_;
     uint32 srvDescriptorSize_ = 0;
     static constexpr uint32 MAX_SRV_COUNT = 4096;
+    uint32 nextSRVIndex_ = 0;  // 次に割り当てるSRVインデックス
 
     // 同期オブジェクト
     ComPtr<ID3D12Fence> fence_;

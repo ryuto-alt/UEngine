@@ -269,6 +269,17 @@ void GraphicsDevice::CreateSRV(ID3D12Resource* resource, uint32 index) {
     device_->CreateShaderResourceView(resource, &srvDesc, handle);
 }
 
+uint32 GraphicsDevice::AllocateSRVIndex() {
+    if (nextSRVIndex_ >= MAX_SRV_COUNT - 100) {  // 100個は予約領域（ボーン行列等）
+        throw std::runtime_error("SRV heap exhausted");
+    }
+    return nextSRVIndex_++;
+}
+
+uint32 GraphicsDevice::GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type) const {
+    return device_->GetDescriptorHandleIncrementSize(type);
+}
+
 void GraphicsDevice::CreateFence() {
     ThrowIfFailed(
         device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence_)),

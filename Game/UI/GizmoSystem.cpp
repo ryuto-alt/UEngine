@@ -21,11 +21,17 @@ bool GizmoSystem::RenderGizmo(GameObject* selectedObject, Camera* camera,
         return false;
     }
 
+    // 毎フレーム必ず呼び出す（前フレームの状態をクリア）
+    ImGuizmo::BeginFrame();
+
     // ギズモの描画領域を設定
     ImGuizmo::SetDrawlist();
     ImGuizmo::SetRect(viewportX, viewportY, viewportWidth, viewportHeight);
     ImGuizmo::SetOrthographic(false);
     ImGuizmo::Enable(true);
+
+    // 軸の感度を上げる（特にカメラ正面に近い軸の反応を良くする）
+    ImGuizmo::AllowAxisFlip(true);
 
     // ギズモのサイズを大きく設定
     ImGuizmo::SetGizmoSizeClipSpace(0.25f);

@@ -22,6 +22,15 @@ void DebugRenderer::Initialize(GraphicsDevice* graphics) {
     // 定数バッファ作成
     transformBuffer_.Create(device);
 
+    // グリッドシェーダーとパイプライン
+    Shader gridVS, gridPS;
+    gridVS.CompileFromFile(L"Shaders/InfiniteGridVS.hlsl", ShaderStage::Vertex);
+    gridPS.CompileFromFile(L"Shaders/InfiniteGridPS.hlsl", ShaderStage::Pixel);
+
+    gridPipeline_ = MakeUnique<InfiniteGridPipeline>();
+    gridPipeline_->Initialize(device, gridVS, gridPS);
+    gridConstantsBuffer_.Create(device);
+
     // 動的頂点バッファ作成
     CreateDynamicVertexBuffer(device);
 
@@ -240,6 +249,31 @@ void DebugRenderer::Render(
 
     // 描画
     cmdList->DrawInstanced(static_cast<uint32>(vertices_.size()), 1, 0, 0);
+}
+
+void DebugRenderer::RenderGrid(
+    ID3D12GraphicsCommandList* cmdList,
+    const Matrix4x4& viewMatrix,
+    const Matrix4x4& projectionMatrix,
+    const Vector3& cameraPos
+) {
+    if (!showGrid_) return;
+
+    Matrix4x4 vp = viewMatrix * projectionMatrix;
+    Matrix4x4 invVP = vp.Inverse();
+
+    GridConstantsCB cb;
+    cb.invViewProj = invVP.Transpose();
+    cb.cameraPos = cameraPos;
+    cb.gridHeight = gridHeight_;
+    cb.viewProj = vp.Transpose();
+    gridConstantsBuffer_.Update(cb);
+
+    cmdList->SetPipelineState(gridPipeline_->GetPipelineState());
+    cmdList->SetGraphicsRootSignature(gridPipeline_->GetRootSignature());
+    cmdList->SetGraphicsRootConstantBufferView(0, gridConstantsBuffer_.GetGPUAddress());
+    cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+    cmdList->DrawInstanced(4, 1, 0, 0);
 }
 
 } // namespace UnoEngine

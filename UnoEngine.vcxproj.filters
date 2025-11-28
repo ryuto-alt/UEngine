@@ -230,6 +230,48 @@
     <ClCompile Include="Engine\Systems\SystemManager.cpp">
       <Filter>Engine\Systems</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\UI\imgui_toggle.cpp">
+      <Filter>Engine\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\UI\imgui_toggle_math.cpp">
+      <Filter>Engine\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\UI\imgui_toggle_palette.cpp">
+      <Filter>Engine\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\UI\imgui_toggle_presets.cpp">
+      <Filter>Engine\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\UI\imgui_toggle_renderer.cpp">
+      <Filter>Engine\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\DebugLinePipeline.cpp">
+      <Filter>Engine\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\InfiniteGridPipeline.cpp">
+      <Filter>Engine\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Rendering\DebugRenderer.cpp">
+      <Filter>Engine\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\Scenes\GameScene.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\UI\EditorUI.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\UI\EditorCamera.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\GameApplication.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\UI\GizmoSystem.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\Components\Player.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Core\Application.h">
@@ -454,6 +496,48 @@
     <ClInclude Include="Engine\Systems\SystemManager.h">
       <Filter>Engine\Systems</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\UI\imgui_toggle.h">
+      <Filter>Engine\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\UI\imgui_toggle_math.h">
+      <Filter>Engine\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\UI\imgui_toggle_palette.h">
+      <Filter>Engine\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\UI\imgui_toggle_presets.h">
+      <Filter>Engine\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\UI\imgui_toggle_renderer.h">
+      <Filter>Engine\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\DebugLinePipeline.h">
+      <Filter>Engine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\InfiniteGridPipeline.h">
+      <Filter>Engine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Rendering\DebugRenderer.h">
+      <Filter>Engine\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\Scenes\GameScene.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\UI\EditorUI.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\UI\EditorCamera.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\GameApplication.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\UI\GizmoSystem.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\Components\Player.h">
+      <Filter>Game</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -481,6 +565,18 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\SkinnedPS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\DebugLineVS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\DebugLinePS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\InfiniteGridVS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\InfiniteGridPS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

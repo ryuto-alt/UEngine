@@ -213,6 +213,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClCompile Include="Engine\Graphics\SkinnedMesh.cpp" />
     <ClCompile Include="Engine\Graphics\SkinnedPipeline.cpp" />
     <ClCompile Include="Engine\Graphics\DebugLinePipeline.cpp" />
+    <ClCompile Include="Engine\Graphics\InfiniteGridPipeline.cpp" />
     <ClCompile Include="Engine\Rendering\DebugRenderer.cpp" />
     <ClCompile Include="Engine\Resource\SkinnedModelImporter.cpp" />
     <ClCompile Include="Engine\Resource\ResourceManager.cpp" />
@@ -286,6 +287,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClInclude Include="Engine\Graphics\SkinnedMesh.h" />
     <ClInclude Include="Engine\Graphics\SkinnedPipeline.h" />
     <ClInclude Include="Engine\Graphics\DebugLinePipeline.h" />
+    <ClInclude Include="Engine\Graphics\InfiniteGridPipeline.h" />
     <ClInclude Include="Engine\Rendering\DebugRenderer.h" />
     <ClInclude Include="Engine\Graphics\SkinnedVertex.h" />
     <ClInclude Include="Engine\Resource\SkinnedModelImporter.h" />
@@ -349,6 +351,18 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
       <AdditionalOptions>/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
     </FxCompile>
     <FxCompile Include="Shaders\SkinnedPS.hlsl">
+      <ShaderType>Pixel</ShaderType>
+      <ShaderModel>6.5</ShaderModel>
+      <EntryPointName>main</EntryPointName>
+      <AdditionalOptions>/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
+    </FxCompile>
+    <FxCompile Include="Shaders\InfiniteGridVS.hlsl">
+      <ShaderType>Vertex</ShaderType>
+      <ShaderModel>6.5</ShaderModel>
+      <EntryPointName>main</EntryPointName>
+      <AdditionalOptions>/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
+    </FxCompile>
+    <FxCompile Include="Shaders\InfiniteGridPS.hlsl">
       <ShaderType>Pixel</ShaderType>
       <ShaderModel>6.5</ShaderModel>
       <EntryPointName>main</EntryPointName>

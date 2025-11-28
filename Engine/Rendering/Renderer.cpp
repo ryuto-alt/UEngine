@@ -193,6 +193,16 @@ void Renderer::DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_
     cmdList->RSSetViewports(1, &viewport);
     cmdList->RSSetScissorRects(1, &scissorRect);
 
+    // グリッド描画（最初に描画）
+    if (enableDebugDraw && debugRenderer_) {
+        debugRenderer_->RenderGrid(
+            cmdList,
+            view.camera->GetViewMatrix(),
+            view.camera->GetProjectionMatrix(),
+            view.camera->GetPosition()
+        );
+    }
+
     // Render scene
     UpdateLighting(view, lightManager);
     RenderMeshes(view, items);

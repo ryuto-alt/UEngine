@@ -72,7 +72,7 @@ private:
     Camera* camera_ = nullptr;
 
     // 設定
-    float moveSpeed_ = 5.0f;
+    float moveSpeed_ = 25.0f;
     float rotateSpeed_ = 1.4f;
     float scrollSpeed_ = 1.0f;
 

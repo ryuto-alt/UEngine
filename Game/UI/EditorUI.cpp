@@ -65,8 +65,7 @@ namespace UnoEngine {
 		// エディタカメラの更新（Edit/Pauseモードのみ）
 		if (editorMode_ != EditorMode::Play) {
 			float deltaTime = ImGui::GetIO().DeltaTime;
-			// オブジェクト選択中はWASD移動を無効化
-			editorCamera_.SetMovementEnabled(selectedObject_ == nullptr);
+			editorCamera_.SetMovementEnabled(true);
 			editorCamera_.Update(deltaTime);
 		}
 

@@ -43,8 +43,14 @@ void Animator::SetSkeleton(std::shared_ptr<Skeleton> skeleton) {
         currentLocalTransforms_.resize(boneCount);
         nextLocalTransforms_.resize(boneCount);
 
+        // バインドポーズを初期状態として設定（アニメーション前のレンダリングで倒れないように）
+        skeleton_->ComputeBindPoseMatrices(finalBoneMatrices_);
+
+        // ローカル変換もバインドポーズで初期化
+        const auto& bones = skeleton_->GetBones();
         for (uint32 i = 0; i < boneCount; ++i) {
-            finalBoneMatrices_[i] = Matrix4x4::Identity();
+            currentLocalTransforms_[i] = bones[i].localBindPose;
+            nextLocalTransforms_[i] = bones[i].localBindPose;
         }
     }
 }
@@ -94,6 +100,9 @@ void Animator::Play(const std::string& stateName, float transitionDuration) {
         currentState_ = state;
         isPlaying_ = true;
         isTransitioning_ = false;
+
+        // 初期フレームを即座に適用（最初のレンダリング前に正しいポーズにする）
+        UpdateBoneMatrices();
     }
 }
 

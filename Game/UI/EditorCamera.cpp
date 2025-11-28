@@ -141,9 +141,6 @@ void EditorCamera::HandleFreeCameraMovement(float deltaTime) {
     // Scene Viewがホバーされていない場合はWASD移動を無効化
     if (!viewportHovered_) return;
 
-    float speed = moveSpeed_;
-    if (io.KeyShift) speed *= 2.0f;
-
     // カメラの実際の向きから移動方向を計算（FPSスタイル）
     Vector3 camForward = camera_->GetForward();
 
@@ -164,8 +161,10 @@ void EditorCamera::HandleFreeCameraMovement(float deltaTime) {
     if (ImGui::IsKeyDown(ImGuiKey_S)) movement = movement - forward;
     if (ImGui::IsKeyDown(ImGuiKey_A)) movement = movement - right;
     if (ImGui::IsKeyDown(ImGuiKey_D)) movement = movement + right;
-    if (ImGui::IsKeyDown(ImGuiKey_E) || ImGui::IsKeyDown(ImGuiKey_Space)) movement = movement + Vector3::UnitY();
-    if (ImGui::IsKeyDown(ImGuiKey_Q) || ImGui::IsKeyDown(ImGuiKey_LeftCtrl)) movement = movement - Vector3::UnitY();
+    if (ImGui::IsKeyDown(ImGuiKey_Space)) movement = movement + Vector3::UnitY();
+    if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl)) movement = movement - Vector3::UnitY();
+
+    float speed = moveSpeed_;
 
     if (movement.Length() > 0.001f) {
         // WASD移動時はオービットモードを解除してフリーカメラに戻る

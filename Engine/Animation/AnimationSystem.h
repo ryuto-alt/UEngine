@@ -19,10 +19,14 @@ public:
     bool IsPlaying() const { return isPlaying_; }
 
 private:
-    bool isPlaying_ = true;  // 初期は再生状態（0.1秒後にオフ）
+#ifdef _DEBUG
+    bool isPlaying_ = true;  // Debug: 初期再生（0.1秒後にオフ）
     float elapsedTime_ = 0.0f;
     bool autoStopTriggered_ = false;
     static constexpr float AUTO_STOP_TIME = 0.1f;
+#else
+    bool isPlaying_ = true;  // Release: 常に再生
+#endif
 };
 
 } // namespace UnoEngine

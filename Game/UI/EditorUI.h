@@ -129,7 +129,11 @@ private:
     bool showGameView_ = true;
 
     // Play/Edit モード
-    EditorMode editorMode_ = EditorMode::Edit;
+#ifdef NDEBUG
+    EditorMode editorMode_ = EditorMode::Play;  // Releaseでは自動再生
+#else
+    EditorMode editorMode_ = EditorMode::Edit;  // Debugでは編集モード
+#endif
     bool stepFrame_ = false;  // 1フレームだけ進める
 
     // パネル表示状態

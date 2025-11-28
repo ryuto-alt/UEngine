@@ -104,7 +104,11 @@ private:
     std::vector<DebugLineVertex> vertices_;
 
     // 設定
-    bool showBones_ = true;
+#ifdef NDEBUG
+    bool showBones_ = false;  // Releaseでは非表示
+#else
+    bool showBones_ = true;   // Debugでは表示
+#endif
     Vector4 boneColor_ = Vector4(0.0f, 1.0f, 0.0f, 1.0f);   // 緑
     Vector4 jointColor_ = Vector4(1.0f, 1.0f, 0.0f, 1.0f);  // 黄
     bool showGrid_ = true;

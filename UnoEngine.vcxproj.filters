@@ -128,9 +128,6 @@
     <ClCompile Include="Engine\Graphics\Mesh.cpp">
       <Filter>Engine\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\ObjLoader.cpp">
-      <Filter>Engine\Resource</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Graphics\Material.cpp">
       <Filter>Engine\Graphics</Filter>
     </ClCompile>
@@ -233,9 +230,6 @@
     <ClCompile Include="Engine\UI\imgui_toggle.cpp">
       <Filter>Engine\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\UI\imgui_toggle_math.cpp">
-      <Filter>Engine\UI</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\UI\imgui_toggle_palette.cpp">
       <Filter>Engine\UI</Filter>
     </ClCompile>
@@ -269,8 +263,8 @@
     <ClCompile Include="Game\UI\GizmoSystem.cpp">
       <Filter>Game</Filter>
     </ClCompile>
-    <ClCompile Include="Game\Components\Player.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="Engine\Resource\ModelImporter.cpp">
+      <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -363,9 +357,6 @@
     </ClInclude>
     <ClInclude Include="Engine\Graphics\Mesh.h">
       <Filter>Engine\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Resource\ObjLoader.h">
-      <Filter>Engine\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\Material.h">
       <Filter>Engine\Graphics</Filter>
@@ -496,21 +487,6 @@
     <ClInclude Include="Engine\Systems\SystemManager.h">
       <Filter>Engine\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\UI\imgui_toggle.h">
-      <Filter>Engine\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\UI\imgui_toggle_math.h">
-      <Filter>Engine\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\UI\imgui_toggle_palette.h">
-      <Filter>Engine\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\UI\imgui_toggle_presets.h">
-      <Filter>Engine\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\UI\imgui_toggle_renderer.h">
-      <Filter>Engine\UI</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Graphics\DebugLinePipeline.h">
       <Filter>Engine\Graphics</Filter>
     </ClInclude>
@@ -537,6 +513,9 @@
     </ClInclude>
     <ClInclude Include="Game\Components\Player.h">
       <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Resource\ModelImporter.h">
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -565,12 +544,6 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\SkinnedPS.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\DebugLineVS.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\DebugLinePS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\InfiniteGridVS.hlsl">

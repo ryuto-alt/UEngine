@@ -55,8 +55,8 @@ namespace UnoEngine {
 		RenderDockSpace();
 		RenderSceneView();
 		RenderGameView();
-		RenderInspector(context);
 		RenderHierarchy(context);
+		RenderInspector(context);
 		RenderStats(context);
 		RenderConsole();
 		RenderProject(context);
@@ -269,8 +269,9 @@ namespace UnoEngine {
 
 			// パネルをドックに配置
 			// 左上: Hierarchy, Inspector, Stats, Profiler（タブ）
-			ImGui::DockBuilderDockWindow("Hierarchy", dock_left);
+			// 注意: 最後にDockしたウィンドウがアクティブタブになる
 			ImGui::DockBuilderDockWindow("Inspector", dock_left);
+			ImGui::DockBuilderDockWindow("Hierarchy", dock_left);
 			ImGui::DockBuilderDockWindow("Stats", dock_left);
 			ImGui::DockBuilderDockWindow("Profiler", dock_left);
 

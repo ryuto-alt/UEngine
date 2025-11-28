@@ -46,7 +46,8 @@ public:
     bool IsControlling() const { return isControlling_; }
 
     // オブジェクトにフォーカス（オービットの中心を設定）
-    void FocusOn(const Vector3& targetPosition, float distance = 5.0f);
+    // resetAngle: trueで斜め上からの角度にリセット、falseで現在の角度を維持
+    void FocusOn(const Vector3& targetPosition, float distance = 5.0f, bool resetAngle = false);
 
     // オービットターゲット設定
     void SetOrbitTarget(const Vector3& target) { orbitTarget_ = target; hasOrbitTarget_ = true; }

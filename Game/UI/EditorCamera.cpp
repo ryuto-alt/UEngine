@@ -220,22 +220,25 @@ void EditorCamera::HandleScrollZoom(float deltaTime) {
     }
 }
 
-void EditorCamera::FocusOn(const Vector3& targetPosition, float distance) {
+void EditorCamera::FocusOn(const Vector3& targetPosition, float distance, bool resetAngle) {
     if (!camera_) return;
 
     orbitTarget_ = targetPosition;
     orbitDistance_ = distance;
     hasOrbitTarget_ = true;
 
-    // 現在のカメラからターゲットへの角度を計算
+    // 現在のカメラからターゲットへの角度を計算（既存の角度を維持）
     Vector3 toCamera = camera_->GetPosition() - targetPosition;
-    if (toCamera.Length() < 0.1f) {
-        toCamera = Vector3(0.0f, 1.0f, 3.0f);
+    if (toCamera.Length() < 0.1f || resetAngle) {
+        // カメラが近すぎる場合やリセット指定時は斜め上からの角度を設定
+        orbitPitch_ = 0.5f;   // 約30度上から見下ろす
+        orbitYaw_ = 0.78f;    // 約45度右から
+    } else {
+        // 現在の角度を維持
+        Vector3 dir = toCamera.Normalize();
+        orbitYaw_ = std::atan2(dir.GetX(), dir.GetZ());
+        orbitPitch_ = std::asin(dir.GetY());
     }
-
-    Vector3 dir = toCamera.Normalize();
-    orbitYaw_ = std::atan2(dir.GetX(), dir.GetZ());
-    orbitPitch_ = std::asin(dir.GetY());
 
     // カメラ位置を設定
     float x = orbitDistance_ * std::cos(orbitPitch_) * std::sin(orbitYaw_);

@@ -223,6 +223,12 @@ private:
     // D&D処理用ヘルパー
     void HandleModelDragDrop(const std::string& modelPath);
     void HandleModelDragDropByIndex(size_t modelIndex);
+
+    // オブジェクトにカメラをフォーカス（バウンディングボックスから距離を自動計算）
+    void FocusOnObject(GameObject* obj);
+
+    // 新規オブジェクトにカメラをフォーカス（角度もリセット）
+    void FocusOnNewObject(GameObject* obj);
 };
 
 } // namespace UnoEngine

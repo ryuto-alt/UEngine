@@ -6,12 +6,16 @@
 #include "../../Engine/Rendering/SkinnedMeshRenderer.h"
 #include "../../Engine/Animation/AnimatorComponent.h"
 #include "../../Engine/Resource/ResourceManager.h"
+#include "../../Engine/Resource/SkinnedModelImporter.h"
 #include "../../Engine/Graphics/DirectionalLightComponent.h"
+#include "../../Engine/Math/BoundingVolume.h"
 #include <imgui.h>
 #include <imgui_internal.h>
 #include "../../Engine/UI/imgui_toggle.h"
 #include "../../Engine/UI/imgui_toggle_presets.h"
 #include "ImGuizmo.h"
+#include <algorithm>
+#include <cmath>
 
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -502,22 +506,14 @@ namespace UnoEngine {
 				// クリックで選択
 				if (ImGui::IsItemClicked()) {
 					selectedObject_ = obj;
-					// 選択したオブジェクトにカメラをフォーカス（ワールド行列から位置を取得）
-					Matrix4x4 worldMatrix = obj->GetTransform().GetWorldMatrix();
-					float m[16];
-					worldMatrix.ToFloatArray(m);
-					Vector3 targetPos(m[12], m[13], m[14]);
-					editorCamera_.FocusOn(targetPos, 5.0f);
+					// 選択したオブジェクトにカメラをフォーカス（バウンディングボックスから距離を自動計算）
+					FocusOnObject(obj);
 				}
-				
+
 				// 右クリックメニュー
 				if (ImGui::BeginPopupContextItem()) {
 					if (ImGui::MenuItem("Focus")) {
-						Matrix4x4 worldMatrix = obj->GetTransform().GetWorldMatrix();
-						float m[16];
-						worldMatrix.ToFloatArray(m);
-						Vector3 targetPos(m[12], m[13], m[14]);
-						editorCamera_.FocusOn(targetPos, 5.0f);
+						FocusOnObject(obj);
 					}
 					if (ImGui::MenuItem("Delete", "DEL")) {
 						// 削除対象としてマーク（ループ中に直接削除すると問題があるため）
@@ -1078,11 +1074,115 @@ namespace UnoEngine {
 				scene_->StartGameObject(selectedObject_);
 			}
 
+			// カメラをモデルにフォーカス（新規追加なので角度もリセット）
+			FocusOnNewObject(selectedObject_);
+
 			consoleMessages_.push_back("[Editor] Created object: " + modelName);
 	}
 
 	// キューをクリア
 		pendingModelLoads_.clear();
+	}
+
+	// オブジェクトにカメラをフォーカス（バウンディングボックスから距離を自動計算）
+	void EditorUI::FocusOnObject(GameObject* obj) {
+		if (!obj) return;
+
+		// オブジェクトの位置を取得
+		Matrix4x4 worldMatrix = obj->GetTransform().GetWorldMatrix();
+		float m[16];
+		worldMatrix.ToFloatArray(m);
+		Vector3 targetPos(m[12], m[13], m[14]);
+
+		// デフォルト距離
+		float distance = 5.0f;
+
+		// SkinnedMeshRendererがある場合はバウンディングボックスから距離を計算
+		auto* renderer = obj->GetComponent<SkinnedMeshRenderer>();
+		if (renderer && renderer->GetModelData()) {
+			auto* modelData = renderer->GetModelData();
+			if (!modelData->meshes.empty()) {
+				// 全メッシュのバウンディングボックスを統合
+				Vector3 boundsMin = modelData->meshes[0].GetBoundsMin();
+				Vector3 boundsMax = modelData->meshes[0].GetBoundsMax();
+
+				for (size_t i = 1; i < modelData->meshes.size(); ++i) {
+					Vector3 meshMin = modelData->meshes[i].GetBoundsMin();
+					Vector3 meshMax = modelData->meshes[i].GetBoundsMax();
+					boundsMin.SetX((std::min)(boundsMin.GetX(), meshMin.GetX()));
+					boundsMin.SetY((std::min)(boundsMin.GetY(), meshMin.GetY()));
+					boundsMin.SetZ((std::min)(boundsMin.GetZ(), meshMin.GetZ()));
+					boundsMax.SetX((std::max)(boundsMax.GetX(), meshMax.GetX()));
+					boundsMax.SetY((std::max)(boundsMax.GetY(), meshMax.GetY()));
+					boundsMax.SetZ((std::max)(boundsMax.GetZ(), meshMax.GetZ()));
+				}
+
+				// モデルの中心とサイズを計算
+				Vector3 localCenter = (boundsMin + boundsMax) * 0.5f;
+				Vector3 size = boundsMax - boundsMin;
+				float maxDimension = (std::max)({ size.GetX(), size.GetY(), size.GetZ() });
+
+				// ターゲット位置をモデルの中心に調整
+				targetPos = targetPos + localCenter;
+
+				// カメラ距離を計算（モデル全体が見えるように）
+				distance = maxDimension * 1.5f;
+				distance = (std::max)(distance, 2.0f);  // 最小距離
+			}
+		}
+
+		editorCamera_.FocusOn(targetPos, distance, false);
+	}
+
+	// オブジェクトにカメラをフォーカス（新規追加時用、角度リセット）
+	void EditorUI::FocusOnNewObject(GameObject* obj) {
+		if (!obj) return;
+
+		// オブジェクトの位置を取得
+		Matrix4x4 worldMatrix = obj->GetTransform().GetWorldMatrix();
+		float m[16];
+		worldMatrix.ToFloatArray(m);
+		Vector3 targetPos(m[12], m[13], m[14]);
+
+		// デフォルト距離
+		float distance = 5.0f;
+
+		// SkinnedMeshRendererがある場合はバウンディングボックスから距離を計算
+		auto* renderer = obj->GetComponent<SkinnedMeshRenderer>();
+		if (renderer && renderer->GetModelData()) {
+			auto* modelData = renderer->GetModelData();
+			if (!modelData->meshes.empty()) {
+				// 全メッシュのバウンディングボックスを統合
+				Vector3 boundsMin = modelData->meshes[0].GetBoundsMin();
+				Vector3 boundsMax = modelData->meshes[0].GetBoundsMax();
+
+				for (size_t i = 1; i < modelData->meshes.size(); ++i) {
+					Vector3 meshMin = modelData->meshes[i].GetBoundsMin();
+					Vector3 meshMax = modelData->meshes[i].GetBoundsMax();
+					boundsMin.SetX((std::min)(boundsMin.GetX(), meshMin.GetX()));
+					boundsMin.SetY((std::min)(boundsMin.GetY(), meshMin.GetY()));
+					boundsMin.SetZ((std::min)(boundsMin.GetZ(), meshMin.GetZ()));
+					boundsMax.SetX((std::max)(boundsMax.GetX(), meshMax.GetX()));
+					boundsMax.SetY((std::max)(boundsMax.GetY(), meshMax.GetY()));
+					boundsMax.SetZ((std::max)(boundsMax.GetZ(), meshMax.GetZ()));
+				}
+
+				// モデルの中心とサイズを計算
+				Vector3 localCenter = (boundsMin + boundsMax) * 0.5f;
+				Vector3 size = boundsMax - boundsMin;
+				float maxDimension = (std::max)({ size.GetX(), size.GetY(), size.GetZ() });
+
+				// ターゲット位置をモデルの中心に調整
+				targetPos = targetPos + localCenter;
+
+				// カメラ距離を計算（モデル全体が見えるように）
+				distance = maxDimension * 1.5f;
+				distance = (std::max)(distance, 2.0f);  // 最小距離
+			}
+		}
+
+		// 新規追加時は角度をリセット（斜め上から）
+		editorCamera_.FocusOn(targetPos, distance, true);
 	}
 
 } // namespace UnoEngine

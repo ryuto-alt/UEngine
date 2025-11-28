@@ -47,20 +47,20 @@ bool GizmoSystem::RenderGizmo(GameObject* selectedObject, Camera* camera,
     auto& transform = selectedObject->GetTransform();
     transform.GetWorldMatrix().ToFloatArray(objectMatrix);
 
-    // スナップ値
+    // スナップ値（CTRL押下時またはsnapEnabled時に有効）
     float* snapPtr = nullptr;
     float snapValues[3] = { 0, 0, 0 };
 
-    if (snapEnabled_) {
+    if (snapEnabled_ || io.KeyCtrl) {
         switch (operation_) {
             case GizmoOperation::Translate:
-                snapValues[0] = snapValues[1] = snapValues[2] = translationSnap_;
+                snapValues[0] = snapValues[1] = snapValues[2] = 1.0f;  // 1単位でスナップ
                 break;
             case GizmoOperation::Rotate:
-                snapValues[0] = snapValues[1] = snapValues[2] = rotationSnap_;
+                snapValues[0] = snapValues[1] = snapValues[2] = 15.0f;  // 15度でスナップ
                 break;
             case GizmoOperation::Scale:
-                snapValues[0] = snapValues[1] = snapValues[2] = scaleSnap_;
+                snapValues[0] = snapValues[1] = snapValues[2] = 1.0f;  // 1.0倍でスナップ
                 break;
         }
         snapPtr = snapValues;

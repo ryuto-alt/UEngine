@@ -735,8 +735,8 @@ void EditorUI::ProcessHotkeys() {
         }
     }
 
-    // Shift+Z: Undo（ギズモ操作を元に戻す）
-    if (io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_Z, false)) {
+    // Ctrl+Z: Undo（ギズモ操作を元に戻す）
+    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Z, false)) {
         PerformUndo();
     }
 }

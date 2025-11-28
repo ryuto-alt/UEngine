@@ -162,7 +162,7 @@ void EditorCamera::HandleFreeCameraMovement(float deltaTime) {
     if (ImGui::IsKeyDown(ImGuiKey_A)) movement = movement - right;
     if (ImGui::IsKeyDown(ImGuiKey_D)) movement = movement + right;
     if (ImGui::IsKeyDown(ImGuiKey_Space)) movement = movement + Vector3::UnitY();
-    if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl)) movement = movement - Vector3::UnitY();
+    if (ImGui::IsKeyDown(ImGuiKey_LeftShift)) movement = movement - Vector3::UnitY();
 
     float speed = moveSpeed_;
 

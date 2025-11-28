@@ -320,7 +320,17 @@ void EditorUI::RenderSceneView() {
 
         // ギズモ描画（Edit/Pauseモードかつオブジェクトが選択されている場合）
         if (editorMode_ != EditorMode::Play && selectedObject_ && editorCamera_.GetCamera()) {
-            gizmoSystem_.RenderGizmo(
+            // ギズモ操作開始時にスナップショットを保存
+            if (gizmoSystem_.IsUsing() && !isGizmoActive_) {
+                isGizmoActive_ = true;
+                auto& transform = selectedObject_->GetTransform();
+                preGizmoSnapshot_.targetObject = selectedObject_;
+                preGizmoSnapshot_.position = transform.GetLocalPosition();
+                preGizmoSnapshot_.rotation = transform.GetLocalRotation();
+                preGizmoSnapshot_.scale = transform.GetLocalScale();
+            }
+
+            bool manipulated = gizmoSystem_.RenderGizmo(
                 selectedObject_,
                 editorCamera_.GetCamera(),
                 sceneViewPosX_,
@@ -328,6 +338,12 @@ void EditorUI::RenderSceneView() {
                 sceneViewSizeX_,
                 sceneViewSizeY_
             );
+
+            // ギズモ操作終了時に履歴に追加
+            if (!gizmoSystem_.IsUsing() && isGizmoActive_) {
+                isGizmoActive_ = false;
+                PushUndoSnapshot(preGizmoSnapshot_);
+            }
         }
     }
 
@@ -717,6 +733,38 @@ void EditorUI::ProcessHotkeys() {
         if (editorMode_ != EditorMode::Edit) {
             Stop();
         }
+    }
+
+    // Shift+Z: Undo（ギズモ操作を元に戻す）
+    if (io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_Z, false)) {
+        PerformUndo();
+    }
+}
+
+// Undo履歴に追加
+void EditorUI::PushUndoSnapshot(const TransformSnapshot& snapshot) {
+    undoStack_.push(snapshot);
+    consoleMessages_.push_back("[Editor] Transform change recorded");
+}
+
+// Undo実行
+void EditorUI::PerformUndo() {
+    if (undoStack_.empty()) {
+        consoleMessages_.push_back("[Editor] Nothing to undo");
+        return;
+    }
+
+    TransformSnapshot snapshot = undoStack_.top();
+    undoStack_.pop();
+
+    if (snapshot.targetObject) {
+        auto& transform = snapshot.targetObject->GetTransform();
+        transform.SetLocalPosition(snapshot.position);
+        transform.SetLocalRotation(snapshot.rotation);
+        transform.SetLocalScale(snapshot.scale);
+        consoleMessages_.push_back("[Editor] Undo performed");
+    } else {
+        consoleMessages_.push_back("[Editor] Undo failed: object no longer exists");
     }
 }
 

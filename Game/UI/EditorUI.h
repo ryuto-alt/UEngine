@@ -4,16 +4,27 @@
 #include "../../Engine/Core/GameObject.h"
 #include "../../Engine/Core/Camera.h"
 #include "../../Engine/Core/Types.h"
+#include "../../Engine/Math/Vector.h"
+#include "../../Engine/Math/Quaternion.h"
 #include "EditorCamera.h"
 #include "GizmoSystem.h"
 #include <vector>
 #include <string>
+#include <stack>
 
 namespace UnoEngine {
 
 class GraphicsDevice;
 class DebugRenderer;
 class AnimationSystem;
+
+// Transform操作履歴
+struct TransformSnapshot {
+    GameObject* targetObject = nullptr;
+    Vector3 position;
+    Quaternion rotation;
+    Vector3 scale;
+};
 
 // EditorUIに渡す情報をまとめた構造体
 struct EditorContext {
@@ -167,6 +178,15 @@ private:
 
     // アニメーションシステム参照
     AnimationSystem* animationSystem_ = nullptr;
+
+    // Undo/Redo履歴
+    std::stack<TransformSnapshot> undoStack_;
+    TransformSnapshot preGizmoSnapshot_;  // ギズモ操作開始時のスナップショット
+    bool isGizmoActive_ = false;
+
+    // Undo/Redoヘルパー
+    void PushUndoSnapshot(const TransformSnapshot& snapshot);
+    void PerformUndo();
 };
 
 } // namespace UnoEngine

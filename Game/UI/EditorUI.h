@@ -11,6 +11,7 @@
 #include <vector>
 #include <string>
 #include <stack>
+#include <unordered_set>
 
 namespace UnoEngine {
 
@@ -179,6 +180,13 @@ private:
 
     // 選択中のオブジェクト
     GameObject* selectedObject_ = nullptr;
+
+    // Hierarchyリネーム用
+    GameObject* renamingObject_ = nullptr;
+    char renameBuffer_[256] = {};
+
+    // Hierarchy展開状態
+    std::unordered_set<GameObject*> expandedObjects_;
 
     // エディタカメラ
     EditorCamera editorCamera_;

@@ -480,50 +480,108 @@ namespace UnoEngine {
 		if (context.gameObjects) {
 			for (size_t i = 0; i < context.gameObjects->size(); ++i) {
 				GameObject* obj = (*context.gameObjects)[i].get();
+				bool isExpanded = expandedObjects_.count(obj) > 0;
+				bool isRenaming = (renamingObject_ == obj);
 
-				ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf |
-					ImGuiTreeNodeFlags_NoTreePushOnOpen |
-					ImGuiTreeNodeFlags_SpanAvailWidth;
-				if (selectedObject_ == obj) {
-					flags |= ImGuiTreeNodeFlags_Selected;
-				}
-
-				// ユニークIDを生成（同じ名前のオブジェクトがあっても区別できるように）
+				// ユニークIDを生成
 				ImGui::PushID(static_cast<int>(i));
-				
+
 				// コンポーネントに応じたアイコン
 				const char* icon = "📦";
 				if (obj->GetComponent<SkinnedMeshRenderer>()) icon = "🎭";
 				else if (obj->GetComponent<DirectionalLightComponent>()) icon = "💡";
 				else if (obj->GetName() == "Player") icon = "🎮";
 				else if (obj->GetName().find("Camera") != std::string::npos) icon = "📷";
-				
-				// アイコンとオブジェクト名を表示
+
+				// 展開矢印（小さい三角形）
+				bool hasTransformInfo = true;  // 全オブジェクトにTransform情報あり
+				if (hasTransformInfo) {
+					// 小さいボタンで三角形を表示
+					ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 2.0f));
+					const char* arrowText = isExpanded ? "v" : ">";
+					if (ImGui::SmallButton(arrowText)) {
+						if (isExpanded) {
+							expandedObjects_.erase(obj);
+						} else {
+							expandedObjects_.insert(obj);
+						}
+					}
+					ImGui::PopStyleVar();
+					ImGui::SameLine();
+				}
+
+				// アイコン
 				ImGui::Text("%s", icon);
 				ImGui::SameLine();
-				ImGui::TreeNodeEx(obj->GetName().c_str(), flags);
 
-				// クリックで選択
-				if (ImGui::IsItemClicked()) {
-					selectedObject_ = obj;
-					// 選択したオブジェクトにカメラをフォーカス（バウンディングボックスから距離を自動計算）
-					FocusOnObject(obj);
+				// リネームモード
+				if (isRenaming) {
+					ImGui::SetNextItemWidth(150.0f);
+					if (ImGui::InputText("##rename", renameBuffer_, sizeof(renameBuffer_),
+						ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
+						// Enter押下でリネーム確定
+						if (strlen(renameBuffer_) > 0) {
+							obj->SetName(renameBuffer_);
+							consoleMessages_.push_back("[Editor] Renamed to: " + std::string(renameBuffer_));
+						}
+						renamingObject_ = nullptr;
+					}
+					// 初回フォーカス設定
+					if (ImGui::IsItemDeactivated() || (!ImGui::IsItemActive() && ImGui::IsMouseClicked(0) && !ImGui::IsItemHovered())) {
+						renamingObject_ = nullptr;
+					}
+					// 最初のフレームでフォーカス
+					if (ImGui::IsWindowAppearing() || (renamingObject_ == obj && !ImGui::IsItemActive())) {
+						ImGui::SetKeyboardFocusHere(-1);
+					}
+				} else {
+					// 通常表示
+					ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf |
+						ImGuiTreeNodeFlags_NoTreePushOnOpen |
+						ImGuiTreeNodeFlags_SpanAvailWidth;
+					if (selectedObject_ == obj) {
+						flags |= ImGuiTreeNodeFlags_Selected;
+					}
+
+					ImGui::TreeNodeEx(obj->GetName().c_str(), flags);
+
+					// シングルクリックで選択＋フォーカス
+					if (ImGui::IsItemClicked() && !ImGui::IsMouseDoubleClicked(0)) {
+						selectedObject_ = obj;
+						FocusOnObject(obj);
+					}
+
+					// ダブルクリックでリネームモード開始
+					if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+						renamingObject_ = obj;
+						strncpy_s(renameBuffer_, obj->GetName().c_str(), sizeof(renameBuffer_) - 1);
+						renameBuffer_[sizeof(renameBuffer_) - 1] = '\0';
+					}
 				}
 
 				// 右クリックメニュー
 				if (ImGui::BeginPopupContextItem()) {
-					if (ImGui::MenuItem("Focus")) {
+					if (ImGui::MenuItem("Rename", "F2")) {
+						renamingObject_ = obj;
+						strncpy_s(renameBuffer_, obj->GetName().c_str(), sizeof(renameBuffer_) - 1);
+						renameBuffer_[sizeof(renameBuffer_) - 1] = '\0';
+					}
+					if (ImGui::MenuItem("Focus", "F")) {
 						FocusOnObject(obj);
 					}
+					ImGui::Separator();
 					if (ImGui::MenuItem("Delete", "DEL")) {
-						// 削除対象としてマーク（ループ中に直接削除すると問題があるため）
 						if (gameObjects_) {
 							for (auto it = gameObjects_->begin(); it != gameObjects_->end(); ++it) {
 								if (it->get() == obj) {
 									consoleMessages_.push_back("[Editor] Deleted object: " + obj->GetName());
+									expandedObjects_.erase(obj);
 									gameObjects_->erase(it);
 									if (selectedObject_ == obj) {
 										selectedObject_ = nullptr;
+									}
+									if (renamingObject_ == obj) {
+										renamingObject_ = nullptr;
 									}
 									break;
 								}
@@ -532,7 +590,82 @@ namespace UnoEngine {
 					}
 					ImGui::EndPopup();
 				}
-				
+
+				// インライン展開：Transform情報
+				if (isExpanded) {
+					ImGui::Indent(20.0f);
+
+					auto& transform = obj->GetTransform();
+
+					// ギズモ操作中は編集を無効化（競合を防ぐ）
+					bool isGizmoActive = gizmoSystem_.IsUsing() && obj == selectedObject_;
+					if (isGizmoActive) {
+						ImGui::BeginDisabled();
+					}
+
+					// ローカル座標を使用（ギズモと統一）
+					Vector3 pos = transform.GetLocalPosition();
+					Quaternion rot = transform.GetLocalRotation();
+					Vector3 scale = transform.GetLocalScale();
+
+					// 回転をオイラー角に変換（Quaternion -> Euler）
+					float pitch, yaw, roll;
+					float qx = rot.GetX(), qy = rot.GetY(), qz = rot.GetZ(), qw = rot.GetW();
+
+					// Roll (X軸回転)
+					float sinr_cosp = 2.0f * (qw * qx + qy * qz);
+					float cosr_cosp = 1.0f - 2.0f * (qx * qx + qy * qy);
+					roll = std::atan2(sinr_cosp, cosr_cosp);
+
+					// Pitch (Y軸回転)
+					float sinp = 2.0f * (qw * qy - qz * qx);
+					if (std::abs(sinp) >= 1.0f)
+						pitch = std::copysign(3.14159265f / 2.0f, sinp);
+					else
+						pitch = std::asin(sinp);
+
+					// Yaw (Z軸回転)
+					float siny_cosp = 2.0f * (qw * qz + qx * qy);
+					float cosy_cosp = 1.0f - 2.0f * (qy * qy + qz * qz);
+					yaw = std::atan2(siny_cosp, cosy_cosp);
+
+					float euler[3] = { roll * 57.2958f, pitch * 57.2958f, yaw * 57.2958f };
+
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
+
+					// Position（ドラッグ＆Ctrl+クリックで直接入力）
+					float posArr[3] = { pos.GetX(), pos.GetY(), pos.GetZ() };
+					ImGui::SetNextItemWidth(180.0f);
+					if (ImGui::DragFloat3("Pos", posArr, 0.1f, 0.0f, 0.0f, "%.2f")) {
+						transform.SetLocalPosition(Vector3(posArr[0], posArr[1], posArr[2]));
+					}
+
+					// Rotation（ドラッグ＆Ctrl+クリックで直接入力）
+					ImGui::SetNextItemWidth(180.0f);
+					if (ImGui::DragFloat3("Rot", euler, 1.0f, 0.0f, 0.0f, "%.1f")) {
+						// Euler角（度）からQuaternionへ変換
+						float radX = euler[0] * 0.0174533f;
+						float radY = euler[1] * 0.0174533f;
+						float radZ = euler[2] * 0.0174533f;
+						transform.SetLocalRotation(Quaternion::RotationRollPitchYaw(radX, radY, radZ));
+					}
+
+					// Scale（ドラッグ＆Ctrl+クリックで直接入力）
+					float scaleArr[3] = { scale.GetX(), scale.GetY(), scale.GetZ() };
+					ImGui::SetNextItemWidth(180.0f);
+					if (ImGui::DragFloat3("Scale", scaleArr, 0.01f, 0.001f, 100.0f, "%.3f")) {
+						transform.SetLocalScale(Vector3(scaleArr[0], scaleArr[1], scaleArr[2]));
+					}
+
+					ImGui::PopStyleColor();
+
+					if (isGizmoActive) {
+						ImGui::EndDisabled();
+					}
+
+					ImGui::Unindent(20.0f);
+				}
+
 				ImGui::PopID();
 			}
 		}
@@ -541,17 +674,30 @@ namespace UnoEngine {
 		}
 
 		// DELキーで選択中のオブジェクトを削除
-		if (selectedObject_ && ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Delete)) {
+		if (selectedObject_ && !renamingObject_ && ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Delete)) {
 			if (gameObjects_) {
 				for (auto it = gameObjects_->begin(); it != gameObjects_->end(); ++it) {
 					if (it->get() == selectedObject_) {
 						consoleMessages_.push_back("[Editor] Deleted object (DEL): " + selectedObject_->GetName());
+						expandedObjects_.erase(selectedObject_);
 						gameObjects_->erase(it);
 						selectedObject_ = nullptr;
 						break;
 					}
 				}
 			}
+		}
+
+		// F2キーでリネームモード開始
+		if (selectedObject_ && !renamingObject_ && ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_F2)) {
+			renamingObject_ = selectedObject_;
+			strncpy_s(renameBuffer_, selectedObject_->GetName().c_str(), sizeof(renameBuffer_) - 1);
+			renameBuffer_[sizeof(renameBuffer_) - 1] = '\0';
+		}
+
+		// Escapeキーでリネームモードをキャンセル
+		if (renamingObject_ && ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+			renamingObject_ = nullptr;
 		}
 
 		// ウィンドウ全体をドロップターゲットに（背景エリア）
@@ -1088,11 +1234,13 @@ namespace UnoEngine {
 	void EditorUI::FocusOnObject(GameObject* obj) {
 		if (!obj) return;
 
-		// オブジェクトの位置を取得
-		Matrix4x4 worldMatrix = obj->GetTransform().GetWorldMatrix();
+		// オブジェクトのワールド行列とスケールを取得
+		auto& transform = obj->GetTransform();
+		Matrix4x4 worldMatrix = transform.GetWorldMatrix();
 		float m[16];
 		worldMatrix.ToFloatArray(m);
 		Vector3 targetPos(m[12], m[13], m[14]);
+		Vector3 worldScale = transform.GetScale();
 
 		// デフォルト距離
 		float distance = 5.0f;
@@ -1117,13 +1265,25 @@ namespace UnoEngine {
 					boundsMax.SetZ((std::max)(boundsMax.GetZ(), meshMax.GetZ()));
 				}
 
-				// モデルの中心とサイズを計算
+				// ローカルの中心とサイズを計算
 				Vector3 localCenter = (boundsMin + boundsMax) * 0.5f;
-				Vector3 size = boundsMax - boundsMin;
-				float maxDimension = (std::max)({ size.GetX(), size.GetY(), size.GetZ() });
+				Vector3 localSize = boundsMax - boundsMin;
 
-				// ターゲット位置をモデルの中心に調整
-				targetPos = targetPos + localCenter;
+				// ワールドスケールを適用
+				Vector3 worldSize(
+					localSize.GetX() * worldScale.GetX(),
+					localSize.GetY() * worldScale.GetY(),
+					localSize.GetZ() * worldScale.GetZ()
+				);
+				float maxDimension = (std::max)({ worldSize.GetX(), worldSize.GetY(), worldSize.GetZ() });
+
+				// ターゲット位置をワールドスケール適用した中心に調整
+				Vector3 scaledCenter(
+					localCenter.GetX() * worldScale.GetX(),
+					localCenter.GetY() * worldScale.GetY(),
+					localCenter.GetZ() * worldScale.GetZ()
+				);
+				targetPos = targetPos + scaledCenter;
 
 				// カメラ距離を計算（モデル全体が見えるように）
 				distance = maxDimension * 1.5f;
@@ -1138,11 +1298,13 @@ namespace UnoEngine {
 	void EditorUI::FocusOnNewObject(GameObject* obj) {
 		if (!obj) return;
 
-		// オブジェクトの位置を取得
-		Matrix4x4 worldMatrix = obj->GetTransform().GetWorldMatrix();
+		// オブジェクトのワールド行列とスケールを取得
+		auto& transform = obj->GetTransform();
+		Matrix4x4 worldMatrix = transform.GetWorldMatrix();
 		float m[16];
 		worldMatrix.ToFloatArray(m);
 		Vector3 targetPos(m[12], m[13], m[14]);
+		Vector3 worldScale = transform.GetScale();
 
 		// デフォルト距離
 		float distance = 5.0f;
@@ -1167,13 +1329,25 @@ namespace UnoEngine {
 					boundsMax.SetZ((std::max)(boundsMax.GetZ(), meshMax.GetZ()));
 				}
 
-				// モデルの中心とサイズを計算
+				// ローカルの中心とサイズを計算
 				Vector3 localCenter = (boundsMin + boundsMax) * 0.5f;
-				Vector3 size = boundsMax - boundsMin;
-				float maxDimension = (std::max)({ size.GetX(), size.GetY(), size.GetZ() });
+				Vector3 localSize = boundsMax - boundsMin;
 
-				// ターゲット位置をモデルの中心に調整
-				targetPos = targetPos + localCenter;
+				// ワールドスケールを適用
+				Vector3 worldSize(
+					localSize.GetX() * worldScale.GetX(),
+					localSize.GetY() * worldScale.GetY(),
+					localSize.GetZ() * worldScale.GetZ()
+				);
+				float maxDimension = (std::max)({ worldSize.GetX(), worldSize.GetY(), worldSize.GetZ() });
+
+				// ターゲット位置をワールドスケール適用した中心に調整
+				Vector3 scaledCenter(
+					localCenter.GetX() * worldScale.GetX(),
+					localCenter.GetY() * worldScale.GetY(),
+					localCenter.GetZ() * worldScale.GetZ()
+				);
+				targetPos = targetPos + scaledCenter;
 
 				// カメラ距離を計算（モデル全体が見えるように）
 				distance = maxDimension * 1.5f;

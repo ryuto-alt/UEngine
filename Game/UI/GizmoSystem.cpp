@@ -1,5 +1,6 @@
 #include "GizmoSystem.h"
 #include <imgui.h>
+#include <cmath>
 
 namespace UnoEngine {
 
@@ -42,10 +43,14 @@ bool GizmoSystem::RenderGizmo(GameObject* selectedObject, Camera* camera,
     const_cast<Camera*>(camera)->GetViewMatrix().ToFloatArray(viewMatrix);
     camera->GetProjectionMatrix().ToFloatArray(projMatrix);
 
-    // オブジェクトのワールド行列を取得
-    float objectMatrix[16];
+    // オブジェクトのワールド行列を取得（ギズモ描画用）
     auto& transform = selectedObject->GetTransform();
+    float objectMatrix[16];
     transform.GetWorldMatrix().ToFloatArray(objectMatrix);
+
+    // 操作前のワールド座標を保存
+    float oldTranslation[3], oldRotation[3], oldScale[3];
+    ImGuizmo::DecomposeMatrixToComponents(objectMatrix, oldTranslation, oldRotation, oldScale);
 
     // スナップ値（CTRL押下時またはsnapEnabled時に有効）
     float* snapPtr = nullptr;
@@ -78,29 +83,47 @@ bool GizmoSystem::RenderGizmo(GameObject* selectedObject, Camera* camera,
         snapPtr
     );
 
-    // 操作があった場合、Transformを更新（操作タイプに応じて必要な値のみ更新）
+    // 操作があった場合、Transformを更新
     if (manipulated) {
-        float translation[3], rotation[3], scale[3];
-        ImGuizmo::DecomposeMatrixToComponents(objectMatrix, translation, rotation, scale);
+        float newTranslation[3], newRotation[3], newScale[3];
+        ImGuizmo::DecomposeMatrixToComponents(objectMatrix, newTranslation, newRotation, newScale);
 
         switch (operation_) {
-            case GizmoOperation::Translate:
-                transform.SetLocalPosition(Vector3(translation[0], translation[1], translation[2]));
+            case GizmoOperation::Translate: {
+                // ワールド座標の差分をローカルに適用
+                Vector3 delta(
+                    newTranslation[0] - oldTranslation[0],
+                    newTranslation[1] - oldTranslation[1],
+                    newTranslation[2] - oldTranslation[2]
+                );
+                Vector3 localPos = transform.GetLocalPosition();
+                transform.SetLocalPosition(localPos + delta);
                 break;
+            }
             case GizmoOperation::Rotate: {
-                // 回転のみ更新（度からラジアンに変換）
+                // 回転は差分ではなく直接設定（親がない場合はワールド=ローカル）
                 constexpr float DEG_TO_RAD = 3.14159265f / 180.0f;
                 Quaternion quat = Quaternion::RotationRollPitchYaw(
-                    rotation[0] * DEG_TO_RAD,
-                    rotation[1] * DEG_TO_RAD,
-                    rotation[2] * DEG_TO_RAD
+                    newRotation[0] * DEG_TO_RAD,
+                    newRotation[1] * DEG_TO_RAD,
+                    newRotation[2] * DEG_TO_RAD
                 );
                 transform.SetLocalRotation(quat);
                 break;
             }
-            case GizmoOperation::Scale:
-                transform.SetLocalScale(Vector3(scale[0], scale[1], scale[2]));
+            case GizmoOperation::Scale: {
+                // スケールの差分をローカルに適用
+                Vector3 localScale = transform.GetLocalScale();
+                float scaleRatioX = (std::abs(oldScale[0]) > 0.0001f) ? newScale[0] / oldScale[0] : 1.0f;
+                float scaleRatioY = (std::abs(oldScale[1]) > 0.0001f) ? newScale[1] / oldScale[1] : 1.0f;
+                float scaleRatioZ = (std::abs(oldScale[2]) > 0.0001f) ? newScale[2] / oldScale[2] : 1.0f;
+                transform.SetLocalScale(Vector3(
+                    localScale.GetX() * scaleRatioX,
+                    localScale.GetY() * scaleRatioY,
+                    localScale.GetZ() * scaleRatioZ
+                ));
                 break;
+            }
         }
     }
 

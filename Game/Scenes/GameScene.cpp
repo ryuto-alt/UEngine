@@ -12,6 +12,8 @@
 #include "../../Engine/Animation/AnimationSystem.h"
 #include "../../Engine/Systems/SystemManager.h"
 #include "../../Engine/Resource/ResourceManager.h"
+#include "../../Engine/Scene/SceneSerializer.h"
+#include <fstream>
 
 #ifdef _DEBUG
 #include <imgui.h>
@@ -23,13 +25,47 @@ void GameScene::OnLoad() {
     Logger::Info("[シーン] GameScene 読み込み開始...");
 
     SetupCamera();
-    SetupPlayer();
-    SetupLighting();
-    SetupAnimatedCharacter();
+
+    // シーンファイルが存在するか確認
+    const std::string sceneFilePath = "assets/scenes/default_scene.json";
+    std::ifstream sceneFile(sceneFilePath);
+    bool sceneFileExists = sceneFile.good();
+    sceneFile.close();
+
+    if (sceneFileExists) {
+        // 保存されたシーンをロード
+        Logger::Info("[シーン] 保存されたシーンをロード: {}", sceneFilePath);
+        if (!SceneSerializer::LoadScene(sceneFilePath, GetGameObjects())) {
+            Logger::Warning("[シーン] シーンのロードに失敗しました。デフォルトシーンを作成します。");
+            // ロード失敗時はデフォルトシーンを作成
+            SetupPlayer();
+            SetupLighting();
+            SetupAnimatedCharacter();
+        } else {
+            // ロード成功時はplayerとanimatedCharacterのポインタを更新
+            for (auto& obj : GetGameObjects()) {
+                if (obj->GetName() == "Player") {
+                    player_ = obj.get();
+                } else if (obj->GetComponent<SkinnedMeshRenderer>()) {
+                    animatedCharacter_ = obj.get();
+                }
+            }
+        }
+    } else {
+        // シーンファイルがない場合はデフォルトシーンを作成
+        Logger::Info("[シーン] シーンファイルが見つかりません。デフォルトシーンを作成します。");
+        SetupPlayer();
+        SetupLighting();
+        SetupAnimatedCharacter();
+    }
 
 #ifdef _DEBUG
     auto* app = static_cast<GameApplication*>(GetApplication());
     editorUI_.Initialize(app->GetGraphicsDevice());
+    editorUI_.SetGameObjects(&GetGameObjects());
+    if (sceneFileExists) {
+        editorUI_.AddConsoleMessage("[シーン] 保存されたシーンをロード: " + sceneFilePath);
+    }
     editorUI_.AddConsoleMessage("[シーン] GameScene 読み込み完了");
 #endif
 

@@ -28,7 +28,8 @@ public:
 
     const std::string& GetName() const { return name_; }
     const std::vector<std::unique_ptr<GameObject>>& GetGameObjects() const { return gameObjects_; }
-    
+    std::vector<std::unique_ptr<GameObject>>& GetGameObjects() { return gameObjects_; }
+
     Camera* GetActiveCamera() const { return activeCamera_; }
     void SetActiveCamera(Camera* camera) { activeCamera_ = camera; }
     

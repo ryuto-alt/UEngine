@@ -2,6 +2,7 @@
 #include "../../Engine/Graphics/GraphicsDevice.h"
 #include "../../Engine/Rendering/DebugRenderer.h"
 #include "../../Engine/Animation/AnimationSystem.h"
+#include "../../Engine/Scene/SceneSerializer.h"
 #include <imgui.h>
 #include <imgui_internal.h>
 #include "../../Engine/UI/imgui_toggle.h"
@@ -739,6 +740,11 @@ void EditorUI::ProcessHotkeys() {
     if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Z, false)) {
         PerformUndo();
     }
+
+    // Ctrl+S: シーン保存
+    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S, false)) {
+        SaveScene("assets/scenes/default_scene.json");
+    }
 }
 
 // Undo履歴に追加
@@ -765,6 +771,38 @@ void EditorUI::PerformUndo() {
         consoleMessages_.push_back("[Editor] Undo performed");
     } else {
         consoleMessages_.push_back("[Editor] Undo failed: object no longer exists");
+    }
+}
+
+// シーン保存
+void EditorUI::SaveScene(const std::string& filepath) {
+    if (!gameObjects_) {
+        consoleMessages_.push_back("[Editor] Error: No game objects to save");
+        return;
+    }
+
+    if (SceneSerializer::SaveScene(*gameObjects_, filepath)) {
+        consoleMessages_.push_back("[Editor] Scene saved: " + filepath);
+    } else {
+        consoleMessages_.push_back("[Editor] Failed to save scene: " + filepath);
+    }
+}
+
+// シーンロード
+void EditorUI::LoadScene(const std::string& filepath) {
+    if (!gameObjects_) {
+        consoleMessages_.push_back("[Editor] Error: No game objects container");
+        return;
+    }
+
+    if (SceneSerializer::LoadScene(filepath, *gameObjects_)) {
+        consoleMessages_.push_back("[Editor] Scene loaded: " + filepath);
+        // ロード後、最初のオブジェクトを選択
+        if (!gameObjects_->empty()) {
+            selectedObject_ = (*gameObjects_)[0].get();
+        }
+    } else {
+        consoleMessages_.push_back("[Editor] Failed to load scene: " + filepath);
     }
 }
 

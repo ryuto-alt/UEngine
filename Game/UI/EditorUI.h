@@ -109,6 +109,13 @@ public:
     void SetSelectedObject(GameObject* obj) { selectedObject_ = obj; }
     GameObject* GetSelectedObject() const { return selectedObject_; }
 
+    // シーン保存/ロード
+    void SaveScene(const std::string& filepath);
+    void LoadScene(const std::string& filepath);
+
+    // GameObjectsリストへの参照を設定（保存/ロード用）
+    void SetGameObjects(std::vector<UniquePtr<GameObject>>* gameObjects) { gameObjects_ = gameObjects; }
+
 private:
     // 各パネルの描画メソッド
     void RenderDockSpace();
@@ -187,6 +194,9 @@ private:
     // Undo/Redoヘルパー
     void PushUndoSnapshot(const TransformSnapshot& snapshot);
     void PerformUndo();
+
+    // GameObjectsリスト（保存/ロード用）
+    std::vector<UniquePtr<GameObject>>* gameObjects_ = nullptr;
 };
 
 } // namespace UnoEngine

@@ -61,6 +61,21 @@ namespace UnoEngine {
 			animationSystem_ = context.animationSystem;
 		}
 
+		// 3Dオーディオプレビュー中はエディタカメラ位置を継続的に更新
+		if (previewingAudioSource_ && previewingAudioSource_->IsPlaying() &&
+			previewingAudioSource_->Is3D() && editorCamera_.GetCamera()) {
+			if (AudioListener::GetInstance()) {
+				AudioListener::GetInstance()->SetEditorOverridePosition(
+					editorCamera_.GetCamera()->GetPosition());
+			}
+		} else if (previewingAudioSource_ && !previewingAudioSource_->IsPlaying()) {
+			// 再生が終わったらオーバーライドをクリア
+			if (AudioListener::GetInstance()) {
+				AudioListener::GetInstance()->ClearEditorOverride();
+			}
+			previewingAudioSource_ = nullptr;
+		}
+
 		// ホットキー処理
 		ProcessHotkeys();
 
@@ -142,6 +157,11 @@ namespace UnoEngine {
 	void EditorUI::Stop() {
 		if (editorMode_ != EditorMode::Edit) {
 			editorMode_ = EditorMode::Edit;
+			// マウスロック解除
+			if (gameViewMouseLocked_) {
+				gameViewMouseLocked_ = false;
+				while (ShowCursor(TRUE) < 0);
+			}
 			// アニメーション停止
 			if (animationSystem_) {
 				animationSystem_->SetPlaying(false);
@@ -344,6 +364,10 @@ namespace UnoEngine {
 
 		ImGui::Begin("Scene", &showSceneView_);
 
+		// ウィンドウ全体のホバー状態を取得（画像以外の領域でも操作可能に）
+		bool windowHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows);
+		bool windowFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
+
 		ImVec2 availableSize = ImGui::GetContentRegionAvail();
 		if (availableSize.x > 0 && availableSize.y > 0) {
 			const float aspectRatio = 16.0f / 9.0f;
@@ -367,10 +391,9 @@ namespace UnoEngine {
 
 			ImGui::Image((ImTextureID)sceneViewTexture_.GetSRVHandle().ptr, imageSize);
 
-			// Scene View画像のホバー状態でカメラ操作を有効化
-			bool sceneHovered = ImGui::IsItemHovered();
-			editorCamera_.SetViewportHovered(sceneHovered);
-			editorCamera_.SetViewportFocused(ImGui::IsWindowFocused());
+			// ウィンドウ全体のホバー状態でカメラ操作を有効化
+			editorCamera_.SetViewportHovered(windowHovered);
+			editorCamera_.SetViewportFocused(windowFocused);
 
 			// 画像の実際のスクリーン位置を計算（ギズモ用）
 			// GetItemRectMin()で直前に描画したImage の正確なスクリーン座標を取得
@@ -421,6 +444,10 @@ namespace UnoEngine {
 
 		ImGui::Begin("Game", &showGameView_);
 
+		// Game Viewのフォーカス状態を追跡
+		gameViewFocused_ = ImGui::IsWindowFocused();
+		gameViewHovered_ = ImGui::IsWindowHovered();
+
 		ImVec2 availableSize = ImGui::GetContentRegionAvail();
 		if (availableSize.x > 0 && availableSize.y > 0) {
 			const float aspectRatio = 16.0f / 9.0f;
@@ -443,6 +470,89 @@ namespace UnoEngine {
 			desiredGameViewHeight_ = static_cast<uint32>(imageSize.y);
 
 			ImGui::Image((ImTextureID)gameViewTexture_.GetSRVHandle().ptr, imageSize);
+
+			// Playモード時のマウスロック＋FPS視点操作
+			if (editorMode_ == EditorMode::Play) {
+				ImGuiIO& io = ImGui::GetIO();
+				bool imageHovered = ImGui::IsItemHovered();
+
+				// Game View画像上で左クリックしたらマウスロック開始
+				if (imageHovered && io.MouseClicked[0] && !gameViewMouseLocked_) {
+					gameViewMouseLocked_ = true;
+					GetCursorPos(&gameViewLockMousePos_);
+					while (ShowCursor(FALSE) >= 0);
+
+					// 現在のカメラの向きからyaw/pitchを初期化
+					if (editorCamera_.GetCamera()) {
+						Vector3 forward = editorCamera_.GetCamera()->GetForward();
+						gameViewYaw_ = std::atan2(forward.GetX(), forward.GetZ());
+						gameViewPitch_ = std::asin(-forward.GetY());
+					}
+				}
+
+				// TABキーでマウスロック解除（Playモードは継続）
+				if (gameViewMouseLocked_ && ImGui::IsKeyPressed(ImGuiKey_Tab)) {
+					gameViewMouseLocked_ = false;
+					while (ShowCursor(TRUE) < 0);
+				}
+
+				// マウスロック中の視点操作とWASD移動
+				if (gameViewMouseLocked_ && editorCamera_.GetCamera()) {
+					POINT currentPos;
+					GetCursorPos(&currentPos);
+
+					float deltaX = static_cast<float>(currentPos.x - gameViewLockMousePos_.x);
+					float deltaY = static_cast<float>(currentPos.y - gameViewLockMousePos_.y);
+
+					SetCursorPos(gameViewLockMousePos_.x, gameViewLockMousePos_.y);
+
+					// 感度
+					float sensitivity = editorCamera_.GetRotateSpeed() * io.DeltaTime;
+					gameViewYaw_ += deltaX * sensitivity;
+					gameViewPitch_ += deltaY * sensitivity;
+
+					// ピッチ制限
+					const float maxPitch = 1.5f;
+					if (gameViewPitch_ > maxPitch) gameViewPitch_ = maxPitch;
+					if (gameViewPitch_ < -maxPitch) gameViewPitch_ = -maxPitch;
+
+					// カメラの向きを更新
+					Quaternion rot = Quaternion::RotationRollPitchYaw(gameViewPitch_, gameViewYaw_, 0.0f);
+					editorCamera_.GetCamera()->SetRotation(rot);
+
+					// WASD移動
+					Camera* camera = editorCamera_.GetCamera();
+					Vector3 forward = camera->GetForward();
+					Vector3 right = Vector3::UnitY().Cross(forward).Normalize();
+
+					// 水平面に投影
+					Vector3 forwardXZ(forward.GetX(), 0.0f, forward.GetZ());
+					if (forwardXZ.Length() > 0.001f) {
+						forwardXZ = forwardXZ.Normalize();
+					}
+
+					Vector3 movement = Vector3::Zero();
+					float moveSpeed = editorCamera_.GetMoveSpeed() * io.DeltaTime;
+
+					if (ImGui::IsKeyDown(ImGuiKey_W)) movement = movement + forwardXZ;
+					if (ImGui::IsKeyDown(ImGuiKey_S)) movement = movement - forwardXZ;
+					if (ImGui::IsKeyDown(ImGuiKey_A)) movement = movement - right;
+					if (ImGui::IsKeyDown(ImGuiKey_D)) movement = movement + right;
+					if (ImGui::IsKeyDown(ImGuiKey_Space)) movement = movement + Vector3::UnitY();
+					if (ImGui::IsKeyDown(ImGuiKey_LeftShift)) movement = movement - Vector3::UnitY();
+
+					if (movement.Length() > 0.001f) {
+						movement = movement.Normalize() * moveSpeed;
+						camera->SetPosition(camera->GetPosition() + movement);
+					}
+				}
+			} else {
+				// Playモード以外ではマウスロック解除
+				if (gameViewMouseLocked_) {
+					gameViewMouseLocked_ = false;
+					while (ShowCursor(TRUE) < 0);
+				}
+			}
 		}
 
 		ImGui::End();
@@ -897,11 +1007,33 @@ namespace UnoEngine {
 						if (audioSource->IsPlaying()) {
 							if (ImGui::Button("Stop##Audio")) {
 								audioSource->Stop();
+								// エディタオーバーライドをクリア
+								if (AudioListener::GetInstance()) {
+									AudioListener::GetInstance()->ClearEditorOverride();
+								}
+								previewingAudioSource_ = nullptr;
 							}
 						} else {
 							if (ImGui::Button("Preview##Audio")) {
+								// 3Dオーディオの場合、エディタカメラ位置をリスナー位置として設定
+								if (audioSource->Is3D() && editorCamera_.GetCamera()) {
+									if (AudioListener::GetInstance()) {
+										AudioListener::GetInstance()->SetEditorOverridePosition(
+											editorCamera_.GetCamera()->GetPosition());
+									}
+									previewingAudioSource_ = audioSource;
+								}
 								audioSource->Play();
 							}
+						}
+
+						// 3Dプレビュー中は現在の距離を表示
+						if (audioSource->Is3D() && audioSource->IsPlaying() && editorCamera_.GetCamera()) {
+							Vector3 sourcePos = obj->GetTransform().GetPosition();
+							Vector3 camPos = editorCamera_.GetCamera()->GetPosition();
+							float distance = (sourcePos - camPos).Length();
+							ImGui::TextColored(ImVec4(0.5f, 1.0f, 0.5f, 1.0f),
+								"Distance: %.1f m", distance);
 						}
 
 						ImGui::Unindent(10.0f);

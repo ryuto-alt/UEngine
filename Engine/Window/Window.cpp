@@ -80,10 +80,8 @@ bool Window::ProcessMessages() {
 }
 
 LRESULT CALLBACK Window::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
-    // ImGui入力処理（最優先）
-    if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)) {
-        return true;
-    }
+    // ImGui入力処理
+    LRESULT imguiResult = ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam);
 
     Window* window = nullptr;
 
@@ -95,9 +93,19 @@ LRESULT CALLBACK Window::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM l
         window = reinterpret_cast<Window*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
     }
 
-    // コールバック呼び出し
+    // キーボード・マウス入力は常にInputManagerにも渡す（ゲーム入力用）
     if (window && window->messageCallback_) {
         window->messageCallback_(msg, wparam, lparam);
+    }
+
+    // ImGuiが処理したメッセージは早期リターン（ただしキーボード/マウスは除く）
+    if (imguiResult) {
+        // キーボードとマウスのメッセージ以外はImGuiが処理したらリターン
+        bool isKeyboardOrMouse = (msg >= WM_KEYFIRST && msg <= WM_KEYLAST) ||
+                                  (msg >= WM_MOUSEFIRST && msg <= WM_MOUSELAST);
+        if (!isKeyboardOrMouse) {
+            return true;
+        }
     }
 
     switch (msg) {

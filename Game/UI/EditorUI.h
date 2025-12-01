@@ -131,6 +131,11 @@ public:
     // 遅延ロード処理（D&Dしたモデルをロード）
     void ProcessPendingLoads();
 
+    // Game Viewのフォーカス状態
+    bool IsGameViewFocused() const { return gameViewFocused_; }
+    bool IsGameViewHovered() const { return gameViewHovered_; }
+    bool IsGameViewMouseLocked() const { return gameViewMouseLocked_; }
+
 private:
     // 各パネルの描画メソッド
     void RenderDockSpace();
@@ -160,6 +165,16 @@ private:
     // View表示状態
     bool showSceneView_ = true;
     bool showGameView_ = true;
+
+    // Game Viewフォーカス状態
+    bool gameViewFocused_ = false;
+    bool gameViewHovered_ = false;
+
+    // Playモード時のマウスロック状態
+    bool gameViewMouseLocked_ = false;
+    POINT gameViewLockMousePos_ = { 0, 0 };
+    float gameViewYaw_ = 0.0f;
+    float gameViewPitch_ = 0.0f;
 
     // Play/Edit モード
 #ifdef NDEBUG

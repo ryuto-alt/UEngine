@@ -162,14 +162,21 @@ float AudioSource::Calculate3DVolume() const {
 
     // AudioListenerを探す（静的インスタンスから取得）
     AudioListener* listener = AudioListener::GetInstance();
-    if (!listener || !listener->GetGameObject()) return 1.0f;
+    if (!listener) return 1.0f;
 
     // 距離計算
     Transform& transform = gameObject_->GetTransform();
-    Transform& listenerTransform = listener->GetGameObject()->GetTransform();
-
     Vector3 sourcePos = transform.GetPosition();
-    Vector3 listenerPos = listenerTransform.GetPosition();
+
+    // エディタオーバーライドがあればそちらを使用
+    Vector3 listenerPos;
+    if (listener->IsUsingEditorOverride()) {
+        listenerPos = listener->GetEditorOverridePosition();
+    } else {
+        if (!listener->GetGameObject()) return 1.0f;
+        listenerPos = listener->GetGameObject()->GetTransform().GetPosition();
+    }
+
     float distance = (sourcePos - listenerPos).Length();
 
     // 逆二乗減衰

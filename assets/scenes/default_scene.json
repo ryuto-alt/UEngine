@@ -28,25 +28,15 @@
             "active": true,
             "components": [
                 {
+                    "type": "AnimatorComponent"
+                },
+                {
                     "modelPath": "assets/model/testmodel/Enemy_Test/Enemy_Walk.gltf",
                     "type": "SkinnedMeshRenderer"
-                },
-                {
-                    "clipPath": "assets/audio/test/edo.wav",
-                    "is3D": false,
-                    "loop": false,
-                    "maxDistance": 100.0,
-                    "minDistance": 1.0,
-                    "playOnAwake": false,
-                    "type": "AudioSource",
-                    "volume": 1.0
-                },
-                {
-                    "type": "AnimatorComponent"
                 }
             ],
             "layer": 1,
-            "name": "Enemy_Walk",
+            "name": "Enemy",
             "transform": {
                 "position": [
                     0.0,

@@ -217,7 +217,8 @@ void GameScene::OnUpdate(float deltaTime) {
 
     // Player camera control (Playモードでのみ有効)
 #ifdef _DEBUG
-    if (editorUI_.IsPlaying()) {
+    // Playモードで、Game Viewでマウスロック中のみ入力を処理
+    if (editorUI_.IsPlaying() && editorUI_.IsGameViewMouseLocked()) {
 #endif
         Camera* camera = GetActiveCamera();
         if (camera && player_ && input_) {

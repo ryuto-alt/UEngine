@@ -7,6 +7,7 @@
 #include "../../Engine/Math/Vector.h"
 #include "../../Engine/Math/Quaternion.h"
 #include "../../Engine/Audio/AudioListener.h"
+#include "../../Engine/Scripting/LuaScriptComponent.h"
 #include "EditorCamera.h"
 #include "GizmoSystem.h"
 #include <vector>

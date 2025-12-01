@@ -1,18 +1,6 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Engine\Rendering">
-      <UniqueIdentifier>{9e0f1a2b-3c4d-5e6f-7a8b-9c0d1e2f3a4b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Engine\Resource">
-      <UniqueIdentifier>{0f1a2b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Engine\Systems">
-      <UniqueIdentifier>{1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Game">
-      <UniqueIdentifier>{7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ソース ファイル">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
@@ -25,8 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
     <Filter Include="Engine">
       <UniqueIdentifier>{8f3c1d2e-4b5a-6c7d-8e9f-0a1b2c3d4e5f}</UniqueIdentifier>
     </Filter>
@@ -48,6 +34,30 @@
     <Filter Include="Engine\UI">
       <UniqueIdentifier>{6f7a8b9c-0d1e-2f3a-4b5c-6d7e8f9a0b1c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Rendering">
+      <UniqueIdentifier>{9e0f1a2b-3c4d-5e6f-7a8b-9c0d1e2f3a4b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Resource">
+      <UniqueIdentifier>{0f1a2b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Systems">
+      <UniqueIdentifier>{1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Animation">
+      <UniqueIdentifier>{c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Scene">
+      <UniqueIdentifier>{d4e5f6a7-b8c9-0d1e-2f3a-4b5c6d7e8f9a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Audio">
+      <UniqueIdentifier>{e5f6a7b8-c9d0-1e2f-3a4b-5c6d7e8f9a0b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Scripting">
+      <UniqueIdentifier>{f6a7b8c9-d0e1-2f3a-4b5c-6d7e8f9a0b1c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game">
+      <UniqueIdentifier>{7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Game\Components">
       <UniqueIdentifier>{7b8c9d0e-1f2a-3b4c-5d6e-7f8a9b0c1d2e}</UniqueIdentifier>
     </Filter>
@@ -60,23 +70,25 @@
     <Filter Include="Game\UI">
       <UniqueIdentifier>{b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="External">
+      <UniqueIdentifier>{a7b8c9d0-e1f2-3a4b-5c6d-7e8f9a0b1c2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\Lua">
+      <UniqueIdentifier>{b8c9d0e1-f2a3-4b5c-6d7e-8f9a0b1c2d3e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\Sol">
+      <UniqueIdentifier>{c9d0e1f2-a3b4-5c6d-7e8f-9a0b1c2d3e4f}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Shaders">
       <UniqueIdentifier>{9d0e1f2a-3b4c-5d6e-7f8a-9b0c1d2e3f4a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Engine\Animation">
-      <UniqueIdentifier>{c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Engine\Scene">
-      <UniqueIdentifier>{d4e5f6a7-b8c9-0d1e-2f3a-4b5c6d7e8f9a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Engine\Audio">
-      <UniqueIdentifier>{e5f6a7b8-c9d0-1e2f-3a4b-5c6d7e8f9a0b}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
+    <!-- Main -->
     <ClCompile Include="main.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <!-- Engine\Core -->
     <ClCompile Include="Engine\Core\Application.cpp">
       <Filter>Engine\Core</Filter>
     </ClCompile>
@@ -95,20 +107,15 @@
     <ClCompile Include="Engine\Core\SceneManager.cpp">
       <Filter>Engine\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Scene\SceneSerializer.cpp">
-      <Filter>Engine\Scene</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Core\OrbitController.cpp">
       <Filter>Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Core\Logger.cpp">
       <Filter>Engine\Core</Filter>
     </ClCompile>
+    <!-- Engine\Graphics -->
     <ClCompile Include="Engine\Graphics\GraphicsDevice.cpp">
       <Filter>Engine\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Window\Window.cpp">
-      <Filter>Engine\Window</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Graphics\Shader.cpp">
       <Filter>Engine\Graphics</Filter>
@@ -118,18 +125,6 @@
     </ClCompile>
     <ClCompile Include="Engine\Graphics\VertexBuffer.cpp">
       <Filter>Engine\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Math\Quaternion.cpp">
-      <Filter>Engine\Math</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Input\Keyboard.cpp">
-      <Filter>Engine\Input</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Input\Mouse.cpp">
-      <Filter>Engine\Input</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Input\InputManager.cpp">
-      <Filter>Engine\Input</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Graphics\IndexBuffer.cpp">
       <Filter>Engine\Graphics</Filter>
@@ -161,18 +156,53 @@
     <ClCompile Include="Engine\Graphics\DirectionalLightComponent.cpp">
       <Filter>Engine\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\ResourceLoader.cpp">
-      <Filter>Engine\Resource</Filter>
+    <ClCompile Include="Engine\Graphics\SkinnedMesh.cpp">
+      <Filter>Engine\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="Game\Scenes\GameScene.cpp">
-      <Filter>Game\Scenes</Filter>
+    <ClCompile Include="Engine\Graphics\SkinnedPipeline.cpp">
+      <Filter>Engine\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="Game\Components\PlayerController.cpp">
-      <Filter>Game\Components</Filter>
+    <ClCompile Include="Engine\Graphics\DebugLinePipeline.cpp">
+      <Filter>Engine\Graphics</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Graphics\InfiniteGridPipeline.cpp">
+      <Filter>Engine\Graphics</Filter>
+    </ClCompile>
+    <!-- Engine\Window -->
+    <ClCompile Include="Engine\Window\Window.cpp">
+      <Filter>Engine\Window</Filter>
+    </ClCompile>
+    <!-- Engine\Math -->
+    <ClCompile Include="Engine\Math\Quaternion.cpp">
+      <Filter>Engine\Math</Filter>
+    </ClCompile>
+    <!-- Engine\Input -->
+    <ClCompile Include="Engine\Input\Keyboard.cpp">
+      <Filter>Engine\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Input\Mouse.cpp">
+      <Filter>Engine\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Input\InputManager.cpp">
+      <Filter>Engine\Input</Filter>
+    </ClCompile>
+    <!-- Engine\UI -->
     <ClCompile Include="Engine\UI\ImGuiManager.cpp">
       <Filter>Engine\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\UI\imgui_toggle.cpp">
+      <Filter>Engine\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\UI\imgui_toggle_palette.cpp">
+      <Filter>Engine\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\UI\imgui_toggle_presets.cpp">
+      <Filter>Engine\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\UI\imgui_toggle_renderer.cpp">
+      <Filter>Engine\UI</Filter>
+    </ClCompile>
+    <!-- Engine\Rendering -->
     <ClCompile Include="Engine\Rendering\RenderSystem.cpp">
       <Filter>Engine\Rendering</Filter>
     </ClCompile>
@@ -185,29 +215,12 @@
     <ClCompile Include="Engine\Rendering\SkinnedMeshRenderer.cpp">
       <Filter>Engine\Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="Game\GameApplication.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="Engine\Rendering\DebugRenderer.cpp">
+      <Filter>Engine\Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="Game\Systems\CameraSystem.cpp">
-      <Filter>Game\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Game\UI\EditorUI.cpp">
-      <Filter>Game\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Game\UI\EditorCamera.cpp">
-      <Filter>Game\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Game\UI\GizmoSystem.cpp">
-      <Filter>Game\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Game\UI\ImGuizmo.cpp">
-      <Filter>Game\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Graphics\SkinnedMesh.cpp">
-      <Filter>Engine\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Graphics\SkinnedPipeline.cpp">
-      <Filter>Engine\Graphics</Filter>
+    <!-- Engine\Resource -->
+    <ClCompile Include="Engine\Resource\ResourceLoader.cpp">
+      <Filter>Engine\Resource</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Resource\SkinnedModelImporter.cpp">
       <Filter>Engine\Resource</Filter>
@@ -215,6 +228,14 @@
     <ClCompile Include="Engine\Resource\ResourceManager.cpp">
       <Filter>Engine\Resource</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Resource\ModelImporter.cpp">
+      <Filter>Engine\Resource</Filter>
+    </ClCompile>
+    <!-- Engine\Systems -->
+    <ClCompile Include="Engine\Systems\SystemManager.cpp">
+      <Filter>Engine\Systems</Filter>
+    </ClCompile>
+    <!-- Engine\Animation -->
     <ClCompile Include="Engine\Animation\Skeleton.cpp">
       <Filter>Engine\Animation</Filter>
     </ClCompile>
@@ -233,9 +254,11 @@
     <ClCompile Include="Engine\Animation\AnimationSystem.cpp">
       <Filter>Engine\Animation</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Systems\SystemManager.cpp">
-      <Filter>Engine\Systems</Filter>
+    <!-- Engine\Scene -->
+    <ClCompile Include="Engine\Scene\SceneSerializer.cpp">
+      <Filter>Engine\Scene</Filter>
     </ClCompile>
+    <!-- Engine\Audio -->
     <ClCompile Include="Engine\Audio\AudioSystem.cpp">
       <Filter>Engine\Audio</Filter>
     </ClCompile>
@@ -248,47 +271,142 @@
     <ClCompile Include="Engine\Audio\AudioListener.cpp">
       <Filter>Engine\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\UI\imgui_toggle.cpp">
-      <Filter>Engine\UI</Filter>
+    <!-- Engine\Scripting -->
+    <ClCompile Include="Engine\Scripting\LuaState.cpp">
+      <Filter>Engine\Scripting</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\UI\imgui_toggle_palette.cpp">
-      <Filter>Engine\UI</Filter>
+    <ClCompile Include="Engine\Scripting\LuaScriptComponent.cpp">
+      <Filter>Engine\Scripting</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\UI\imgui_toggle_presets.cpp">
-      <Filter>Engine\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\UI\imgui_toggle_renderer.cpp">
-      <Filter>Engine\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Graphics\DebugLinePipeline.cpp">
-      <Filter>Engine\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Graphics\InfiniteGridPipeline.cpp">
-      <Filter>Engine\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Rendering\DebugRenderer.cpp">
-      <Filter>Engine\Rendering</Filter>
-    </ClCompile>
-    <ClCompile Include="Game\Scenes\GameScene.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="Game\UI\EditorUI.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="Game\UI\EditorCamera.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
+    <!-- Game -->
     <ClCompile Include="Game\GameApplication.cpp">
       <Filter>Game</Filter>
     </ClCompile>
-    <ClCompile Include="Game\UI\GizmoSystem.cpp">
-      <Filter>Game</Filter>
+    <!-- Game\Scenes -->
+    <ClCompile Include="Game\Scenes\GameScene.cpp">
+      <Filter>Game\Scenes</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\ModelImporter.cpp">
-      <Filter>ソース ファイル</Filter>
+    <!-- Game\Components -->
+    <ClCompile Include="Game\Components\PlayerController.cpp">
+      <Filter>Game\Components</Filter>
+    </ClCompile>
+    <!-- Game\Systems -->
+    <ClCompile Include="Game\Systems\CameraSystem.cpp">
+      <Filter>Game\Systems</Filter>
+    </ClCompile>
+    <!-- Game\UI -->
+    <ClCompile Include="Game\UI\EditorUI.cpp">
+      <Filter>Game\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\UI\EditorCamera.cpp">
+      <Filter>Game\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\UI\GizmoSystem.cpp">
+      <Filter>Game\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\UI\ImGuizmo.cpp">
+      <Filter>Game\UI</Filter>
+    </ClCompile>
+    <!-- External\Lua -->
+    <ClCompile Include="external\lua\src\lapi.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lauxlib.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lbaselib.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lcode.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lcorolib.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lctype.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\ldblib.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\ldebug.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\ldo.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\ldump.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lfunc.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lgc.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\linit.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\liolib.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\llex.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lmathlib.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lmem.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\loadlib.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lobject.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lopcodes.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\loslib.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lparser.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lstate.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lstring.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lstrlib.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\ltable.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\ltablib.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\ltm.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lundump.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lutf8lib.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lvm.c">
+      <Filter>External\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lzio.c">
+      <Filter>External\Lua</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <!-- Engine\Core -->
     <ClInclude Include="Engine\Core\Application.h">
       <Filter>Engine\Core</Filter>
     </ClInclude>
@@ -310,17 +428,11 @@
     <ClInclude Include="Engine\Core\SceneManager.h">
       <Filter>Engine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Scene\SceneSerializer.h">
-      <Filter>Engine\Scene</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Core\OrbitController.h">
       <Filter>Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Core\Logger.h">
       <Filter>Engine\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Graphics\ConstantBuffer.h">
-      <Filter>Engine\Graphics</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Core\NonCopyable.h">
       <Filter>Engine\Core</Filter>
@@ -328,14 +440,15 @@
     <ClInclude Include="Engine\Core\Types.h">
       <Filter>Engine\Core</Filter>
     </ClInclude>
+    <!-- Engine\Graphics -->
+    <ClInclude Include="Engine\Graphics\ConstantBuffer.h">
+      <Filter>Engine\Graphics</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Graphics\D3D12Common.h">
       <Filter>Engine\Graphics</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\GraphicsDevice.h">
       <Filter>Engine\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Window\Window.h">
-      <Filter>Engine\Window</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\Shader.h">
       <Filter>Engine\Graphics</Filter>
@@ -345,36 +458,6 @@
     </ClInclude>
     <ClInclude Include="Engine\Graphics\VertexBuffer.h">
       <Filter>Engine\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Math\Math.h">
-      <Filter>Engine\Math</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Math\MathCommon.h">
-      <Filter>Engine\Math</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Math\MathUtils.h">
-      <Filter>Engine\Math</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Math\Matrix.h">
-      <Filter>Engine\Math</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Math\Quaternion.h">
-      <Filter>Engine\Math</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Math\Vector.h">
-      <Filter>Engine\Math</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Math\BoundingVolume.h">
-      <Filter>Engine\Math</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Input\Keyboard.h">
-      <Filter>Engine\Input</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Input\Mouse.h">
-      <Filter>Engine\Input</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Input\InputManager.h">
-      <Filter>Engine\Input</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\IndexBuffer.h">
       <Filter>Engine\Graphics</Filter>
@@ -406,21 +489,65 @@
     <ClInclude Include="Engine\Graphics\DirectionalLightComponent.h">
       <Filter>Engine\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\ResourceLoader.h">
-      <Filter>Engine\Resource</Filter>
-    </ClInclude>
-    <ClInclude Include="Game\Scenes\GameScene.h">
-      <Filter>Game\Scenes</Filter>
-    </ClInclude>
-    <ClInclude Include="Game\Components\PlayerController.h">
-      <Filter>Game\Components</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Graphics\d3dx12.h">
       <Filter>Engine\Graphics</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Graphics\SkinnedMesh.h">
+      <Filter>Engine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\SkinnedPipeline.h">
+      <Filter>Engine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\SkinnedVertex.h">
+      <Filter>Engine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\DebugLinePipeline.h">
+      <Filter>Engine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\InfiniteGridPipeline.h">
+      <Filter>Engine\Graphics</Filter>
+    </ClInclude>
+    <!-- Engine\Window -->
+    <ClInclude Include="Engine\Window\Window.h">
+      <Filter>Engine\Window</Filter>
+    </ClInclude>
+    <!-- Engine\Math -->
+    <ClInclude Include="Engine\Math\Math.h">
+      <Filter>Engine\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Math\MathCommon.h">
+      <Filter>Engine\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Math\MathUtils.h">
+      <Filter>Engine\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Math\Matrix.h">
+      <Filter>Engine\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Math\Quaternion.h">
+      <Filter>Engine\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Math\Vector.h">
+      <Filter>Engine\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Math\BoundingVolume.h">
+      <Filter>Engine\Math</Filter>
+    </ClInclude>
+    <!-- Engine\Input -->
+    <ClInclude Include="Engine\Input\Keyboard.h">
+      <Filter>Engine\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Input\Mouse.h">
+      <Filter>Engine\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Input\InputManager.h">
+      <Filter>Engine\Input</Filter>
+    </ClInclude>
+    <!-- Engine\UI -->
     <ClInclude Include="Engine\UI\ImGuiManager.h">
       <Filter>Engine\UI</Filter>
     </ClInclude>
+    <!-- Engine\Rendering -->
     <ClInclude Include="Engine\Rendering\RenderSystem.h">
       <Filter>Engine\Rendering</Filter>
     </ClInclude>
@@ -433,65 +560,8 @@
     <ClInclude Include="Engine\Rendering\RenderItem.h">
       <Filter>Engine\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Systems\ISystem.h">
-      <Filter>Engine\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Audio\AudioSystem.h">
-      <Filter>Engine\Audio</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Audio\AudioClip.h">
-      <Filter>Engine\Audio</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Audio\AudioSource.h">
-      <Filter>Engine\Audio</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Audio\AudioListener.h">
-      <Filter>Engine\Audio</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Rendering\Renderer.h">
       <Filter>Engine\Rendering</Filter>
-    </ClInclude>
-    <ClInclude Include="Game\GameApplication.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="Game\Components\Player.h">
-      <Filter>Game\Components</Filter>
-    </ClInclude>
-    <ClInclude Include="Game\Systems\CameraSystem.h">
-      <Filter>Game\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Game\UI\EditorUI.h">
-      <Filter>Game\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Game\UI\EditorCamera.h">
-      <Filter>Game\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Game\UI\GizmoSystem.h">
-      <Filter>Game\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Game\UI\ImGuizmo.h">
-      <Filter>Game\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Game\UI\ImViewGuizmo.h">
-      <Filter>Game\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Graphics\SkinnedMesh.h">
-      <Filter>Engine\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Graphics\SkinnedPipeline.h">
-      <Filter>Engine\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Graphics\SkinnedVertex.h">
-      <Filter>Engine\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Resource\SkinnedModelImporter.h">
-      <Filter>Engine\Resource</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Resource\ResourceManager.h">
-      <Filter>Engine\Resource</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Resource\ImportOptions.h">
-      <Filter>Engine\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Rendering\SkinnedRenderItem.h">
       <Filter>Engine\Rendering</Filter>
@@ -502,6 +572,33 @@
     <ClInclude Include="Engine\Rendering\SkinnedMeshRenderer.h">
       <Filter>Engine\Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Rendering\DebugRenderer.h">
+      <Filter>Engine\Rendering</Filter>
+    </ClInclude>
+    <!-- Engine\Resource -->
+    <ClInclude Include="Engine\Resource\ResourceLoader.h">
+      <Filter>Engine\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Resource\SkinnedModelImporter.h">
+      <Filter>Engine\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Resource\ResourceManager.h">
+      <Filter>Engine\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Resource\ImportOptions.h">
+      <Filter>Engine\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Resource\ModelImporter.h">
+      <Filter>Engine\Resource</Filter>
+    </ClInclude>
+    <!-- Engine\Systems -->
+    <ClInclude Include="Engine\Systems\ISystem.h">
+      <Filter>Engine\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Systems\SystemManager.h">
+      <Filter>Engine\Systems</Filter>
+    </ClInclude>
+    <!-- Engine\Animation -->
     <ClInclude Include="Engine\Animation\Skeleton.h">
       <Filter>Engine\Animation</Filter>
     </ClInclude>
@@ -520,38 +617,74 @@
     <ClInclude Include="Engine\Animation\AnimationSystem.h">
       <Filter>Engine\Animation</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Systems\SystemManager.h">
-      <Filter>Engine\Systems</Filter>
+    <!-- Engine\Scene -->
+    <ClInclude Include="Engine\Scene\SceneSerializer.h">
+      <Filter>Engine\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Graphics\DebugLinePipeline.h">
-      <Filter>Engine\Graphics</Filter>
+    <!-- Engine\Audio -->
+    <ClInclude Include="Engine\Audio\AudioSystem.h">
+      <Filter>Engine\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Graphics\InfiniteGridPipeline.h">
-      <Filter>Engine\Graphics</Filter>
+    <ClInclude Include="Engine\Audio\AudioClip.h">
+      <Filter>Engine\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Rendering\DebugRenderer.h">
-      <Filter>Engine\Rendering</Filter>
+    <ClInclude Include="Engine\Audio\AudioSource.h">
+      <Filter>Engine\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="Game\Scenes\GameScene.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="Engine\Audio\AudioListener.h">
+      <Filter>Engine\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="Game\UI\EditorUI.h">
-      <Filter>Game</Filter>
+    <!-- Engine\Scripting -->
+    <ClInclude Include="Engine\Scripting\LuaState.h">
+      <Filter>Engine\Scripting</Filter>
     </ClInclude>
-    <ClInclude Include="Game\UI\EditorCamera.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="Engine\Scripting\LuaScriptComponent.h">
+      <Filter>Engine\Scripting</Filter>
     </ClInclude>
+    <!-- Game -->
     <ClInclude Include="Game\GameApplication.h">
       <Filter>Game</Filter>
     </ClInclude>
-    <ClInclude Include="Game\UI\GizmoSystem.h">
-      <Filter>Game</Filter>
+    <!-- Game\Scenes -->
+    <ClInclude Include="Game\Scenes\GameScene.h">
+      <Filter>Game\Scenes</Filter>
+    </ClInclude>
+    <!-- Game\Components -->
+    <ClInclude Include="Game\Components\PlayerController.h">
+      <Filter>Game\Components</Filter>
     </ClInclude>
     <ClInclude Include="Game\Components\Player.h">
-      <Filter>Game</Filter>
+      <Filter>Game\Components</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\ModelImporter.h">
-      <Filter>ヘッダー ファイル</Filter>
+    <!-- Game\Systems -->
+    <ClInclude Include="Game\Systems\CameraSystem.h">
+      <Filter>Game\Systems</Filter>
+    </ClInclude>
+    <!-- Game\UI -->
+    <ClInclude Include="Game\UI\EditorUI.h">
+      <Filter>Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\UI\EditorCamera.h">
+      <Filter>Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\UI\GizmoSystem.h">
+      <Filter>Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\UI\ImGuizmo.h">
+      <Filter>Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\UI\ImViewGuizmo.h">
+      <Filter>Game\UI</Filter>
+    </ClInclude>
+    <!-- External\Sol -->
+    <ClInclude Include="external\sol\sol.hpp">
+      <Filter>External\Sol</Filter>
+    </ClInclude>
+    <ClInclude Include="external\sol\config.hpp">
+      <Filter>External\Sol</Filter>
+    </ClInclude>
+    <ClInclude Include="external\sol\forward.hpp">
+      <Filter>External\Sol</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

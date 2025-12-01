@@ -598,11 +598,14 @@ namespace UnoEngine {
 
 		ImGui::Begin("Inspector", &showInspector_);
 
-		if (context.player) {
-			ImGui::Text("Selected: Player");
+		// 選択されたオブジェクトの情報を表示
+		GameObject* selected = selectedObject_ ? selectedObject_ : context.player;
+
+		if (selected) {
+			ImGui::Text("Selected: %s", selected->GetName().c_str());
 			ImGui::Separator();
 
-			auto& transform = context.player->GetTransform();
+			auto& transform = selected->GetTransform();
 			auto pos = transform.GetLocalPosition();
 			auto rot = transform.GetLocalRotation();
 			auto scale = transform.GetLocalScale();
@@ -612,6 +615,89 @@ namespace UnoEngine {
 			ImGui::Text("Rotation: (%.2f, %.2f, %.2f, %.2f)",
 				rot.GetX(), rot.GetY(), rot.GetZ(), rot.GetW());
 			ImGui::Text("Scale: (%.2f, %.2f, %.2f)", scale.GetX(), scale.GetY(), scale.GetZ());
+
+			// LuaScriptComponentの表示
+			auto* luaScript = selected->GetComponent<LuaScriptComponent>();
+			if (luaScript) {
+				ImGui::Separator();
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.8f, 1.0f, 1.0f));
+				ImGui::Text("Lua Script");
+				ImGui::PopStyleColor();
+
+				// スクリプトパス
+				ImGui::Text("Script: %s", luaScript->GetScriptPath().c_str());
+
+				// エラー表示
+				if (luaScript->HasError()) {
+					auto& error = luaScript->GetLastError();
+					if (error) {
+						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
+						ImGui::TextWrapped("Error: %s", error->message.c_str());
+						if (error->line >= 0) {
+							ImGui::Text("Line: %d", error->line);
+						}
+						ImGui::PopStyleColor();
+					}
+				}
+
+				// プロパティ表示
+				auto properties = luaScript->GetProperties();
+				if (!properties.empty()) {
+					ImGui::Spacing();
+					ImGui::Text("Properties:");
+					ImGui::Indent();
+
+					for (auto& prop : properties) {
+						ImGui::PushID(prop.name.c_str());
+
+						std::visit([&](auto&& val) {
+							using T = std::decay_t<decltype(val)>;
+							if constexpr (std::is_same_v<T, bool>) {
+								bool v = val;
+								if (ImGui::Checkbox(prop.name.c_str(), &v)) {
+									luaScript->SetProperty(prop.name, v);
+								}
+							} else if constexpr (std::is_same_v<T, int32>) {
+								int v = val;
+								if (ImGui::DragInt(prop.name.c_str(), &v)) {
+									luaScript->SetProperty(prop.name, static_cast<int32>(v));
+								}
+							} else if constexpr (std::is_same_v<T, float>) {
+								float v = val;
+								if (ImGui::DragFloat(prop.name.c_str(), &v, 0.1f)) {
+									luaScript->SetProperty(prop.name, v);
+								}
+							} else if constexpr (std::is_same_v<T, std::string>) {
+								char buffer[256];
+								strncpy_s(buffer, val.c_str(), sizeof(buffer) - 1);
+								if (ImGui::InputText(prop.name.c_str(), buffer, sizeof(buffer))) {
+									luaScript->SetProperty(prop.name, std::string(buffer));
+								}
+							}
+						}, prop.value);
+
+						ImGui::PopID();
+					}
+
+					ImGui::Unindent();
+				}
+
+				// リロードボタン
+				ImGui::Spacing();
+				if (ImGui::Button("Reload Script")) {
+					(void)luaScript->ReloadScript();
+				}
+			}
+
+			// スクリプト追加ボタン
+			if (!luaScript) {
+				ImGui::Separator();
+				if (ImGui::Button("Add Lua Script")) {
+					auto* newScript = selected->AddComponent<LuaScriptComponent>();
+					// デフォルトスクリプトパスを設定
+					newScript->SetScriptPath("assets/scripts/NewScript.lua");
+				}
+			}
 		}
 		else {
 			ImGui::Text("No object selected");

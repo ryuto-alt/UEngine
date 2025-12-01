@@ -78,7 +78,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(ProjectDir)external\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)external\assimp\include;$(ProjectDir)external\lua\src;$(ProjectDir)external;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -102,7 +102,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Debug\*.dll" "$(OutDir)" /Y</Command>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(ProjectDir)external\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)external\assimp\include;$(ProjectDir)external\lua\src;$(ProjectDir)external;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -124,7 +124,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(ProjectDir)external\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)external\assimp\include;$(ProjectDir)external\lua\src;$(ProjectDir)external;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -148,7 +148,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Debug\*.dll" "$(OutDir)" /Y</Command>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(ProjectDir)external\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)external\assimp\include;$(ProjectDir)external\lua\src;$(ProjectDir)external;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -229,6 +229,40 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClCompile Include="Engine\Audio\AudioClip.cpp" />
     <ClCompile Include="Engine\Audio\AudioSource.cpp" />
     <ClCompile Include="Engine\Audio\AudioListener.cpp" />
+    <ClCompile Include="Engine\Scripting\LuaState.cpp" />
+    <ClCompile Include="Engine\Scripting\LuaScriptComponent.cpp" />
+    <ClCompile Include="external\lua\src\lapi.c" />
+    <ClCompile Include="external\lua\src\lauxlib.c" />
+    <ClCompile Include="external\lua\src\lbaselib.c" />
+    <ClCompile Include="external\lua\src\lcode.c" />
+    <ClCompile Include="external\lua\src\lcorolib.c" />
+    <ClCompile Include="external\lua\src\lctype.c" />
+    <ClCompile Include="external\lua\src\ldblib.c" />
+    <ClCompile Include="external\lua\src\ldebug.c" />
+    <ClCompile Include="external\lua\src\ldo.c" />
+    <ClCompile Include="external\lua\src\ldump.c" />
+    <ClCompile Include="external\lua\src\lfunc.c" />
+    <ClCompile Include="external\lua\src\lgc.c" />
+    <ClCompile Include="external\lua\src\linit.c" />
+    <ClCompile Include="external\lua\src\liolib.c" />
+    <ClCompile Include="external\lua\src\llex.c" />
+    <ClCompile Include="external\lua\src\lmathlib.c" />
+    <ClCompile Include="external\lua\src\lmem.c" />
+    <ClCompile Include="external\lua\src\loadlib.c" />
+    <ClCompile Include="external\lua\src\lobject.c" />
+    <ClCompile Include="external\lua\src\lopcodes.c" />
+    <ClCompile Include="external\lua\src\loslib.c" />
+    <ClCompile Include="external\lua\src\lparser.c" />
+    <ClCompile Include="external\lua\src\lstate.c" />
+    <ClCompile Include="external\lua\src\lstring.c" />
+    <ClCompile Include="external\lua\src\lstrlib.c" />
+    <ClCompile Include="external\lua\src\ltable.c" />
+    <ClCompile Include="external\lua\src\ltablib.c" />
+    <ClCompile Include="external\lua\src\ltm.c" />
+    <ClCompile Include="external\lua\src\lundump.c" />
+    <ClCompile Include="external\lua\src\lutf8lib.c" />
+    <ClCompile Include="external\lua\src\lvm.c" />
+    <ClCompile Include="external\lua\src\lzio.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Core\Application.h" />
@@ -313,6 +347,8 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClInclude Include="Engine\Animation\AnimatorComponent.h" />
     <ClInclude Include="Engine\Animation\AnimationSystem.h" />
     <ClInclude Include="Engine\Systems\SystemManager.h" />
+    <ClInclude Include="Engine\Scripting\LuaState.h" />
+    <ClInclude Include="Engine\Scripting\LuaScriptComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

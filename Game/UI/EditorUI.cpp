@@ -61,19 +61,36 @@ namespace UnoEngine {
 			animationSystem_ = context.animationSystem;
 		}
 
-		// 3Dオーディオプレビュー中はエディタカメラ位置を継続的に更新
-		if (previewingAudioSource_ && previewingAudioSource_->IsPlaying() &&
-			previewingAudioSource_->Is3D() && editorCamera_.GetCamera()) {
-			if (AudioListener::GetInstance()) {
+		// 3Dオーディオ：リスナー位置を更新
+		if (editorCamera_.GetCamera() && AudioListener::GetInstance()) {
+			if (editorMode_ == EditorMode::Play) {
+				// Playモード中はカメラ位置をリスナー位置として使用
 				AudioListener::GetInstance()->SetEditorOverridePosition(
 					editorCamera_.GetCamera()->GetPosition());
+				AudioListener::GetInstance()->SetEditorOverrideOrientation(
+					editorCamera_.GetCamera()->GetForward(),
+					editorCamera_.GetCamera()->GetUp());
+			} else if (previewingAudioSource_ && previewingAudioSource_->IsPlaying() &&
+				previewingAudioSource_->Is3D()) {
+				// プレビュー中はエディタカメラ位置・向きを継続的に更新
+				AudioListener::GetInstance()->SetEditorOverridePosition(
+					editorCamera_.GetCamera()->GetPosition());
+				AudioListener::GetInstance()->SetEditorOverrideOrientation(
+					editorCamera_.GetCamera()->GetForward(),
+					editorCamera_.GetCamera()->GetUp());
 			}
-		} else if (previewingAudioSource_ && !previewingAudioSource_->IsPlaying()) {
-			// 再生が終わったらオーバーライドをクリア
+		}
+
+		// プレビュー終了時の処理
+		if (previewingAudioSource_ && !previewingAudioSource_->IsPlaying()) {
 			if (AudioListener::GetInstance()) {
 				AudioListener::GetInstance()->ClearEditorOverride();
 			}
 			previewingAudioSource_ = nullptr;
+			// Playモードでなければエディタ用リスナーも解放
+			if (editorMode_ == EditorMode::Edit) {
+				editorAudioListener_.reset();
+			}
 		}
 
 		// ホットキー処理
@@ -111,6 +128,18 @@ namespace UnoEngine {
 			if (audioSystem_ && audioSystem_->IsPaused()) {
 				audioSystem_->ResumeAll();
 			}
+
+			// シーンにAudioListenerがない場合はエディタ用を作成
+			// （3Dオーディオを機能させるため）
+			if (!AudioListener::GetInstance()) {
+				editorAudioListener_ = std::make_unique<AudioListener>();
+				consoleMessages_.push_back("[Audio] Created AudioListener for Play mode");
+			}
+			// Playモードではエディタオーバーライドをクリア（GameObjectの位置を使う）
+			if (AudioListener::GetInstance()) {
+				AudioListener::GetInstance()->ClearEditorOverride();
+			}
+
 			// PlayOnAwakeのAudioSourceを再生
 			int playCount = 0;
 			if (gameObjects_) {
@@ -180,6 +209,12 @@ namespace UnoEngine {
 					}
 				}
 			}
+			// エディタ用AudioListenerを解放
+			if (AudioListener::GetInstance()) {
+				AudioListener::GetInstance()->ClearEditorOverride();
+			}
+			editorAudioListener_.reset();
+
 			consoleMessages_.push_back("[Editor] Stopped - returned to Edit mode (stopped " + std::to_string(stoppedCount) + " audio sources)");
 		}
 	}
@@ -1012,14 +1047,24 @@ namespace UnoEngine {
 									AudioListener::GetInstance()->ClearEditorOverride();
 								}
 								previewingAudioSource_ = nullptr;
+								// エディタ用リスナーを解放
+								editorAudioListener_.reset();
 							}
 						} else {
 							if (ImGui::Button("Preview##Audio")) {
-								// 3Dオーディオの場合、エディタカメラ位置をリスナー位置として設定
-								if (audioSource->Is3D() && editorCamera_.GetCamera()) {
-									if (AudioListener::GetInstance()) {
+								// 3Dオーディオの場合、エディタ用リスナーを作成してから再生
+								if (audioSource->Is3D()) {
+									// シーンにAudioListenerがない場合はエディタ用を作成
+									if (!AudioListener::GetInstance()) {
+										editorAudioListener_ = std::make_unique<AudioListener>();
+									}
+									// エディタカメラ位置・向きをリスナーとして設定
+									if (AudioListener::GetInstance() && editorCamera_.GetCamera()) {
 										AudioListener::GetInstance()->SetEditorOverridePosition(
 											editorCamera_.GetCamera()->GetPosition());
+										AudioListener::GetInstance()->SetEditorOverrideOrientation(
+											editorCamera_.GetCamera()->GetForward(),
+											editorCamera_.GetCamera()->GetUp());
 									}
 									previewingAudioSource_ = audioSource;
 								}

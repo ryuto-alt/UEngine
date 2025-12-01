@@ -3,6 +3,8 @@
 #include "../Core/Logger.h"
 #include <algorithm>
 
+#pragma comment(lib, "xaudio2.lib")
+
 namespace UnoEngine {
 
 AudioSystem* AudioSystem::instance_ = nullptr;
@@ -39,6 +41,28 @@ bool AudioSystem::Initialize() {
         Logger::Error("Failed to create mastering voice");
         xaudio2_.Reset();
         return false;
+    }
+
+    // マスターボイスの詳細を取得
+    XAUDIO2_VOICE_DETAILS voiceDetails;
+    masterVoice_->GetVoiceDetails(&voiceDetails);
+    outputChannels_ = voiceDetails.InputChannels;
+    Logger::Info("AudioSystem: Output channels = " + std::to_string(outputChannels_));
+
+    // X3DAudio初期化
+    DWORD channelMask;
+    hr = masterVoice_->GetChannelMask(&channelMask);
+    if (SUCCEEDED(hr)) {
+        Logger::Info("AudioSystem: Channel mask = " + std::to_string(channelMask));
+        hr = X3DAudioInitialize(channelMask, X3DAUDIO_SPEED_OF_SOUND, x3dAudioHandle_);
+        if (SUCCEEDED(hr)) {
+            x3dAudioInitialized_ = true;
+            Logger::Info("X3DAudio initialized successfully");
+        } else {
+            Logger::Warning("Failed to initialize X3DAudio (hr=" + std::to_string(hr) + "), 3D audio will be disabled");
+        }
+    } else {
+        Logger::Warning("Failed to get channel mask (hr=" + std::to_string(hr) + "), 3D audio will be disabled");
     }
 
     initialized_ = true;

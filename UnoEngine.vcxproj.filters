@@ -245,6 +245,9 @@
     <ClCompile Include="Engine\Audio\AudioSource.cpp">
       <Filter>Engine\Audio</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Audio\AudioListener.cpp">
+      <Filter>Engine\Audio</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\UI\imgui_toggle.cpp">
       <Filter>Engine\UI</Filter>
     </ClCompile>

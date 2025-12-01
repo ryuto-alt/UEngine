@@ -2,6 +2,8 @@
 
 #include "../Core/Component.h"
 #include <xaudio2.h>
+#include <x3daudio.h>
+#include <vector>
 #include <string>
 #include <memory>
 
@@ -59,8 +61,9 @@ public:
     void SetMaxDistance(float distance) { maxDistance_ = distance; }
 
 private:
-    void UpdateVolume();
-    float Calculate3DVolume() const;
+    void Update3DAudio();
+    void InitializeDSPSettings();
+    void CleanupDSPSettings();
     void SubmitBuffer();
 
     std::shared_ptr<AudioClip> clip_;
@@ -77,6 +80,12 @@ private:
 
     bool isPlaying_ = false;
     bool isPaused_ = false;
+
+    // X3DAudio用
+    X3DAUDIO_EMITTER emitter_{};
+    X3DAUDIO_DSP_SETTINGS dspSettings_{};
+    std::vector<float> matrixCoefficients_;
+    bool dspInitialized_ = false;
 };
 
 } // namespace UnoEngine

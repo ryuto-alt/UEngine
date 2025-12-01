@@ -6,12 +6,14 @@
 #include "../../Engine/Core/Types.h"
 #include "../../Engine/Math/Vector.h"
 #include "../../Engine/Math/Quaternion.h"
+#include "../../Engine/Audio/AudioListener.h"
 #include "EditorCamera.h"
 #include "GizmoSystem.h"
 #include <vector>
 #include <string>
 #include <stack>
 #include <unordered_set>
+#include <memory>
 
 namespace UnoEngine {
 
@@ -228,6 +230,9 @@ private:
     
     // AudioSourceプレビュー用
     AudioSource* previewingAudioSource_ = nullptr;
+    
+    // エディタ用のAudioListener（シーンにリスナーがない場合に使用）
+    std::unique_ptr<AudioListener> editorAudioListener_;
 
     // Undo/Redo履歴
     std::stack<TransformSnapshot> undoStack_;

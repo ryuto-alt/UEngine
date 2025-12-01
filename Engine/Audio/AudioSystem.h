@@ -2,6 +2,7 @@
 
 #include "../Systems/ISystem.h"
 #include <xaudio2.h>
+#include <x3daudio.h>
 #include <wrl/client.h>
 #include <memory>
 #include <vector>
@@ -40,6 +41,9 @@ public:
     IXAudio2* GetXAudio2() const { return xaudio2_.Get(); }
     IXAudio2MasteringVoice* GetMasterVoice() const { return masterVoice_; }
     bool IsInitialized() const { return initialized_; }
+    bool IsX3DAudioInitialized() const { return x3dAudioInitialized_; }
+    const X3DAUDIO_HANDLE& GetX3DAudioHandle() const { return x3dAudioHandle_; }
+    UINT32 GetOutputChannels() const { return outputChannels_; }
 
     // 一時停止制御
     void PauseAll();
@@ -53,6 +57,11 @@ private:
     IXAudio2MasteringVoice* masterVoice_ = nullptr;
     bool initialized_ = false;
     bool isPaused_ = false;
+
+    // X3DAudio
+    X3DAUDIO_HANDLE x3dAudioHandle_;
+    bool x3dAudioInitialized_ = false;
+    UINT32 outputChannels_ = 0;
 
     // アクティブなボイスのリスト
     std::vector<IXAudio2SourceVoice*> activeVoices_;

@@ -261,6 +261,10 @@ private:
     std::vector<std::string> cachedAudioPaths_;
     void RefreshAudioPaths();
 
+    // スクリプトパスキャッシュ
+    std::vector<std::string> cachedScriptPaths_;
+    void RefreshScriptPaths();
+
     // 遅延ロード用キュー
     std::vector<std::string> pendingModelLoads_;
 

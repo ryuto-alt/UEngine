@@ -624,8 +624,61 @@ namespace UnoEngine {
 				ImGui::Text("Lua Script");
 				ImGui::PopStyleColor();
 
-				// スクリプトパス
-				ImGui::Text("Script: %s", luaScript->GetScriptPath().c_str());
+				// スクリプト選択コンボボックス
+				if (cachedScriptPaths_.empty()) {
+					RefreshScriptPaths();
+				}
+
+				std::string currentScript = luaScript->GetScriptPath();
+				int currentIndex = -1;
+				for (size_t i = 0; i < cachedScriptPaths_.size(); ++i) {
+					if (cachedScriptPaths_[i] == currentScript) {
+						currentIndex = static_cast<int>(i);
+						break;
+					}
+				}
+
+				// 現在のスクリプト名を表示（パスからファイル名のみ抽出）
+				std::string displayName = currentScript.empty() ? "(None)" :
+					currentScript.substr(currentScript.find_last_of("/\\") + 1);
+
+				if (ImGui::BeginCombo("Script", displayName.c_str())) {
+					// Noneオプション
+					if (ImGui::Selectable("(None)", currentScript.empty())) {
+						luaScript->SetScriptPath("");
+					}
+
+					for (size_t i = 0; i < cachedScriptPaths_.size(); ++i) {
+						// ファイル名のみ表示
+						std::string scriptName = cachedScriptPaths_[i].substr(
+							cachedScriptPaths_[i].find_last_of("/\\") + 1);
+						bool isSelected = (currentIndex == static_cast<int>(i));
+
+						if (ImGui::Selectable(scriptName.c_str(), isSelected)) {
+							luaScript->SetScriptPath(cachedScriptPaths_[i]);
+							(void)luaScript->ReloadScript();
+						}
+
+						// ツールチップでフルパス表示
+						if (ImGui::IsItemHovered()) {
+							ImGui::SetTooltip("%s", cachedScriptPaths_[i].c_str());
+						}
+
+						if (isSelected) {
+							ImGui::SetItemDefaultFocus();
+						}
+					}
+					ImGui::EndCombo();
+				}
+
+				// リフレッシュボタン
+				ImGui::SameLine();
+				if (ImGui::Button("R##RefreshScripts")) {
+					RefreshScriptPaths();
+				}
+				if (ImGui::IsItemHovered()) {
+					ImGui::SetTooltip("Refresh script list");
+				}
 
 				// エラー表示
 				if (luaScript->HasError()) {
@@ -687,15 +740,20 @@ namespace UnoEngine {
 				if (ImGui::Button("Reload Script")) {
 					(void)luaScript->ReloadScript();
 				}
+
+				// コンポーネント削除ボタン
+				ImGui::SameLine();
+				if (ImGui::Button("Remove Script")) {
+					selected->RemoveComponent<LuaScriptComponent>();
+				}
 			}
 
 			// スクリプト追加ボタン
 			if (!luaScript) {
 				ImGui::Separator();
 				if (ImGui::Button("Add Lua Script")) {
-					auto* newScript = selected->AddComponent<LuaScriptComponent>();
-					// デフォルトスクリプトパスを設定
-					newScript->SetScriptPath("assets/scripts/NewScript.lua");
+					selected->AddComponent<LuaScriptComponent>();
+					RefreshScriptPaths();
 				}
 			}
 		}
@@ -1751,6 +1809,24 @@ namespace UnoEngine {
 						std::string relativePath = entry.path().string();
 						std::replace(relativePath.begin(), relativePath.end(), '\\', '/');
 						cachedAudioPaths_.push_back(relativePath);
+					}
+				}
+			}
+		}
+	}
+
+	void EditorUI::RefreshScriptPaths() {
+		cachedScriptPaths_.clear();
+
+		std::string scriptPath = "assets/scripts";
+		if (std::filesystem::exists(scriptPath) && std::filesystem::is_directory(scriptPath)) {
+			for (const auto& entry : std::filesystem::recursive_directory_iterator(scriptPath)) {
+				if (entry.is_regular_file()) {
+					std::string ext = entry.path().extension().string();
+					if (ext == ".lua" || ext == ".LUA") {
+						std::string relativePath = entry.path().string();
+						std::replace(relativePath.begin(), relativePath.end(), '\\', '/');
+						cachedScriptPaths_.push_back(relativePath);
 					}
 				}
 			}

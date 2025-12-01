@@ -3,6 +3,7 @@
 #include "../Engine/Resource/ResourceLoader.h"
 #include "../Engine/Rendering/RenderSystem.h"
 #include "../Engine/Rendering/SkinnedRenderItem.h"
+#include "../Engine/Audio/AudioSystem.h"
 #include "../Engine/Core/Logger.h"
 
 namespace UnoEngine {
@@ -15,7 +16,8 @@ void GameApplication::OnInit() {
     // Register systems
     GetSystemManager()->RegisterSystem<AnimationSystem>();
     GetSystemManager()->RegisterSystem<CameraSystem>();
-    Logger::Info("[初期化] システム登録完了 (Animation, Camera)");
+    GetSystemManager()->RegisterSystem<AudioSystem>();
+    Logger::Info("[初期化] システム登録完了 (Animation, Camera, Audio)");
 }
 
 Mesh* GameApplication::LoadMesh(const std::string& path) {

@@ -23,6 +23,48 @@
                     1.0
                 ]
             }
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "modelPath": "assets/model/testmodel/Enemy_Test/Enemy_Walk.gltf",
+                    "type": "SkinnedMeshRenderer"
+                },
+                {
+                    "clipPath": "assets/audio/test/edo.wav",
+                    "is3D": false,
+                    "loop": false,
+                    "maxDistance": 100.0,
+                    "minDistance": 1.0,
+                    "playOnAwake": false,
+                    "type": "AudioSource",
+                    "volume": 1.0
+                },
+                {
+                    "type": "AnimatorComponent"
+                }
+            ],
+            "layer": 1,
+            "name": "Enemy_Walk",
+            "transform": {
+                "position": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                ],
+                "scale": [
+                    0.10000000149011612,
+                    0.10000000149011612,
+                    0.10000000149011612
+                ]
+            }
         }
     ],
     "scene_name": "Scene",

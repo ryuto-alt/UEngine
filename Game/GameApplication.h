@@ -2,6 +2,7 @@
 
 #include "../Engine/Core/Application.h"
 #include "../Engine/Animation/AnimationSystem.h"
+#include "../Engine/Audio/AudioSystem.h"
 #include "../Engine/Resource/ResourceManager.h"
 #include "Systems/CameraSystem.h"
 #include <memory>
@@ -23,6 +24,7 @@ public:
 
     // Accessors
     CameraSystem* GetCameraSystem() { return GetSystemManager()->GetSystem<CameraSystem>(); }
+    AudioSystem* GetAudioSystem() { return GetSystemManager()->GetSystem<AudioSystem>(); }
     GraphicsDevice* GetGraphicsDevice() { return graphics_.get(); }
     Renderer* GetRenderer() { return renderer_.get(); }
     LightManager* GetLightManager() { return lightManager_.get(); }

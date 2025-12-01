@@ -10,6 +10,7 @@
 #include "../../Engine/Rendering/DebugRenderer.h"
 #include "../../Engine/Animation/AnimatorComponent.h"
 #include "../../Engine/Animation/AnimationSystem.h"
+#include "../../Engine/Audio/AudioSystem.h"
 #include "../../Engine/Systems/SystemManager.h"
 #include "../../Engine/Resource/ResourceManager.h"
 #include "../../Engine/Scene/SceneSerializer.h"
@@ -103,6 +104,7 @@ void GameScene::OnLoad() {
     editorUI_.SetGameObjects(&GetGameObjects());
     editorUI_.SetResourceManager(app->GetResourceManager());
     editorUI_.SetScene(this);
+    editorUI_.SetAudioSystem(app->GetAudioSystem());
     if (sceneFileExists) {
         editorUI_.AddConsoleMessage("[シーン] 保存されたシーンをロード: " + sceneFilePath);
     }

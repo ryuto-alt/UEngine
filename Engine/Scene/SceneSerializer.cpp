@@ -1,6 +1,8 @@
 #include "SceneSerializer.h"
 #include "../Rendering/SkinnedMeshRenderer.h"
 #include "../Animation/AnimatorComponent.h"
+#include "../Audio/AudioSource.h"
+#include "../Audio/AudioListener.h"
 #include <fstream>
 #include <iostream>
 
@@ -188,13 +190,28 @@ json SceneSerializer::SerializeComponent(const Component& component) {
     // AnimatorComponent
     if (auto* animator = dynamic_cast<const AnimatorComponent*>(&component)) {
         comp["type"] = "AnimatorComponent";
-        // AnimatorComponentは自動的にSkinnedMeshRendererから初期化されるため、
-        // 特別なデータの保存は不要
         return comp;
     }
 
-    // 他のコンポーネントタイプは今後追加
-    // 未知のコンポーネントタイプの場合はnullを返す
+    // AudioSource
+    if (auto* audioSource = dynamic_cast<const AudioSource*>(&component)) {
+        comp["type"] = "AudioSource";
+        comp["clipPath"] = audioSource->GetClipPath();
+        comp["volume"] = audioSource->GetVolume();
+        comp["loop"] = audioSource->IsLooping();
+        comp["playOnAwake"] = audioSource->GetPlayOnAwake();
+        comp["is3D"] = audioSource->Is3D();
+        comp["minDistance"] = audioSource->GetMinDistance();
+        comp["maxDistance"] = audioSource->GetMaxDistance();
+        return comp;
+    }
+
+    // AudioListener
+    if (auto* audioListener = dynamic_cast<const AudioListener*>(&component)) {
+        comp["type"] = "AudioListener";
+        return comp;
+    }
+
     return json();
 }
 
@@ -213,10 +230,35 @@ void SceneSerializer::DeserializeComponent(const json& json, GameObject& gameObj
         }
     }
     else if (type == "AnimatorComponent") {
-        // AnimatorComponentはSkinnedMeshRendererによって自動的に追加・初期化されるため、
-        // ここでは何もしない
+        // AnimatorComponentはSkinnedMeshRendererによって自動的に追加・初期化される
     }
-    // 他のコンポーネントタイプは今後追加
+    else if (type == "AudioSource") {
+        auto* audioSource = gameObject.AddComponent<AudioSource>();
+        if (json.contains("clipPath")) {
+            audioSource->SetClipPath(json["clipPath"].get<std::string>());
+        }
+        if (json.contains("volume")) {
+            audioSource->SetVolume(json["volume"].get<float>());
+        }
+        if (json.contains("loop")) {
+            audioSource->SetLoop(json["loop"].get<bool>());
+        }
+        if (json.contains("playOnAwake")) {
+            audioSource->SetPlayOnAwake(json["playOnAwake"].get<bool>());
+        }
+        if (json.contains("is3D")) {
+            audioSource->Set3D(json["is3D"].get<bool>());
+        }
+        if (json.contains("minDistance")) {
+            audioSource->SetMinDistance(json["minDistance"].get<float>());
+        }
+        if (json.contains("maxDistance")) {
+            audioSource->SetMaxDistance(json["maxDistance"].get<float>());
+        }
+    }
+    else if (type == "AudioListener") {
+        gameObject.AddComponent<AudioListener>();
+    }
 }
 
 } // namespace UnoEngine

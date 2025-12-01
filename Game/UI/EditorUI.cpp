@@ -9,6 +9,10 @@
 #include "../../Engine/Resource/SkinnedModelImporter.h"
 #include "../../Engine/Graphics/DirectionalLightComponent.h"
 #include "../../Engine/Math/BoundingVolume.h"
+#include "../../Engine/Audio/AudioSystem.h"
+#include "../../Engine/Audio/AudioSource.h"
+#include "../../Engine/Audio/AudioListener.h"
+#include "../../Engine/Audio/AudioClip.h"
 #include <imgui.h>
 #include <imgui_internal.h>
 #include "../../Engine/UI/imgui_toggle.h"
@@ -21,6 +25,7 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
+#include <commdlg.h>
 #include <filesystem>
 
 namespace UnoEngine {
@@ -84,13 +89,33 @@ namespace UnoEngine {
 			if (animationSystem_) {
 				animationSystem_->SetPlaying(true);
 			}
-			consoleMessages_.push_back("[Editor] Play mode started");
+			// AudioSystemのポーズ状態をリセット
+			if (audioSystem_ && audioSystem_->IsPaused()) {
+				audioSystem_->ResumeAll();
+			}
+			// PlayOnAwakeのAudioSourceを再生
+			int playCount = 0;
+			if (gameObjects_) {
+				for (auto& obj : *gameObjects_) {
+					if (auto* audioSource = obj->GetComponent<AudioSource>()) {
+						if (audioSource->GetPlayOnAwake()) {
+							audioSource->Play();
+							playCount++;
+						}
+					}
+				}
+			}
+			consoleMessages_.push_back("[Editor] Play mode started (triggered " + std::to_string(playCount) + " audio sources)");
 		}
 		else if (editorMode_ == EditorMode::Pause) {
 			editorMode_ = EditorMode::Play;
 			// アニメーション再開
 			if (animationSystem_) {
 				animationSystem_->SetPlaying(true);
+			}
+			// オーディオ再開
+			if (audioSystem_) {
+				audioSystem_->ResumeAll();
 			}
 			consoleMessages_.push_back("[Editor] Resumed");
 		}
@@ -103,6 +128,10 @@ namespace UnoEngine {
 			if (animationSystem_) {
 				animationSystem_->SetPlaying(false);
 			}
+			// オーディオ一時停止
+			if (audioSystem_) {
+				audioSystem_->PauseAll();
+			}
 			consoleMessages_.push_back("[Editor] Paused");
 		}
 	}
@@ -114,7 +143,21 @@ namespace UnoEngine {
 			if (animationSystem_) {
 				animationSystem_->SetPlaying(false);
 			}
-			consoleMessages_.push_back("[Editor] Stopped - returned to Edit mode");
+			// AudioSystemのポーズ状態をリセット（Pause中にStopされた場合）
+			if (audioSystem_ && audioSystem_->IsPaused()) {
+				audioSystem_->ResumeAll();
+			}
+			// オーディオ停止
+			int stoppedCount = 0;
+			if (gameObjects_) {
+				for (auto& obj : *gameObjects_) {
+					if (auto* audioSource = obj->GetComponent<AudioSource>()) {
+						audioSource->Stop();
+						stoppedCount++;
+					}
+				}
+			}
+			consoleMessages_.push_back("[Editor] Stopped - returned to Edit mode (stopped " + std::to_string(stoppedCount) + " audio sources)");
 		}
 	}
 
@@ -559,6 +602,27 @@ namespace UnoEngine {
 					}
 				}
 
+				// AudioファイルのD&Dターゲット（オブジェクトにドロップ）
+				if (ImGui::BeginDragDropTarget()) {
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AUDIO_PATH")) {
+						size_t index = *(const size_t*)payload->Data;
+						if (index < cachedAudioPaths_.size()) {
+							const std::string& audioPath = cachedAudioPaths_[index];
+							// AudioSourceがなければ追加
+							auto* audioSource = obj->GetComponent<AudioSource>();
+							if (!audioSource) {
+								audioSource = obj->AddComponent<AudioSource>();
+								consoleMessages_.push_back("[Editor] Added AudioSource to: " + obj->GetName());
+							}
+							audioSource->SetClipPath(audioPath);
+							audioSource->LoadClip(audioPath);
+							consoleMessages_.push_back("[Audio] Set clip: " + std::filesystem::path(audioPath).filename().string());
+							selectedObject_ = obj;
+						}
+					}
+					ImGui::EndDragDropTarget();
+				}
+
 				// 右クリックメニュー
 				if (ImGui::BeginPopupContextItem()) {
 					if (ImGui::MenuItem("Rename", "F2")) {
@@ -587,6 +651,22 @@ namespace UnoEngine {
 								}
 							}
 						}
+					}
+					ImGui::Separator();
+					if (ImGui::BeginMenu("Add Component")) {
+						if (ImGui::MenuItem("AudioSource")) {
+							if (!obj->GetComponent<AudioSource>()) {
+								obj->AddComponent<AudioSource>();
+								consoleMessages_.push_back("[Editor] Added AudioSource to: " + obj->GetName());
+							}
+						}
+						if (ImGui::MenuItem("AudioListener")) {
+							if (!obj->GetComponent<AudioListener>()) {
+								obj->AddComponent<AudioListener>();
+								consoleMessages_.push_back("[Editor] Added AudioListener to: " + obj->GetName());
+							}
+						}
+						ImGui::EndMenu();
 					}
 					ImGui::EndPopup();
 				}
@@ -661,6 +741,139 @@ namespace UnoEngine {
 
 					if (isGizmoActive) {
 						ImGui::EndDisabled();
+					}
+
+					// === AudioSource コンポーネント ===
+					if (auto* audioSource = obj->GetComponent<AudioSource>()) {
+						ImGui::Separator();
+						ImGui::Text("AudioSource");
+						ImGui::Indent(10.0f);
+
+						// オーディオファイルリストをリフレッシュ（まだ空の場合）
+						if (cachedAudioPaths_.empty()) {
+							RefreshAudioPaths();
+						}
+
+						// クリップ選択（ドロップダウン）
+						std::string currentClip = audioSource->GetClipPath();
+						std::string displayName = currentClip.empty() ? "(None)" : std::filesystem::path(currentClip).filename().string();
+
+						ImGui::SetNextItemWidth(180.0f);
+						if (ImGui::BeginCombo("Audio Clip", displayName.c_str())) {
+							// (None)選択肢
+							if (ImGui::Selectable("(None)", currentClip.empty())) {
+								audioSource->SetClipPath("");
+								audioSource->SetClip(nullptr);
+							}
+
+							// assets/audioフォルダ内のファイル一覧
+							for (const auto& audioPath : cachedAudioPaths_) {
+								std::string filename = std::filesystem::path(audioPath).filename().string();
+								bool isSelected = (currentClip == audioPath);
+								if (ImGui::Selectable(filename.c_str(), isSelected)) {
+									audioSource->SetClipPath(audioPath);
+									audioSource->LoadClip(audioPath);
+									consoleMessages_.push_back("[Audio] Loaded: " + filename);
+								}
+								if (isSelected) {
+									ImGui::SetItemDefaultFocus();
+								}
+							}
+							ImGui::EndCombo();
+						}
+
+						// D&Dターゲット（AudioClipをここにドロップ可能）
+						if (ImGui::BeginDragDropTarget()) {
+							if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AUDIO_PATH")) {
+								size_t index = *(const size_t*)payload->Data;
+								if (index < cachedAudioPaths_.size()) {
+									const std::string& audioPath = cachedAudioPaths_[index];
+									audioSource->SetClipPath(audioPath);
+									audioSource->LoadClip(audioPath);
+									consoleMessages_.push_back("[Audio] Dropped: " + std::filesystem::path(audioPath).filename().string());
+								}
+							}
+							ImGui::EndDragDropTarget();
+						}
+
+						ImGui::SameLine();
+						if (ImGui::Button("...##AudioClip")) {
+							// Win32 ファイルダイアログ（外部ファイル用）
+							char filename[MAX_PATH] = "";
+							OPENFILENAMEA ofn = {};
+							ofn.lStructSize = sizeof(ofn);
+							ofn.hwndOwner = nullptr;
+							ofn.lpstrFilter = "WAV Files\0*.wav\0All Files\0*.*\0";
+							ofn.lpstrFile = filename;
+							ofn.nMaxFile = MAX_PATH;
+							ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
+							ofn.lpstrDefExt = "wav";
+							if (GetOpenFileNameA(&ofn)) {
+								audioSource->SetClipPath(filename);
+								audioSource->LoadClip(filename);
+							}
+						}
+						if (ImGui::IsItemHovered()) {
+							ImGui::SetTooltip("Browse for external WAV file");
+						}
+
+						// 音量
+						float volume = audioSource->GetVolume();
+						ImGui::SetNextItemWidth(150.0f);
+						if (ImGui::SliderFloat("Volume", &volume, 0.0f, 1.0f)) {
+							audioSource->SetVolume(volume);
+						}
+
+						// ループ
+						bool loop = audioSource->IsLooping();
+						if (ImGui::Checkbox("Loop", &loop)) {
+							audioSource->SetLoop(loop);
+						}
+
+						// PlayOnAwake
+						bool playOnAwake = audioSource->GetPlayOnAwake();
+						if (ImGui::Checkbox("Play On Awake", &playOnAwake)) {
+							audioSource->SetPlayOnAwake(playOnAwake);
+						}
+
+						// 3Dオーディオ設定
+						bool is3D = audioSource->Is3D();
+						if (ImGui::Checkbox("3D Audio", &is3D)) {
+							audioSource->Set3D(is3D);
+						}
+
+						if (is3D) {
+							float minDist = audioSource->GetMinDistance();
+							float maxDist = audioSource->GetMaxDistance();
+							ImGui::SetNextItemWidth(100.0f);
+							if (ImGui::DragFloat("Min Distance", &minDist, 0.1f, 0.1f, 100.0f)) {
+								audioSource->SetMinDistance(minDist);
+							}
+							ImGui::SetNextItemWidth(100.0f);
+							if (ImGui::DragFloat("Max Distance", &maxDist, 1.0f, 1.0f, 1000.0f)) {
+								audioSource->SetMaxDistance(maxDist);
+							}
+						}
+
+						// プレビューボタン
+						if (audioSource->IsPlaying()) {
+							if (ImGui::Button("Stop##Audio")) {
+								audioSource->Stop();
+							}
+						} else {
+							if (ImGui::Button("Preview##Audio")) {
+								audioSource->Play();
+							}
+						}
+
+						ImGui::Unindent(10.0f);
+					}
+
+					// === AudioListener コンポーネント ===
+					if (obj->GetComponent<AudioListener>()) {
+						ImGui::Separator();
+						ImGui::Text("AudioListener");
+						ImGui::TextDisabled("  (Main listener for 3D audio)");
 					}
 
 					ImGui::Unindent(20.0f);
@@ -931,6 +1144,70 @@ namespace UnoEngine {
 			ImGui::TreePop();
 		}
 
+		// Audioフォルダをスキャン
+		if (ImGui::TreeNode("Audio")) {
+			if (ImGui::SmallButton("Refresh##Audio")) {
+				RefreshAudioPaths();
+				consoleMessages_.push_back("[Editor] Audio list refreshed");
+			}
+			ImGui::Separator();
+
+			if (cachedAudioPaths_.empty()) {
+				RefreshAudioPaths();
+			}
+
+			for (size_t i = 0; i < cachedAudioPaths_.size(); ++i) {
+				const auto& audioPath = cachedAudioPaths_[i];
+				std::filesystem::path p(audioPath);
+				std::string filename = p.filename().string();
+
+				ImGui::PushID(static_cast<int>(i + 10000)); // モデルとIDが被らないようにオフセット
+
+				ImGui::Text("🔊");
+				ImGui::SameLine();
+
+				if (ImGui::Selectable(filename.c_str())) {
+					// シングルクリック: AudioSourceがある選択中オブジェクトにセット
+					if (selectedObject_) {
+						if (auto* audioSource = selectedObject_->GetComponent<AudioSource>()) {
+							audioSource->SetClipPath(audioPath);
+							audioSource->LoadClip(audioPath);
+							consoleMessages_.push_back("[Editor] Audio clip set: " + filename);
+						}
+					}
+				}
+
+				// ダブルクリック: 新規GameObjectを作成してAudioSourceを追加
+				if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+					if (gameObjects_) {
+						std::string objectName = p.stem().string(); // 拡張子なしのファイル名
+						auto newObject = std::make_unique<GameObject>(objectName);
+						auto* audioSource = newObject->AddComponent<AudioSource>();
+						audioSource->SetClipPath(audioPath);
+						audioSource->LoadClip(audioPath);
+						selectedObject_ = newObject.get();
+						gameObjects_->push_back(std::move(newObject));
+						consoleMessages_.push_back("[Editor] Created AudioSource object: " + objectName);
+					}
+				}
+
+				// ドラッグ＆ドロップソース
+				if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+					ImGui::SetDragDropPayload("AUDIO_PATH", &i, sizeof(size_t));
+					ImGui::Text("🔊 %s", filename.c_str());
+					ImGui::EndDragDropSource();
+				}
+
+				ImGui::PopID();
+			}
+
+			if (cachedAudioPaths_.empty()) {
+				ImGui::TextDisabled("(no audio files found)");
+			}
+
+			ImGui::TreePop();
+		}
+
 		ImGui::End();
 	}
 
@@ -1154,6 +1431,25 @@ namespace UnoEngine {
 						std::string relativePath = entry.path().string();
 						std::replace(relativePath.begin(), relativePath.end(), '\\', '/');
 						cachedModelPaths_.push_back(relativePath);
+					}
+				}
+			}
+		}
+	}
+
+	// オーディオパスをリフレッシュ
+	void EditorUI::RefreshAudioPaths() {
+		cachedAudioPaths_.clear();
+
+		std::string audioPath = "assets/audio";
+		if (std::filesystem::exists(audioPath) && std::filesystem::is_directory(audioPath)) {
+			for (const auto& entry : std::filesystem::recursive_directory_iterator(audioPath)) {
+				if (entry.is_regular_file()) {
+					std::string ext = entry.path().extension().string();
+					if (ext == ".wav" || ext == ".WAV") {
+						std::string relativePath = entry.path().string();
+						std::replace(relativePath.begin(), relativePath.end(), '\\', '/');
+						cachedAudioPaths_.push_back(relativePath);
 					}
 				}
 			}

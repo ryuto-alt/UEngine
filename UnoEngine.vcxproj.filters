@@ -69,6 +69,9 @@
     <Filter Include="Engine\Scene">
       <UniqueIdentifier>{d4e5f6a7-b8c9-0d1e-2f3a-4b5c6d7e8f9a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Audio">
+      <UniqueIdentifier>{e5f6a7b8-c9d0-1e2f-3a4b-5c6d7e8f9a0b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -232,6 +235,15 @@
     </ClCompile>
     <ClCompile Include="Engine\Systems\SystemManager.cpp">
       <Filter>Engine\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Audio\AudioSystem.cpp">
+      <Filter>Engine\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Audio\AudioClip.cpp">
+      <Filter>Engine\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Audio\AudioSource.cpp">
+      <Filter>Engine\Audio</Filter>
     </ClCompile>
     <ClCompile Include="Engine\UI\imgui_toggle.cpp">
       <Filter>Engine\UI</Filter>
@@ -420,6 +432,18 @@
     </ClInclude>
     <ClInclude Include="Engine\Systems\ISystem.h">
       <Filter>Engine\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Audio\AudioSystem.h">
+      <Filter>Engine\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Audio\AudioClip.h">
+      <Filter>Engine\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Audio\AudioSource.h">
+      <Filter>Engine\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Audio\AudioListener.h">
+      <Filter>Engine\Audio</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Rendering\Renderer.h">
       <Filter>Engine\Rendering</Filter>

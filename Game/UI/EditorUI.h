@@ -18,6 +18,8 @@ namespace UnoEngine {
 class GraphicsDevice;
 class DebugRenderer;
 class AnimationSystem;
+class AudioSystem;
+class AudioSource;
 
 // Transform操作履歴
 struct TransformSnapshot {
@@ -85,6 +87,9 @@ public:
 
     // アニメーションシステムとの連携
     void SetAnimationSystem(AnimationSystem* animSystem) { animationSystem_ = animSystem; }
+
+    // オーディオシステムとの連携
+    void SetAudioSystem(AudioSystem* audioSystem) { audioSystem_ = audioSystem; }
 
     // 次のフレームで適用するビューポートサイズを取得
     void GetDesiredViewportSizes(uint32& gameW, uint32& gameH, uint32& sceneW, uint32& sceneH) const {
@@ -203,6 +208,12 @@ private:
     // アニメーションシステム参照
     AnimationSystem* animationSystem_ = nullptr;
 
+    // オーディオシステム参照
+    AudioSystem* audioSystem_ = nullptr;
+    
+    // AudioSourceプレビュー用
+    AudioSource* previewingAudioSource_ = nullptr;
+
     // Undo/Redo履歴
     std::stack<TransformSnapshot> undoStack_;
     TransformSnapshot preGizmoSnapshot_;  // ギズモ操作開始時のスナップショット
@@ -224,6 +235,10 @@ private:
     // モデルパスキャッシュ（D&D用）
     std::vector<std::string> cachedModelPaths_;
     void RefreshModelPaths();
+
+    // オーディオパスキャッシュ
+    std::vector<std::string> cachedAudioPaths_;
+    void RefreshAudioPaths();
 
     // 遅延ロード用キュー
     std::vector<std::string> pendingModelLoads_;

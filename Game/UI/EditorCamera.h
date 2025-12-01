@@ -4,6 +4,7 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#include <string>
 
 namespace UnoEngine {
 
@@ -57,6 +58,10 @@ public:
 
     // オービットターゲットがあるか
     bool HasOrbitTarget() const { return hasOrbitTarget_; }
+
+    // 設定の保存/読み込み
+    void SaveSettings(const std::string& filepath = "editor_camera_settings.json");
+    void LoadSettings(const std::string& filepath = "editor_camera_settings.json");
 
 private:
     // フリーカメラ操作（右クリック + WASD）

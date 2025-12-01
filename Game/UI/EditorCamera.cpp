@@ -2,6 +2,8 @@
 #include "../../Engine/Math/Quaternion.h"
 #include <imgui.h>
 #include <cmath>
+#include <fstream>
+#include <nlohmann/json.hpp>
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
@@ -252,6 +254,40 @@ void EditorCamera::FocusOn(const Vector3& targetPosition, float distance, bool r
     Matrix4x4 viewMat = Matrix4x4::LookAtLH(newPos, orbitTarget_, Vector3::UnitY());
     Quaternion rot = Quaternion::FromRotationMatrix(viewMat.Inverse());
     camera_->SetRotation(rot);
+}
+
+void EditorCamera::SaveSettings(const std::string& filepath) {
+    nlohmann::json settings;
+    settings["moveSpeed"] = moveSpeed_;
+    settings["rotateSpeed"] = rotateSpeed_;
+    settings["scrollSpeed"] = scrollSpeed_;
+
+    std::ofstream file(filepath);
+    if (file.is_open()) {
+        file << settings.dump(4);
+    }
+}
+
+void EditorCamera::LoadSettings(const std::string& filepath) {
+    std::ifstream file(filepath);
+    if (!file.is_open()) return;
+
+    try {
+        nlohmann::json settings;
+        file >> settings;
+
+        if (settings.contains("moveSpeed")) {
+            moveSpeed_ = settings["moveSpeed"].get<float>();
+        }
+        if (settings.contains("rotateSpeed")) {
+            rotateSpeed_ = settings["rotateSpeed"].get<float>();
+        }
+        if (settings.contains("scrollSpeed")) {
+            scrollSpeed_ = settings["scrollSpeed"].get<float>();
+        }
+    } catch (...) {
+        // JSONパースエラーの場合は無視（デフォルト値を使用）
+    }
 }
 
 } // namespace UnoEngine

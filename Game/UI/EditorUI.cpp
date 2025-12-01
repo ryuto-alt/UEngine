@@ -38,6 +38,9 @@ namespace UnoEngine {
 		// ギズモシステム初期化
 		gizmoSystem_.Initialize();
 
+		// エディタカメラ設定を読み込み
+		editorCamera_.LoadSettings();
+
 		// Console初期ログ
 		consoleMessages_.push_back("[System] UnoEngine Editor Initialized");
 		consoleMessages_.push_back("[Info] Press ~ to toggle console");
@@ -493,6 +496,41 @@ namespace UnoEngine {
 			if (ImGui::Toggle("##BonesToggle", &showBones, config)) {
 				context.debugRenderer->SetShowBones(showBones);
 			}
+		}
+
+		ImGui::Separator();
+		ImGui::Text("Camera Settings");
+		ImGui::Spacing();
+
+		bool settingsChanged = false;
+
+		// マウス感度（回転速度）
+		float rotateSpeed = editorCamera_.GetRotateSpeed();
+		ImGui::Text("Mouse Sensitivity");
+		if (ImGui::SliderFloat("##MouseSensitivity", &rotateSpeed, 0.1f, 5.0f, "%.2f")) {
+			editorCamera_.SetRotateSpeed(rotateSpeed);
+			settingsChanged = true;
+		}
+
+		// 移動速度
+		float moveSpeed = editorCamera_.GetMoveSpeed();
+		ImGui::Text("Move Speed");
+		if (ImGui::SliderFloat("##MoveSpeed", &moveSpeed, 1.0f, 100.0f, "%.1f")) {
+			editorCamera_.SetMoveSpeed(moveSpeed);
+			settingsChanged = true;
+		}
+
+		// スクロール速度
+		float scrollSpeed = editorCamera_.GetScrollSpeed();
+		ImGui::Text("Scroll Speed");
+		if (ImGui::SliderFloat("##ScrollSpeed", &scrollSpeed, 0.1f, 5.0f, "%.2f")) {
+			editorCamera_.SetScrollSpeed(scrollSpeed);
+			settingsChanged = true;
+		}
+
+		// 設定が変更されたら保存
+		if (settingsChanged) {
+			editorCamera_.SaveSettings();
 		}
 
 		ImGui::End();

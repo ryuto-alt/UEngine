@@ -123,6 +123,10 @@ void GameScene::OnLoad() {
     editorUI_.SetResourceManager(app->GetResourceManager());
     editorUI_.SetScene(this);
     editorUI_.SetAudioSystem(app->GetAudioSystem());
+
+    // Game Camera（Main Camera）を設定
+    editorUI_.SetGameCamera(GetActiveCamera());
+
     if (sceneFileExists) {
         editorUI_.AddConsoleMessage("[シーン] 保存されたシーンをロード: " + sceneFilePath);
     }

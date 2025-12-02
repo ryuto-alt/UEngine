@@ -50,6 +50,7 @@ public:
     virtual ~Renderer() = default;
 
     void Initialize(GraphicsDevice* graphics, Window* window);
+    void BeginFrame();  // フレーム開始時にダイナミックバッファをリセット
     void Draw(const RenderView& view, const std::vector<RenderItem>& renderItems, LightManager* lightManager, Scene* scene = nullptr);
     void DrawSkinnedMeshes(const RenderView& view, const std::vector<SkinnedRenderItem>& items, LightManager* lightManager);
     void DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle,
@@ -84,11 +85,14 @@ private:
     DynamicConstantBuffer<TransformCB> skinnedTransformBuffer_;
     DynamicConstantBuffer<MaterialCB> skinnedMaterialBuffer_;
     
-    // 通常メッシュ用（互換性のため保持）
-    ConstantBuffer<TransformCB> constantBuffer_;
-    ConstantBuffer<LightCB> lightBuffer_;
-    ConstantBuffer<MaterialCB> materialBuffer_;
+    // 通常メッシュ用（DynamicConstantBufferで複数ビュー対応）
+    DynamicConstantBuffer<TransformCB> constantBuffer_;
+    DynamicConstantBuffer<LightCB> lightBuffer_;
+    DynamicConstantBuffer<MaterialCB> materialBuffer_;
     ConstantBuffer<BoneMatricesCB> boneBuffer_;
+
+    // 現在のライトバッファのGPUアドレス（UpdateLightingで更新）
+    D3D12_GPU_VIRTUAL_ADDRESS currentLightGpuAddr_ = 0;
     
     // StructuredBuffer for bone matrices（複数モデル対応のリングバッファ）
     static constexpr uint32 MAX_SKINNED_OBJECTS = 16;  // 1フレームで描画可能な最大スキンモデル数

@@ -30,6 +30,7 @@ Material* GameApplication::LoadMaterial(const std::string& name) {
 
 void GameApplication::OnRender() {
     graphics_->BeginFrame();
+    renderer_->BeginFrame();  // ダイナミックバッファをリセット
 
     Scene* scene = GetSceneManager()->GetActiveScene();
     if (scene) {
@@ -50,53 +51,56 @@ void GameApplication::OnRender() {
         GameScene* gameScene = dynamic_cast<GameScene*>(scene);
         if (gameScene) {
             auto* editorUI = gameScene->GetEditorUI();
+            auto* debugRenderer = renderer_->GetDebugRenderer();
 
-            // アクティブなViewのみ描画（パフォーマンス改善）
-            if (editorUI->ShouldRenderGameView()) {
-                // Game Viewに描画（デバッグ描画なし）
-                auto* gameViewTex = editorUI->GetGameViewTexture();
-                if (gameViewTex && gameViewTex->GetResource()) {
-                    renderer_->DrawToTexture(
-                        gameViewTex->GetResource(),
-                        gameViewTex->GetRTVHandle(),
-                        gameViewTex->GetDSVHandle(),
-                        view,
-                        items,
-                        lightManager_.get(),
-                        skinnedItems,
-                        false  // デバッグ描画無効
-                    );
-                }
+            // Scene View用カメラを取得（Main Cameraとは完全に独立したEditorCamera）
+            Camera* sceneCamera = editorUI->GetSceneViewCamera();
+
+            // デバッグ: カメラが異なることを確認
+            if (sceneCamera == view.camera) {
+                Logger::Warning("[描画] SceneCameraとMainCameraが同じです！");
             }
 
-            if (editorUI->ShouldRenderSceneView()) {
-                // Scene View用の独立したRenderViewを作成
+            // Game Viewに描画（Main Cameraを使用）
+            auto* gameViewTex = editorUI->GetGameViewTexture();
+            if (gameViewTex && gameViewTex->GetResource() && view.camera) {
+                renderer_->DrawToTexture(
+                    gameViewTex->GetResource(),
+                    gameViewTex->GetRTVHandle(),
+                    gameViewTex->GetDSVHandle(),
+                    view,  // Main Camera
+                    items,
+                    lightManager_.get(),
+                    skinnedItems,
+                    false  // デバッグ描画無効
+                );
+            }
+
+            // Scene Viewに描画（EditorCameraを使用）
+            auto* sceneViewTex = editorUI->GetSceneViewTexture();
+            if (sceneViewTex && sceneViewTex->GetResource() && sceneCamera) {
+                // デバッグ描画の準備
+                if (debugRenderer) {
+                    debugRenderer->BeginFrame();
+                    editorUI->PrepareSceneViewGizmos(debugRenderer);
+                }
+
+                // Scene View用のRenderViewを作成
                 RenderView sceneView;
-                sceneView.camera = editorUI->GetSceneViewCamera();
+                sceneView.camera = sceneCamera;  // EditorCamera（sceneViewCamera_）
                 sceneView.layerMask = view.layerMask;
                 sceneView.viewName = "SceneView";
 
-                // デバッグ描画の準備（BeginFrameでクリアしてからギズモを追加）
-                auto* debugRenderer = renderer_->GetDebugRenderer();
-                if (debugRenderer) {
-                    debugRenderer->BeginFrame();  // 前フレームのデータをクリア
-                    editorUI->PrepareSceneViewGizmos(debugRenderer);  // カメラギズモを追加
-                }
-
-                // Scene Viewに描画（デバッグ描画あり、EditorCameraを使用）
-                auto* sceneViewTex = editorUI->GetSceneViewTexture();
-                if (sceneViewTex && sceneViewTex->GetResource() && sceneView.camera) {
-                    renderer_->DrawToTexture(
-                        sceneViewTex->GetResource(),
-                        sceneViewTex->GetRTVHandle(),
-                        sceneViewTex->GetDSVHandle(),
-                        sceneView,
-                        items,
-                        lightManager_.get(),
-                        skinnedItems,
-                        true  // デバッグ描画有効
-                    );
-                }
+                renderer_->DrawToTexture(
+                    sceneViewTex->GetResource(),
+                    sceneViewTex->GetRTVHandle(),
+                    sceneViewTex->GetDSVHandle(),
+                    sceneView,
+                    items,
+                    lightManager_.get(),
+                    skinnedItems,
+                    true  // デバッグ描画有効
+                );
             }
 
             // メインウィンドウのレンダーターゲットを再設定

@@ -33,9 +33,9 @@ void Renderer::Initialize(GraphicsDevice* graphics, Window* window) {
 
     skinnedPipeline_.Initialize(device, skinnedVS, skinnedPS, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
 
-    constantBuffer_.Create(device);
-    lightBuffer_.Create(device);
-    materialBuffer_.Create(device);
+    constantBuffer_.Create(device, 512);  // フレーム内で複数ビュー×複数メッシュ分
+    lightBuffer_.Create(device, 16);       // 複数ビュー分
+    materialBuffer_.Create(device, 512);   // フレーム内で複数ビュー×複数メッシュ分
     boneBuffer_.Create(device);
     
     // スキンメッシュ用ダイナミックバッファ（フレーム内で複数回更新可能）
@@ -53,6 +53,16 @@ void Renderer::Initialize(GraphicsDevice* graphics, Window* window) {
     debugRenderer_->Initialize(graphics_);
 }
 
+void Renderer::BeginFrame() {
+    // フレーム開始時にダイナミックバッファをリセット
+    constantBuffer_.Reset();
+    lightBuffer_.Reset();
+    materialBuffer_.Reset();
+    skinnedTransformBuffer_.Reset();
+    skinnedMaterialBuffer_.Reset();
+    currentBoneSlot_ = 0;
+}
+
 void Renderer::Draw(const RenderView& view, const std::vector<RenderItem>& items, LightManager* lights, Scene* scene) {
     if (!view.camera) return;
 
@@ -64,57 +74,58 @@ void Renderer::Draw(const RenderView& view, const std::vector<RenderItem>& items
 
 void Renderer::UpdateLighting(const RenderView& view, LightManager* lights) {
     auto gpuLight = lights ? lights->BuildGPULightData() : GPULightData{};
-    
+
     LightCB lightData;
     lightData.directionalLightDirection = DirectX::XMFLOAT3(gpuLight.direction.GetX(), gpuLight.direction.GetY(), gpuLight.direction.GetZ());
     lightData.directionalLightColor = DirectX::XMFLOAT3(gpuLight.color.GetX(), gpuLight.color.GetY(), gpuLight.color.GetZ());
     lightData.directionalLightIntensity = gpuLight.intensity;
     lightData.ambientLight = DirectX::XMFLOAT3(gpuLight.ambient.GetX(), gpuLight.ambient.GetY(), gpuLight.ambient.GetZ());
-    
+
     auto cameraPos = view.camera->GetPosition();
     lightData.cameraPosition = DirectX::XMFLOAT3(cameraPos.GetX(), cameraPos.GetY(), cameraPos.GetZ());
-    
-    lightBuffer_.Update(lightData);
+
+    currentLightGpuAddr_ = lightBuffer_.Update(lightData);
 }
 
 void Renderer::RenderMeshes(const RenderView& view, const std::vector<RenderItem>& items) {
     auto* cmdList = graphics_->GetCommandList();
     auto* heap = graphics_->GetSRVHeap();
-    
+
     cmdList->SetPipelineState(pipeline_.GetPipelineState());
     cmdList->SetGraphicsRootSignature(pipeline_.GetRootSignature());
-    
+
     ID3D12DescriptorHeap* heaps[] = {heap};
     cmdList->SetDescriptorHeaps(1, heaps);
     cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    
-    cmdList->SetGraphicsRootConstantBufferView(2, lightBuffer_.GetGPUAddress());
-    
+
+    // ライトバッファはUpdateLightingで更新済み
+    cmdList->SetGraphicsRootConstantBufferView(2, currentLightGpuAddr_);
+
     auto viewMatrix = view.camera->GetViewMatrix();
     auto projection = view.camera->GetProjectionMatrix();
-    
+
     for (const auto& item : items) {
         if (!item.mesh || !item.material) continue;
-        
+
         TransformCB transformData;
         auto mvp = item.worldMatrix * viewMatrix * projection;
         DirectX::XMStoreFloat4x4(&transformData.world, DirectX::XMMatrixTranspose(item.worldMatrix.GetXMMatrix()));
         DirectX::XMStoreFloat4x4(&transformData.view, DirectX::XMMatrixTranspose(viewMatrix.GetXMMatrix()));
         DirectX::XMStoreFloat4x4(&transformData.projection, DirectX::XMMatrixTranspose(projection.GetXMMatrix()));
         DirectX::XMStoreFloat4x4(&transformData.mvp, DirectX::XMMatrixTranspose(mvp.GetXMMatrix()));
-        constantBuffer_.Update(transformData);
-        cmdList->SetGraphicsRootConstantBufferView(0, constantBuffer_.GetGPUAddress());
-        
+        D3D12_GPU_VIRTUAL_ADDRESS transformGpuAddr = constantBuffer_.Update(transformData);
+        cmdList->SetGraphicsRootConstantBufferView(0, transformGpuAddr);
+
         cmdList->SetGraphicsRootDescriptorTable(1, item.material->GetAlbedoSRV(heap));
-        
+
         MaterialCB materialData;
         const auto& matData = item.material->GetData();
         materialData.albedo = DirectX::XMFLOAT3(matData.albedo[0], matData.albedo[1], matData.albedo[2]);
         materialData.metallic = matData.metallic;
         materialData.roughness = matData.roughness;
-        materialBuffer_.Update(materialData);
-        cmdList->SetGraphicsRootConstantBufferView(3, materialBuffer_.GetGPUAddress());
-        
+        D3D12_GPU_VIRTUAL_ADDRESS materialGpuAddr = materialBuffer_.Update(materialData);
+        cmdList->SetGraphicsRootConstantBufferView(3, materialGpuAddr);
+
         auto vbView = item.mesh->GetVertexBuffer().GetView();
         cmdList->IASetVertexBuffers(0, 1, &vbView);
         auto ibView = item.mesh->GetIndexBuffer().GetView();
@@ -291,15 +302,13 @@ void Renderer::RenderSkinnedMeshes(const RenderView& view, const std::vector<Ski
     cmdList->SetDescriptorHeaps(1, heaps);
     cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    cmdList->SetGraphicsRootConstantBufferView(2, lightBuffer_.GetGPUAddress());
+    // ライトバッファはUpdateLightingで更新済み
+    cmdList->SetGraphicsRootConstantBufferView(2, currentLightGpuAddr_);
 
     auto viewMatrix = view.camera->GetViewMatrix();
     auto projection = view.camera->GetProjectionMatrix();
 
-    // ダイナミックバッファをリセット
-    skinnedTransformBuffer_.Reset();
-    skinnedMaterialBuffer_.Reset();
-    currentBoneSlot_ = 0;
+    // 注意: ダイナミックバッファのリセットはRenderer::BeginFrame()で行われる
 
     // ボーン行列バッファ全体を一度だけマップ
     BoneMatrixPair* mappedBoneData = nullptr;

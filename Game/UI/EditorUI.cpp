@@ -36,7 +36,7 @@ namespace UnoEngine {
 		gameViewTexture_.Create(graphics, 1280, 720, 3);
 		sceneViewTexture_.Create(graphics, 1280, 720, 4);
 
-		// Scene View用カメラの初期化
+		// Scene View用カメラの初期化（Main Cameraとは完全に独立）
 		sceneViewCamera_.SetPerspective(
 			60.0f * 0.0174533f,  // FOV 60度
 			16.0f / 9.0f,        // アスペクト比
@@ -46,6 +46,8 @@ namespace UnoEngine {
 		sceneViewCamera_.SetPosition(Vector3(0.0f, 5.0f, -10.0f));
 		// 少し下を向く（原点を見る感じ）
 		sceneViewCamera_.SetRotation(Quaternion::RotationRollPitchYaw(0.3f, 0.0f, 0.0f));
+		// ビュー行列を即座に更新（最初のフレームで正しい状態にする）
+		sceneViewCamera_.GetViewMatrix();
 
 		// EditorCameraにScene View用カメラを設定
 		editorCamera_.SetCamera(&sceneViewCamera_);
@@ -66,20 +68,24 @@ namespace UnoEngine {
 		// ImGuizmoフレーム開始
 		ImGuizmo::BeginFrame();
 
-		// Game Camera（Main Camera）を設定
-		if (context.camera) {
+		// Game Camera（Main Camera）を設定（未設定の場合のみ）
+		if (!gameCamera_ && context.camera) {
 			gameCamera_ = context.camera;
 		}
 
-		// Scene Viewのアスペクト比を更新
+		// Scene Viewのアスペクト比を更新（変更があった場合のみ）
 		if (desiredSceneViewWidth_ > 0 && desiredSceneViewHeight_ > 0) {
-			float aspect = static_cast<float>(desiredSceneViewWidth_) / static_cast<float>(desiredSceneViewHeight_);
-			sceneViewCamera_.SetPerspective(
-				60.0f * 0.0174533f,  // FOV 60度
-				aspect,
-				0.1f,
-				1000.0f
-			);
+			float newAspect = static_cast<float>(desiredSceneViewWidth_) / static_cast<float>(desiredSceneViewHeight_);
+			float currentAspect = sceneViewCamera_.GetAspectRatio();
+			// アスペクト比が変わった場合のみ更新（浮動小数点の誤差を考慮）
+			if (std::abs(newAspect - currentAspect) > 0.001f) {
+				sceneViewCamera_.SetPerspective(
+					60.0f * 0.0174533f,  // FOV 60度
+					newAspect,
+					0.1f,
+					1000.0f
+				);
+			}
 		}
 
 		// アニメーションシステムを設定

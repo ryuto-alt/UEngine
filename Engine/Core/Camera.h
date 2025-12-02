@@ -46,6 +46,8 @@ public:
 
     float GetNearClip() const { return nearZ_; }
     float GetFarClip() const { return farZ_; }
+    float GetAspectRatio() const { return aspect_; }
+    float GetFieldOfView() const { return fovY_; }
 
 private:
     // トランスフォーム

@@ -277,6 +277,12 @@ private:
 
     // 新規オブジェクトにカメラをフォーカス（角度もリセット）
     void FocusOnNewObject(GameObject* obj);
+
+    // カメラアイコンとFrustumを描画
+    void DrawCameraGizmos(const EditorContext& context);
+
+    // カメラFrustum表示フラグ
+    bool showCameraFrustum_ = false;
 };
 
 } // namespace UnoEngine

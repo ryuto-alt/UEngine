@@ -166,6 +166,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Engine\Core\Application.cpp" />
     <ClCompile Include="Engine\Core\Camera.cpp" />
+    <ClCompile Include="Engine\Core\CameraComponent.cpp" />
     <ClCompile Include="Engine\Core\Transform.cpp" />
     <ClCompile Include="Engine\Core\GameObject.cpp" />
     <ClCompile Include="Engine\Core\Scene.cpp" />
@@ -271,6 +272,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClInclude Include="Engine\Audio\AudioSource.h" />
     <ClInclude Include="Engine\Audio\AudioListener.h" />
     <ClInclude Include="Engine\Core\Camera.h" />
+    <ClInclude Include="Engine\Core\CameraComponent.h" />
     <ClInclude Include="Engine\Core\Transform.h" />
     <ClInclude Include="Engine\Core\Component.h" />
     <ClInclude Include="Engine\Core\GameObject.h" />

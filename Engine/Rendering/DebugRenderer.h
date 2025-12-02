@@ -64,6 +64,12 @@ public:
     // 球体描画（関節用）
     void AddSphere(const Vector3& center, float radius, const Vector4& color, int segments = 8);
 
+    // カメラFrustum描画
+    void AddCameraFrustum(const Vector3 nearCorners[4], const Vector3 farCorners[4], const Vector4& color);
+
+    // カメラアイコン描画（簡易ワイヤーフレームカメラ形状）
+    void AddCameraIcon(const Vector3& position, const Vector3& forward, const Vector3& up, float scale, const Vector4& color);
+
     // フレーム開始時にクリア
     void BeginFrame();
 

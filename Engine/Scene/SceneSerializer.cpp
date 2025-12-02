@@ -3,6 +3,7 @@
 #include "../Animation/AnimatorComponent.h"
 #include "../Audio/AudioSource.h"
 #include "../Audio/AudioListener.h"
+#include "../Core/CameraComponent.h"
 #include <fstream>
 #include <iostream>
 
@@ -212,6 +213,19 @@ json SceneSerializer::SerializeComponent(const Component& component) {
         return comp;
     }
 
+    // CameraComponent
+    if (auto* camera = dynamic_cast<const CameraComponent*>(&component)) {
+        comp["type"] = "CameraComponent";
+        comp["fov"] = camera->GetFieldOfView();
+        comp["aspect"] = camera->GetAspectRatio();
+        comp["nearClip"] = camera->GetNearClip();
+        comp["farClip"] = camera->GetFarClip();
+        comp["isOrthographic"] = camera->IsOrthographic();
+        comp["priority"] = camera->GetPriority();
+        comp["isMain"] = camera->IsMain();
+        return comp;
+    }
+
     return json();
 }
 
@@ -258,6 +272,44 @@ void SceneSerializer::DeserializeComponent(const json& json, GameObject& gameObj
     }
     else if (type == "AudioListener") {
         gameObject.AddComponent<AudioListener>();
+    }
+    else if (type == "CameraComponent") {
+        auto* camera = gameObject.AddComponent<CameraComponent>();
+        float fov = 60.0f * 0.0174533f;  // デフォルト値
+        float aspect = 16.0f / 9.0f;
+        float nearClip = 0.1f;
+        float farClip = 1000.0f;
+
+        if (json.contains("fov")) {
+            fov = json["fov"].get<float>();
+        }
+        if (json.contains("aspect")) {
+            aspect = json["aspect"].get<float>();
+        }
+        if (json.contains("nearClip")) {
+            nearClip = json["nearClip"].get<float>();
+        }
+        if (json.contains("farClip")) {
+            farClip = json["farClip"].get<float>();
+        }
+
+        bool isOrtho = false;
+        if (json.contains("isOrthographic")) {
+            isOrtho = json["isOrthographic"].get<bool>();
+        }
+
+        if (isOrtho) {
+            camera->SetOrthographic(10.0f, 10.0f, nearClip, farClip);
+        } else {
+            camera->SetPerspective(fov, aspect, nearClip, farClip);
+        }
+
+        if (json.contains("priority")) {
+            camera->SetPriority(json["priority"].get<int>());
+        }
+        if (json.contains("isMain")) {
+            camera->SetMain(json["isMain"].get<bool>());
+        }
     }
 }
 

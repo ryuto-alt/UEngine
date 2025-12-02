@@ -276,4 +276,92 @@ void DebugRenderer::RenderGrid(
     cmdList->DrawInstanced(4, 1, 0, 0);
 }
 
+void DebugRenderer::AddCameraFrustum(const Vector3 nearCorners[4], const Vector3 farCorners[4], const Vector4& color) {
+    // Near plane edges
+    AddLine(nearCorners[0], nearCorners[1], color);  // bottom
+    AddLine(nearCorners[1], nearCorners[2], color);  // right
+    AddLine(nearCorners[2], nearCorners[3], color);  // top
+    AddLine(nearCorners[3], nearCorners[0], color);  // left
+
+    // Far plane edges
+    AddLine(farCorners[0], farCorners[1], color);
+    AddLine(farCorners[1], farCorners[2], color);
+    AddLine(farCorners[2], farCorners[3], color);
+    AddLine(farCorners[3], farCorners[0], color);
+
+    // Connecting edges (near to far)
+    AddLine(nearCorners[0], farCorners[0], color);
+    AddLine(nearCorners[1], farCorners[1], color);
+    AddLine(nearCorners[2], farCorners[2], color);
+    AddLine(nearCorners[3], farCorners[3], color);
+}
+
+void DebugRenderer::AddCameraIcon(const Vector3& position, const Vector3& forward, const Vector3& up, float scale, const Vector4& color) {
+    // カメラ形状を描画（Unityスタイルのワイヤーフレームカメラ）
+    Vector3 right = up.Cross(forward).Normalize();
+
+    // カメラボディの寸法
+    float bodyW = scale * 0.5f;
+    float bodyH = scale * 0.35f;
+    float bodyD = scale * 0.6f;
+    float lensR = scale * 0.2f;
+    float lensL = scale * 0.3f;
+
+    // ボディの中心はカメラ位置
+    Vector3 bodyCenter = position;
+
+    // ボディの8つの角
+    Vector3 corners[8];
+    corners[0] = bodyCenter - right * bodyW - up * bodyH - forward * bodyD; // 後左下
+    corners[1] = bodyCenter + right * bodyW - up * bodyH - forward * bodyD; // 後右下
+    corners[2] = bodyCenter + right * bodyW + up * bodyH - forward * bodyD; // 後右上
+    corners[3] = bodyCenter - right * bodyW + up * bodyH - forward * bodyD; // 後左上
+    corners[4] = bodyCenter - right * bodyW - up * bodyH + forward * bodyD; // 前左下
+    corners[5] = bodyCenter + right * bodyW - up * bodyH + forward * bodyD; // 前右下
+    corners[6] = bodyCenter + right * bodyW + up * bodyH + forward * bodyD; // 前右上
+    corners[7] = bodyCenter - right * bodyW + up * bodyH + forward * bodyD; // 前左上
+
+    // ボディの辺を描画
+    // 後面
+    AddLine(corners[0], corners[1], color);
+    AddLine(corners[1], corners[2], color);
+    AddLine(corners[2], corners[3], color);
+    AddLine(corners[3], corners[0], color);
+
+    // 前面
+    AddLine(corners[4], corners[5], color);
+    AddLine(corners[5], corners[6], color);
+    AddLine(corners[6], corners[7], color);
+    AddLine(corners[7], corners[4], color);
+
+    // 接続辺
+    AddLine(corners[0], corners[4], color);
+    AddLine(corners[1], corners[5], color);
+    AddLine(corners[2], corners[6], color);
+    AddLine(corners[3], corners[7], color);
+
+    // レンズ（前に突き出た円錐形状）
+    Vector3 lensBase = bodyCenter + forward * bodyD;
+    Vector3 lensTip = lensBase + forward * lensL;
+
+    // 簡易的なレンズ表現（四角形ベース）
+    Vector3 lensCorners[4];
+    lensCorners[0] = lensBase - right * lensR - up * lensR;
+    lensCorners[1] = lensBase + right * lensR - up * lensR;
+    lensCorners[2] = lensBase + right * lensR + up * lensR;
+    lensCorners[3] = lensBase - right * lensR + up * lensR;
+
+    // レンズの輪郭
+    AddLine(lensCorners[0], lensCorners[1], color);
+    AddLine(lensCorners[1], lensCorners[2], color);
+    AddLine(lensCorners[2], lensCorners[3], color);
+    AddLine(lensCorners[3], lensCorners[0], color);
+
+    // レンズの先端への線
+    AddLine(lensCorners[0], lensTip, color);
+    AddLine(lensCorners[1], lensTip, color);
+    AddLine(lensCorners[2], lensTip, color);
+    AddLine(lensCorners[3], lensTip, color);
+}
+
 } // namespace UnoEngine

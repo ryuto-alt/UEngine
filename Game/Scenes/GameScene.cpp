@@ -11,6 +11,7 @@
 #include "../../Engine/Animation/AnimatorComponent.h"
 #include "../../Engine/Animation/AnimationSystem.h"
 #include "../../Engine/Audio/AudioSystem.h"
+#include "../../Engine/Core/CameraComponent.h"
 #include "../../Engine/Systems/SystemManager.h"
 #include "../../Engine/Resource/ResourceManager.h"
 #include "../../Engine/Scene/SceneSerializer.h"
@@ -25,8 +26,6 @@ namespace UnoEngine {
 void GameScene::OnLoad() {
     Logger::Info("[シーン] GameScene 読み込み開始...");
 
-    SetupCamera();
-
     // シーンファイルが存在するか確認
     const std::string sceneFilePath = "assets/scenes/default_scene.json";
     std::ifstream sceneFile(sceneFilePath);
@@ -39,6 +38,7 @@ void GameScene::OnLoad() {
         if (!SceneSerializer::LoadScene(sceneFilePath, GetGameObjects())) {
             Logger::Warning("[シーン] シーンのロードに失敗しました。デフォルトシーンを作成します。");
             // ロード失敗時はデフォルトシーンを作成
+            SetupCamera();
             SetupPlayer();
             SetupLighting();
             SetupAnimatedCharacter();
@@ -47,10 +47,22 @@ void GameScene::OnLoad() {
             auto* app = static_cast<GameApplication*>(GetApplication());
             auto* resourceManager = app->GetResourceManager();
 
+            bool foundMainCamera = false;
+
             // 各モデルを個別にロード（複数モデルを1つのアップロードコンテキストで処理すると描画バグが発生）
             for (auto& obj : GetGameObjects()) {
                 if (obj->GetName() == "Player") {
                     player_ = obj.get();
+                }
+                // Main Cameraを検出
+                if (obj->GetName() == "Main Camera") {
+                    mainCamera_ = obj.get();
+                    obj->SetDeletable(false);  // 削除不可フラグを復元
+                    if (auto* cameraComp = obj->GetComponent<CameraComponent>()) {
+                        cameraComp->SetMain(true);
+                        SetActiveCamera(cameraComp->GetCamera());
+                        foundMainCamera = true;
+                    }
                 }
 
                 // SkinnedMeshRendererを持つオブジェクトのモデルを再ロード
@@ -89,10 +101,16 @@ void GameScene::OnLoad() {
                     }
                 }
             }
+
+            // Main Cameraがシーンに存在しない場合は作成
+            if (!foundMainCamera) {
+                SetupCamera();
+            }
         }
     } else {
         // シーンファイルがない場合はデフォルトシーンを作成
         Logger::Info("[シーン] シーンファイルが見つかりません。デフォルトシーンを作成します。");
+        SetupCamera();
         SetupPlayer();
         SetupLighting();
         SetupAnimatedCharacter();
@@ -119,10 +137,21 @@ void GameScene::OnLoad() {
 }
 
 void GameScene::SetupCamera() {
-    auto camera = MakeUnique<Camera>();
-    camera->SetPosition(Vector3(0.0f, 1.0f, 3.0f));
-    camera->SetRotation(Quaternion::LookRotation(Vector3(0.0f, 0.0f, -1.0f).Normalize(), Vector3::UnitY()));
-    SetActiveCamera(camera.release());
+    // Main CameraをGameObjectとして作成
+    mainCamera_ = CreateGameObject("Main Camera");
+    mainCamera_->SetDeletable(false);  // 削除不可に設定
+
+    // 先にTransformを設定（CameraComponentを追加する前に）
+    mainCamera_->GetTransform().SetLocalPosition(Vector3(0.0f, 1.0f, -3.0f));
+    // Z+方向を向くようにデフォルト回転（Identity）を使用
+
+    // CameraComponentを追加（Awake()でTransformを同期）
+    auto* cameraComp = mainCamera_->AddComponent<CameraComponent>();
+    cameraComp->SetMain(true);
+    cameraComp->SetPerspective(60.0f * 0.0174533f, 16.0f / 9.0f, 0.1f, 1000.0f);
+
+    // アクティブカメラとして設定
+    SetActiveCamera(cameraComp->GetCamera());
 }
 
 void GameScene::SetupPlayer() {

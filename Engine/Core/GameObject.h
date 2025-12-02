@@ -55,9 +55,13 @@ public:
 
     bool IsActive() const { return isActive_; }
     void SetActive(bool active) { isActive_ = active; }
-    
+
     Layer GetLayer() const { return layer_; }
     void SetLayer(Layer layer) { layer_ = layer; }
+
+    // 削除可能かどうか（Main Cameraなど、削除不可のオブジェクト用）
+    bool IsDeletable() const { return isDeletable_; }
+    void SetDeletable(bool deletable) { isDeletable_ = deletable; }
 
     // For Scene lifecycle management
     const std::vector<std::unique_ptr<Component>>& GetComponents() const { return components_; }
@@ -70,6 +74,7 @@ private:
     std::unordered_map<std::type_index, Component*> componentMap_;
     bool isActive_ = true;
     Layer layer_ = Layers::DEFAULT;
+    bool isDeletable_ = true;  // デフォルトは削除可能
 };
 
 template<typename T, typename... Args>

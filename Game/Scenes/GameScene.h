@@ -31,6 +31,7 @@ private:
 
     GameObject* player_ = nullptr;
     GameObject* animatedCharacter_ = nullptr;
+    GameObject* mainCamera_ = nullptr;
 
     // Model path for editor display
     std::string loadedModelPath_;

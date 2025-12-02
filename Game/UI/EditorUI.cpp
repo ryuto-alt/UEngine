@@ -13,6 +13,7 @@
 #include "../../Engine/Audio/AudioSource.h"
 #include "../../Engine/Audio/AudioListener.h"
 #include "../../Engine/Audio/AudioClip.h"
+#include "../../Engine/Core/CameraComponent.h"
 #include <imgui.h>
 #include <imgui_internal.h>
 #include "../../Engine/UI/imgui_toggle.h"
@@ -105,6 +106,9 @@ namespace UnoEngine {
 		RenderConsole();
 		RenderProject(context);
 		RenderProfiler();
+
+		// カメラアイコンとFrustumをDebugRendererに追加
+		DrawCameraGizmos(context);
 
 		// エディタカメラの更新（Edit/Pauseモードのみ）
 		if (editorMode_ != EditorMode::Play) {
@@ -858,10 +862,10 @@ namespace UnoEngine {
 
 				// コンポーネントに応じたアイコン
 				const char* icon = "📦";
-				if (obj->GetComponent<SkinnedMeshRenderer>()) icon = "🎭";
+				if (obj->GetComponent<CameraComponent>()) icon = "📷";  // カメラコンポーネント優先
+				else if (obj->GetComponent<SkinnedMeshRenderer>()) icon = "🎭";
 				else if (obj->GetComponent<DirectionalLightComponent>()) icon = "💡";
 				else if (obj->GetName() == "Player") icon = "🎮";
-				else if (obj->GetName().find("Camera") != std::string::npos) icon = "📷";
 
 				// 展開矢印（小さい三角形）
 				bool hasTransformInfo = true;  // 全オブジェクトにTransform情報あり
@@ -961,8 +965,13 @@ namespace UnoEngine {
 						FocusOnObject(obj);
 					}
 					ImGui::Separator();
-					if (ImGui::MenuItem("Delete", "DEL")) {
-						if (gameObjects_) {
+					// 削除不可オブジェクトはグレーアウト
+					bool canDelete = obj->IsDeletable();
+					if (!canDelete) {
+						ImGui::BeginDisabled();
+					}
+					if (ImGui::MenuItem("Delete", "DEL", false, canDelete)) {
+						if (gameObjects_ && canDelete) {
 							for (auto it = gameObjects_->begin(); it != gameObjects_->end(); ++it) {
 								if (it->get() == obj) {
 									consoleMessages_.push_back("[Editor] Deleted object: " + obj->GetName());
@@ -977,6 +986,12 @@ namespace UnoEngine {
 									break;
 								}
 							}
+						}
+					}
+					if (!canDelete) {
+						ImGui::EndDisabled();
+						if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+							ImGui::SetTooltip("This object cannot be deleted");
 						}
 					}
 					ImGui::Separator();
@@ -1245,9 +1260,11 @@ namespace UnoEngine {
 			ImGui::TextDisabled("(no objects)");
 		}
 
-		// DELキーで選択中のオブジェクトを削除
+		// DELキーで選択中のオブジェクトを削除（削除不可オブジェクトは除く）
 		if (selectedObject_ && !renamingObject_ && ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Delete)) {
-			if (gameObjects_) {
+			if (!selectedObject_->IsDeletable()) {
+				consoleMessages_.push_back("[Editor] Cannot delete: " + selectedObject_->GetName() + " (protected)");
+			} else if (gameObjects_) {
 				for (auto it = gameObjects_->begin(); it != gameObjects_->end(); ++it) {
 					if (it->get() == selectedObject_) {
 						consoleMessages_.push_back("[Editor] Deleted object (DEL): " + selectedObject_->GetName());
@@ -2030,6 +2047,60 @@ namespace UnoEngine {
 
 		// 新規追加時は角度をリセット（斜め上から）
 		editorCamera_.FocusOn(targetPos, distance, true);
+	}
+
+	void EditorUI::DrawCameraGizmos(const EditorContext& context) {
+		// DebugRendererがない場合は何もしない
+		if (!context.debugRenderer || !context.gameObjects) {
+			return;
+		}
+
+		// Scene View表示中のみカメラギズモを描画
+		if (!showSceneView_) {
+			return;
+		}
+
+		// 全GameObjectをスキャンしてCameraComponentを持つものを探す
+		for (const auto& obj : *context.gameObjects) {
+			auto* cameraComp = obj->GetComponent<CameraComponent>();
+			if (!cameraComp) continue;
+
+			// カメラの位置と向きを取得
+			Camera* cam = cameraComp->GetCamera();
+			if (!cam) continue;
+
+			Vector3 camPos = cam->GetPosition();
+			Vector3 camForward = cam->GetForward();
+			Vector3 camUp = cam->GetUp();
+
+			// カメラアイコンの色（選択中は黄色、通常は白）
+			Vector4 iconColor = (selectedObject_ == obj.get())
+				? Vector4(1.0f, 1.0f, 0.0f, 1.0f)  // 黄色（選択中）
+				: Vector4(1.0f, 1.0f, 1.0f, 1.0f); // 白（通常）
+
+			// カメラアイコンを描画
+			float iconScale = 0.5f;
+			context.debugRenderer->AddCameraIcon(camPos, camForward, camUp, iconScale, iconColor);
+
+			// 選択中のカメラはFrustumも描画
+			if (selectedObject_ == obj.get() || showCameraFrustum_) {
+				Vector3 nearCorners[4];
+				Vector3 farCorners[4];
+
+				// 表示用に遠距離を制限（見やすさのため）
+				float displayFarClip = (std::min)(cameraComp->GetFarClip(), 20.0f);
+				float originalFarClip = cameraComp->GetFarClip();
+
+				// 一時的にFarClipを変更してFrustumを取得
+				cameraComp->SetFarClip(displayFarClip);
+				cameraComp->GetFrustumCorners(nearCorners, farCorners);
+				cameraComp->SetFarClip(originalFarClip);
+
+				// Frustumを描画（半透明の青）
+				Vector4 frustumColor(0.3f, 0.6f, 1.0f, 1.0f);
+				context.debugRenderer->AddCameraFrustum(nearCorners, farCorners, frustumColor);
+			}
+		}
 	}
 
 } // namespace UnoEngine

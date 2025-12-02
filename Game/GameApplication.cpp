@@ -70,14 +70,27 @@ void GameApplication::OnRender() {
             }
 
             if (editorUI->ShouldRenderSceneView()) {
-                // Scene Viewに描画（デバッグ描画あり）
+                // Scene View用の独立したRenderViewを作成
+                RenderView sceneView;
+                sceneView.camera = editorUI->GetSceneViewCamera();
+                sceneView.layerMask = view.layerMask;
+                sceneView.viewName = "SceneView";
+
+                // デバッグ描画の準備（BeginFrameでクリアしてからギズモを追加）
+                auto* debugRenderer = renderer_->GetDebugRenderer();
+                if (debugRenderer) {
+                    debugRenderer->BeginFrame();  // 前フレームのデータをクリア
+                    editorUI->PrepareSceneViewGizmos(debugRenderer);  // カメラギズモを追加
+                }
+
+                // Scene Viewに描画（デバッグ描画あり、EditorCameraを使用）
                 auto* sceneViewTex = editorUI->GetSceneViewTexture();
-                if (sceneViewTex && sceneViewTex->GetResource()) {
+                if (sceneViewTex && sceneViewTex->GetResource() && sceneView.camera) {
                     renderer_->DrawToTexture(
                         sceneViewTex->GetResource(),
                         sceneViewTex->GetRTVHandle(),
                         sceneViewTex->GetDSVHandle(),
-                        view,
+                        sceneView,
                         items,
                         lightManager_.get(),
                         skinnedItems,

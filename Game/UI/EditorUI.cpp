@@ -36,6 +36,20 @@ namespace UnoEngine {
 		gameViewTexture_.Create(graphics, 1280, 720, 3);
 		sceneViewTexture_.Create(graphics, 1280, 720, 4);
 
+		// Scene View用カメラの初期化
+		sceneViewCamera_.SetPerspective(
+			60.0f * 0.0174533f,  // FOV 60度
+			16.0f / 9.0f,        // アスペクト比
+			0.1f,                // Near clip
+			1000.0f              // Far clip
+		);
+		sceneViewCamera_.SetPosition(Vector3(0.0f, 5.0f, -10.0f));
+		// 少し下を向く（原点を見る感じ）
+		sceneViewCamera_.SetRotation(Quaternion::RotationRollPitchYaw(0.3f, 0.0f, 0.0f));
+
+		// EditorCameraにScene View用カメラを設定
+		editorCamera_.SetCamera(&sceneViewCamera_);
+
 		// ギズモシステム初期化
 		gizmoSystem_.Initialize();
 
@@ -52,9 +66,20 @@ namespace UnoEngine {
 		// ImGuizmoフレーム開始
 		ImGuizmo::BeginFrame();
 
-		// カメラを設定（毎フレーム）
+		// Game Camera（Main Camera）を設定
 		if (context.camera) {
-			editorCamera_.SetCamera(context.camera);
+			gameCamera_ = context.camera;
+		}
+
+		// Scene Viewのアスペクト比を更新
+		if (desiredSceneViewWidth_ > 0 && desiredSceneViewHeight_ > 0) {
+			float aspect = static_cast<float>(desiredSceneViewWidth_) / static_cast<float>(desiredSceneViewHeight_);
+			sceneViewCamera_.SetPerspective(
+				60.0f * 0.0174533f,  // FOV 60度
+				aspect,
+				0.1f,
+				1000.0f
+			);
 		}
 
 		// アニメーションシステムを設定
@@ -63,22 +88,22 @@ namespace UnoEngine {
 		}
 
 		// 3Dオーディオ：リスナー位置を更新
-		if (editorCamera_.GetCamera() && AudioListener::GetInstance()) {
-			if (editorMode_ == EditorMode::Play) {
-				// Playモード中はカメラ位置をリスナー位置として使用
+		if (AudioListener::GetInstance()) {
+			if (editorMode_ == EditorMode::Play && gameCamera_) {
+				// Playモード中はGame Camera位置をリスナー位置として使用
 				AudioListener::GetInstance()->SetEditorOverridePosition(
-					editorCamera_.GetCamera()->GetPosition());
+					gameCamera_->GetPosition());
 				AudioListener::GetInstance()->SetEditorOverrideOrientation(
-					editorCamera_.GetCamera()->GetForward(),
-					editorCamera_.GetCamera()->GetUp());
+					gameCamera_->GetForward(),
+					gameCamera_->GetUp());
 			} else if (previewingAudioSource_ && previewingAudioSource_->IsPlaying() &&
 				previewingAudioSource_->Is3D()) {
-				// プレビュー中はエディタカメラ位置・向きを継続的に更新
+				// プレビュー中はScene Viewカメラ位置・向きを継続的に更新
 				AudioListener::GetInstance()->SetEditorOverridePosition(
-					editorCamera_.GetCamera()->GetPosition());
+					sceneViewCamera_.GetPosition());
 				AudioListener::GetInstance()->SetEditorOverrideOrientation(
-					editorCamera_.GetCamera()->GetForward(),
-					editorCamera_.GetCamera()->GetUp());
+					sceneViewCamera_.GetForward(),
+					sceneViewCamera_.GetUp());
 			}
 		}
 
@@ -106,9 +131,6 @@ namespace UnoEngine {
 		RenderConsole();
 		RenderProject(context);
 		RenderProfiler();
-
-		// カメラアイコンとFrustumをDebugRendererに追加
-		DrawCameraGizmos(context);
 
 		// エディタカメラの更新（Edit/Pauseモードのみ）
 		if (editorMode_ != EditorMode::Play) {
@@ -522,8 +544,8 @@ namespace UnoEngine {
 					while (ShowCursor(FALSE) >= 0);
 
 					// 現在のカメラの向きからyaw/pitchを初期化
-					if (editorCamera_.GetCamera()) {
-						Vector3 forward = editorCamera_.GetCamera()->GetForward();
+					if (gameCamera_) {
+						Vector3 forward = gameCamera_->GetForward();
 						gameViewYaw_ = std::atan2(forward.GetX(), forward.GetZ());
 						gameViewPitch_ = std::asin(-forward.GetY());
 					}
@@ -536,7 +558,7 @@ namespace UnoEngine {
 				}
 
 				// マウスロック中の視点操作とWASD移動
-				if (gameViewMouseLocked_ && editorCamera_.GetCamera()) {
+				if (gameViewMouseLocked_ && gameCamera_) {
 					POINT currentPos;
 					GetCursorPos(&currentPos);
 
@@ -557,11 +579,10 @@ namespace UnoEngine {
 
 					// カメラの向きを更新
 					Quaternion rot = Quaternion::RotationRollPitchYaw(gameViewPitch_, gameViewYaw_, 0.0f);
-					editorCamera_.GetCamera()->SetRotation(rot);
+					gameCamera_->SetRotation(rot);
 
 					// WASD移動
-					Camera* camera = editorCamera_.GetCamera();
-					Vector3 forward = camera->GetForward();
+					Vector3 forward = gameCamera_->GetForward();
 					Vector3 right = Vector3::UnitY().Cross(forward).Normalize();
 
 					// 水平面に投影
@@ -582,7 +603,7 @@ namespace UnoEngine {
 
 					if (movement.Length() > 0.001f) {
 						movement = movement.Normalize() * moveSpeed;
-						camera->SetPosition(camera->GetPosition() + movement);
+						gameCamera_->SetPosition(gameCamera_->GetPosition() + movement);
 					}
 				}
 			} else {
@@ -1217,13 +1238,13 @@ namespace UnoEngine {
 									if (!AudioListener::GetInstance()) {
 										editorAudioListener_ = std::make_unique<AudioListener>();
 									}
-									// エディタカメラ位置・向きをリスナーとして設定
-									if (AudioListener::GetInstance() && editorCamera_.GetCamera()) {
+									// Scene Viewカメラ位置・向きをリスナーとして設定
+									if (AudioListener::GetInstance()) {
 										AudioListener::GetInstance()->SetEditorOverridePosition(
-											editorCamera_.GetCamera()->GetPosition());
+											sceneViewCamera_.GetPosition());
 										AudioListener::GetInstance()->SetEditorOverrideOrientation(
-											editorCamera_.GetCamera()->GetForward(),
-											editorCamera_.GetCamera()->GetUp());
+											sceneViewCamera_.GetForward(),
+											sceneViewCamera_.GetUp());
 									}
 									previewingAudioSource_ = audioSource;
 								}
@@ -1232,9 +1253,9 @@ namespace UnoEngine {
 						}
 
 						// 3Dプレビュー中は現在の距離を表示
-						if (audioSource->Is3D() && audioSource->IsPlaying() && editorCamera_.GetCamera()) {
+						if (audioSource->Is3D() && audioSource->IsPlaying()) {
 							Vector3 sourcePos = obj->GetTransform().GetPosition();
-							Vector3 camPos = editorCamera_.GetCamera()->GetPosition();
+							Vector3 camPos = sceneViewCamera_.GetPosition();
 							float distance = (sourcePos - camPos).Length();
 							ImGui::TextColored(ImVec4(0.5f, 1.0f, 0.5f, 1.0f),
 								"Distance: %.1f m", distance);
@@ -2049,9 +2070,9 @@ namespace UnoEngine {
 		editorCamera_.FocusOn(targetPos, distance, true);
 	}
 
-	void EditorUI::DrawCameraGizmos(const EditorContext& context) {
+	void EditorUI::PrepareSceneViewGizmos(DebugRenderer* debugRenderer) {
 		// DebugRendererがない場合は何もしない
-		if (!context.debugRenderer || !context.gameObjects) {
+		if (!debugRenderer || !gameObjects_) {
 			return;
 		}
 
@@ -2061,7 +2082,7 @@ namespace UnoEngine {
 		}
 
 		// 全GameObjectをスキャンしてCameraComponentを持つものを探す
-		for (const auto& obj : *context.gameObjects) {
+		for (const auto& obj : *gameObjects_) {
 			auto* cameraComp = obj->GetComponent<CameraComponent>();
 			if (!cameraComp) continue;
 
@@ -2080,7 +2101,7 @@ namespace UnoEngine {
 
 			// カメラアイコンを描画
 			float iconScale = 0.5f;
-			context.debugRenderer->AddCameraIcon(camPos, camForward, camUp, iconScale, iconColor);
+			debugRenderer->AddCameraIcon(camPos, camForward, camUp, iconScale, iconColor);
 
 			// 選択中のカメラはFrustumも描画
 			if (selectedObject_ == obj.get() || showCameraFrustum_) {
@@ -2089,16 +2110,54 @@ namespace UnoEngine {
 
 				// 表示用に遠距離を制限（見やすさのため）
 				float displayFarClip = (std::min)(cameraComp->GetFarClip(), 20.0f);
-				float originalFarClip = cameraComp->GetFarClip();
+				float nearClip = cameraComp->GetNearClip();
+				float fov = cameraComp->GetFieldOfView();
+				float aspect = cameraComp->GetAspectRatio();
 
-				// 一時的にFarClipを変更してFrustumを取得
-				cameraComp->SetFarClip(displayFarClip);
-				cameraComp->GetFrustumCorners(nearCorners, farCorners);
-				cameraComp->SetFarClip(originalFarClip);
+				// カメラの方向ベクトル
+				Vector3 right = camUp.Cross(camForward).Normalize();
+
+				// Frustumコーナーを直接計算（投影行列を変更せずに）
+				if (cameraComp->IsOrthographic()) {
+					float halfW = 5.0f;  // デフォルト幅の半分
+					float halfH = 5.0f;
+
+					Vector3 nearCenter = camPos + camForward * nearClip;
+					Vector3 farCenter = camPos + camForward * displayFarClip;
+
+					nearCorners[0] = nearCenter - right * halfW - camUp * halfH;
+					nearCorners[1] = nearCenter + right * halfW - camUp * halfH;
+					nearCorners[2] = nearCenter + right * halfW + camUp * halfH;
+					nearCorners[3] = nearCenter - right * halfW + camUp * halfH;
+
+					farCorners[0] = farCenter - right * halfW - camUp * halfH;
+					farCorners[1] = farCenter + right * halfW - camUp * halfH;
+					farCorners[2] = farCenter + right * halfW + camUp * halfH;
+					farCorners[3] = farCenter - right * halfW + camUp * halfH;
+				} else {
+					float tanHalfFov = std::tan(fov * 0.5f);
+					float nearH = nearClip * tanHalfFov;
+					float nearW = nearH * aspect;
+					float farH = displayFarClip * tanHalfFov;
+					float farW = farH * aspect;
+
+					Vector3 nearCenter = camPos + camForward * nearClip;
+					Vector3 farCenter = camPos + camForward * displayFarClip;
+
+					nearCorners[0] = nearCenter - right * nearW - camUp * nearH;
+					nearCorners[1] = nearCenter + right * nearW - camUp * nearH;
+					nearCorners[2] = nearCenter + right * nearW + camUp * nearH;
+					nearCorners[3] = nearCenter - right * nearW + camUp * nearH;
+
+					farCorners[0] = farCenter - right * farW - camUp * farH;
+					farCorners[1] = farCenter + right * farW - camUp * farH;
+					farCorners[2] = farCenter + right * farW + camUp * farH;
+					farCorners[3] = farCenter - right * farW + camUp * farH;
+				}
 
 				// Frustumを描画（半透明の青）
 				Vector4 frustumColor(0.3f, 0.6f, 1.0f, 1.0f);
-				context.debugRenderer->AddCameraFrustum(nearCorners, farCorners, frustumColor);
+				debugRenderer->AddCameraFrustum(nearCorners, farCorners, frustumColor);
 			}
 		}
 	}

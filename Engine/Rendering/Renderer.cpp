@@ -217,25 +217,28 @@ void Renderer::DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_
     }
 
     // デバッグ描画（enableDebugDrawがtrueの場合のみ）
-    if (enableDebugDraw && debugRenderer_ && debugRenderer_->GetShowBones()) {
-        debugRenderer_->BeginFrame();
+    // 注意: BeginFrame()は呼び出し側（GameApplication等）で管理する
+    // ここではボーン描画とライン描画のみ行う
+    if (enableDebugDraw && debugRenderer_) {
+        // ボーン描画が有効な場合
+        if (debugRenderer_->GetShowBones()) {
+            // テスト用: 原点に軸を描画（パイプライン動作確認）
+            debugRenderer_->AddLine(Vector3(0, 0, 0), Vector3(0, 0.3f, 0), Vector4(1, 0, 0, 1));  // 赤Y軸
+            debugRenderer_->AddLine(Vector3(0, 0, 0), Vector3(0.3f, 0, 0), Vector4(0, 1, 0, 1));  // 緑X軸
+            debugRenderer_->AddLine(Vector3(0, 0, 0), Vector3(0, 0, 0.3f), Vector4(0, 0, 1, 1));  // 青Z軸
 
-        // テスト用: 原点に軸を描画（パイプライン動作確認）
-        debugRenderer_->AddLine(Vector3(0, 0, 0), Vector3(0, 0.3f, 0), Vector4(1, 0, 0, 1));  // 赤Y軸
-        debugRenderer_->AddLine(Vector3(0, 0, 0), Vector3(0.3f, 0, 0), Vector4(0, 1, 0, 1));  // 緑X軸
-        debugRenderer_->AddLine(Vector3(0, 0, 0), Vector3(0, 0, 0.3f), Vector4(0, 0, 1, 1));  // 青Z軸
-
-        int animatorCount = 0;
-        for (const auto& item : skinnedItems) {
-            if (item.animator) {
-                animatorCount++;
-                auto* skeleton = item.animator->GetSkeleton();
-                const auto& localTransforms = item.animator->GetCurrentLocalTransforms();
-                if (skeleton && !localTransforms.empty()) {
-                    debugRenderer_->DrawBones(skeleton, localTransforms, item.worldMatrix);
+            for (const auto& item : skinnedItems) {
+                if (item.animator) {
+                    auto* skeleton = item.animator->GetSkeleton();
+                    const auto& localTransforms = item.animator->GetCurrentLocalTransforms();
+                    if (skeleton && !localTransforms.empty()) {
+                        debugRenderer_->DrawBones(skeleton, localTransforms, item.worldMatrix);
+                    }
                 }
             }
         }
+
+        // デバッグライン描画（カメラギズモ、ボーン等すべて）
         debugRenderer_->Render(
             cmdList,
             view.camera->GetViewMatrix(),
@@ -257,9 +260,8 @@ void Renderer::DrawSkinnedMeshes(const RenderView& view, const std::vector<Skinn
     RenderSkinnedMeshes(view, items);
 
     // デバッグボーン描画
+    // 注意: BeginFrame()は呼び出し側で管理する
     if (debugRenderer_ && debugRenderer_->GetShowBones()) {
-        debugRenderer_->BeginFrame();
-        
         for (const auto& item : items) {
             if (item.animator) {
                 auto* skeleton = item.animator->GetSkeleton();
@@ -269,7 +271,7 @@ void Renderer::DrawSkinnedMeshes(const RenderView& view, const std::vector<Skinn
                 }
             }
         }
-        
+
         debugRenderer_->Render(
             graphics_->GetCommandList(),
             view.camera->GetViewMatrix(),

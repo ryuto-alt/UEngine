@@ -107,8 +107,8 @@ public:
         consoleMessages_.push_back(message);
     }
 
-    // エディタカメラ
-    void SetEditorCamera(Camera* camera) { editorCamera_.SetCamera(camera); }
+    // エディタカメラ（Scene View用の独立したカメラ）
+    Camera* GetSceneViewCamera() { return &sceneViewCamera_; }
     EditorCamera& GetEditorCamera() { return editorCamera_; }
 
     // ギズモシステム
@@ -138,6 +138,13 @@ public:
     bool IsGameViewFocused() const { return gameViewFocused_; }
     bool IsGameViewHovered() const { return gameViewHovered_; }
     bool IsGameViewMouseLocked() const { return gameViewMouseLocked_; }
+
+    // Game Camera（Main Camera）の設定
+    void SetGameCamera(Camera* camera) { gameCamera_ = camera; }
+    Camera* GetGameCamera() const { return gameCamera_; }
+
+    // Scene View描画前にカメラギズモをDebugRendererに追加
+    void PrepareSceneViewGizmos(DebugRenderer* debugRenderer);
 
 private:
     // 各パネルの描画メソッド
@@ -211,7 +218,13 @@ private:
     // Hierarchy展開状態
     std::unordered_set<GameObject*> expandedObjects_;
 
-    // エディタカメラ
+    // Scene View用の独立したカメラ（EditorCameraが操作する）
+    Camera sceneViewCamera_;
+
+    // Game Camera（Main Camera）への参照
+    Camera* gameCamera_ = nullptr;
+
+    // エディタカメラ（Scene View用カメラのコントローラー）
     EditorCamera editorCamera_;
 
     // ギズモシステム
@@ -278,8 +291,6 @@ private:
     // 新規オブジェクトにカメラをフォーカス（角度もリセット）
     void FocusOnNewObject(GameObject* obj);
 
-    // カメラアイコンとFrustumを描画
-    void DrawCameraGizmos(const EditorContext& context);
 
     // カメラFrustum表示フラグ
     bool showCameraFrustum_ = false;

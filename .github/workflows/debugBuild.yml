@@ -28,4 +28,4 @@ jobs:
         run: nuget restore ${{ env.SOLUTION_FILE_PATH }} -PackagesDirectory packages
 
       - name: Build
-        run: msbuild ${{ env.SOLUTION_FILE_PATH }} /p:Platform=x64 /p:Configuration=${{ env.CONFIGURATION }}
+        run: msbuild ${{ env.SOLUTION_FILE_PATH }} /p:Platform=x64 /p:Configuration=${{ env.CONFIGURATION }} /p:PlatformToolset=v143

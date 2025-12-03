@@ -3,12 +3,13 @@
 #include "D3D12Common.h"
 #include "Shader.h"
 #include "../Animation/Skeleton.h"
+#include "../Math/MathCommon.h"
 
 namespace UnoEngine {
 
 // ボーン行列用定数バッファ
 struct alignas(256) BoneMatricesCB {
-    DirectX::XMFLOAT4X4 bones[MAX_BONES];
+    Float4x4 bones[MAX_BONES];
 };
 
 // スキンメッシュ用パイプライン

@@ -1,6 +1,6 @@
 #include "Sprite.h"
 #include "GraphicsDevice.h"
-#include <DirectXMath.h>
+
 
 namespace UnoEngine {
 

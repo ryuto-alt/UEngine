@@ -12,34 +12,34 @@
 #include "DebugRenderer.h"
 #include "../Window/Window.h"
 #include "../UI/ImGuiManager.h"
-#include <DirectXMath.h>
+#include "../Math/MathCommon.h"
 #include <vector>
 
 namespace UnoEngine {
 
 struct alignas(256) TransformCB {
-    DirectX::XMFLOAT4X4 world;
-    DirectX::XMFLOAT4X4 view;
-    DirectX::XMFLOAT4X4 projection;
-    DirectX::XMFLOAT4X4 mvp;
+    Float4x4 world;
+    Float4x4 view;
+    Float4x4 projection;
+    Float4x4 mvp;
 };
 
 struct alignas(256) LightCB {
-    DirectX::XMFLOAT3 directionalLightDirection;
+    Float3 directionalLightDirection;
     float padding0;
-    DirectX::XMFLOAT3 directionalLightColor;
+    Float3 directionalLightColor;
     float directionalLightIntensity;
-    DirectX::XMFLOAT3 ambientLight;
+    Float3 ambientLight;
     float padding1;
-    DirectX::XMFLOAT3 cameraPosition;
+    Float3 cameraPosition;
     float padding2;
 };
 
 struct alignas(256) MaterialCB {
-    DirectX::XMFLOAT3 albedo;
+    Float3 albedo;
     float metallic;
     float roughness;
-    DirectX::XMFLOAT3 padding;
+    Float3 padding;
 };
 
 class Scene;

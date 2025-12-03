@@ -1,4 +1,5 @@
 #include "DebugRenderer.h"
+#include "../Math/MathCommon.h"
 #include "../Graphics/GraphicsDevice.h"
 #include "../Graphics/Shader.h"
 #include "../Animation/Skeleton.h"
@@ -164,7 +165,7 @@ void DebugRenderer::DrawBones(
 
 void DebugRenderer::AddSphere(const Vector3& center, float radius, const Vector4& color, int segments) {
     // 簡易的な球体（3つの円環）
-    const float angleStep = DirectX::XM_2PI / segments;
+    const float angleStep = Math::TWO_PI / segments;
 
     // XY平面
     for (int i = 0; i < segments; ++i) {

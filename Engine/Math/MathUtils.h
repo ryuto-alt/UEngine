@@ -21,19 +21,9 @@ inline T Clamp(T value, T minVal, T maxVal) {
     return (std::max)(minVal, (std::min)(value, maxVal));
 }
 
-// 線形補間
-inline float Lerp(float a, float b, float t) {
-    return a + (b - a) * t;
-}
-
 // 正規化された値（0-1）
 inline float Saturate(float value) {
     return Clamp(value, 0.0f, 1.0f);
-}
-
-// 浮動小数点比較
-inline bool NearlyEqual(float a, float b, float epsilon = EPSILON) {
-    return std::abs(a - b) < epsilon;
 }
 
 // 符号取得

@@ -9,6 +9,12 @@
 
 namespace UnoEngine {
 
+// Matrix4x4をFloat4x4に変換（転置して格納）
+static void StoreTransposedMatrix(Float4x4& dest, const Matrix4x4& src) {
+    Matrix4x4 transposed = src.Transpose();
+    transposed.ToFloatArray(reinterpret_cast<float*>(&dest));
+}
+
 void Renderer::Initialize(GraphicsDevice* graphics, Window* window) {
     graphics_ = graphics;
     window_ = window;
@@ -76,13 +82,13 @@ void Renderer::UpdateLighting(const RenderView& view, LightManager* lights) {
     auto gpuLight = lights ? lights->BuildGPULightData() : GPULightData{};
 
     LightCB lightData;
-    lightData.directionalLightDirection = DirectX::XMFLOAT3(gpuLight.direction.GetX(), gpuLight.direction.GetY(), gpuLight.direction.GetZ());
-    lightData.directionalLightColor = DirectX::XMFLOAT3(gpuLight.color.GetX(), gpuLight.color.GetY(), gpuLight.color.GetZ());
+    lightData.directionalLightDirection = Float3(gpuLight.direction.GetX(), gpuLight.direction.GetY(), gpuLight.direction.GetZ());
+    lightData.directionalLightColor = Float3(gpuLight.color.GetX(), gpuLight.color.GetY(), gpuLight.color.GetZ());
     lightData.directionalLightIntensity = gpuLight.intensity;
-    lightData.ambientLight = DirectX::XMFLOAT3(gpuLight.ambient.GetX(), gpuLight.ambient.GetY(), gpuLight.ambient.GetZ());
+    lightData.ambientLight = Float3(gpuLight.ambient.GetX(), gpuLight.ambient.GetY(), gpuLight.ambient.GetZ());
 
     auto cameraPos = view.camera->GetPosition();
-    lightData.cameraPosition = DirectX::XMFLOAT3(cameraPos.GetX(), cameraPos.GetY(), cameraPos.GetZ());
+    lightData.cameraPosition = Float3(cameraPos.GetX(), cameraPos.GetY(), cameraPos.GetZ());
 
     currentLightGpuAddr_ = lightBuffer_.Update(lightData);
 }
@@ -109,10 +115,10 @@ void Renderer::RenderMeshes(const RenderView& view, const std::vector<RenderItem
 
         TransformCB transformData;
         auto mvp = item.worldMatrix * viewMatrix * projection;
-        DirectX::XMStoreFloat4x4(&transformData.world, DirectX::XMMatrixTranspose(item.worldMatrix.GetXMMatrix()));
-        DirectX::XMStoreFloat4x4(&transformData.view, DirectX::XMMatrixTranspose(viewMatrix.GetXMMatrix()));
-        DirectX::XMStoreFloat4x4(&transformData.projection, DirectX::XMMatrixTranspose(projection.GetXMMatrix()));
-        DirectX::XMStoreFloat4x4(&transformData.mvp, DirectX::XMMatrixTranspose(mvp.GetXMMatrix()));
+        StoreTransposedMatrix(transformData.world, item.worldMatrix);
+        StoreTransposedMatrix(transformData.view, viewMatrix);
+        StoreTransposedMatrix(transformData.projection, projection);
+        StoreTransposedMatrix(transformData.mvp, mvp);
         D3D12_GPU_VIRTUAL_ADDRESS transformGpuAddr = constantBuffer_.Update(transformData);
         cmdList->SetGraphicsRootConstantBufferView(0, transformGpuAddr);
 
@@ -120,7 +126,7 @@ void Renderer::RenderMeshes(const RenderView& view, const std::vector<RenderItem
 
         MaterialCB materialData;
         const auto& matData = item.material->GetData();
-        materialData.albedo = DirectX::XMFLOAT3(matData.albedo[0], matData.albedo[1], matData.albedo[2]);
+        materialData.albedo = Float3(matData.albedo[0], matData.albedo[1], matData.albedo[2]);
         materialData.metallic = matData.metallic;
         materialData.roughness = matData.roughness;
         D3D12_GPU_VIRTUAL_ADDRESS materialGpuAddr = materialBuffer_.Update(materialData);
@@ -333,10 +339,10 @@ void Renderer::RenderSkinnedMeshes(const RenderView& view, const std::vector<Ski
         // Transform（ダイナミックバッファを使用）
         TransformCB transformData;
         auto mvp = item.worldMatrix * viewMatrix * projection;
-        DirectX::XMStoreFloat4x4(&transformData.world, DirectX::XMMatrixTranspose(item.worldMatrix.GetXMMatrix()));
-        DirectX::XMStoreFloat4x4(&transformData.view, DirectX::XMMatrixTranspose(viewMatrix.GetXMMatrix()));
-        DirectX::XMStoreFloat4x4(&transformData.projection, DirectX::XMMatrixTranspose(projection.GetXMMatrix()));
-        DirectX::XMStoreFloat4x4(&transformData.mvp, DirectX::XMMatrixTranspose(mvp.GetXMMatrix()));
+        StoreTransposedMatrix(transformData.world, item.worldMatrix);
+        StoreTransposedMatrix(transformData.view, viewMatrix);
+        StoreTransposedMatrix(transformData.projection, projection);
+        StoreTransposedMatrix(transformData.mvp, mvp);
         auto transformGpuAddr = skinnedTransformBuffer_.Update(transformData);
         cmdList->SetGraphicsRootConstantBufferView(0, transformGpuAddr);
 
@@ -349,11 +355,11 @@ void Renderer::RenderSkinnedMeshes(const RenderView& view, const std::vector<Ski
         MaterialCB materialData;
         if (item.material) {
             const auto& matData = item.material->GetData();
-            materialData.albedo = DirectX::XMFLOAT3(matData.albedo[0], matData.albedo[1], matData.albedo[2]);
+            materialData.albedo = Float3(matData.albedo[0], matData.albedo[1], matData.albedo[2]);
             materialData.metallic = matData.metallic;
             materialData.roughness = matData.roughness;
         } else {
-            materialData.albedo = DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f);
+            materialData.albedo = Float3(1.0f, 1.0f, 1.0f);
             materialData.metallic = 0.0f;
             materialData.roughness = 0.5f;
         }
@@ -369,10 +375,11 @@ void Renderer::RenderSkinnedMeshes(const RenderView& view, const std::vector<Ski
             
             for (size_t i = 0; i < numBones; ++i) {
                 const auto& pair = (*item.boneMatrixPairs)[i];
-                DirectX::XMStoreFloat4x4(reinterpret_cast<DirectX::XMFLOAT4X4*>(&slotData[i].skeletonSpaceMatrix),
-                                         DirectX::XMMatrixTranspose(pair.skeletonSpaceMatrix.GetXMMatrix()));
-                DirectX::XMStoreFloat4x4(reinterpret_cast<DirectX::XMFLOAT4X4*>(&slotData[i].skeletonSpaceInverseTransposeMatrix),
-                                         DirectX::XMMatrixTranspose(pair.skeletonSpaceInverseTransposeMatrix.GetXMMatrix()));
+                // 転置した行列を格納
+                Matrix4x4 transposedSkeleton = pair.skeletonSpaceMatrix.Transpose();
+                Matrix4x4 transposedInvTranspose = pair.skeletonSpaceInverseTransposeMatrix.Transpose();
+                transposedSkeleton.ToFloatArray(reinterpret_cast<float*>(&slotData[i].skeletonSpaceMatrix));
+                transposedInvTranspose.ToFloatArray(reinterpret_cast<float*>(&slotData[i].skeletonSpaceInverseTransposeMatrix));
             }
             
             // このスロット用のSRVをバインド

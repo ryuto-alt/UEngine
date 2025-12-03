@@ -250,6 +250,7 @@ void EditorCamera::FocusOn(const Vector3& targetPosition, float distance, bool r
     Vector3 newPos = orbitTarget_ + Vector3(x, y, z);
     camera_->SetPosition(newPos);
 
+
     // カメラをターゲットに向ける
     Matrix4x4 viewMat = Matrix4x4::LookAtLH(newPos, orbitTarget_, Vector3::UnitY());
     Quaternion rot = Quaternion::FromRotationMatrix(viewMat.Inverse());

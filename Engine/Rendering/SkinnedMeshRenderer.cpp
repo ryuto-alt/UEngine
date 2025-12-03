@@ -3,6 +3,7 @@
 #include "../Core/Logger.h"
 #include "../Animation/AnimatorComponent.h"
 #include "../Graphics/SkinnedMesh.h"
+#include <limits>
 
 namespace UnoEngine {
 
@@ -107,22 +108,36 @@ void SkinnedMeshRenderer::InitializeAnimator() {
 
 void SkinnedMeshRenderer::CalculateBounds() {
     if (!modelData_ || modelData_->meshes.empty()) return;
-    
-    BoundingBox combinedBounds;
-    
+
+    // 全メッシュのバウンディングボックスを結合
+    Vector3 totalMin(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
+    Vector3 totalMax(std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest());
+
     for (const auto& mesh : modelData_->meshes) {
-        // Get vertex data to calculate bounds
-        // For now, use a default bounding box
-        // TODO: Calculate actual bounds from vertex data
+        Vector3 meshMin = mesh.GetBoundsMin();
+        Vector3 meshMax = mesh.GetBoundsMax();
+
+        totalMin = Vector3(
+            std::min(totalMin.GetX(), meshMin.GetX()),
+            std::min(totalMin.GetY(), meshMin.GetY()),
+            std::min(totalMin.GetZ(), meshMin.GetZ())
+        );
+        totalMax = Vector3(
+            std::max(totalMax.GetX(), meshMax.GetX()),
+            std::max(totalMax.GetY(), meshMax.GetY()),
+            std::max(totalMax.GetZ(), meshMax.GetZ())
+        );
     }
-    
-    // Use a reasonable default for now
-    combinedBounds = BoundingBox(
-        Vector3(-1.0f, -1.0f, -1.0f),
-        Vector3(1.0f, 2.0f, 1.0f)
-    );
-    
-    UpdateBounds(combinedBounds);
+
+    // 有効なバウンディングボックスが計算されたか確認
+    if (totalMin.GetX() <= totalMax.GetX() &&
+        totalMin.GetY() <= totalMax.GetY() &&
+        totalMin.GetZ() <= totalMax.GetZ()) {
+        UpdateBounds(BoundingBox(totalMin, totalMax));
+    } else {
+        // フォールバック: デフォルトサイズ
+        UpdateBounds(BoundingBox(Vector3(-1.0f, -1.0f, -1.0f), Vector3(1.0f, 2.0f, 1.0f)));
+    }
 }
 
 } // namespace UnoEngine

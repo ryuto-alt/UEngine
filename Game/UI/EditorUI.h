@@ -301,6 +301,10 @@ private:
 
     // カメラFrustum表示フラグ
     bool showCameraFrustum_ = false;
+
+    // レイピッキング（SceneViewでのクリック選択）
+    GameObject* PickObjectAtScreenPos(float screenX, float screenY);
+    void HandleSceneViewPicking();
 };
 
 } // namespace UnoEngine

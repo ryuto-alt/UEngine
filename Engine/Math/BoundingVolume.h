@@ -48,6 +48,40 @@ struct BoundingBox {
                min.GetZ() <= other.max.GetZ() && max.GetZ() >= other.min.GetZ();
     }
 
+    // レイとの交差判定（スラブ法）
+    // rayOrigin: レイの始点
+    // rayDir: レイの方向（正規化されている必要あり）
+    // tMin, tMax: 交差した場合の距離（出力）
+    // 戻り値: 交差した場合true
+    bool IntersectsRay(const Vector3& rayOrigin, const Vector3& rayDir, float& tMin, float& tMax) const {
+        tMin = 0.0f;
+        tMax = std::numeric_limits<float>::max();
+
+        for (int i = 0; i < 3; ++i) {
+            float origin = (i == 0) ? rayOrigin.GetX() : (i == 1) ? rayOrigin.GetY() : rayOrigin.GetZ();
+            float dir = (i == 0) ? rayDir.GetX() : (i == 1) ? rayDir.GetY() : rayDir.GetZ();
+            float minVal = (i == 0) ? min.GetX() : (i == 1) ? min.GetY() : min.GetZ();
+            float maxVal = (i == 0) ? max.GetX() : (i == 1) ? max.GetY() : max.GetZ();
+
+            if (std::abs(dir) < 1e-8f) {
+                // レイがこの軸に平行な場合
+                if (origin < minVal || origin > maxVal) {
+                    return false;
+                }
+            } else {
+                float t1 = (minVal - origin) / dir;
+                float t2 = (maxVal - origin) / dir;
+                if (t1 > t2) std::swap(t1, t2);
+                tMin = std::max(tMin, t1);
+                tMax = std::min(tMax, t2);
+                if (tMin > tMax) {
+                    return false;
+                }
+            }
+        }
+        return tMax >= 0.0f;
+    }
+
     void Expand(const Vector3& point) {
         min = Vector3(
             std::min(min.GetX(), point.GetX()),

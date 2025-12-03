@@ -474,6 +474,9 @@ namespace UnoEngine {
 			// エディタカメラにビューポート矩形を設定（マウスクリップ用）
 			editorCamera_.SetViewportRect(sceneViewPosX_, sceneViewPosY_, sceneViewSizeX_, sceneViewSizeY_);
 
+			// SceneViewでのクリック選択処理
+			HandleSceneViewPicking();
+
 			// ギズモ描画（Edit/Pauseモードかつオブジェクトが選択されている場合）
 			if (editorMode_ != EditorMode::Play && selectedObject_ && editorCamera_.GetCamera()) {
 				// ギズモ操作開始時にスナップショットを保存
@@ -2200,6 +2203,160 @@ namespace UnoEngine {
 				// Frustumを描画（半透明の青）
 				Vector4 frustumColor(0.3f, 0.6f, 1.0f, 1.0f);
 				debugRenderer->AddCameraFrustum(nearCorners, farCorners, frustumColor);
+			}
+		}
+	}
+
+	// スクリーン座標からレイを飛ばしてオブジェクトを選択
+	GameObject* EditorUI::PickObjectAtScreenPos(float screenX, float screenY) {
+		if (!gameObjects_ || !editorCamera_.GetCamera()) {
+			return nullptr;
+		}
+
+		Camera* camera = editorCamera_.GetCamera();
+
+		// スクリーン座標をビューポート内の正規化座標に変換 (-1 to 1)
+		float ndcX = ((screenX - sceneViewPosX_) / sceneViewSizeX_) * 2.0f - 1.0f;
+		float ndcY = 1.0f - ((screenY - sceneViewPosY_) / sceneViewSizeY_) * 2.0f;
+
+		// 逆投影行列と逆ビュー行列を取得
+		Matrix4x4 invProj = camera->GetProjectionMatrix().Inverse();
+		Matrix4x4 invView = camera->GetViewMatrix().Inverse();
+
+		// NDC座標をビュー空間に変換
+		Vector4 rayClipNear(ndcX, ndcY, 0.0f, 1.0f);
+		Vector4 rayClipFar(ndcX, ndcY, 1.0f, 1.0f);
+
+		Vector4 rayViewNear = invProj.TransformVector4(rayClipNear);
+		Vector4 rayViewFar = invProj.TransformVector4(rayClipFar);
+
+		// パースペクティブ除算
+		if (std::abs(rayViewNear.GetW()) > 1e-6f) {
+			rayViewNear = Vector4(
+				rayViewNear.GetX() / rayViewNear.GetW(),
+				rayViewNear.GetY() / rayViewNear.GetW(),
+				rayViewNear.GetZ() / rayViewNear.GetW(),
+				1.0f
+			);
+		}
+		if (std::abs(rayViewFar.GetW()) > 1e-6f) {
+			rayViewFar = Vector4(
+				rayViewFar.GetX() / rayViewFar.GetW(),
+				rayViewFar.GetY() / rayViewFar.GetW(),
+				rayViewFar.GetZ() / rayViewFar.GetW(),
+				1.0f
+			);
+		}
+
+		// ワールド空間に変換
+		Vector4 rayWorldNear = invView.TransformVector4(rayViewNear);
+		Vector4 rayWorldFar = invView.TransformVector4(rayViewFar);
+
+		Vector3 rayOrigin(rayWorldNear.GetX(), rayWorldNear.GetY(), rayWorldNear.GetZ());
+		Vector3 rayEnd(rayWorldFar.GetX(), rayWorldFar.GetY(), rayWorldFar.GetZ());
+		Vector3 rayDir = (rayEnd - rayOrigin).Normalize();
+
+		// 全オブジェクトとの交差判定
+		GameObject* closestObject = nullptr;
+		float closestDistance = std::numeric_limits<float>::max();
+
+		for (const auto& obj : *gameObjects_) {
+			if (!obj || !obj->IsActive()) continue;
+
+			// SkinnedMeshRendererを持つオブジェクトのバウンディングボックスを取得
+			auto* renderer = obj->GetComponent<SkinnedMeshRenderer>();
+			if (renderer && renderer->HasModel()) {
+				// ローカルバウンディングボックスを取得
+				BoundingBox localBounds = renderer->GetBounds();
+
+				// バウンディングボックスが無効な場合はデフォルトサイズを使用
+				if (!localBounds.IsValid()) {
+					localBounds = BoundingBox(Vector3(-1.0f, -1.0f, -1.0f), Vector3(1.0f, 2.0f, 1.0f));
+				}
+
+				// ワールド変換行列を取得
+				const Transform& transform = obj->GetTransform();
+				Matrix4x4 worldMatrix = transform.GetWorldMatrix();
+				Matrix4x4 invWorldMatrix = worldMatrix.Inverse();
+
+				// レイをローカル空間に変換
+				Vector4 localOrigin4 = invWorldMatrix.TransformVector4(Vector4(rayOrigin.GetX(), rayOrigin.GetY(), rayOrigin.GetZ(), 1.0f));
+				Vector4 localDir4 = invWorldMatrix.TransformVector4(Vector4(rayDir.GetX(), rayDir.GetY(), rayDir.GetZ(), 0.0f));
+
+				Vector3 localRayOrigin(localOrigin4.GetX(), localOrigin4.GetY(), localOrigin4.GetZ());
+				Vector3 localRayDir = Vector3(localDir4.GetX(), localDir4.GetY(), localDir4.GetZ()).Normalize();
+
+				// ローカル空間でレイとバウンディングボックスの交差判定
+				float tMin, tMax;
+				if (localBounds.IntersectsRay(localRayOrigin, localRayDir, tMin, tMax)) {
+					// ワールド空間での距離を計算
+					Vector3 hitPointLocal = localRayOrigin + localRayDir * tMin;
+					Vector4 hitPointWorld4 = worldMatrix.TransformVector4(Vector4(hitPointLocal.GetX(), hitPointLocal.GetY(), hitPointLocal.GetZ(), 1.0f));
+					Vector3 hitPointWorld(hitPointWorld4.GetX(), hitPointWorld4.GetY(), hitPointWorld4.GetZ());
+					float distance = (hitPointWorld - rayOrigin).Length();
+
+					if (distance < closestDistance) {
+						closestDistance = distance;
+						closestObject = obj.get();
+					}
+				}
+			}
+			else {
+				// メッシュがないオブジェクトはデフォルトバウンディングボックスで判定
+				BoundingBox defaultBounds(Vector3(-1.0f, -1.0f, -1.0f), Vector3(1.0f, 2.0f, 1.0f));
+
+				const Transform& transform = obj->GetTransform();
+				Matrix4x4 worldMatrix = transform.GetWorldMatrix();
+				Matrix4x4 invWorldMatrix = worldMatrix.Inverse();
+
+				Vector4 localOrigin4 = invWorldMatrix.TransformVector4(Vector4(rayOrigin.GetX(), rayOrigin.GetY(), rayOrigin.GetZ(), 1.0f));
+				Vector4 localDir4 = invWorldMatrix.TransformVector4(Vector4(rayDir.GetX(), rayDir.GetY(), rayDir.GetZ(), 0.0f));
+
+				Vector3 localRayOrigin(localOrigin4.GetX(), localOrigin4.GetY(), localOrigin4.GetZ());
+				Vector3 localRayDir = Vector3(localDir4.GetX(), localDir4.GetY(), localDir4.GetZ()).Normalize();
+
+				float tMin, tMax;
+				if (defaultBounds.IntersectsRay(localRayOrigin, localRayDir, tMin, tMax)) {
+					Vector3 hitPointLocal = localRayOrigin + localRayDir * tMin;
+					Vector4 hitPointWorld4 = worldMatrix.TransformVector4(Vector4(hitPointLocal.GetX(), hitPointLocal.GetY(), hitPointLocal.GetZ(), 1.0f));
+					Vector3 hitPointWorld(hitPointWorld4.GetX(), hitPointWorld4.GetY(), hitPointWorld4.GetZ());
+					float distance = (hitPointWorld - rayOrigin).Length();
+
+					if (distance < closestDistance) {
+						closestDistance = distance;
+						closestObject = obj.get();
+					}
+				}
+			}
+		}
+
+		return closestObject;
+	}
+
+	// SceneViewでのクリック選択処理
+	void EditorUI::HandleSceneViewPicking() {
+		// Editモードでのみ有効
+		if (editorMode_ == EditorMode::Play) return;
+
+		// ギズモ操作中は選択しない
+		if (gizmoSystem_.IsUsing() || gizmoSystem_.IsOver()) return;
+
+		ImGuiIO& io = ImGui::GetIO();
+
+		// 左クリックでオブジェクト選択
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+			ImVec2 mousePos = io.MousePos;
+
+			// SceneViewの範囲内かチェック
+			if (mousePos.x >= sceneViewPosX_ && mousePos.x <= sceneViewPosX_ + sceneViewSizeX_ &&
+				mousePos.y >= sceneViewPosY_ && mousePos.y <= sceneViewPosY_ + sceneViewSizeY_) {
+
+				GameObject* picked = PickObjectAtScreenPos(mousePos.x, mousePos.y);
+				if (picked) {
+					selectedObject_ = picked;
+					// オイラー角キャッシュをクリア（新しいオブジェクト選択時）
+					cachedEulerAngles_.clear();
+				}
 			}
 		}
 	}

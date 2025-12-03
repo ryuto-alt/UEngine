@@ -4,11 +4,9 @@ on:
     branches:
       - master
 env:
-  # リポジトリのルートディレクトリを起点としたソリューションファイルのパス
   SOLUTION_FILE_PATH: UnoEngine.vcxproj
-  # Visual Studio の構成(Debug / Release )
   CONFIGURATION: Debug
-  VCPKG_BINARY_SOURCES: "clear;files,C:/vcpkg_cache,readwrite"
+  VCPKG_DEFAULT_BINARY_CACHE: C:/vcpkg_cache
 jobs:
   build:
     runs-on: windows-2022
@@ -28,21 +26,18 @@ jobs:
       - name: Restore NuGet packages
         run: nuget restore ${{ env.SOLUTION_FILE_PATH }} -PackagesDirectory packages
 
-      - name: Cache vcpkg packages
+      - name: Create vcpkg cache directory
+        run: New-Item -ItemType Directory -Force -Path C:/vcpkg_cache
+
+      - name: Cache vcpkg
+        id: cache-vcpkg
         uses: actions/cache@v4
         with:
-          path: |
-            C:/vcpkg_cache
-            C:/vcpkg/installed
-          key: vcpkg-x64-windows-${{ hashFiles('.github/workflows/DebugBuild.yml') }}
-          restore-keys: |
-            vcpkg-x64-windows-
-
-      - name: Setup vcpkg cache directory
-        run: |
-          if (!(Test-Path "C:/vcpkg_cache")) { New-Item -ItemType Directory -Path "C:/vcpkg_cache" }
+          path: C:/vcpkg/installed
+          key: vcpkg-installed-v1
 
       - name: Install vcpkg dependencies
+        if: steps.cache-vcpkg.outputs.cache-hit != 'true'
         run: |
           C:\vcpkg\vcpkg install imgui[core,dx12-binding,win32-binding,docking-experimental]:x64-windows nlohmann-json:x64-windows assimp:x64-windows
 

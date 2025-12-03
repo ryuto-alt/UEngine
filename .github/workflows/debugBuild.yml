@@ -8,6 +8,7 @@ env:
   SOLUTION_FILE_PATH: UnoEngine.vcxproj
   # Visual Studio の構成(Debug / Release )
   CONFIGURATION: Debug
+  VCPKG_BINARY_SOURCES: "clear;files,C:/vcpkg_cache,readwrite"
 jobs:
   build:
     runs-on: windows-2022
@@ -26,6 +27,20 @@ jobs:
 
       - name: Restore NuGet packages
         run: nuget restore ${{ env.SOLUTION_FILE_PATH }} -PackagesDirectory packages
+
+      - name: Cache vcpkg packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            C:/vcpkg_cache
+            C:/vcpkg/installed
+          key: vcpkg-x64-windows-${{ hashFiles('.github/workflows/DebugBuild.yml') }}
+          restore-keys: |
+            vcpkg-x64-windows-
+
+      - name: Setup vcpkg cache directory
+        run: |
+          if (!(Test-Path "C:/vcpkg_cache")) { New-Item -ItemType Directory -Path "C:/vcpkg_cache" }
 
       - name: Install vcpkg dependencies
         run: |

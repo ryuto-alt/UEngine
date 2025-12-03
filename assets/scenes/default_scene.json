@@ -28,11 +28,11 @@
             "active": true,
             "components": [
                 {
-                    "type": "AnimatorComponent"
-                },
-                {
                     "modelPath": "assets/model/testmodel/Enemy_Test/Enemy_Walk.gltf",
                     "type": "SkinnedMeshRenderer"
+                },
+                {
+                    "type": "AnimatorComponent"
                 }
             ],
             "layer": 1,
@@ -40,6 +40,73 @@
             "transform": {
                 "position": [
                     0.0,
+                    0.0,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                ],
+                "scale": [
+                    0.10000000149011612,
+                    0.10000000149011612,
+                    0.10000000149011612
+                ]
+            }
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "aspect": 1.7777777910232544,
+                    "farClip": 1000.0,
+                    "fov": 1.047197937965393,
+                    "isMain": true,
+                    "isOrthographic": false,
+                    "nearClip": 0.10000000149011612,
+                    "priority": 0,
+                    "type": "CameraComponent"
+                }
+            ],
+            "layer": 1,
+            "name": "Camera",
+            "transform": {
+                "position": [
+                    -1.9362561702728271,
+                    4.172793388366699,
+                    10.656730651855469
+                ],
+                "rotation": [
+                    0.0,
+                    0.9999998807907104,
+                    -0.0,
+                    -1.1920928955078125e-07
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            }
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "type": "AnimatorComponent"
+                },
+                {
+                    "modelPath": "assets/model/testmodel/Enemy_Test/enemy_walk2.gltf",
+                    "type": "SkinnedMeshRenderer"
+                }
+            ],
+            "layer": 1,
+            "name": "enemy_walk2",
+            "transform": {
+                "position": [
+                    -5.346048355102539,
                     0.0,
                     0.0
                 ],

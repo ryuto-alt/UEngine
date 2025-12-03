@@ -54,11 +54,11 @@ void GameScene::OnLoad() {
                 if (obj->GetName() == "Player") {
                     player_ = obj.get();
                 }
-                // Main Cameraを検出
-                if (obj->GetName() == "Main Camera") {
-                    mainCamera_ = obj.get();
-                    obj->SetDeletable(false);  // 削除不可フラグを復元
-                    if (auto* cameraComp = obj->GetComponent<CameraComponent>()) {
+                // CameraComponentを持つオブジェクトを検出（名前に関係なく）
+                if (auto* cameraComp = obj->GetComponent<CameraComponent>()) {
+                    if (cameraComp->IsMain() || !foundMainCamera) {
+                        mainCamera_ = obj.get();
+                        obj->SetDeletable(false);  // 削除不可フラグを復元
                         cameraComp->SetMain(true);
                         SetActiveCamera(cameraComp->GetCamera());
                         foundMainCamera = true;

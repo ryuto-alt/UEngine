@@ -1807,6 +1807,9 @@ namespace UnoEngine {
 
 		if (SceneSerializer::SaveScene(*gameObjects_, filepath)) {
 			consoleMessages_.push_back("[Editor] Scene saved: " + filepath);
+			// EditorCameraの設定も保存
+			editorCamera_.SaveSettings();
+			consoleMessages_.push_back("[Editor] Editor camera settings saved");
 		}
 		else {
 			consoleMessages_.push_back("[Editor] Failed to save scene: " + filepath);

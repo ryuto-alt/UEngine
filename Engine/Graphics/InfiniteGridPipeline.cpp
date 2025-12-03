@@ -66,9 +66,9 @@ void InfiniteGridPipeline::CreatePipelineState(
     psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
     psoDesc.RasterizerState.DepthClipEnable = TRUE;
 
-    // 深度テスト有効、書き込みも有効
+    // 深度テスト有効、書き込みは無効（グリッドがオブジェクトを隠さないように）
     psoDesc.DepthStencilState.DepthEnable = TRUE;
-    psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+    psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
     psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 
     psoDesc.SampleMask = UINT_MAX;

@@ -136,8 +136,11 @@ void EditorCamera::Update(float deltaTime) {
             if (pitch_ > maxPitch) pitch_ = maxPitch;
             if (pitch_ < -maxPitch) pitch_ = -maxPitch;
 
-            // Quaternionで回転を設定
-            Quaternion rot = Quaternion::RotationRollPitchYaw(pitch_, yaw_, 0.0f);
+            // Y軸回転（yaw）とX軸回転（pitch）を個別に作成して合成
+            // カメラ用: Qy * Qx の順序で適用（ワールドY軸で水平回転、ローカルX軸で上下回転）
+            Quaternion rotY = Quaternion::RotationAxis(Vector3::UnitY(), yaw_);
+            Quaternion rotX = Quaternion::RotationAxis(Vector3::UnitX(), pitch_);
+            Quaternion rot = rotY * rotX;
             camera_->SetRotation(rot);
         }
     }

@@ -148,7 +148,7 @@ public:
     }
 
     // オイラー角から生成（ピッチ=X, ヨー=Y, ロール=Z）
-    // 回転順序: Y(yaw) * X(pitch) * Z(roll)
+    // 回転順序: Z(roll) * X(pitch) * Y(yaw)
     static Quaternion RotationRollPitchYaw(float pitch, float yaw, float roll) {
         float cp = std::cos(pitch * 0.5f);
         float sp = std::sin(pitch * 0.5f);
@@ -158,9 +158,9 @@ public:
         float sr = std::sin(roll * 0.5f);
 
         return Quaternion(
-            cr * sp * cy + sr * cp * sy,  // x
-            cr * cp * sy - sr * sp * cy,  // y
-            sr * cp * cy - cr * sp * sy,  // z
+            sr * cp * cy - cr * sp * sy,  // x
+            cr * sp * cy + sr * cp * sy,  // y
+            cr * cp * sy - sr * sp * cy,  // z
             cr * cp * cy + sr * sp * sy   // w
         );
     }

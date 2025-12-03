@@ -144,8 +144,11 @@ void Renderer::SetupViewport() {
     auto* cmdList = graphics_->GetCommandList();
 
     D3D12_VIEWPORT viewport = {};
+    viewport.TopLeftX = 0.0f;
+    viewport.TopLeftY = 0.0f;
     viewport.Width = static_cast<float>(window_->GetWidth());
     viewport.Height = static_cast<float>(window_->GetHeight());
+    viewport.MinDepth = 0.0f;
     viewport.MaxDepth = 1.0f;
 
     D3D12_RECT scissorRect = {};
@@ -203,8 +206,11 @@ void Renderer::DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_
     // Set viewport based on texture size
     D3D12_RESOURCE_DESC desc = renderTarget->GetDesc();
     D3D12_VIEWPORT viewport = {};
+    viewport.TopLeftX = 0.0f;
+    viewport.TopLeftY = 0.0f;
     viewport.Width = static_cast<float>(desc.Width);
     viewport.Height = static_cast<float>(desc.Height);
+    viewport.MinDepth = 0.0f;
     viewport.MaxDepth = 1.0f;
 
     D3D12_RECT scissorRect = {};

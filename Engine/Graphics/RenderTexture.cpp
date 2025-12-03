@@ -65,12 +65,15 @@ void RenderTexture::Create(GraphicsDevice* graphics, uint32 width, uint32 height
     
     D3D12_RESOURCE_DESC depthDesc = {};
     depthDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+    depthDesc.Alignment = 0;
     depthDesc.Width = width;
     depthDesc.Height = height;
     depthDesc.DepthOrArraySize = 1;
     depthDesc.MipLevels = 1;
     depthDesc.Format = DXGI_FORMAT_D32_FLOAT;
     depthDesc.SampleDesc.Count = 1;
+    depthDesc.SampleDesc.Quality = 0;
+    depthDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
     depthDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
     
     D3D12_CLEAR_VALUE depthClearValue = {};
@@ -88,7 +91,14 @@ void RenderTexture::Create(GraphicsDevice* graphics, uint32 width, uint32 height
     );
     
     dsvHandle_ = dsvHeap_->GetCPUDescriptorHandleForHeapStart();
-    device->CreateDepthStencilView(depthStencil_.Get(), nullptr, dsvHandle_);
+    
+    // 明示的にDSV記述子を設定（深度テストの問題を防ぐ）
+    D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+    dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+    dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
+    dsvDesc.Texture2D.MipSlice = 0;
+    device->CreateDepthStencilView(depthStencil_.Get(), &dsvDesc, dsvHandle_);
 
     // SRVハンドルを保存
     auto srvHeap = graphics->GetSRVHeap();

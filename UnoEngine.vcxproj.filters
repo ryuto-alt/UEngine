@@ -282,10 +282,6 @@
     <ClCompile Include="Game\GameApplication.cpp">
       <Filter>Game</Filter>
     </ClCompile>
-    <!-- Game\Scenes -->
-    <ClCompile Include="Game\Scenes\GameScene.cpp">
-      <Filter>Game\Scenes</Filter>
-    </ClCompile>
     <!-- Game\Components -->
     <ClCompile Include="Game\Components\PlayerController.cpp">
       <Filter>Game\Components</Filter>
@@ -644,10 +640,6 @@
     <!-- Game -->
     <ClInclude Include="Game\GameApplication.h">
       <Filter>Game</Filter>
-    </ClInclude>
-    <!-- Game\Scenes -->
-    <ClInclude Include="Game\Scenes\GameScene.h">
-      <Filter>Game\Scenes</Filter>
     </ClInclude>
     <!-- Game\Components -->
     <ClInclude Include="Game\Components\PlayerController.h">

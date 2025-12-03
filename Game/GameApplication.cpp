@@ -1,5 +1,5 @@
 #include "GameApplication.h"
-#include "Scenes/GameScene.h"
+#include "../Engine/Core/Scene.h"
 #include "../Engine/Resource/ResourceLoader.h"
 #include "../Engine/Rendering/RenderSystem.h"
 #include "../Engine/Rendering/SkinnedRenderItem.h"
@@ -48,9 +48,8 @@ void GameApplication::OnRender() {
         }
 
 #ifdef _DEBUG
-        GameScene* gameScene = dynamic_cast<GameScene*>(scene);
-        if (gameScene) {
-            auto* editorUI = gameScene->GetEditorUI();
+        auto* editorUI = scene->GetEditorUI();
+        if (editorUI) {
             auto* debugRenderer = renderer_->GetDebugRenderer();
 
             // Scene View用カメラを取得（Main Cameraとは完全に独立したEditorCamera）

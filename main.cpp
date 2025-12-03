@@ -1,5 +1,5 @@
 #include "Game/GameApplication.h"
-#include "Game/Scenes/GameScene.h"
+#include "Engine/Core/Scene.h"
 #include "Engine/Resource/ResourceLoader.h"
 #include "Engine/Input/InputManager.h"
 
@@ -26,9 +26,9 @@ protected:
         // Initialize ResourceLoader
         ResourceLoader::Initialize(GetGraphics());
 
-        // Load GameScene
-        auto gameScene = MakeUnique<GameScene>();
-        GetSceneManager()->LoadScene(std::move(gameScene));
+        // Load Scene
+        auto scene = MakeUnique<Scene>();
+        GetSceneManager()->LoadScene(std::move(scene));
     }
 
     void OnUpdate(float deltaTime) override {

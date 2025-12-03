@@ -197,7 +197,6 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClCompile Include="Engine\Graphics\MeshRenderer.cpp" />
     <ClCompile Include="Engine\Graphics\DirectionalLightComponent.cpp" />
     <ClCompile Include="Engine\Resource\ResourceLoader.cpp" />
-    <ClCompile Include="Game\Scenes\GameScene.cpp" />
     <ClCompile Include="Game\Components\PlayerController.cpp" />
     <ClCompile Include="Engine\Rendering\Renderer.cpp" />
     <ClCompile Include="Engine\Rendering\SkinnedMeshRenderer.cpp" />
@@ -317,7 +316,6 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClInclude Include="Engine\Graphics\MeshRenderer.h" />
     <ClInclude Include="Engine\Graphics\DirectionalLightComponent.h" />
     <ClInclude Include="Engine\Resource\ResourceLoader.h" />
-    <ClInclude Include="Game\Scenes\GameScene.h" />
     <ClInclude Include="Game\Components\PlayerController.h" />
     <ClInclude Include="Engine\Rendering\Renderer.h" />
     <ClInclude Include="Game\GameApplication.h" />

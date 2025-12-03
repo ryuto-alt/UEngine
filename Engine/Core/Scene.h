@@ -7,6 +7,10 @@
 #include <memory>
 #include <string>
 
+#ifdef _DEBUG
+#include "../../Game/UI/EditorUI.h"
+#endif
+
 namespace UnoEngine {
 
 class Application;
@@ -17,11 +21,11 @@ public:
     Scene(const std::string& name = "Scene");
     virtual ~Scene() = default;
 
-    virtual void OnLoad() {}
+    void OnLoad();
     virtual void OnUnload() {}
-    virtual void OnUpdate(float deltaTime);
-    virtual void OnRender(RenderView& view) = 0;
-    virtual void OnImGui() {}
+    void OnUpdate(float deltaTime);
+    void OnRender(RenderView& view);
+    void OnImGui();
 
     GameObject* CreateGameObject(const std::string& name = "GameObject");
     void DestroyGameObject(GameObject* obj);
@@ -32,14 +36,18 @@ public:
 
     Camera* GetActiveCamera() const { return activeCamera_; }
     void SetActiveCamera(Camera* camera) { activeCamera_ = camera; }
-    
+
     Application* GetApplication() const { return app_; }
     void SetApplication(Application* app) { app_ = app; }
-    
+
     void SetInputManager(InputManager* input) { input_ = input; }
 
     // Call Start() on a specific GameObject's components (useful for runtime-created objects)
     void StartGameObject(GameObject* obj);
+
+#ifdef _DEBUG
+    EditorUI* GetEditorUI() { return &editorUI_; }
+#endif
 
 protected:
     InputManager* input_ = nullptr;
@@ -48,12 +56,20 @@ protected:
     void ProcessPendingStarts();
 
 private:
+    void SetupDefaultCamera();
+    void LoadSceneFromFile(const std::string& filepath);
+
     std::string name_;
     std::vector<std::unique_ptr<GameObject>> gameObjects_;
     std::vector<GameObject*> pendingDestroy_;
     Camera* activeCamera_ = nullptr;
     Application* app_ = nullptr;
     bool isLoaded_ = false;
+    GameObject* mainCamera_ = nullptr;
+
+#ifdef _DEBUG
+    EditorUI editorUI_;
+#endif
 };
 
 } // namespace UnoEngine

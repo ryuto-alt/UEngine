@@ -19,11 +19,17 @@ void Transform::SetLocalScale(const Vector3& scale) {
 }
 
 Vector3 Transform::GetPosition() const {
+    // 親がない場合はローカル位置がそのままワールド位置
+    if (!parent_) {
+        return localPosition_;
+    }
+    // 親がある場合はワールド行列から取得
     if (isDirty_) UpdateWorldMatrix();
+    // DirectXの行優先行列：Translation は m[3][0], m[3][1], m[3][2]
     return Vector3(
-        cachedWorldMatrix_.GetElement(0, 3),
-        cachedWorldMatrix_.GetElement(1, 3),
-        cachedWorldMatrix_.GetElement(2, 3)
+        cachedWorldMatrix_.GetElement(3, 0),
+        cachedWorldMatrix_.GetElement(3, 1),
+        cachedWorldMatrix_.GetElement(3, 2)
     );
 }
 
@@ -113,10 +119,13 @@ void Transform::MarkDirty() {
 }
 
 void Transform::UpdateWorldMatrix() const {
+    // DirectXの行優先行列で、点は右から掛ける: point * Matrix
+    // 適用順序: Scale -> Rotate -> Translate
+    // 行列の掛け算: S * R * T (右から左に適用される)
     Matrix4x4 localMatrix =
-        Matrix4x4::Translation(localPosition_) *
+        Matrix4x4::Scale(localScale_) *
         localRotation_.ToMatrix() *
-        Matrix4x4::Scale(localScale_);
+        Matrix4x4::Translation(localPosition_);
 
     if (parent_) {
         cachedWorldMatrix_ = localMatrix * parent_->GetWorldMatrix();

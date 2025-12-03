@@ -66,16 +66,12 @@ void CameraComponent::UpdateCameraTransform() {
 
     auto& transform = gameObject_->GetTransform();
 
-    // ワールド行列から位置を取得
-    Matrix4x4 worldMatrix = transform.GetWorldMatrix();
-    float m[16];
-    worldMatrix.ToFloatArray(m);
-
-    Vector3 worldPos(m[12], m[13], m[14]);
+    // TransformのGetPosition()を使用（正しくワールド位置を取得）
+    Vector3 worldPos = transform.GetPosition();
     camera_.SetPosition(worldPos);
 
-    // ローカル回転を使用（親の回転も考慮する場合はワールド行列から抽出が必要）
-    camera_.SetRotation(transform.GetLocalRotation());
+    // ワールド回転を使用（親の回転も考慮）
+    camera_.SetRotation(transform.GetRotation());
 }
 
 void CameraComponent::UpdateProjectionMatrix() {

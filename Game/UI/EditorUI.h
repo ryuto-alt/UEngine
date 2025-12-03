@@ -14,6 +14,7 @@
 #include <string>
 #include <stack>
 #include <unordered_set>
+#include <unordered_map>
 #include <memory>
 
 namespace UnoEngine {
@@ -123,7 +124,10 @@ public:
     void LoadScene(const std::string& filepath);
 
     // GameObjectsリストへの参照を設定（保存/ロード用）
-    void SetGameObjects(std::vector<UniquePtr<GameObject>>* gameObjects) { gameObjects_ = gameObjects; }
+    void SetGameObjects(std::vector<UniquePtr<GameObject>>* gameObjects) {
+        gameObjects_ = gameObjects;
+        cachedEulerAngles_.clear();  // オイラー角キャッシュをクリア
+    }
 
     // ResourceManagerへの参照を設定（モデル読み込み用）
     void SetResourceManager(class ResourceManager* resourceManager) { resourceManager_ = resourceManager; }
@@ -229,6 +233,9 @@ private:
 
     // ギズモシステム
     GizmoSystem gizmoSystem_;
+
+    // オイラー角キャッシュ（ジンバルロック回避用、オブジェクトIDをキーに）
+    std::unordered_map<uint64_t, Vector3> cachedEulerAngles_;
 
     // Scene Viewの位置・サイズ（ギズモ用）
     float sceneViewPosX_ = 0.0f;

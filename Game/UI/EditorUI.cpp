@@ -495,6 +495,12 @@ namespace UnoEngine {
 					sceneViewSizeY_
 				);
 
+				// ギズモで回転操作された場合、キャッシュをクリア（再計算させる）
+				if (manipulated && gizmoSystem_.GetOperation() == GizmoOperation::Rotate) {
+					uint64_t objId = reinterpret_cast<uint64_t>(selectedObject_);
+					cachedEulerAngles_.erase(objId);
+				}
+
 				// ギズモ操作終了時に履歴に追加
 				if (!gizmoSystem_.IsUsing() && isGizmoActive_) {
 					isGizmoActive_ = false;
@@ -1057,28 +1063,51 @@ namespace UnoEngine {
 					Quaternion rot = transform.GetLocalRotation();
 					Vector3 scale = transform.GetLocalScale();
 
-					// 回転をオイラー角に変換（Quaternion -> Euler）
-					float pitch, yaw, roll;
-					float qx = rot.GetX(), qy = rot.GetY(), qz = rot.GetZ(), qw = rot.GetW();
+					// オブジェクトごとにキャッシュされたオイラー角を使用
+					// （ジンバルロック問題を回避するため、ユーザー入力値を保持）
+					uint64_t objId = reinterpret_cast<uint64_t>(obj);
+					if (cachedEulerAngles_.find(objId) == cachedEulerAngles_.end()) {
+						// 初回はクォータニオンから計算
+						// クォータニオンを正規化してNaN防止
+						rot = rot.Normalize();
+						float qx = rot.GetX(), qy = rot.GetY(), qz = rot.GetZ(), qw = rot.GetW();
 
-					// Roll (X軸回転)
-					float sinr_cosp = 2.0f * (qw * qx + qy * qz);
-					float cosr_cosp = 1.0f - 2.0f * (qx * qx + qy * qy);
-					roll = std::atan2(sinr_cosp, cosr_cosp);
+						// クォータニオンが有効かチェック
+						float qLen = qx*qx + qy*qy + qz*qz + qw*qw;
+						if (qLen < 0.0001f || std::isnan(qLen)) {
+							// 無効なクォータニオン -> デフォルト値
+							cachedEulerAngles_[objId] = Vector3(0.0f, 0.0f, 0.0f);
+						} else {
+							// XMQuaternionRotationRollPitchYaw互換のオイラー角抽出
+							// 回転順序: Z(Roll) -> X(Pitch) -> Y(Yaw)
+							float sinX = 2.0f * (qw * qx - qy * qz);
+							float cosX = 1.0f - 2.0f * (qx * qx + qz * qz);
+							float xRad = std::atan2(sinX, cosX);
 
-					// Pitch (Y軸回転)
-					float sinp = 2.0f * (qw * qy - qz * qx);
-					if (std::abs(sinp) >= 1.0f)
-						pitch = std::copysign(3.14159265f / 2.0f, sinp);
-					else
-						pitch = std::asin(sinp);
+							float sinY = 2.0f * (qw * qy + qx * qz);
+							sinY = std::clamp(sinY, -1.0f, 1.0f);
+							float yRad = std::asin(sinY);
 
-					// Yaw (Z軸回転)
-					float siny_cosp = 2.0f * (qw * qz + qx * qy);
-					float cosy_cosp = 1.0f - 2.0f * (qy * qy + qz * qz);
-					yaw = std::atan2(siny_cosp, cosy_cosp);
+							float sinZ = 2.0f * (qw * qz - qx * qy);
+							float cosZ = 1.0f - 2.0f * (qy * qy + qz * qz);
+							float zRad = std::atan2(sinZ, cosZ);
 
-					float euler[3] = { roll * 57.2958f, pitch * 57.2958f, yaw * 57.2958f };
+							constexpr float RAD_TO_DEG = 57.2957795f;
+							float xDeg = xRad * RAD_TO_DEG;
+							float yDeg = yRad * RAD_TO_DEG;
+							float zDeg = zRad * RAD_TO_DEG;
+
+							// NaNチェック
+							if (std::isnan(xDeg) || std::isnan(yDeg) || std::isnan(zDeg)) {
+								cachedEulerAngles_[objId] = Vector3(0.0f, 0.0f, 0.0f);
+							} else {
+								cachedEulerAngles_[objId] = Vector3(xDeg, yDeg, zDeg);
+							}
+						}
+					}
+
+					Vector3& cachedEuler = cachedEulerAngles_[objId];
+					float euler[3] = { cachedEuler.GetX(), cachedEuler.GetY(), cachedEuler.GetZ() };
 
 					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
 
@@ -1092,10 +1121,14 @@ namespace UnoEngine {
 					// Rotation（ドラッグ＆Ctrl+クリックで直接入力）
 					ImGui::SetNextItemWidth(180.0f);
 					if (ImGui::DragFloat3("Rot", euler, 1.0f, 0.0f, 0.0f, "%.1f")) {
+						// キャッシュを更新
+						cachedEuler = Vector3(euler[0], euler[1], euler[2]);
+
 						// Euler角（度）からQuaternionへ変換
-						float radX = euler[0] * 0.0174533f;
-						float radY = euler[1] * 0.0174533f;
-						float radZ = euler[2] * 0.0174533f;
+						constexpr float DEG_TO_RAD = 0.0174532925f;
+						float radX = euler[0] * DEG_TO_RAD;  // Pitch (X軸)
+						float radY = euler[1] * DEG_TO_RAD;  // Yaw (Y軸)
+						float radZ = euler[2] * DEG_TO_RAD;  // Roll (Z軸)
 						transform.SetLocalRotation(Quaternion::RotationRollPitchYaw(radX, radY, radZ));
 					}
 

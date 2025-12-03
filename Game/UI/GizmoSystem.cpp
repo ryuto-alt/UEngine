@@ -1,6 +1,7 @@
 #include "GizmoSystem.h"
 #include <imgui.h>
 #include <cmath>
+#include <cstring>
 
 namespace UnoEngine {
 
@@ -31,7 +32,7 @@ bool GizmoSystem::RenderGizmo(GameObject* selectedObject, Camera* camera,
     ImGuizmo::SetOrthographic(false);
     ImGuizmo::Enable(true);
 
-    // 軸の感度を上げる（特にカメラ正面に近い軸の反応を良くする）
+    // 軸の感度を上げる
     ImGuizmo::AllowAxisFlip(true);
 
     // ギズモのサイズを大きく設定
@@ -43,29 +44,32 @@ bool GizmoSystem::RenderGizmo(GameObject* selectedObject, Camera* camera,
     const_cast<Camera*>(camera)->GetViewMatrix().ToFloatArray(viewMatrix);
     camera->GetProjectionMatrix().ToFloatArray(projMatrix);
 
-    // オブジェクトのワールド行列を取得（ギズモ描画用）
+    // オブジェクトのTransformを取得
     auto& transform = selectedObject->GetTransform();
-    float objectMatrix[16];
-    transform.GetWorldMatrix().ToFloatArray(objectMatrix);
 
-    // 操作前のワールド座標を保存
-    float oldTranslation[3], oldRotation[3], oldScale[3];
-    ImGuizmo::DecomposeMatrixToComponents(objectMatrix, oldTranslation, oldRotation, oldScale);
+    // 操作前のローカル値を保存
+    Vector3 oldLocalPos = transform.GetLocalPosition();
+    Quaternion oldLocalRot = transform.GetLocalRotation();
+    Vector3 oldLocalScale = transform.GetLocalScale();
 
-    // スナップ値（CTRL押下時またはsnapEnabled時に有効）
+    // ギズモ用の行列を構築（ワールド行列を使用）
+    float gizmoMatrix[16];
+    transform.GetWorldMatrix().ToFloatArray(gizmoMatrix);
+
+    // スナップ値
     float* snapPtr = nullptr;
     float snapValues[3] = { 0, 0, 0 };
 
     if (snapEnabled_ || io.KeyCtrl) {
         switch (operation_) {
             case GizmoOperation::Translate:
-                snapValues[0] = snapValues[1] = snapValues[2] = 1.0f;  // 1単位でスナップ
+                snapValues[0] = snapValues[1] = snapValues[2] = 1.0f;
                 break;
             case GizmoOperation::Rotate:
-                snapValues[0] = snapValues[1] = snapValues[2] = 15.0f;  // 15度でスナップ
+                snapValues[0] = snapValues[1] = snapValues[2] = 15.0f;
                 break;
             case GizmoOperation::Scale:
-                snapValues[0] = snapValues[1] = snapValues[2] = 1.0f;  // 1.0倍でスナップ
+                snapValues[0] = snapValues[1] = snapValues[2] = 1.0f;
                 break;
         }
         snapPtr = snapValues;
@@ -78,50 +82,66 @@ bool GizmoSystem::RenderGizmo(GameObject* selectedObject, Camera* camera,
         projMatrix,
         ToImGuizmoOperation(),
         ToImGuizmoMode(),
-        objectMatrix,
+        gizmoMatrix,
         deltaMatrix,
         snapPtr
     );
 
     // 操作があった場合、Transformを更新
     if (manipulated) {
+        // ImGuizmoの結果を分解
         float newTranslation[3], newRotation[3], newScale[3];
-        ImGuizmo::DecomposeMatrixToComponents(objectMatrix, newTranslation, newRotation, newScale);
+        ImGuizmo::DecomposeMatrixToComponents(gizmoMatrix, newTranslation, newRotation, newScale);
+
+        // NaNチェック
+        bool hasNaN = std::isnan(newTranslation[0]) || std::isnan(newTranslation[1]) || std::isnan(newTranslation[2]) ||
+                      std::isnan(newRotation[0]) || std::isnan(newRotation[1]) || std::isnan(newRotation[2]) ||
+                      std::isnan(newScale[0]) || std::isnan(newScale[1]) || std::isnan(newScale[2]);
+
+        if (hasNaN) {
+            return false;
+        }
 
         switch (operation_) {
             case GizmoOperation::Translate: {
-                // ワールド座標の差分をローカルに適用
-                Vector3 delta(
-                    newTranslation[0] - oldTranslation[0],
-                    newTranslation[1] - oldTranslation[1],
-                    newTranslation[2] - oldTranslation[2]
-                );
-                Vector3 localPos = transform.GetLocalPosition();
-                transform.SetLocalPosition(localPos + delta);
+                // 新しいワールド位置を取得
+                Vector3 newWorldPos(newTranslation[0], newTranslation[1], newTranslation[2]);
+
+                if (transform.GetParent() == nullptr) {
+                    transform.SetLocalPosition(newWorldPos);
+                } else {
+                    transform.SetPosition(newWorldPos);
+                }
                 break;
             }
             case GizmoOperation::Rotate: {
-                // 回転は差分ではなく直接設定（親がない場合はワールド=ローカル）
-                constexpr float DEG_TO_RAD = 3.14159265f / 180.0f;
-                Quaternion quat = Quaternion::RotationRollPitchYaw(
-                    newRotation[0] * DEG_TO_RAD,
-                    newRotation[1] * DEG_TO_RAD,
-                    newRotation[2] * DEG_TO_RAD
-                );
-                transform.SetLocalRotation(quat);
+                // オイラー角から新しい回転を作成
+                constexpr float DEG_TO_RAD = 0.0174532925f;
+                float radX = newRotation[0] * DEG_TO_RAD;
+                float radY = newRotation[1] * DEG_TO_RAD;
+                float radZ = newRotation[2] * DEG_TO_RAD;
+
+                Quaternion newRot = Quaternion::RotationRollPitchYaw(radX, radY, radZ);
+                newRot = newRot.Normalize();
+
+                if (!std::isnan(newRot.GetX()) && !std::isnan(newRot.GetY()) &&
+                    !std::isnan(newRot.GetZ()) && !std::isnan(newRot.GetW())) {
+                    // 位置を先に設定してから回転を設定（位置が変わらないように）
+                    transform.SetLocalPosition(oldLocalPos);
+                    transform.SetLocalRotation(newRot);
+                }
                 break;
             }
             case GizmoOperation::Scale: {
-                // スケールの差分をローカルに適用
-                Vector3 localScale = transform.GetLocalScale();
-                float scaleRatioX = (std::abs(oldScale[0]) > 0.0001f) ? newScale[0] / oldScale[0] : 1.0f;
-                float scaleRatioY = (std::abs(oldScale[1]) > 0.0001f) ? newScale[1] / oldScale[1] : 1.0f;
-                float scaleRatioZ = (std::abs(oldScale[2]) > 0.0001f) ? newScale[2] / oldScale[2] : 1.0f;
-                transform.SetLocalScale(Vector3(
-                    localScale.GetX() * scaleRatioX,
-                    localScale.GetY() * scaleRatioY,
-                    localScale.GetZ() * scaleRatioZ
-                ));
+                Vector3 newScaleVec(newScale[0], newScale[1], newScale[2]);
+
+                // 異常なスケールをチェック
+                if (newScaleVec.GetX() < 0.001f || newScaleVec.GetY() < 0.001f || newScaleVec.GetZ() < 0.001f ||
+                    newScaleVec.GetX() > 1000.0f || newScaleVec.GetY() > 1000.0f || newScaleVec.GetZ() > 1000.0f) {
+                    break;
+                }
+
+                transform.SetLocalScale(newScaleVec);
                 break;
             }
         }

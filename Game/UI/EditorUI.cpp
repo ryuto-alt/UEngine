@@ -9,6 +9,7 @@
 #include "../../Engine/Resource/SkinnedModelImporter.h"
 #include "../../Engine/Resource/StaticModelImporter.h"
 #include "../../Engine/Graphics/MeshRenderer.h"
+#include "../../Engine/Graphics/SkinnedVertex.h"
 #include "../../Engine/Graphics/DirectionalLightComponent.h"
 #include "../../Engine/Math/BoundingVolume.h"
 #include "../../Engine/Audio/AudioSystem.h"
@@ -23,6 +24,9 @@
 #include "ImGuizmo.h"
 #include <algorithm>
 #include <cmath>
+
+// C++20 u8リテラルをconst char*に変換するヘルパー
+#define U8(str) reinterpret_cast<const char*>(u8##str)
 
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -1166,6 +1170,85 @@ namespace UnoEngine {
 
 					if (isGizmoActive) {
 						ImGui::EndDisabled();
+					}
+
+					// === モデル情報 ===
+					auto* skinnedRenderer = obj->GetComponent<SkinnedMeshRenderer>();
+					auto* meshRenderer = obj->GetComponent<MeshRenderer>();
+
+					if (skinnedRenderer && skinnedRenderer->HasModel()) {
+						ImGui::Separator();
+						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.8f, 1.0f, 1.0f));
+						ImGui::Text(U8("スキンモデル"));
+						ImGui::PopStyleColor();
+						ImGui::Indent(10.0f);
+
+						const auto& meshes = skinnedRenderer->GetMeshes();
+						uint32 totalVertices = 0;
+						uint32 totalIndices = 0;
+						size_t totalMemory = 0;
+
+						for (const auto& mesh : meshes) {
+							uint32 vCount = mesh.GetVertexBuffer().GetVertexCount();
+							uint32 iCount = mesh.GetIndexBuffer().GetIndexCount();
+							totalVertices += vCount;
+							totalIndices += iCount;
+							// メモリ計算: SkinnedVertex(64bytes) + Index(4bytes)
+							totalMemory += vCount * sizeof(SkinnedVertex) + iCount * sizeof(uint32);
+						}
+
+						ImGui::TextDisabled(U8("メッシュ数: %zu"), meshes.size());
+						ImGui::TextDisabled(U8("頂点数: %u"), totalVertices);
+						ImGui::TextDisabled(U8("三角形数: %u"), totalIndices / 3);
+
+						// メモリサイズを適切な単位で表示
+						if (totalMemory >= 1024 * 1024) {
+							ImGui::TextDisabled(U8("メモリ: %.2f MB"), totalMemory / (1024.0f * 1024.0f));
+						} else if (totalMemory >= 1024) {
+							ImGui::TextDisabled(U8("メモリ: %.2f KB"), totalMemory / 1024.0f);
+						} else {
+							ImGui::TextDisabled(U8("メモリ: %zu B"), totalMemory);
+						}
+
+						// ボーン数
+						auto* modelData = skinnedRenderer->GetModelData();
+						if (modelData && modelData->skeleton) {
+							ImGui::TextDisabled(U8("ボーン数: %zu"), modelData->skeleton->GetBoneCount());
+						}
+
+						// アニメーション数
+						if (modelData && !modelData->animations.empty()) {
+							ImGui::TextDisabled(U8("アニメーション数: %zu"), modelData->animations.size());
+						}
+
+						ImGui::Unindent(10.0f);
+					}
+					else if (meshRenderer && meshRenderer->GetMesh()) {
+						ImGui::Separator();
+						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 1.0f, 0.8f, 1.0f));
+						ImGui::Text(U8("静的モデル"));
+						ImGui::PopStyleColor();
+						ImGui::Indent(10.0f);
+
+						const auto* mesh = meshRenderer->GetMesh();
+						uint32 vCount = mesh->GetVertexBuffer().GetVertexCount();
+						uint32 iCount = mesh->GetIndexBuffer().GetIndexCount();
+						// メモリ計算: Vertex(32bytes) + Index(4bytes)
+						size_t totalMemory = vCount * sizeof(Vertex) + iCount * sizeof(uint32);
+
+						ImGui::TextDisabled(U8("頂点数: %u"), vCount);
+						ImGui::TextDisabled(U8("三角形数: %u"), iCount / 3);
+
+						// メモリサイズを適切な単位で表示
+						if (totalMemory >= 1024 * 1024) {
+							ImGui::TextDisabled(U8("メモリ: %.2f MB"), totalMemory / (1024.0f * 1024.0f));
+						} else if (totalMemory >= 1024) {
+							ImGui::TextDisabled(U8("メモリ: %.2f KB"), totalMemory / 1024.0f);
+						} else {
+							ImGui::TextDisabled(U8("メモリ: %zu B"), totalMemory);
+						}
+
+						ImGui::Unindent(10.0f);
 					}
 
 					// === AudioSource コンポーネント ===

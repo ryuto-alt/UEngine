@@ -1,5 +1,6 @@
 #include "SceneSerializer.h"
 #include "../Rendering/SkinnedMeshRenderer.h"
+#include "../Graphics/MeshRenderer.h"
 #include "../Animation/AnimatorComponent.h"
 #include "../Audio/AudioSource.h"
 #include "../Audio/AudioListener.h"
@@ -188,6 +189,13 @@ json SceneSerializer::SerializeComponent(const Component& component) {
         return comp;
     }
 
+    // MeshRenderer (静的モデル用)
+    if (auto* renderer = dynamic_cast<const MeshRenderer*>(&component)) {
+        comp["type"] = "MeshRenderer";
+        comp["modelPath"] = renderer->GetModelPath();
+        return comp;
+    }
+
     // AnimatorComponent
     if (auto* animator = dynamic_cast<const AnimatorComponent*>(&component)) {
         comp["type"] = "AnimatorComponent";
@@ -241,6 +249,14 @@ void SceneSerializer::DeserializeComponent(const json& json, GameObject& gameObj
         if (json.contains("modelPath")) {
             std::string modelPath = json["modelPath"].get<std::string>();
             renderer->SetModel(modelPath);
+        }
+    }
+    else if (type == "MeshRenderer") {
+        auto* renderer = gameObject.AddComponent<MeshRenderer>();
+        if (json.contains("modelPath")) {
+            std::string modelPath = json["modelPath"].get<std::string>();
+            renderer->SetModelPath(modelPath);
+            // 注意: 実際のメッシュデータはScene::RestoreResources()で再ロードされる
         }
     }
     else if (type == "AnimatorComponent") {

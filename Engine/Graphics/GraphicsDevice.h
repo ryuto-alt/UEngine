@@ -85,7 +85,7 @@ private:
     ComPtr<ID3D12DescriptorHeap> srvHeap_;
     uint32 srvDescriptorSize_ = 0;
     static constexpr uint32 MAX_SRV_COUNT = 4096;
-    uint32 nextSRVIndex_ = 0;  // 次に割り当てるSRVインデックス
+    uint32 nextSRVIndex_ = 10;  // 次に割り当てるSRVインデックス（0-9はImGui等の予約領域）
 
     // 同期オブジェクト
     ComPtr<ID3D12Fence> fence_;

@@ -3,6 +3,7 @@
 #include "../Core/Component.h"
 #include "Mesh.h"
 #include "Material.h"
+#include <string>
 
 namespace UnoEngine {
 
@@ -17,9 +18,14 @@ public:
     Mesh* GetMesh() const { return mesh_; }
     Material* GetMaterial() const { return material_; }
 
+    // モデルパス（シリアライズ用）
+    void SetModelPath(const std::string& path) { modelPath_ = path; }
+    const std::string& GetModelPath() const { return modelPath_; }
+
 private:
     Mesh* mesh_ = nullptr;
     Material* material_ = nullptr;
+    std::string modelPath_;
 };
 
 } // namespace UnoEngine

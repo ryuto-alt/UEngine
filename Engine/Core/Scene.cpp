@@ -4,6 +4,7 @@
 #include "CameraComponent.h"
 #include "../Scene/SceneSerializer.h"
 #include "../Rendering/SkinnedMeshRenderer.h"
+#include "../Graphics/MeshRenderer.h"
 #include "../Animation/AnimatorComponent.h"
 #include "../Animation/AnimationSystem.h"
 #include "../Graphics/DirectionalLightComponent.h"
@@ -12,6 +13,7 @@
 #include "../Rendering/DebugRenderer.h"
 #include "../Systems/SystemManager.h"
 #include "../Resource/ResourceManager.h"
+#include "../Resource/StaticModelImporter.h"
 #include "../../Game/GameApplication.h"
 #include <algorithm>
 #include <fstream>
@@ -96,16 +98,16 @@ void Scene::LoadSceneFromFile(const std::string& filepath) {
         }
 
         // SkinnedMeshRendererを持つオブジェクトのモデルを再ロード
-        auto* renderer = obj->GetComponent<SkinnedMeshRenderer>();
-        if (renderer) {
-            std::string modelPath = renderer->GetModelPath();
+        auto* skinnedRenderer = obj->GetComponent<SkinnedMeshRenderer>();
+        if (skinnedRenderer) {
+            std::string modelPath = skinnedRenderer->GetModelPath();
             if (!modelPath.empty()) {
                 resourceManager->BeginUpload();
                 auto* modelData = resourceManager->LoadSkinnedModel(modelPath);
                 resourceManager->EndUpload();
 
                 if (modelData) {
-                    renderer->SetModel(modelData);
+                    skinnedRenderer->SetModel(modelData);
 
                     // Animatorを再初期化
                     auto* animator = obj->GetComponent<AnimatorComponent>();
@@ -120,9 +122,30 @@ void Scene::LoadSceneFromFile(const std::string& filepath) {
                         }
                     }
 
-                    Logger::Info("[シーン] モデル再ロード完了: {}", modelPath);
+                    Logger::Info("[シーン] スキンモデル再ロード完了: {}", modelPath);
                 } else {
-                    Logger::Warning("[シーン] モデル再ロード失敗: {}", modelPath);
+                    Logger::Warning("[シーン] スキンモデル再ロード失敗: {}", modelPath);
+                }
+            }
+        }
+
+        // MeshRendererを持つオブジェクトのモデルを再ロード（静的モデル）
+        auto* meshRenderer = obj->GetComponent<MeshRenderer>();
+        if (meshRenderer) {
+            std::string modelPath = meshRenderer->GetModelPath();
+            if (!modelPath.empty()) {
+                resourceManager->BeginUpload();
+                auto* modelData = resourceManager->LoadStaticModel(modelPath);
+                resourceManager->EndUpload();
+
+                if (modelData && !modelData->meshes.empty()) {
+                    meshRenderer->SetMesh(&modelData->meshes[0]);
+                    if (modelData->meshes[0].HasMaterial()) {
+                        meshRenderer->SetMaterial(const_cast<Material*>(modelData->meshes[0].GetMaterial()));
+                    }
+                    Logger::Info("[シーン] 静的モデル再ロード完了: {}", modelPath);
+                } else {
+                    Logger::Warning("[シーン] 静的モデル再ロード失敗: {}", modelPath);
                 }
             }
         }

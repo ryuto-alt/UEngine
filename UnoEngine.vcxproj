@@ -217,6 +217,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClCompile Include="Engine\Graphics\InfiniteGridPipeline.cpp" />
     <ClCompile Include="Engine\Rendering\DebugRenderer.cpp" />
     <ClCompile Include="Engine\Resource\SkinnedModelImporter.cpp" />
+    <ClCompile Include="Engine\Resource\StaticModelImporter.cpp" />
     <ClCompile Include="Engine\Resource\ResourceManager.cpp" />
     <ClCompile Include="Engine\Animation\Skeleton.cpp" />
     <ClCompile Include="Engine\Animation\AnimationClip.cpp" />
@@ -335,6 +336,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y</Command>
     <ClInclude Include="Engine\Rendering\DebugRenderer.h" />
     <ClInclude Include="Engine\Graphics\SkinnedVertex.h" />
     <ClInclude Include="Engine\Resource\SkinnedModelImporter.h" />
+    <ClInclude Include="Engine\Resource\StaticModelImporter.h" />
     <ClInclude Include="Engine\Resource\ResourceManager.h" />
     <ClInclude Include="Engine\Resource\ImportOptions.h" />
     <ClInclude Include="Engine\Rendering\SkinnedRenderItem.h" />

@@ -7,6 +7,8 @@
 #include "../../Engine/Animation/AnimatorComponent.h"
 #include "../../Engine/Resource/ResourceManager.h"
 #include "../../Engine/Resource/SkinnedModelImporter.h"
+#include "../../Engine/Resource/StaticModelImporter.h"
+#include "../../Engine/Graphics/MeshRenderer.h"
 #include "../../Engine/Graphics/DirectionalLightComponent.h"
 #include "../../Engine/Math/BoundingVolume.h"
 #include "../../Engine/Audio/AudioSystem.h"
@@ -1955,13 +1957,15 @@ namespace UnoEngine {
 		// このモデル専用のアップロードコンテキスト
 		resourceManager_->BeginUpload();
 
-		// モデルをロード
-		auto* modelData = resourceManager_->LoadSkinnedModel(modelPath);
+		// モデルをロード（自動判別）
+		SkinnedModelData* skinnedModelData = nullptr;
+		StaticModelData* staticModelData = nullptr;
+		bool isSkinned = resourceManager_->LoadModel(modelPath, &skinnedModelData, &staticModelData);
 
 		// アップロード完了
 		resourceManager_->EndUpload();
 
-			if (!modelData) {
+			if (!skinnedModelData && !staticModelData) {
 				consoleMessages_.push_back("[Editor] ERROR: Failed to load model: " + modelPath);
 				continue;
 			}
@@ -1971,21 +1975,37 @@ namespace UnoEngine {
 			// GameObjectを生成
 			auto newObject = std::make_unique<GameObject>(modelName);
 
-			// AnimatorComponentを先に追加（SkinnedMeshRenderer::Awake()でリンクできるように）
-			auto* animator = newObject->AddComponent<AnimatorComponent>();
-			if (modelData->skeleton) {
-				animator->Initialize(modelData->skeleton, modelData->animations);
-				if (!modelData->animations.empty()) {
-					std::string animName = modelData->animations[0]->GetName();
-					animator->Play(animName, true);
-					consoleMessages_.push_back("[Editor] Playing animation: " + animName);
+			if (isSkinned && skinnedModelData) {
+				// スキンモデルの場合
+				// AnimatorComponentを先に追加（SkinnedMeshRenderer::Awake()でリンクできるように）
+				auto* animator = newObject->AddComponent<AnimatorComponent>();
+				if (skinnedModelData->skeleton) {
+					animator->Initialize(skinnedModelData->skeleton, skinnedModelData->animations);
+					if (!skinnedModelData->animations.empty()) {
+						std::string animName = skinnedModelData->animations[0]->GetName();
+						animator->Play(animName, true);
+						consoleMessages_.push_back("[Editor] Playing animation: " + animName);
+					}
 				}
-			}
 
-			// SkinnedMeshRendererを追加（AnimatorComponentが既に存在するのでAwake()でリンクされる）
-			auto* renderer = newObject->AddComponent<SkinnedMeshRenderer>();
-			renderer->SetModel(modelPath);  // まずパスを設定
-			renderer->SetModel(modelData);   // 次に実際のモデルデータを設定
+				// SkinnedMeshRendererを追加（AnimatorComponentが既に存在するのでAwake()でリンクされる）
+				auto* renderer = newObject->AddComponent<SkinnedMeshRenderer>();
+				renderer->SetModel(modelPath);  // まずパスを設定
+				renderer->SetModel(skinnedModelData);   // 次に実際のモデルデータを設定
+			} else if (staticModelData) {
+				// 静的モデルの場合
+				// MeshRendererを追加
+				auto* renderer = newObject->AddComponent<MeshRenderer>();
+				renderer->SetModelPath(modelPath);  // パスを設定（シリアライズ用）
+				// 静的モデルの最初のメッシュを設定
+				if (!staticModelData->meshes.empty()) {
+					renderer->SetMesh(&staticModelData->meshes[0]);
+					if (staticModelData->meshes[0].HasMaterial()) {
+						renderer->SetMaterial(const_cast<Material*>(staticModelData->meshes[0].GetMaterial()));
+					}
+				}
+				consoleMessages_.push_back("[Editor] Loaded as static model");
+			}
 
 			// 選択状態にする
 			selectedObject_ = newObject.get();

@@ -74,9 +74,9 @@
             "name": "Camera",
             "transform": {
                 "position": [
-                    -2.742205858230591,
+                    -0.7422058582305908,
                     3.396432399749756,
-                    13.975615501403809
+                    9.975615501403809
                 ],
                 "rotation": [
                     0.0,
@@ -88,67 +88,6 @@
                     1.0,
                     1.0,
                     1.0
-                ]
-            }
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "modelPath": "assets/model/testmodel/Enemy_Test/enemy_walk2.gltf",
-                    "type": "SkinnedMeshRenderer"
-                },
-                {
-                    "type": "AnimatorComponent"
-                }
-            ],
-            "layer": 1,
-            "name": "enemy_walk2",
-            "transform": {
-                "position": [
-                    -5.346048355102539,
-                    0.0,
-                    0.0
-                ],
-                "rotation": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    1.0
-                ],
-                "scale": [
-                    0.10000000149011612,
-                    0.10000000149011612,
-                    0.10000000149011612
-                ]
-            }
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "modelPath": "assets/model/testmodel/kani/kani.gltf",
-                    "type": "MeshRenderer"
-                }
-            ],
-            "layer": 1,
-            "name": "kani",
-            "transform": {
-                "position": [
-                    -3.0,
-                    2.0,
-                    3.0
-                ],
-                "rotation": [
-                    0.7071067690849304,
-                    0.0,
-                    0.0,
-                    0.7071067690849304
-                ],
-                "scale": [
-                    5.0,
-                    5.0,
-                    5.0
                 ]
             }
         }

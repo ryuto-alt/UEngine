@@ -1736,29 +1736,12 @@ namespace UnoEngine {
 			consoleMessages_.push_back("[Editor] Gizmo: Translate");
 		}
 
-		// E: 回転ギズモ
+		// E: スケールギズモ
 		if (ImGui::IsKeyPressed(ImGuiKey_E, false) && !io.KeyCtrl) {
-			gizmoSystem_.SetOperation(GizmoOperation::Rotate);
-			consoleMessages_.push_back("[Editor] Gizmo: Rotate");
-		}
-
-		// R: スケールギズモ（Ctrl+Rはレイアウトリセット用なので除外）
-		if (ImGui::IsKeyPressed(ImGuiKey_R, false) && !io.KeyCtrl && !io.KeyShift) {
 			gizmoSystem_.SetOperation(GizmoOperation::Scale);
 			consoleMessages_.push_back("[Editor] Gizmo: Scale");
 		}
 
-		// G: Local/World切り替え
-		if (ImGui::IsKeyPressed(ImGuiKey_G, false)) {
-			if (gizmoSystem_.GetMode() == GizmoMode::World) {
-				gizmoSystem_.SetMode(GizmoMode::Local);
-				consoleMessages_.push_back("[Editor] Gizmo Mode: Local");
-			}
-			else {
-				gizmoSystem_.SetMode(GizmoMode::World);
-				consoleMessages_.push_back("[Editor] Gizmo Mode: World");
-			}
-		}
 
 		// F10: Step（一時停止中のみ）
 		if (ImGui::IsKeyPressed(ImGuiKey_F10, false)) {

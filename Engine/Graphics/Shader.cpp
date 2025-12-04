@@ -19,6 +19,9 @@ void Shader::CompileFromFile(const std::wstring& filepath, ShaderStage stage, co
     case ShaderStage::Pixel:
         target = "ps_5_1";
         break;
+    case ShaderStage::Compute:
+        target = "cs_5_1";
+        break;
     default:
         throw std::runtime_error("Unsupported shader stage");
     }

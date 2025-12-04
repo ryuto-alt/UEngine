@@ -24,6 +24,7 @@ class DebugRenderer;
 class AnimationSystem;
 class AudioSystem;
 class AudioSource;
+class ParticleEditor;
 
 // Transform操作履歴
 struct TransformSnapshot {
@@ -94,6 +95,10 @@ public:
 
     // オーディオシステムとの連携
     void SetAudioSystem(AudioSystem* audioSystem) { audioSystem_ = audioSystem; }
+
+    // パーティクルエディターとの連携
+    void SetParticleEditor(ParticleEditor* editor) { particleEditor_ = editor; }
+    ParticleEditor* GetParticleEditor() const { return particleEditor_; }
 
     // 次のフレームで適用するビューポートサイズを取得
     void GetDesiredViewportSizes(uint32& gameW, uint32& gameH, uint32& sceneW, uint32& sceneH) const {
@@ -248,7 +253,10 @@ private:
 
     // オーディオシステム参照
     AudioSystem* audioSystem_ = nullptr;
-    
+
+    // パーティクルエディター参照
+    ParticleEditor* particleEditor_ = nullptr;
+
     // AudioSourceプレビュー用
     AudioSource* previewingAudioSource_ = nullptr;
     

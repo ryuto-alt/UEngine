@@ -11,7 +11,8 @@ namespace UnoEngine {
 // シェーダーステージ
 enum class ShaderStage {
     Vertex,
-    Pixel
+    Pixel,
+    Compute
 };
 
 // シェーダークラス

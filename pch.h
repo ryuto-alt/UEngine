@@ -37,3 +37,9 @@
 // Engine Core Types (frequently used)
 #include "Engine/Core/Types.h"
 #include "Engine/Core/NonCopyable.h"
+
+// ==================================================
+// UTF-8 String Helper for C++20
+// ソースファイルがUTF-8 BOMで保存されている場合、
+// 通常の文字列リテラルでも日本語を使用可能
+// ==================================================

@@ -18,6 +18,7 @@
 #include "../../Engine/Audio/AudioListener.h"
 #include "../../Engine/Audio/AudioClip.h"
 #include "../../Engine/Core/CameraComponent.h"
+#include "../../Engine/Editor/ParticleEditor.h"
 #include <imgui.h>
 #include <imgui_internal.h>
 #include "../../Engine/UI/imgui_toggle.h"
@@ -147,6 +148,11 @@ namespace UnoEngine {
 		RenderConsole();
 		RenderProject(context);
 		RenderProfiler();
+
+		// パーティクルエディター描画
+		if (particleEditor_) {
+			particleEditor_->Draw();
+		}
 
 		// エディタカメラの更新（Edit/Pauseモードのみ）
 		if (editorMode_ != EditorMode::Play) {
@@ -306,6 +312,16 @@ namespace UnoEngine {
 				ImGui::SeparatorText("Performance");
 				ImGui::MenuItem("Stats", nullptr, &showStats_);
 				ImGui::MenuItem("Profiler", nullptr, &showProfiler_);
+
+				ImGui::SeparatorText("Effects");
+				if (particleEditor_) {
+					bool particleEditorVisible = particleEditor_->IsVisible();
+					if (ImGui::MenuItem("Particle Editor", nullptr, &particleEditorVisible)) {
+						particleEditor_->SetVisible(particleEditorVisible);
+					}
+				} else {
+					ImGui::MenuItem("Particle Editor (Not Available)", nullptr, false, false);
+				}
 
 				ImGui::Separator();
 				if (ImGui::MenuItem("Reset Layout", "Ctrl+Shift+R")) {

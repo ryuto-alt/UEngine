@@ -235,6 +235,8 @@ void Scene::OnImGui() {
         if (app->GetSystemManager()) {
             context.animationSystem = app->GetSystemManager()->GetSystem<AnimationSystem>();
         }
+        // パーティクルエディターを設定
+        editorUI_.SetParticleEditor(app->GetParticleEditor());
     }
 
     editorUI_.Render(context);

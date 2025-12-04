@@ -51,6 +51,14 @@ void Application::Initialize() {
     renderer_ = MakeUnique<Renderer>();
     renderer_->Initialize(graphics_.get(), window_.get());
 
+    // パーティクルシステム初期化
+    particleSystem_ = MakeUnique<ParticleSystem>();
+    particleSystem_->Initialize(graphics_.get());
+
+    // パーティクルエディター初期化
+    particleEditor_ = MakeUnique<ParticleEditor>();
+    particleEditor_->Initialize(graphics_.get(), particleSystem_.get());
+
     OnInit();
     running_ = true;
 }
@@ -76,13 +84,23 @@ void Application::MainLoop() {
 
         // 更新
         sceneManager_->Update(deltaTime);
-        
+
         // システム更新
         Scene* activeScene = sceneManager_->GetActiveScene();
         if (activeScene) {
             systemManager_.Update(activeScene, deltaTime);
         }
-        
+
+        // パーティクルシステム更新
+        if (particleSystem_) {
+            particleSystem_->Update(deltaTime);
+        }
+
+        // パーティクルエディターのプレビュー更新
+        if (particleEditor_) {
+            particleEditor_->UpdatePreview(deltaTime);
+        }
+
         OnUpdate(deltaTime);
 
         // 描画
@@ -92,23 +110,45 @@ void Application::MainLoop() {
 
 void Application::OnRender() {
     graphics_->BeginFrame();
-    
+
+    // パーティクルエディターのプレビュー描画（メインレンダリングの前）
+    if (particleEditor_) {
+        particleEditor_->RenderPreview();
+    }
+
     Scene* scene = sceneManager_->GetActiveScene();
+    Camera* camera = nullptr;
     if (scene) {
         RenderView view;
         scene->OnRender(view);
-        
+
         auto items = renderSystem_->CollectRenderables(scene, view);
 
         renderer_->Draw(view, items, lightManager_.get(), scene);
+
+        // アクティブカメラ取得
+        camera = scene->GetActiveCamera();
     }
-    
+
+    // パーティクル描画（メインビュー）
+    if (particleSystem_ && camera) {
+        particleSystem_->Render(camera);
+    }
+
     graphics_->EndFrame();
     graphics_->Present();
 }
 
 void Application::Shutdown() {
     OnShutdown();
+
+    // パーティクルシステム解放
+    particleEditor_.reset();
+    if (particleSystem_) {
+        particleSystem_->Shutdown();
+        particleSystem_.reset();
+    }
+
     input_.reset();
     graphics_.reset();
     window_.reset();

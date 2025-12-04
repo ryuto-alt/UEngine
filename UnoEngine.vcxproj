@@ -247,6 +247,11 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClCompile Include="Engine\Audio\AudioListener.cpp" />
     <ClCompile Include="Engine\Scripting\LuaState.cpp" />
     <ClCompile Include="Engine\Scripting\LuaScriptComponent.cpp" />
+    <ClCompile Include="Engine\Particle\ParticleEmitter.cpp" />
+    <ClCompile Include="Engine\Particle\ParticleSystem.cpp" />
+    <ClCompile Include="Engine\Particle\ParticleSerializer.cpp" />
+    <ClCompile Include="Engine\Editor\CurveEditor.cpp" />
+    <ClCompile Include="Engine\Editor\ParticleEditor.cpp" />
     <ClCompile Include="external\lua\src\lapi.c">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
@@ -431,6 +436,14 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClInclude Include="Engine\Systems\SystemManager.h" />
     <ClInclude Include="Engine\Scripting\LuaState.h" />
     <ClInclude Include="Engine\Scripting\LuaScriptComponent.h" />
+    <ClInclude Include="Engine\Particle\Curve.h" />
+    <ClInclude Include="Engine\Particle\Gradient.h" />
+    <ClInclude Include="Engine\Particle\ParticleData.h" />
+    <ClInclude Include="Engine\Particle\ParticleEmitter.h" />
+    <ClInclude Include="Engine\Particle\ParticleSystem.h" />
+    <ClInclude Include="Engine\Particle\ParticleSerializer.h" />
+    <ClInclude Include="Engine\Editor\CurveEditor.h" />
+    <ClInclude Include="Engine\Editor\ParticleEditor.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -516,6 +529,41 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
+    <FxCompile Include="Shaders\Particle\ParticleEmitCS.hlsl">
+      <ShaderType>Compute</ShaderType>
+      <ShaderModel>6.5</ShaderModel>
+      <EntryPointName>main</EntryPointName>
+      <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Zi /Qembed_debug %(AdditionalOptions)</AdditionalOptions>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Particle\ParticleUpdateCS.hlsl">
+      <ShaderType>Compute</ShaderType>
+      <ShaderModel>6.5</ShaderModel>
+      <EntryPointName>main</EntryPointName>
+      <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Zi /Qembed_debug %(AdditionalOptions)</AdditionalOptions>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Particle\ParticleBillboardVS.hlsl">
+      <ShaderType>Vertex</ShaderType>
+      <ShaderModel>6.5</ShaderModel>
+      <EntryPointName>main</EntryPointName>
+      <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Zi /Qembed_debug %(AdditionalOptions)</AdditionalOptions>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Particle\ParticlePS.hlsl">
+      <ShaderType>Pixel</ShaderType>
+      <ShaderModel>6.5</ShaderModel>
+      <EntryPointName>main</EntryPointName>
+      <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Zi /Qembed_debug %(AdditionalOptions)</AdditionalOptions>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\Particle\ParticleCommon.hlsli" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

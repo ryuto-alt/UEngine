@@ -82,6 +82,15 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{9d0e1f2a-3b4c-5d6e-7f8a-9b0c1d2e3f4a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\Particle">
+      <UniqueIdentifier>{a0b1c2d3-e4f5-6a7b-8c9d-0e1f2a3b4c5d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Particle">
+      <UniqueIdentifier>{b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Editor">
+      <UniqueIdentifier>{c2d3e4f5-a6b7-8c9d-0e1f-2a3b4c5d6e7f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <!-- Main -->
@@ -277,6 +286,23 @@
     </ClCompile>
     <ClCompile Include="Engine\Scripting\LuaScriptComponent.cpp">
       <Filter>Engine\Scripting</Filter>
+    </ClCompile>
+    <!-- Engine\Particle -->
+    <ClCompile Include="Engine\Particle\ParticleEmitter.cpp">
+      <Filter>Engine\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Particle\ParticleSystem.cpp">
+      <Filter>Engine\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Particle\ParticleSerializer.cpp">
+      <Filter>Engine\Particle</Filter>
+    </ClCompile>
+    <!-- Engine\Editor -->
+    <ClCompile Include="Engine\Editor\CurveEditor.cpp">
+      <Filter>Engine\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Editor\ParticleEditor.cpp">
+      <Filter>Engine\Editor</Filter>
     </ClCompile>
     <!-- Game -->
     <ClCompile Include="Game\GameApplication.cpp">
@@ -637,6 +663,32 @@
     <ClInclude Include="Engine\Scripting\LuaScriptComponent.h">
       <Filter>Engine\Scripting</Filter>
     </ClInclude>
+    <!-- Engine\Particle -->
+    <ClInclude Include="Engine\Particle\Curve.h">
+      <Filter>Engine\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Particle\Gradient.h">
+      <Filter>Engine\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Particle\ParticleData.h">
+      <Filter>Engine\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Particle\ParticleEmitter.h">
+      <Filter>Engine\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Particle\ParticleSystem.h">
+      <Filter>Engine\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Particle\ParticleSerializer.h">
+      <Filter>Engine\Particle</Filter>
+    </ClInclude>
+    <!-- Engine\Editor -->
+    <ClInclude Include="Engine\Editor\CurveEditor.h">
+      <Filter>Engine\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Editor\ParticleEditor.h">
+      <Filter>Engine\Editor</Filter>
+    </ClInclude>
     <!-- Game -->
     <ClInclude Include="Game\GameApplication.h">
       <Filter>Game</Filter>
@@ -713,5 +765,22 @@
     <FxCompile Include="Shaders\InfiniteGridPS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Particle\ParticleEmitCS.hlsl">
+      <Filter>Shaders\Particle</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Particle\ParticleUpdateCS.hlsl">
+      <Filter>Shaders\Particle</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Particle\ParticleBillboardVS.hlsl">
+      <Filter>Shaders\Particle</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Particle\ParticlePS.hlsl">
+      <Filter>Shaders\Particle</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\Particle\ParticleCommon.hlsli">
+      <Filter>Shaders\Particle</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "RenderSystem.h"
 #include "SkinnedMeshRenderer.h"
 #include "../Graphics/MeshRenderer.h"

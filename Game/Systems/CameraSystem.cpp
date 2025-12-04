@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "CameraSystem.h"
 #include "../../Engine/Core/Scene.h"
 #include "../Components/Player.h"

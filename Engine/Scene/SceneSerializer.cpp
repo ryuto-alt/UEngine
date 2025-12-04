@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "SceneSerializer.h"
 #include "../Rendering/SkinnedMeshRenderer.h"
 #include "../Graphics/MeshRenderer.h"

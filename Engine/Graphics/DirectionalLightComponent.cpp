@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "DirectionalLightComponent.h"
 #include "../Core/GameObject.h"
 

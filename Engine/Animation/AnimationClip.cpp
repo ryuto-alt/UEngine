@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "AnimationClip.h"
 #include "Skeleton.h"
 #include <algorithm>

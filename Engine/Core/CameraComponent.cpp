@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "CameraComponent.h"
 #include "GameObject.h"
 #include "Transform.h"

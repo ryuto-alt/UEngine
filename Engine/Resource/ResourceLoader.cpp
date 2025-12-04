@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "ResourceLoader.h"
 #include "../Graphics/GraphicsDevice.h"
 #include "ModelImporter.h"

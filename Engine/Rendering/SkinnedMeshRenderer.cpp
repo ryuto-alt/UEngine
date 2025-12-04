@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "SkinnedMeshRenderer.h"
 #include "../Core/GameObject.h"
 #include "../Core/Logger.h"

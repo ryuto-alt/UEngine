@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "AnimatorComponent.h"
 #include "AnimationState.h"
 

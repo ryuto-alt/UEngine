@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "AnimationState.h"
 #include "AnimationClip.h"
 #include <cmath>

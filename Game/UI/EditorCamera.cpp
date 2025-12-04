@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "EditorCamera.h"
 #include "../../Engine/Math/Quaternion.h"
 #include <imgui.h>

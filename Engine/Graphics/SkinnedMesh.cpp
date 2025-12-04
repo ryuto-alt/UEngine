@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "SkinnedMesh.h"
 #include "GraphicsDevice.h"
 #include <algorithm>

@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "Mesh.h"
 #include "../Math/MathUtils.h"
 #include <algorithm>

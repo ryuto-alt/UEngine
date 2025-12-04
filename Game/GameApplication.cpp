@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "GameApplication.h"
 #include "../Engine/Core/Scene.h"
 #include "../Engine/Resource/ResourceLoader.h"

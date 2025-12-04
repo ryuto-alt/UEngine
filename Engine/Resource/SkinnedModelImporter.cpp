@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "SkinnedModelImporter.h"
 #include "../Graphics/GraphicsDevice.h"
 #include "../Graphics/Material.h"

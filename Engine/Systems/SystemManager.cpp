@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "SystemManager.h"
 #include "../Core/Scene.h"
 #include <algorithm>

@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "ResourceManager.h"
 #include "../Graphics/GraphicsDevice.h"
 #include "../Core/Logger.h"

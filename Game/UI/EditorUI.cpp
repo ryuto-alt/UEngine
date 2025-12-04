@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "EditorUI.h"
 #include "../../Engine/Graphics/GraphicsDevice.h"
 #include "../../Engine/Rendering/DebugRenderer.h"

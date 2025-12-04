@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "AudioSystem.h"
 #include "../Core/Scene.h"
 #include "../Core/Logger.h"

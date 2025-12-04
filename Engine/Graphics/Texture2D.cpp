@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "Texture2D.h"
 #include "GraphicsDevice.h"
 #include "d3dx12.h"

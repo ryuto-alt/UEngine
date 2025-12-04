@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "OrbitController.h"
 #include "SceneManager.h"
 #include "../Input/InputManager.h"

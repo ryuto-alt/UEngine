@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "LuaScriptComponent.h"
 #include "../Core/GameObject.h"
 #include "../Core/Logger.h"

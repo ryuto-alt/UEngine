@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "Quaternion.h"
 #include "Matrix.h"
 #include <cmath>

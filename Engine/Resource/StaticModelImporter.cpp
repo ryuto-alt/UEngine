@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "StaticModelImporter.h"
 #include "../Graphics/GraphicsDevice.h"
 #include "../Graphics/Material.h"

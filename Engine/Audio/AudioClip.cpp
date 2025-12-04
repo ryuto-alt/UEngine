@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "AudioClip.h"
 #include "../Core/Logger.h"
 #include <fstream>

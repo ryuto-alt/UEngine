@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "AnimationSystem.h"
 #include "AnimatorComponent.h"
 #include "../Core/Scene.h"

@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "SkinnedPipeline.h"
 #include "SkinnedVertex.h"
 

@@ -72,6 +72,12 @@ private:
     void DrawCollisionSection(EmitterConfig& config);
     void DrawRenderingSection(EmitterConfig& config);
     void DrawSubEmitterSection(EmitterConfig& config);
+    
+    // 3Dエフェクト用セクション
+    void DrawForceFieldSection(EmitterConfig& config);
+    void DrawAttractorSection(EmitterConfig& config);
+    void DrawOrbitalSection(EmitterConfig& config);
+    void DrawRibbonSection(EmitterConfig& config);
 
     // ファイル操作
     void NewEffect();
@@ -83,23 +89,46 @@ private:
     void CreateDemoPreset();
     void CreateSmokePreset();
     void CreateSparkPreset();
+    void CreateAuraPreset();
+    void CreateExplosionPreset();
+    void CreateRainPreset();
+    void CreateSnowPreset();
+    void CreateTornadoPreset();
+    void CreateVortexPreset();
+    void CreateMagicCirclePreset();
+    void CreateBladeTrailPreset();
 
 private:
     void UpdatePreviewCamera();
     void UpdatePreviewParticles(float deltaTime);
     void EmitPreviewParticles(int count);
     void DrawPreviewParticles(ImDrawList* drawList, const ImVec2& canvasPos, const ImVec2& canvasSize);
+    void Render3DPreview();
+    void HandlePreviewInput(const ImVec2& canvasPos, const ImVec2& canvasSize);
+    void DrawGrid(ImDrawList* drawList, const ImVec2& canvasPos, const ImVec2& canvasSize);
     
     GraphicsDevice* graphics_ = nullptr;
     ParticleSystem* particleSystem_ = nullptr;
     ParticleEmitter* selectedEmitter_ = nullptr;
 
-    // プレビュー用
+    // プレビュー用カメラ
     std::unique_ptr<Camera> previewCamera_;
     std::unique_ptr<RenderTexture> previewRenderTexture_;
-    float previewOrbitAngle_ = 0.0f;
-    float previewOrbitDistance_ = 5.0f;
-    float previewOrbitHeight_ = 2.0f;
+    
+    // オービットカメラパラメータ
+    float previewOrbitAngle_ = 0.0f;         // 水平回転角（ラジアン）
+    float previewOrbitPitch_ = 1.0f;         // 垂直角（ラジアン）- 魔法陣を斜め上から見る
+    float previewOrbitDistance_ = 12.0f;     // カメラ距離
+    Float3 previewOrbitTarget_ = { 0.0f, 1.0f, 0.0f };  // 注視点（少し上）
+    
+    // カメラ操作状態
+    bool isOrbitDragging_ = false;
+    bool isPanDragging_ = false;
+    ImVec2 lastMousePos_ = { 0.0f, 0.0f };
+    
+    // プレビューサイズ
+    uint32 previewWidth_ = 600;
+    uint32 previewHeight_ = 500;
 
     // 状態
     bool isVisible_ = false;
@@ -113,8 +142,11 @@ private:
     int selectedTabIndex_ = 0;
     bool showPreview_ = true;
     bool autoRotatePreview_ = false;
+    bool use3DPreview_ = false;  // 3Dプレビュー使用フラグ（GPUレンダリング問題のため一時的にfalse）
+    bool showGrid_ = true;      // グリッド表示
+    bool showAxis_ = true;      // 軸表示
     
-    // CPUプレビュー用パーティクル
+    // CPUプレビュー用パーティクル（フォールバック用）
     std::vector<PreviewParticle> previewParticles_;
     float previewEmitAccumulator_ = 0.0f;
     float previewTime_ = 0.0f;

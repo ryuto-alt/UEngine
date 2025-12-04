@@ -88,6 +88,20 @@ enum class BlendMode {
     Premultiplied   // プリマルチプライドアルファ
 };
 
+// プロシージャルシェイプタイプ（テクスチャなしでシェーダーで描画）
+enum class ProceduralShape {
+    None,           // 通常（テクスチャまたは円形グラデーション）
+    Circle,         // 単純な円
+    Ring,           // リング（ドーナツ）
+    Star,           // 星形
+    Pentagon,       // 五角形
+    Hexagon,        // 六角形
+    MagicCircle,    // 魔法陣（複合）
+    Rune,           // ルーン文字風
+    Cross,          // 十字
+    Sparkle         // きらめき
+};
+
 // スプライトシート設定
 struct SpriteSheetConfig {
     bool enabled = false;
@@ -177,6 +191,110 @@ struct NoiseModule {
     float strengthZ = 1.0f;
 };
 
+
+// フォースフィールドタイプ
+enum class ForceFieldType {
+    Directional,    // 一方向の力
+    Radial,         // 放射状の力（中心から外/内）
+    Vortex,         // 渦巻き
+    Turbulence,     // 乱流
+    Drag            // 抵抗
+};
+
+// フォースフィールド形状
+enum class ForceFieldShape {
+    Infinite,       // 無限（全体に適用）
+    Sphere,         // 球
+    Box,            // ボックス
+    Cylinder        // 円柱
+};
+
+// 単一のフォースフィールド
+struct ForceField {
+    bool enabled = false;
+    ForceFieldType type = ForceFieldType::Directional;
+    ForceFieldShape shape = ForceFieldShape::Infinite;
+    
+    // 位置・サイズ
+    Float3 position = { 0.0f, 0.0f, 0.0f };
+    Float3 size = { 5.0f, 5.0f, 5.0f };     // 球=radius使用、ボックス=各軸
+    float radius = 5.0f;
+    
+    // 力のパラメータ
+    Float3 direction = { 0.0f, 1.0f, 0.0f }; // Directional用
+    float strength = 1.0f;                   // 力の強さ
+    float attenuation = 0.0f;                // 減衰率（距離による）
+    
+    // Vortex（渦巻き）用パラメータ
+    Float3 axis = { 0.0f, 1.0f, 0.0f };      // 渦の軸
+    float rotationSpeed = 1.0f;              // 回転速度
+    float inwardForce = 0.0f;                // 内向きの力
+    float upwardForce = 0.0f;                // 上向きの力
+    
+    // Turbulence用
+    float frequency = 1.0f;
+    int32 octaves = 1;
+    
+    // Drag用
+    float dragCoefficient = 0.1f;
+};
+
+// フォースフィールドモジュール（複数のフォースフィールドを持てる）
+struct ForceFieldModule {
+    bool enabled = false;
+    std::vector<ForceField> fields;
+};
+
+// アトラクター（引力/斥力）
+struct Attractor {
+    bool enabled = false;
+    Float3 position = { 0.0f, 0.0f, 0.0f };
+    float strength = 5.0f;                   // 正=引力、負=斥力
+    float radius = 10.0f;                    // 影響範囲
+    float deadzone = 0.5f;                   // この距離以下では力が働かない
+    bool killOnContact = false;              // 接触時にパーティクルを消す
+    float innerRadius = 0.0f;                // 内側の範囲（この内側では最大力）
+};
+
+// アトラクターモジュール
+struct AttractorModule {
+    bool enabled = false;
+    std::vector<Attractor> attractors;
+};
+
+// 軌道運動モジュール（Effekseerのリング/スパイラル移動）
+struct OrbitalModule {
+    bool enabled = false;
+    Float3 center = { 0.0f, 0.0f, 0.0f };    // 軌道の中心
+    Float3 axis = { 0.0f, 1.0f, 0.0f };      // 回転軸
+    MinMaxCurve angularVelocity = MinMaxCurve::Constant(180.0f);  // 度/秒
+    MinMaxCurve radialVelocity = MinMaxCurve::Constant(0.0f);     // 半径方向の速度
+    float startRadius = 1.0f;                // 初期半径
+    bool inheritEmitterRotation = false;
+};
+
+// リボン/トレイルのレンダリング設定（拡張版）
+struct RibbonConfig {
+    bool enabled = false;
+    int32 segments = 20;                     // セグメント数
+    float length = 2.0f;                     // リボン長さ
+    float width = 0.5f;                      // リボン幅
+    MinMaxCurve widthOverLength = MinMaxCurve::Constant(1.0f);
+    MinMaxGradient colorOverLength;
+    bool faceCameraAxis = true;              // カメラ軸に向ける
+    float uvRepeat = 1.0f;                   // UVの繰り返し回数
+};
+
+// 親子関係設定（Effekseerのノードシステム）
+struct ParentChildConfig {
+    bool enabled = false;
+    bool inheritPosition = true;
+    bool inheritRotation = true;
+    bool inheritScale = true;
+    bool inheritColor = false;
+    float followDelay = 0.0f;               // 追従遅延
+};
+
 // トレイル設定
 struct TrailConfig {
     bool enabled = false;
@@ -220,10 +338,20 @@ struct EmitterConfig {
     RotationOverLifetime rotationOverLifetime;
     ForceOverLifetime forceOverLifetime;
     NoiseModule noise;
+    
+    // 3Dエフェクト用モジュール
+    ForceFieldModule forceField;
+    AttractorModule attractor;
+    OrbitalModule orbital;
+    RibbonConfig ribbon;
+    ParentChildConfig parentChild;
 
     // レンダリング
     RenderMode renderMode = RenderMode::Billboard;
     BlendMode blendMode = BlendMode::Additive;
+    ProceduralShape proceduralShape = ProceduralShape::None;  // プロシージャル形状
+    float proceduralParam1 = 0.5f;   // 形状パラメータ1（リングの太さ、星の内側半径など）
+    float proceduralParam2 = 5.0f;   // 形状パラメータ2（星の頂点数など）
     std::string texturePath;
     SpriteSheetConfig spriteSheet;
     float sortingFudge = 0.0f;      // ソート調整値

@@ -80,6 +80,10 @@ struct alignas(256) ParticleRenderCB {
     uint32 useTexture;
     uint32 blendMode;
     float softParticleScale;
+    uint32 proceduralShape;     // プロシージャル形状タイプ
+    float proceduralParam1;     // 形状パラメータ1
+    float proceduralParam2;     // 形状パラメータ2
+    float totalTime;            // アニメーション用時間
     float padding;
 };
 

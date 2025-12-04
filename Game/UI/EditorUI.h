@@ -288,6 +288,16 @@ private:
     // スクリプトパスキャッシュ
     std::vector<std::string> cachedScriptPaths_;
     void RefreshScriptPaths();
+    void OpenScriptInVSCode(const std::string& scriptPath);
+
+    // スクリプトファイル監視
+    struct WatchedScript {
+        std::string path;
+        std::filesystem::file_time_type lastWriteTime;
+    };
+    std::vector<WatchedScript> watchedScripts_;
+    void UpdateScriptFileWatcher();
+    void ReloadModifiedScripts();
 
     // 遅延ロード用キュー
     std::vector<std::string> pendingModelLoads_;

@@ -74,6 +74,9 @@ namespace UnoEngine {
 		// ImGuizmoフレーム開始
 		ImGuizmo::BeginFrame();
 
+		// スクリプトファイル監視（ホットリロード）
+		UpdateScriptFileWatcher();
+
 		// Game Camera（Main Camera）を設定（未設定の場合のみ）
 		if (!gameCamera_ && context.camera) {
 			gameCamera_ = context.camera;
@@ -1750,6 +1753,66 @@ namespace UnoEngine {
 			ImGui::TreePop();
 		}
 
+		// Scriptsフォルダをスキャン
+		if (ImGui::TreeNode("Scripts")) {
+			if (ImGui::SmallButton("Refresh##Scripts")) {
+				RefreshScriptPaths();
+				consoleMessages_.push_back("[Editor] Script list refreshed");
+			}
+			ImGui::Separator();
+
+			if (cachedScriptPaths_.empty()) {
+				RefreshScriptPaths();
+			}
+
+			for (size_t i = 0; i < cachedScriptPaths_.size(); ++i) {
+				const auto& scriptPath = cachedScriptPaths_[i];
+				std::filesystem::path p(scriptPath);
+				std::string filename = p.filename().string();
+
+				ImGui::PushID(static_cast<int>(i + 20000)); // 他とIDが被らないようにオフセット
+
+				ImGui::Text("📜");
+				ImGui::SameLine();
+
+				if (ImGui::Selectable(filename.c_str(), false, ImGuiSelectableFlags_AllowDoubleClick)) {
+					if (ImGui::IsMouseDoubleClicked(0)) {
+						// ダブルクリック: VSCodeで開く
+						OpenScriptInVSCode(scriptPath);
+						consoleMessages_.push_back("[Editor] Opening in VSCode: " + filename);
+					} else {
+						// シングルクリック: LuaScriptComponentがある選択中オブジェクトにセット
+						if (selectedObject_) {
+							if (auto* luaScript = selectedObject_->GetComponent<LuaScriptComponent>()) {
+								luaScript->SetScriptPath(scriptPath);
+								consoleMessages_.push_back("[Editor] Script set: " + filename);
+							}
+						}
+					}
+				}
+
+				// ツールチップでフルパス表示
+				if (ImGui::IsItemHovered()) {
+					ImGui::SetTooltip(U8("%s\n(ダブルクリックでVSCodeで開く)"), scriptPath.c_str());
+				}
+
+				// ドラッグ＆ドロップソース
+				if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+					ImGui::SetDragDropPayload("SCRIPT_PATH", &i, sizeof(size_t));
+					ImGui::Text("📜 %s", filename.c_str());
+					ImGui::EndDragDropSource();
+				}
+
+				ImGui::PopID();
+			}
+
+			if (cachedScriptPaths_.empty()) {
+				ImGui::TextDisabled("(no scripts found)");
+			}
+
+			ImGui::TreePop();
+		}
+
 		ImGui::End();
 	}
 
@@ -2022,6 +2085,75 @@ namespace UnoEngine {
 				}
 			}
 		}
+	}
+
+	void EditorUI::OpenScriptInVSCode(const std::string& scriptPath) {
+		// 絶対パスに変換
+		std::filesystem::path absPath = std::filesystem::absolute(scriptPath);
+		std::string absPathStr = absPath.string();
+
+		// ShellExecuteExでファイルをデフォルトアプリケーションで開く（非同期）
+		SHELLEXECUTEINFOA sei = { sizeof(sei) };
+		sei.fMask = SEE_MASK_ASYNCOK;  // 非同期実行
+		sei.lpVerb = "open";
+		sei.lpFile = absPathStr.c_str();
+		sei.nShow = SW_SHOWNORMAL;
+		ShellExecuteExA(&sei);
+
+		// 監視リストに追加（まだ追加されていなければ）
+		bool alreadyWatching = false;
+		for (const auto& watched : watchedScripts_) {
+			if (watched.path == scriptPath) {
+				alreadyWatching = true;
+				break;
+			}
+		}
+
+		if (!alreadyWatching && std::filesystem::exists(scriptPath)) {
+			WatchedScript ws;
+			ws.path = scriptPath;
+			ws.lastWriteTime = std::filesystem::last_write_time(scriptPath);
+			watchedScripts_.push_back(ws);
+			consoleMessages_.push_back("[Editor] Watching script: " + scriptPath);
+		}
+	}
+
+	void EditorUI::UpdateScriptFileWatcher() {
+		for (auto& watched : watchedScripts_) {
+			if (!std::filesystem::exists(watched.path)) continue;
+
+			auto currentTime = std::filesystem::last_write_time(watched.path);
+			if (currentTime != watched.lastWriteTime) {
+				watched.lastWriteTime = currentTime;
+
+				// 変更されたスクリプトをリロード
+				consoleMessages_.push_back("[Editor] Script modified, reloading: " + watched.path);
+
+				// このスクリプトを使用しているLuaScriptComponentをリロード
+				if (gameObjects_) {
+					for (auto& obj : *gameObjects_) {
+						if (auto* luaScript = obj->GetComponent<LuaScriptComponent>()) {
+							if (luaScript->GetScriptPath() == watched.path) {
+								(void)luaScript->ReloadScript();
+								consoleMessages_.push_back("[Editor] Reloaded script on: " + obj->GetName());
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	void EditorUI::ReloadModifiedScripts() {
+		// 手動リロード用（必要に応じて呼び出し）
+		if (gameObjects_) {
+			for (auto& obj : *gameObjects_) {
+				if (auto* luaScript = obj->GetComponent<LuaScriptComponent>()) {
+					(void)luaScript->ReloadScript();
+				}
+			}
+		}
+		consoleMessages_.push_back("[Editor] All scripts reloaded");
 	}
 
 	// 遅延ロード処理

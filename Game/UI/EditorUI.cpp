@@ -1120,6 +1120,12 @@ namespace UnoEngine {
 					if (ImGui::DragFloat3("Pos", posArr, 0.1f, 0.0f, 0.0f, "%.2f")) {
 						transform.SetLocalPosition(Vector3(posArr[0], posArr[1], posArr[2]));
 					}
+					if (ImGui::IsItemActivated()) {
+						BeginInspectorEdit(obj);
+					}
+					if (ImGui::IsItemDeactivatedAfterEdit()) {
+						EndInspectorEdit();
+					}
 
 					// Rotation（ドラッグ＆Ctrl+クリックで直接入力）
 					ImGui::SetNextItemWidth(180.0f);
@@ -1134,12 +1140,24 @@ namespace UnoEngine {
 						float radZ = euler[2] * DEG_TO_RAD;  // Roll (Z軸)
 						transform.SetLocalRotation(Quaternion::RotationRollPitchYaw(radX, radY, radZ));
 					}
+					if (ImGui::IsItemActivated()) {
+						BeginInspectorEdit(obj);
+					}
+					if (ImGui::IsItemDeactivatedAfterEdit()) {
+						EndInspectorEdit();
+					}
 
 					// Scale（ドラッグ＆Ctrl+クリックで直接入力）
 					float scaleArr[3] = { scale.GetX(), scale.GetY(), scale.GetZ() };
 					ImGui::SetNextItemWidth(180.0f);
 					if (ImGui::DragFloat3("Scale", scaleArr, 0.01f, 0.001f, 100.0f, "%.3f")) {
 						transform.SetLocalScale(Vector3(scaleArr[0], scaleArr[1], scaleArr[2]));
+					}
+					if (ImGui::IsItemActivated()) {
+						BeginInspectorEdit(obj);
+					}
+					if (ImGui::IsItemDeactivatedAfterEdit()) {
+						EndInspectorEdit();
 					}
 
 					ImGui::PopStyleColor();
@@ -1799,6 +1817,28 @@ namespace UnoEngine {
 		else {
 			consoleMessages_.push_back("[Editor] Undo failed: object no longer exists");
 		}
+	}
+
+	// インスペクター編集開始時にスナップショットを保存
+	void EditorUI::BeginInspectorEdit(GameObject* obj) {
+		if (!obj || isInspectorEditing_) return;
+
+		auto& transform = obj->GetTransform();
+		preInspectorSnapshot_.targetObject = obj;
+		preInspectorSnapshot_.position = transform.GetLocalPosition();
+		preInspectorSnapshot_.rotation = transform.GetLocalRotation();
+		preInspectorSnapshot_.scale = transform.GetLocalScale();
+		isInspectorEditing_ = true;
+	}
+
+	// インスペクター編集終了時にUndoスタックにpush
+	void EditorUI::EndInspectorEdit() {
+		if (!isInspectorEditing_) return;
+
+		if (preInspectorSnapshot_.targetObject) {
+			PushUndoSnapshot(preInspectorSnapshot_);
+		}
+		isInspectorEditing_ = false;
 	}
 
 	// シーン保存

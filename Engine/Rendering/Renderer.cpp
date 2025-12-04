@@ -282,6 +282,7 @@ void Renderer::DrawSkinnedMeshes(const RenderView& view, const std::vector<Skinn
     UpdateLighting(view, lights);
     RenderSkinnedMeshes(view, items);
 
+#ifdef _DEBUG
     // デバッグボーン描画
     // 注意: BeginFrame()は呼び出し側で管理する
     if (debugRenderer_ && debugRenderer_->GetShowBones()) {
@@ -301,6 +302,7 @@ void Renderer::DrawSkinnedMeshes(const RenderView& view, const std::vector<Skinn
             view.camera->GetProjectionMatrix()
         );
     }
+#endif
 }
 
 void Renderer::RenderSkinnedMeshes(const RenderView& view, const std::vector<SkinnedRenderItem>& items) {

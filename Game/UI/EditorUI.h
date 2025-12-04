@@ -259,10 +259,14 @@ private:
     std::stack<TransformSnapshot> undoStack_;
     TransformSnapshot preGizmoSnapshot_;  // ギズモ操作開始時のスナップショット
     bool isGizmoActive_ = false;
+    TransformSnapshot preInspectorSnapshot_;  // インスペクター編集開始時のスナップショット
+    bool isInspectorEditing_ = false;
 
     // Undo/Redoヘルパー
     void PushUndoSnapshot(const TransformSnapshot& snapshot);
     void PerformUndo();
+    void BeginInspectorEdit(GameObject* obj);  // インスペクター編集開始
+    void EndInspectorEdit();  // インスペクター編集終了
 
     // GameObjectsリスト（保存/ロード用）
     std::vector<UniquePtr<GameObject>>* gameObjects_ = nullptr;

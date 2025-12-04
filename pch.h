@@ -14,10 +14,10 @@
 #include <windows.h>
 #include <shellapi.h>  // ShellExecuteEx用
 
-// DirectX 12
-#include <d3d12.h>
-#include <dxgi1_6.h>
-#include <wrl/client.h>
+//// DirectX 12
+//#include <d3d12.h>
+//#include <dxgi1_6.h>
+//#include <wrl/client.h>
 
 // C++ Standard Library
 #include <memory>

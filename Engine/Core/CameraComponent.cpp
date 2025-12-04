@@ -12,6 +12,7 @@ void CameraComponent::Awake() {
 
     // 初期投影設定
     UpdateProjectionMatrix();
+
 }
 
 void CameraComponent::Start() {

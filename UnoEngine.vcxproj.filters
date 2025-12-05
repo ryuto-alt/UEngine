@@ -100,6 +100,21 @@
     <Filter Include="Shaders\PostProcess">
       <UniqueIdentifier>{e4f5a6b7-c8d9-0e1f-2a3b-4c5d6e7f8a9b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\Basic">
+      <UniqueIdentifier>{f5a6b7c8-d9e0-1f2a-3b4c-5d6e7f8a9b0c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Debug">
+      <UniqueIdentifier>{a6b7c8d9-e0f1-2a3b-4c5d-6e7f8a9b0c1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\PBR">
+      <UniqueIdentifier>{b7c8d9e0-f1a2-3b4c-5d6e-7f8a9b0c1d2e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Skinned">
+      <UniqueIdentifier>{c8d9e0f1-a2b3-4c5d-6e7f-8a9b0c1d2e3f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Sprite">
+      <UniqueIdentifier>{d9e0f1a2-b3c4-5d6e-7f8a-9b0c1d2e3f4a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <!-- Main -->
@@ -804,35 +819,41 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Shaders\BasicVS.hlsl">
-      <Filter>Shaders</Filter>
+    <FxCompile Include="Shaders\Basic\BasicVS.hlsl">
+      <Filter>Shaders\Basic</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\BasicPS.hlsl">
-      <Filter>Shaders</Filter>
+    <FxCompile Include="Shaders\Basic\BasicPS.hlsl">
+      <Filter>Shaders\Basic</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\PBRVS.hlsl">
-      <Filter>Shaders</Filter>
+    <FxCompile Include="Shaders\PBR\PBRVS.hlsl">
+      <Filter>Shaders\PBR</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\PBRPS.hlsl">
-      <Filter>Shaders</Filter>
+    <FxCompile Include="Shaders\PBR\PBRPS.hlsl">
+      <Filter>Shaders\PBR</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\SpriteVS.hlsl">
-      <Filter>Shaders</Filter>
+    <FxCompile Include="Shaders\Sprite\SpriteVS.hlsl">
+      <Filter>Shaders\Sprite</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\SpritePS.hlsl">
-      <Filter>Shaders</Filter>
+    <FxCompile Include="Shaders\Sprite\SpritePS.hlsl">
+      <Filter>Shaders\Sprite</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\SkinnedVS.hlsl">
-      <Filter>Shaders</Filter>
+    <FxCompile Include="Shaders\Skinned\SkinnedVS.hlsl">
+      <Filter>Shaders\Skinned</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\SkinnedPS.hlsl">
-      <Filter>Shaders</Filter>
+    <FxCompile Include="Shaders\Skinned\SkinnedPS.hlsl">
+      <Filter>Shaders\Skinned</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\InfiniteGridVS.hlsl">
-      <Filter>Shaders</Filter>
+    <FxCompile Include="Shaders\Debug\InfiniteGridVS.hlsl">
+      <Filter>Shaders\Debug</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\InfiniteGridPS.hlsl">
-      <Filter>Shaders</Filter>
+    <FxCompile Include="Shaders\Debug\InfiniteGridPS.hlsl">
+      <Filter>Shaders\Debug</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Debug\DebugLineVS.hlsl">
+      <Filter>Shaders\Debug</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Debug\DebugLinePS.hlsl">
+      <Filter>Shaders\Debug</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Particle\ParticleEmitCS.hlsl">
       <Filter>Shaders\Particle</Filter>

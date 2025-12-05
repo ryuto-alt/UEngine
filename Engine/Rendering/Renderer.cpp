@@ -24,19 +24,19 @@ void Renderer::Initialize(GraphicsDevice* graphics, Window* window) {
 
     // PBR Pipeline
     Shader vertexShader;
-    vertexShader.CompileFromFile(L"Shaders/PBRVS.hlsl", ShaderStage::Vertex);
+    vertexShader.CompileFromFile(L"Shaders/PBR/PBRVS.hlsl", ShaderStage::Vertex);
 
     Shader pixelShader;
-    pixelShader.CompileFromFile(L"Shaders/PBRPS.hlsl", ShaderStage::Pixel);
+    pixelShader.CompileFromFile(L"Shaders/PBR/PBRPS.hlsl", ShaderStage::Pixel);
 
     pipeline_.Initialize(device, vertexShader, pixelShader, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
 
     // Skinned Pipeline
     Shader skinnedVS;
-    skinnedVS.CompileFromFile(L"Shaders/SkinnedVS.hlsl", ShaderStage::Vertex);
+    skinnedVS.CompileFromFile(L"Shaders/Skinned/SkinnedVS.hlsl", ShaderStage::Vertex);
 
     Shader skinnedPS;
-    skinnedPS.CompileFromFile(L"Shaders/SkinnedPS.hlsl", ShaderStage::Pixel);
+    skinnedPS.CompileFromFile(L"Shaders/Skinned/SkinnedPS.hlsl", ShaderStage::Pixel);
 
     skinnedPipeline_.Initialize(device, skinnedVS, skinnedPS, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
 

@@ -482,7 +482,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Shaders\BasicVS.hlsl">
+    <FxCompile Include="Shaders\Basic\BasicVS.hlsl">
       <ShaderType>Vertex</ShaderType>
       <ShaderModel>6.5</ShaderModel>
       <EntryPointName>main</EntryPointName>
@@ -490,7 +490,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\BasicPS.hlsl">
+    <FxCompile Include="Shaders\Basic\BasicPS.hlsl">
       <ShaderType>Pixel</ShaderType>
       <ShaderModel>6.5</ShaderModel>
       <EntryPointName>main</EntryPointName>
@@ -498,7 +498,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\PBRVS.hlsl">
+    <FxCompile Include="Shaders\PBR\PBRVS.hlsl">
       <ShaderType>Vertex</ShaderType>
       <ShaderModel>6.5</ShaderModel>
       <EntryPointName>main</EntryPointName>
@@ -506,7 +506,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\PBRPS.hlsl">
+    <FxCompile Include="Shaders\PBR\PBRPS.hlsl">
       <ShaderType>Pixel</ShaderType>
       <ShaderModel>6.5</ShaderModel>
       <EntryPointName>main</EntryPointName>
@@ -514,7 +514,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\SpriteVS.hlsl">
+    <FxCompile Include="Shaders\Sprite\SpriteVS.hlsl">
       <ShaderType>Vertex</ShaderType>
       <ShaderModel>6.5</ShaderModel>
       <EntryPointName>main</EntryPointName>
@@ -522,7 +522,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\SpritePS.hlsl">
+    <FxCompile Include="Shaders\Sprite\SpritePS.hlsl">
       <ShaderType>Pixel</ShaderType>
       <ShaderModel>6.5</ShaderModel>
       <EntryPointName>main</EntryPointName>
@@ -530,7 +530,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\SkinnedVS.hlsl">
+    <FxCompile Include="Shaders\Skinned\SkinnedVS.hlsl">
       <ShaderType>Vertex</ShaderType>
       <ShaderModel>6.5</ShaderModel>
       <EntryPointName>main</EntryPointName>
@@ -538,7 +538,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\SkinnedPS.hlsl">
+    <FxCompile Include="Shaders\Skinned\SkinnedPS.hlsl">
       <ShaderType>Pixel</ShaderType>
       <ShaderModel>6.5</ShaderModel>
       <EntryPointName>main</EntryPointName>
@@ -546,7 +546,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\InfiniteGridVS.hlsl">
+    <FxCompile Include="Shaders\Debug\InfiniteGridVS.hlsl">
       <ShaderType>Vertex</ShaderType>
       <ShaderModel>6.5</ShaderModel>
       <EntryPointName>main</EntryPointName>
@@ -554,7 +554,23 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\InfiniteGridPS.hlsl">
+    <FxCompile Include="Shaders\Debug\InfiniteGridPS.hlsl">
+      <ShaderType>Pixel</ShaderType>
+      <ShaderModel>6.5</ShaderModel>
+      <EntryPointName>main</EntryPointName>
+      <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Zi /Qembed_debug %(AdditionalOptions)</AdditionalOptions>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Debug\DebugLineVS.hlsl">
+      <ShaderType>Vertex</ShaderType>
+      <ShaderModel>6.5</ShaderModel>
+      <EntryPointName>main</EntryPointName>
+      <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Zi /Qembed_debug %(AdditionalOptions)</AdditionalOptions>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Debug\DebugLinePS.hlsl">
       <ShaderType>Pixel</ShaderType>
       <ShaderModel>6.5</ShaderModel>
       <EntryPointName>main</EntryPointName>

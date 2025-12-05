@@ -14,8 +14,8 @@ void DebugRenderer::Initialize(GraphicsDevice* graphics) {
 
     // シェーダーロード
     Shader vertexShader, pixelShader;
-    vertexShader.CompileFromFile(L"Shaders/DebugLineVS.hlsl", ShaderStage::Vertex);
-    pixelShader.CompileFromFile(L"Shaders/DebugLinePS.hlsl", ShaderStage::Pixel);
+    vertexShader.CompileFromFile(L"Shaders/Debug/DebugLineVS.hlsl", ShaderStage::Vertex);
+    pixelShader.CompileFromFile(L"Shaders/Debug/DebugLinePS.hlsl", ShaderStage::Pixel);
 
     // パイプライン作成
     pipeline_ = MakeUnique<DebugLinePipeline>();
@@ -26,8 +26,8 @@ void DebugRenderer::Initialize(GraphicsDevice* graphics) {
 
     // グリッドシェーダーとパイプライン
     Shader gridVS, gridPS;
-    gridVS.CompileFromFile(L"Shaders/InfiniteGridVS.hlsl", ShaderStage::Vertex);
-    gridPS.CompileFromFile(L"Shaders/InfiniteGridPS.hlsl", ShaderStage::Pixel);
+    gridVS.CompileFromFile(L"Shaders/Debug/InfiniteGridVS.hlsl", ShaderStage::Vertex);
+    gridPS.CompileFromFile(L"Shaders/Debug/InfiniteGridPS.hlsl", ShaderStage::Pixel);
 
     gridPipeline_ = MakeUnique<InfiniteGridPipeline>();
     gridPipeline_->Initialize(device, gridVS, gridPS);

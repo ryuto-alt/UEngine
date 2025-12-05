@@ -536,7 +536,8 @@ void ParticleEditor::DrawGrid(ImDrawList* drawList, const ImVec2& canvasPos, con
 
     float centerX = canvasPos.x + canvasSize.x * 0.5f;
     float centerY = canvasPos.y + canvasSize.y * 0.5f;
-    float scale = canvasSize.y * 0.08f;
+    float baseScale = canvasSize.y * 0.08f;
+    float scale = baseScale * (12.0f / previewOrbitDistance_);  // ズーム連動
 
     // 3D変換用
     Transform3D transform;
@@ -1597,7 +1598,8 @@ namespace {
 void ParticleEditor::DrawPreviewParticles(ImDrawList* drawList, const ImVec2& canvasPos, const ImVec2& canvasSize) {
     float centerX = canvasPos.x + canvasSize.x * 0.5f;
     float centerY = canvasPos.y + canvasSize.y * 0.5f;
-    float scale = canvasSize.y * 0.08f;  // スケール調整
+    float baseScale = canvasSize.y * 0.08f;
+    float scale = baseScale * (12.0f / previewOrbitDistance_);  // ズーム連動
 
     // カメラ行列の計算（簡易版）
     float camAngle = previewOrbitAngle_;

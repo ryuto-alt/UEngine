@@ -234,8 +234,14 @@ json SceneSerializer::SerializeComponent(const Component& component) {
         comp["priority"] = camera->GetPriority();
         comp["isMain"] = camera->IsMain();
         comp["postProcessEnabled"] = camera->IsPostProcessEnabled();
-        comp["postProcessEffect"] = static_cast<int>(camera->GetPostProcessEffect());
         comp["postProcessIntensity"] = camera->GetPostProcessIntensity();
+
+        // 複数エフェクトチェーンを保存
+        json effectsArray = json::array();
+        for (auto effect : camera->GetPostProcessEffects()) {
+            effectsArray.push_back(static_cast<int>(effect));
+        }
+        comp["postProcessEffects"] = effectsArray;
 
         // Vignette params
         const auto& vignetteParams = camera->GetVignetteParams();
@@ -350,7 +356,16 @@ void SceneSerializer::DeserializeComponent(const json& json, GameObject& gameObj
         if (json.contains("postProcessEnabled")) {
             camera->SetPostProcessEnabled(json["postProcessEnabled"].get<bool>());
         }
-        if (json.contains("postProcessEffect")) {
+        // 複数エフェクトチェーンを読み込み
+        if (json.contains("postProcessEffects") && json["postProcessEffects"].is_array()) {
+            std::vector<PostProcessType> effects;
+            for (const auto& e : json["postProcessEffects"]) {
+                effects.push_back(static_cast<PostProcessType>(e.get<int>()));
+            }
+            camera->SetPostProcessEffects(effects);
+        }
+        // 旧フォーマット互換（単一エフェクト）
+        else if (json.contains("postProcessEffect")) {
             camera->SetPostProcessEffect(static_cast<PostProcessType>(json["postProcessEffect"].get<int>()));
         }
         if (json.contains("postProcessIntensity")) {

@@ -1392,89 +1392,79 @@ namespace UnoEngine {
 					bool ppEnabled = camComp->IsPostProcessEnabled();
 					if (ImGui::Checkbox(U8("有効##PostProcess"), &ppEnabled)) {
 						camComp->SetPostProcessEnabled(ppEnabled);
-					isDirty_ = true;
+						isDirty_ = true;
 					}
 
 					if (ppEnabled) {
-						int currentEffect = static_cast<int>(camComp->GetPostProcessEffect());
-						ImGui::Text(U8("エフェクト"));
-						ImGui::SameLine(80.0f);
-						ImGui::SetNextItemWidth(-1);
-						if (ImGui::BeginCombo("##PPEffect", PostProcessManager::GetEffectName(currentEffect))) {
-							for (int i = 0; i < PostProcessManager::GetEffectCount(); ++i) {
-								bool isSelected = (currentEffect == i);
-								if (ImGui::Selectable(PostProcessManager::GetEffectName(i), isSelected)) {
-									camComp->SetPostProcessEffect(static_cast<PostProcessType>(i));
-									isDirty_ = true;
+						// 複数エフェクト選択UI
+						ImGui::Text(U8("エフェクトチェーン"));
+						ImGui::SameLine(120.0f);
+						ImGui::TextDisabled("(?)");
+						if (ImGui::IsItemHovered()) {
+							ImGui::SetTooltip(U8("チェックしたエフェクトが上から順に適用されます"));
+						}
+
+						for (int i = 1; i < static_cast<int>(PostProcessType::Count); ++i) {
+							auto effectType = static_cast<PostProcessType>(i);
+							bool hasEffect = camComp->HasPostProcessEffect(effectType);
+							if (ImGui::Checkbox(PostProcessManager::GetEffectName(i), &hasEffect)) {
+								if (hasEffect) {
+									camComp->AddPostProcessEffect(effectType);
+								} else {
+									camComp->RemovePostProcessEffect(effectType);
 								}
-								if (isSelected) {
-									ImGui::SetItemDefaultFocus();
+								isDirty_ = true;
+							}
+
+							// エフェクトが有効な場合、そのパラメータを表示
+							if (hasEffect) {
+								ImGui::Indent(20.0f);
+								if (effectType == PostProcessType::Grayscale) {
+									if (auto* grayscale = postProcessManager_->GetGrayscale()) {
+										auto& params = grayscale->GetParams();
+										ImGui::SetNextItemWidth(-1);
+										if (ImGui::SliderFloat("##GrayIntensity", &params.intensity, 0.0f, 1.0f, U8("強度: %.2f"))) {
+											camComp->SetGrayscaleParams(params);
+											isDirty_ = true;
+										}
+									}
 								}
-							}
-							ImGui::EndCombo();
-						}
-
-						// エフェクト固有パラメータ
-						PostProcessType effectType = camComp->GetPostProcessEffect();
-
-						if (effectType == PostProcessType::Grayscale) {
-							float intensity = camComp->GetPostProcessIntensity();
-							ImGui::Text(U8("強度"));
-							ImGui::SameLine(80.0f);
-							ImGui::SetNextItemWidth(-1);
-							if (ImGui::SliderFloat("##PPIntensity", &intensity, 0.0f, 1.0f)) {
-								camComp->SetPostProcessIntensity(intensity);
-								isDirty_ = true;
-							}
-						}
-						else if (effectType == PostProcessType::Vignette) {
-							if (auto* vignette = postProcessManager_->GetVignette()) {
-								auto& params = vignette->GetParams();
-
-								ImGui::Text(U8("半径"));
-								ImGui::SameLine(80.0f);
-								ImGui::SetNextItemWidth(-1);
-								if (ImGui::SliderFloat("##VigRadius", &params.radius, 0.1f, 1.5f)) {
-								camComp->SetVignetteParams(params);
-								isDirty_ = true;
-							}
-
-								ImGui::Text(U8("柔らかさ"));
-								ImGui::SameLine(80.0f);
-								ImGui::SetNextItemWidth(-1);
-								if (ImGui::SliderFloat("##VigSoftness", &params.softness, 0.01f, 1.0f)) {
-								camComp->SetVignetteParams(params);
-								isDirty_ = true;
-							}
-
-								ImGui::Text(U8("強度"));
-								ImGui::SameLine(80.0f);
-								ImGui::SetNextItemWidth(-1);
-								if (ImGui::SliderFloat("##VigIntensity", &params.intensity, 0.0f, 1.0f)) {
-								camComp->SetVignetteParams(params);
-								isDirty_ = true;
-							}
-							}
-						}
-						else if (effectType == PostProcessType::Fisheye) {
-							if (auto* fisheye = postProcessManager_->GetFisheye()) {
-								auto& params = fisheye->GetParams();
-
-								ImGui::Text(U8("歪み"));
-								ImGui::SameLine(80.0f);
-								ImGui::SetNextItemWidth(-1);
-								if (ImGui::SliderFloat("##FishStrength", &params.strength, -1.0f, 1.0f)) {
-								camComp->SetFisheyeParams(params);
-								isDirty_ = true;
-							}
-
-								ImGui::Text(U8("ズーム"));
-								ImGui::SameLine(80.0f);
-								ImGui::SetNextItemWidth(-1);
-								if (ImGui::SliderFloat("##FishZoom", &params.zoom, 0.5f, 2.0f)) {
-								camComp->SetFisheyeParams(params);
-								isDirty_ = true;
-							}
+								else if (effectType == PostProcessType::Vignette) {
+									if (auto* vignette = postProcessManager_->GetVignette()) {
+										auto& params = vignette->GetParams();
+										ImGui::SetNextItemWidth(-1);
+										if (ImGui::SliderFloat("##VigRadius", &params.radius, 0.1f, 1.5f, U8("半径: %.2f"))) {
+											camComp->SetVignetteParams(params);
+											isDirty_ = true;
+										}
+										ImGui::SetNextItemWidth(-1);
+										if (ImGui::SliderFloat("##VigSoftness", &params.softness, 0.01f, 1.0f, U8("柔らかさ: %.2f"))) {
+											camComp->SetVignetteParams(params);
+											isDirty_ = true;
+										}
+										ImGui::SetNextItemWidth(-1);
+										if (ImGui::SliderFloat("##VigIntensity", &params.intensity, 0.0f, 1.0f, U8("強度: %.2f"))) {
+											camComp->SetVignetteParams(params);
+											isDirty_ = true;
+										}
+									}
+								}
+								else if (effectType == PostProcessType::Fisheye) {
+									if (auto* fisheye = postProcessManager_->GetFisheye()) {
+										auto& params = fisheye->GetParams();
+										ImGui::SetNextItemWidth(-1);
+										if (ImGui::SliderFloat("##FishStrength", &params.strength, -1.0f, 1.0f, U8("歪み: %.2f"))) {
+											camComp->SetFisheyeParams(params);
+											isDirty_ = true;
+										}
+										ImGui::SetNextItemWidth(-1);
+										if (ImGui::SliderFloat("##FishZoom", &params.zoom, 0.5f, 2.0f, U8("ズーム: %.2f"))) {
+											camComp->SetFisheyeParams(params);
+											isDirty_ = true;
+										}
+									}
+								}
+								ImGui::Unindent(20.0f);
 							}
 						}
 					}
@@ -2877,7 +2867,10 @@ namespace UnoEngine {
 			if (auto* fisheye = postProcessManager_->GetFisheye()) {
 				camComp->SetFisheyeParams(fisheye->GetParams());
 			}
-			// Grayscale has no adjustable params currently
+			// Grayscaleパラメータを同期
+			if (auto* grayscale = postProcessManager_->GetGrayscale()) {
+				camComp->SetGrayscaleParams(grayscale->GetParams());
+			}
 			break;
 		}
 	}
@@ -2898,6 +2891,10 @@ namespace UnoEngine {
 			// Fisheyeパラメータを同期
 			if (auto* fisheye = postProcessManager_->GetFisheye()) {
 				fisheye->SetParams(camComp->GetFisheyeParams());
+			}
+			// Grayscaleパラメータを同期
+			if (auto* grayscale = postProcessManager_->GetGrayscale()) {
+				grayscale->SetParams(camComp->GetGrayscaleParams());
 			}
 			// 最初のCameraComponentを見つけたら終了
 			break;

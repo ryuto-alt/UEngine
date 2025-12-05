@@ -4,6 +4,7 @@
 #include "Camera.h"
 #include "../Math/Math.h"
 #include "../PostProcess/PostProcessType.h"
+#include <vector>
 
 namespace UnoEngine {
 
@@ -64,8 +65,16 @@ public:
     bool IsPostProcessEnabled() const { return postProcessEnabled_; }
     void SetPostProcessEnabled(bool enabled) { postProcessEnabled_ = enabled; }
 
-    PostProcessType GetPostProcessEffect() const { return postProcessEffect_; }
-    void SetPostProcessEffect(PostProcessType effect) { postProcessEffect_ = effect; }
+    // 複数エフェクトチェーン
+    const std::vector<PostProcessType>& GetPostProcessEffects() const { return postProcessEffects_; }
+    void SetPostProcessEffects(const std::vector<PostProcessType>& effects) { postProcessEffects_ = effects; }
+    void AddPostProcessEffect(PostProcessType effect);
+    void RemovePostProcessEffect(PostProcessType effect);
+    bool HasPostProcessEffect(PostProcessType effect) const;
+
+    // 旧API互換（単一エフェクト）
+    PostProcessType GetPostProcessEffect() const { return postProcessEffects_.empty() ? PostProcessType::None : postProcessEffects_[0]; }
+    void SetPostProcessEffect(PostProcessType effect);
 
     float GetPostProcessIntensity() const { return postProcessIntensity_; }
     void SetPostProcessIntensity(float intensity) { postProcessIntensity_ = intensity; }
@@ -102,7 +111,7 @@ private:
 
     // Post Processing設定
     bool postProcessEnabled_ = false;
-    PostProcessType postProcessEffect_ = PostProcessType::None;
+    std::vector<PostProcessType> postProcessEffects_;
     float postProcessIntensity_ = 1.0f;
 
     // Effect-specific parameters

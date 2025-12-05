@@ -86,18 +86,17 @@ void GameApplication::OnRender() {
                     }
                 }
                 if (camComp && camComp->IsPostProcessEnabled() && 
-                    camComp->GetPostProcessEffect() != PostProcessType::None) {
+                    !camComp->GetPostProcessEffects().empty()) {
                     auto* postProcessMgr = editorUI->GetPostProcessManager();
                     auto* postProcessOutput = editorUI->GetPostProcessOutputTexture();
                     if (postProcessMgr && postProcessOutput) {
-                        postProcessMgr->SetActiveEffect(camComp->GetPostProcessEffect());
+                        postProcessMgr->SetEffectChain(camComp->GetPostProcessEffects());
                         postProcessMgr->Apply(graphics_.get(), gameViewTex, postProcessOutput);
                     }
                 } else {
-                    // ポストプロセス無効時はエフェクトをNoneに設定
                     auto* postProcessMgr = editorUI->GetPostProcessManager();
                     if (postProcessMgr) {
-                        postProcessMgr->SetActiveEffect(PostProcessType::None);
+                        postProcessMgr->ClearEffects();
                     }
                 }
             }

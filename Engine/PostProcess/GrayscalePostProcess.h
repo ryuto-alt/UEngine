@@ -15,8 +15,13 @@ public:
     PostProcessType GetType() const override { return PostProcessType::Grayscale; }
     const char* GetName() const override { return "Grayscale"; }
 
+    GrayscaleParams& GetParams() { return m_params; }
+    const GrayscaleParams& GetParams() const { return m_params; }
+    void SetParams(const GrayscaleParams& params) { m_params = params; }
+
 private:
     PostProcessPipeline m_pipeline;
+    GrayscaleParams m_params;
 };
 
 } // namespace UnoEngine

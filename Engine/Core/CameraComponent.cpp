@@ -2,6 +2,7 @@
 #include "CameraComponent.h"
 #include "GameObject.h"
 #include "Transform.h"
+#include <algorithm>
 
 namespace UnoEngine {
 
@@ -134,6 +135,30 @@ void CameraComponent::GetFrustumCorners(Vector3 outNearCorners[4], Vector3 outFa
         outFarCorners[2] = farCenter + right * farW + up * farH;
         outFarCorners[3] = farCenter - right * farW + up * farH;
     }
+}
+
+void CameraComponent::SetPostProcessEffect(PostProcessType effect) {
+    postProcessEffects_.clear();
+    if (effect != PostProcessType::None) {
+        postProcessEffects_.push_back(effect);
+    }
+}
+
+void CameraComponent::AddPostProcessEffect(PostProcessType effect) {
+    if (effect == PostProcessType::None || effect == PostProcessType::Count) return;
+    if (HasPostProcessEffect(effect)) return;
+    postProcessEffects_.push_back(effect);
+}
+
+void CameraComponent::RemovePostProcessEffect(PostProcessType effect) {
+    auto it = std::find(postProcessEffects_.begin(), postProcessEffects_.end(), effect);
+    if (it != postProcessEffects_.end()) {
+        postProcessEffects_.erase(it);
+    }
+}
+
+bool CameraComponent::HasPostProcessEffect(PostProcessType effect) const {
+    return std::find(postProcessEffects_.begin(), postProcessEffects_.end(), effect) != postProcessEffects_.end();
 }
 
 } // namespace UnoEngine

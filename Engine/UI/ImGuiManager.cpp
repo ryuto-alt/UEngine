@@ -56,8 +56,115 @@ void ImGuiManager::Initialize(GraphicsDevice* graphics, Window* window, uint32 s
 
     io.Fonts->Build();
 
-    // ImGuiスタイル設定
+    // ImGuiスタイル設定（カスタムダークテーマ）
     ImGui::StyleColorsDark();
+    
+    // カスタムダークテーマの適用
+    ImGuiStyle& style = ImGui::GetStyle();
+    
+    // ウィンドウの角を丸く
+    style.WindowRounding = 4.0f;
+    style.FrameRounding = 2.0f;
+    style.PopupRounding = 4.0f;
+    style.ScrollbarRounding = 4.0f;
+    style.GrabRounding = 2.0f;
+    style.TabRounding = 4.0f;
+    
+    // パディングとスペーシング
+    style.WindowPadding = ImVec2(8.0f, 8.0f);
+    style.FramePadding = ImVec2(5.0f, 3.0f);
+    style.ItemSpacing = ImVec2(6.0f, 4.0f);
+    style.ItemInnerSpacing = ImVec2(4.0f, 4.0f);
+    
+    // ボーダーサイズ
+    style.WindowBorderSize = 1.0f;
+    style.FrameBorderSize = 0.0f;
+    style.PopupBorderSize = 1.0f;
+    
+    // カラーパレット（黒＋赤アクセントテーマ）
+    ImVec4* colors = style.Colors;
+
+    // 赤アクセントカラー定義
+    ImVec4 accentRed = ImVec4(0.80f, 0.20f, 0.20f, 1.0f);        // メイン赤
+    ImVec4 accentRedHover = ImVec4(0.90f, 0.30f, 0.30f, 1.0f);   // ホバー時の赤
+    ImVec4 accentRedActive = ImVec4(0.70f, 0.15f, 0.15f, 1.0f);  // アクティブ時の赤
+    ImVec4 accentRedDark = ImVec4(0.50f, 0.12f, 0.12f, 1.0f);    // 暗めの赤
+
+    // 背景色（ほぼ黒）
+    colors[ImGuiCol_WindowBg]             = ImVec4(0.06f, 0.06f, 0.06f, 1.0f);
+    colors[ImGuiCol_ChildBg]              = ImVec4(0.06f, 0.06f, 0.06f, 1.0f);
+    colors[ImGuiCol_PopupBg]              = ImVec4(0.08f, 0.08f, 0.08f, 0.98f);
+
+    // タイトルバー
+    colors[ImGuiCol_TitleBg]              = ImVec4(0.04f, 0.04f, 0.04f, 1.0f);
+    colors[ImGuiCol_TitleBgActive]        = ImVec4(0.08f, 0.08f, 0.08f, 1.0f);
+    colors[ImGuiCol_TitleBgCollapsed]     = ImVec4(0.04f, 0.04f, 0.04f, 0.75f);
+
+    // メニューバー
+    colors[ImGuiCol_MenuBarBg]            = ImVec4(0.08f, 0.08f, 0.08f, 1.0f);
+
+    // ヘッダー（コラプシングヘッダー等）- 赤アクセント
+    colors[ImGuiCol_Header]               = accentRedDark;
+    colors[ImGuiCol_HeaderHovered]        = accentRed;
+    colors[ImGuiCol_HeaderActive]         = accentRedActive;
+
+    // タブ - 赤アクセント
+    colors[ImGuiCol_Tab]                  = ImVec4(0.10f, 0.10f, 0.10f, 1.0f);
+    colors[ImGuiCol_TabHovered]           = accentRed;
+    colors[ImGuiCol_TabActive]            = accentRedDark;
+    colors[ImGuiCol_TabUnfocused]         = ImVec4(0.06f, 0.06f, 0.06f, 1.0f);
+    colors[ImGuiCol_TabUnfocusedActive]   = ImVec4(0.12f, 0.08f, 0.08f, 1.0f);
+
+    // フレーム（入力フィールド等）
+    colors[ImGuiCol_FrameBg]              = ImVec4(0.10f, 0.10f, 0.10f, 1.0f);
+    colors[ImGuiCol_FrameBgHovered]       = ImVec4(0.15f, 0.12f, 0.12f, 1.0f);
+    colors[ImGuiCol_FrameBgActive]        = ImVec4(0.20f, 0.12f, 0.12f, 1.0f);
+
+    // ボタン - 赤アクセント
+    colors[ImGuiCol_Button]               = ImVec4(0.15f, 0.15f, 0.15f, 1.0f);
+    colors[ImGuiCol_ButtonHovered]        = accentRed;
+    colors[ImGuiCol_ButtonActive]         = accentRedActive;
+
+    // スクロールバー
+    colors[ImGuiCol_ScrollbarBg]          = ImVec4(0.04f, 0.04f, 0.04f, 1.0f);
+    colors[ImGuiCol_ScrollbarGrab]        = ImVec4(0.25f, 0.25f, 0.25f, 1.0f);
+    colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.35f, 0.25f, 0.25f, 1.0f);
+    colors[ImGuiCol_ScrollbarGrabActive]  = accentRed;
+
+    // チェックマーク - 赤
+    colors[ImGuiCol_CheckMark]            = accentRed;
+
+    // スライダー - 赤
+    colors[ImGuiCol_SliderGrab]           = accentRed;
+    colors[ImGuiCol_SliderGrabActive]     = accentRedHover;
+
+    // セパレーター
+    colors[ImGuiCol_Separator]            = ImVec4(0.20f, 0.15f, 0.15f, 1.0f);
+    colors[ImGuiCol_SeparatorHovered]     = accentRed;
+    colors[ImGuiCol_SeparatorActive]      = accentRedHover;
+
+    // リサイズグリップ - 赤
+    colors[ImGuiCol_ResizeGrip]           = ImVec4(0.30f, 0.15f, 0.15f, 0.50f);
+    colors[ImGuiCol_ResizeGripHovered]    = accentRed;
+    colors[ImGuiCol_ResizeGripActive]     = accentRedHover;
+
+    // ドッキング - 赤
+    colors[ImGuiCol_DockingPreview]       = ImVec4(0.80f, 0.20f, 0.20f, 0.70f);
+    colors[ImGuiCol_DockingEmptyBg]       = ImVec4(0.04f, 0.04f, 0.04f, 1.0f);
+
+    // テキスト
+    colors[ImGuiCol_Text]                 = ImVec4(0.92f, 0.92f, 0.92f, 1.0f);
+    colors[ImGuiCol_TextDisabled]         = ImVec4(0.45f, 0.45f, 0.45f, 1.0f);
+
+    // ボーダー - 少し赤みを帯びた暗い色
+    colors[ImGuiCol_Border]               = ImVec4(0.20f, 0.15f, 0.15f, 1.0f);
+    colors[ImGuiCol_BorderShadow]         = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+
+    // 選択 - 赤
+    colors[ImGuiCol_TextSelectedBg]       = ImVec4(0.60f, 0.15f, 0.15f, 0.50f);
+
+    // ナビゲーション - 赤
+    colors[ImGuiCol_NavHighlight]         = accentRed;
 
     // Win32バックエンド初期化
     ImGui_ImplWin32_Init(window->GetHandle());

@@ -68,8 +68,31 @@ PSOutput main(PSInput input)
     if (grid.a < 0.01)
         discard;
     
-    // グリッド色
-    output.color = float4(0.5, 0.5, 0.5, grid.a * 0.5);
+    // 軸ライン（X軸=赤、Z軸=青）- 控えめな色
+    float axisWidth = 0.02;  // 軸ラインの太さ（細め）
+    float3 axisColor = float3(0.3, 0.3, 0.3);  // デフォルト（暗い灰色）
+    float axisAlpha = 0.0;
+    
+    // X軸（Z=0付近）- 控えめな赤
+    if (abs(fragPos.z) < axisWidth) {
+        axisColor = float3(0.5, 0.2, 0.2);  // 暗めの赤
+        axisAlpha = (1.0 - abs(fragPos.z) / axisWidth) * 0.6;
+    }
+    // Z軸（X=0付近）- 控えめな青
+    if (abs(fragPos.x) < axisWidth) {
+        axisColor = float3(0.2, 0.3, 0.5);  // 暗めの青
+        axisAlpha = max(axisAlpha, (1.0 - abs(fragPos.x) / axisWidth) * 0.6);
+    }
+    
+    // グリッド色（非常に薄い灰色）
+    float3 gridColor = float3(0.25, 0.25, 0.25);
+    float gridAlpha = grid.a * 0.15;  // かなり薄く
+    
+    // 軸ラインとグリッドを合成
+    float3 finalColor = lerp(gridColor, axisColor, axisAlpha);
+    float finalAlpha = max(gridAlpha, axisAlpha * fade);
+    
+    output.color = float4(finalColor, finalAlpha);
     
     // 深度計算
     output.depth = ComputeDepth(fragPos, viewProj);

@@ -167,6 +167,11 @@ private:
     void RenderProject(const EditorContext& context);
     void RenderProfiler();
 
+    // 新しいUnity風パネル
+    void RenderWorldOutliner(const EditorContext& context);   // 左: World Outliner & Assets
+    void RenderObjectProperties(const EditorContext& context); // 右: Object Properties
+    void RenderConsoleAndDebugger();                           // 下: Console & Debugger
+
     // ホットキー処理
     void ProcessHotkeys();
 
@@ -184,6 +189,10 @@ private:
     // View表示状態
     bool showSceneView_ = true;
     bool showGameView_ = true;
+    bool showBlueprintEditor_ = false;  // Blueprint Editor表示状態
+
+    // 中央ビューのアクティブタブ（0: Scene, 1: Game, 2: Blueprint Editor）
+    int activeCenterViewTab_ = 0;
 
     // Game Viewフォーカス状態
     bool gameViewFocused_ = false;

@@ -831,6 +831,7 @@ namespace UnoEngine {
 					// Noneオプション
 					if (ImGui::Selectable("(None)", currentScript.empty())) {
 						luaScript->SetScriptPath("");
+						isDirty_ = true;
 					}
 
 					for (size_t i = 0; i < cachedScriptPaths_.size(); ++i) {
@@ -842,6 +843,7 @@ namespace UnoEngine {
 						if (ImGui::Selectable(scriptName.c_str(), isSelected)) {
 							luaScript->SetScriptPath(cachedScriptPaths_[i]);
 							(void)luaScript->ReloadScript();
+							isDirty_ = true;
 						}
 
 						// ツールチップでフルパス表示
@@ -894,25 +896,29 @@ namespace UnoEngine {
 								bool v = val;
 								if (ImGui::Checkbox(prop.name.c_str(), &v)) {
 									luaScript->SetProperty(prop.name, v);
-								}
-							} else if constexpr (std::is_same_v<T, int32>) {
+								isDirty_ = true;
+							}
+						} else if constexpr (std::is_same_v<T, int32>) {
 								int v = val;
 								if (ImGui::DragInt(prop.name.c_str(), &v)) {
 									luaScript->SetProperty(prop.name, static_cast<int32>(v));
-								}
-							} else if constexpr (std::is_same_v<T, float>) {
+								isDirty_ = true;
+							}
+						} else if constexpr (std::is_same_v<T, float>) {
 								float v = val;
 								if (ImGui::DragFloat(prop.name.c_str(), &v, 0.1f)) {
 									luaScript->SetProperty(prop.name, v);
-								}
-							} else if constexpr (std::is_same_v<T, std::string>) {
+								isDirty_ = true;
+							}
+						} else if constexpr (std::is_same_v<T, std::string>) {
 								char buffer[256];
 								strncpy_s(buffer, val.c_str(), sizeof(buffer) - 1);
 								if (ImGui::InputText(prop.name.c_str(), buffer, sizeof(buffer))) {
 									luaScript->SetProperty(prop.name, std::string(buffer));
-								}
+								isDirty_ = true;
 							}
-						}, prop.value);
+						}
+					}, prop.value);
 
 						ImGui::PopID();
 					}
@@ -924,6 +930,7 @@ namespace UnoEngine {
 				ImGui::Spacing();
 				if (ImGui::Button("Reload Script")) {
 					(void)luaScript->ReloadScript();
+							isDirty_ = true;
 				}
 
 				// コンポーネント削除ボタン
@@ -1088,9 +1095,10 @@ namespace UnoEngine {
 									for (auto it = gameObjects_->begin(); it != gameObjects_->end(); ++it) {
 										if (it->get() == obj) {
 											consoleMessages_.push_back(U8("[エディタ] 削除: ") + obj->GetName());
-											gameObjects_->erase(it);
-											if (selectedObject_ == obj) selectedObject_ = nullptr;
-											break;
+									gameObjects_->erase(it);
+									if (selectedObject_ == obj) selectedObject_ = nullptr;
+									isDirty_ = true;
+									break;
 										}
 									}
 								}
@@ -1377,6 +1385,7 @@ namespace UnoEngine {
 					bool ppEnabled = camComp->IsPostProcessEnabled();
 					if (ImGui::Checkbox(U8("有効##PostProcess"), &ppEnabled)) {
 						camComp->SetPostProcessEnabled(ppEnabled);
+					isDirty_ = true;
 					}
 
 					if (ppEnabled) {
@@ -1389,6 +1398,7 @@ namespace UnoEngine {
 								bool isSelected = (currentEffect == i);
 								if (ImGui::Selectable(PostProcessManager::GetEffectName(i), isSelected)) {
 									camComp->SetPostProcessEffect(static_cast<PostProcessType>(i));
+									isDirty_ = true;
 								}
 								if (isSelected) {
 									ImGui::SetItemDefaultFocus();
@@ -1403,6 +1413,7 @@ namespace UnoEngine {
 						ImGui::SetNextItemWidth(-1);
 						if (ImGui::SliderFloat("##PPIntensity", &intensity, 0.0f, 1.0f)) {
 							camComp->SetPostProcessIntensity(intensity);
+						isDirty_ = true;
 						}
 					}
 
@@ -1429,13 +1440,15 @@ namespace UnoEngine {
 					if (ImGui::BeginCombo("##AudioClip", clipName.c_str())) {
 						if (ImGui::Selectable(U8("(なし)"), audioSource->GetClipPath().empty())) {
 							audioSource->SetClipPath("");
-							audioSource->SetClip(nullptr);
+						audioSource->SetClip(nullptr);
+						isDirty_ = true;
 						}
 						for (const auto& path : cachedAudioPaths_) {
 							std::string filename = std::filesystem::path(path).filename().string();
 							if (ImGui::Selectable(filename.c_str(), audioSource->GetClipPath() == path)) {
 								audioSource->SetClipPath(path);
 								audioSource->LoadClip(path);
+							isDirty_ = true;
 							}
 						}
 						ImGui::EndCombo();
@@ -1448,6 +1461,7 @@ namespace UnoEngine {
 					ImGui::SetNextItemWidth(-1);
 					if (ImGui::SliderFloat("##Volume", &volume, 0.0f, 1.0f)) {
 						audioSource->SetVolume(volume);
+						isDirty_ = true;
 					}
 
 					// ループ
@@ -1456,6 +1470,7 @@ namespace UnoEngine {
 					ImGui::SameLine(100.0f);
 					if (ImGui::Checkbox("##Loop", &loop)) {
 						audioSource->SetLoop(loop);
+						isDirty_ = true;
 					}
 
 					// 開始時再生
@@ -1465,6 +1480,7 @@ namespace UnoEngine {
 					ImGui::SameLine();
 					if (ImGui::Checkbox("##PlayOnAwake", &playOnAwake)) {
 						audioSource->SetPlayOnAwake(playOnAwake);
+						isDirty_ = true;
 					}
 
 					// プレビュー
@@ -1492,12 +1508,14 @@ namespace UnoEngine {
 					if (ImGui::BeginCombo("##Script", scriptName.c_str())) {
 						if (ImGui::Selectable(U8("(なし)"), luaScript->GetScriptPath().empty())) {
 							luaScript->SetScriptPath("");
+						isDirty_ = true;
 						}
 						for (const auto& path : cachedScriptPaths_) {
 							std::string filename = std::filesystem::path(path).filename().string();
 							if (ImGui::Selectable(filename.c_str(), luaScript->GetScriptPath() == path)) {
 								luaScript->SetScriptPath(path);
 								(void)luaScript->ReloadScript();
+							isDirty_ = true;
 							}
 						}
 						ImGui::EndCombo();
@@ -1526,12 +1544,15 @@ namespace UnoEngine {
 			if (ImGui::BeginPopup("AddComponentPopup")) {
 				if (ImGui::MenuItem(U8("オーディオソース")) && !selected->GetComponent<AudioSource>()) {
 					selected->AddComponent<AudioSource>();
+					isDirty_ = true;
 				}
 				if (ImGui::MenuItem(U8("オーディオリスナー")) && !selected->GetComponent<AudioListener>()) {
 					selected->AddComponent<AudioListener>();
+					isDirty_ = true;
 				}
 				if (ImGui::MenuItem(U8("Luaスクリプト")) && !selected->GetComponent<LuaScriptComponent>()) {
 					selected->AddComponent<LuaScriptComponent>();
+					isDirty_ = true;
 				}
 				ImGui::EndPopup();
 			}
@@ -1692,6 +1713,7 @@ namespace UnoEngine {
 						// Enter押下でリネーム確定
 						if (strlen(renameBuffer_) > 0) {
 							obj->SetName(renameBuffer_);
+								isDirty_ = true;
 							consoleMessages_.push_back("[Editor] Renamed to: " + std::string(renameBuffer_));
 						}
 						renamingObject_ = nullptr;
@@ -1771,15 +1793,16 @@ namespace UnoEngine {
 							for (auto it = gameObjects_->begin(); it != gameObjects_->end(); ++it) {
 								if (it->get() == obj) {
 									consoleMessages_.push_back("[Editor] Deleted object: " + obj->GetName());
-									expandedObjects_.erase(obj);
-									gameObjects_->erase(it);
-									if (selectedObject_ == obj) {
-										selectedObject_ = nullptr;
-									}
-									if (renamingObject_ == obj) {
-										renamingObject_ = nullptr;
-									}
-									break;
+								expandedObjects_.erase(obj);
+								gameObjects_->erase(it);
+								if (selectedObject_ == obj) {
+									selectedObject_ = nullptr;
+								}
+								if (renamingObject_ == obj) {
+									renamingObject_ = nullptr;
+								}
+								isDirty_ = true;
+								break;
 								}
 							}
 						}
@@ -2025,7 +2048,8 @@ namespace UnoEngine {
 							// (None)選択肢
 							if (ImGui::Selectable("(None)", currentClip.empty())) {
 								audioSource->SetClipPath("");
-								audioSource->SetClip(nullptr);
+						audioSource->SetClip(nullptr);
+						isDirty_ = true;
 							}
 
 							// assets/audioフォルダ内のファイル一覧
@@ -2084,24 +2108,28 @@ namespace UnoEngine {
 						ImGui::SetNextItemWidth(150.0f);
 						if (ImGui::SliderFloat("Volume", &volume, 0.0f, 1.0f)) {
 							audioSource->SetVolume(volume);
+						isDirty_ = true;
 						}
 
 						// ループ
 						bool loop = audioSource->IsLooping();
 						if (ImGui::Checkbox("Loop", &loop)) {
 							audioSource->SetLoop(loop);
+						isDirty_ = true;
 						}
 
 						// PlayOnAwake
 						bool playOnAwake = audioSource->GetPlayOnAwake();
 						if (ImGui::Checkbox("Play On Awake", &playOnAwake)) {
 							audioSource->SetPlayOnAwake(playOnAwake);
+						isDirty_ = true;
 						}
 
 						// 3Dオーディオ設定
 						bool is3D = audioSource->Is3D();
 						if (ImGui::Checkbox("3D Audio", &is3D)) {
 							audioSource->Set3D(is3D);
+						isDirty_ = true;
 						}
 
 						if (is3D) {
@@ -2110,10 +2138,12 @@ namespace UnoEngine {
 							ImGui::SetNextItemWidth(100.0f);
 							if (ImGui::DragFloat("Min Distance", &minDist, 0.1f, 0.1f, 100.0f)) {
 								audioSource->SetMinDistance(minDist);
+							isDirty_ = true;
 							}
 							ImGui::SetNextItemWidth(100.0f);
 							if (ImGui::DragFloat("Max Distance", &maxDist, 1.0f, 1.0f, 1000.0f)) {
 								audioSource->SetMaxDistance(maxDist);
+							isDirty_ = true;
 							}
 						}
 
@@ -2188,10 +2218,11 @@ namespace UnoEngine {
 				for (auto it = gameObjects_->begin(); it != gameObjects_->end(); ++it) {
 					if (it->get() == selectedObject_) {
 						consoleMessages_.push_back("[Editor] Deleted object (DEL): " + selectedObject_->GetName());
-						expandedObjects_.erase(selectedObject_);
-						gameObjects_->erase(it);
-						selectedObject_ = nullptr;
-						break;
+					expandedObjects_.erase(selectedObject_);
+					gameObjects_->erase(it);
+					selectedObject_ = nullptr;
+					isDirty_ = true;
+					break;
 					}
 				}
 			}
@@ -2676,6 +2707,7 @@ namespace UnoEngine {
 	// Undo履歴に追加
 	void EditorUI::PushUndoSnapshot(const TransformSnapshot& snapshot) {
 		undoStack_.push(snapshot);
+		isDirty_ = true;
 		consoleMessages_.push_back(U8("[エディタ] 変更を記録しました"));
 	}
 
@@ -2735,6 +2767,7 @@ namespace UnoEngine {
 			// EditorCameraの設定も保存
 			editorCamera_.SaveSettings();
 			consoleMessages_.push_back(U8("[エディタ] カメラ設定を保存しました"));
+			isDirty_ = false;
 		}
 		else {
 			consoleMessages_.push_back(U8("[エディタ] シーン保存に失敗: ") + filepath);
@@ -2886,6 +2919,7 @@ namespace UnoEngine {
 						if (auto* luaScript = obj->GetComponent<LuaScriptComponent>()) {
 							if (luaScript->GetScriptPath() == watched.path) {
 								(void)luaScript->ReloadScript();
+							isDirty_ = true;
 								consoleMessages_.push_back("[Editor] Reloaded script on: " + obj->GetName());
 							}
 						}
@@ -2901,6 +2935,7 @@ namespace UnoEngine {
 			for (auto& obj : *gameObjects_) {
 				if (auto* luaScript = obj->GetComponent<LuaScriptComponent>()) {
 					(void)luaScript->ReloadScript();
+							isDirty_ = true;
 				}
 			}
 		}
@@ -2978,6 +3013,7 @@ namespace UnoEngine {
 
 			// GameObjectsリストに追加
 			gameObjects_->push_back(std::move(newObject));
+			isDirty_ = true;
 
 			// 重要: コンポーネントのStart()を呼んで初期化
 			// （再起動時はScene::ProcessPendingStarts()で呼ばれるが、D&D時は手動で呼ぶ必要がある）

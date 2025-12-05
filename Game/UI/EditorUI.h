@@ -129,6 +129,11 @@ public:
     void SaveScene(const std::string& filepath);
     void LoadScene(const std::string& filepath);
 
+    // 変更追跡
+    bool IsDirty() const { return isDirty_; }
+    void SetDirty(bool dirty = true) { isDirty_ = dirty; }
+    void MarkDirty() { isDirty_ = true; }
+
     // GameObjectsリストへの参照を設定（保存/ロード用）
     void SetGameObjects(std::vector<UniquePtr<GameObject>>* gameObjects) {
         gameObjects_ = gameObjects;
@@ -334,6 +339,9 @@ private:
     // 新規オブジェクトにカメラをフォーカス（角度もリセット）
     void FocusOnNewObject(GameObject* obj);
 
+
+    // 変更追跡フラグ
+    bool isDirty_ = false;
 
     // カメラFrustum表示フラグ
     bool showCameraFrustum_ = false;

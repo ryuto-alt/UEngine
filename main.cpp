@@ -30,6 +30,33 @@ protected:
         // Load Scene
         auto scene = MakeUnique<Scene>();
         GetSceneManager()->LoadScene(std::move(scene));
+
+        // Set close request callback for save confirmation
+        GetWindow()->SetCloseRequestCallback([this]() -> bool {
+            auto* scene = GetSceneManager()->GetActiveScene();
+            auto* editorUI = scene ? scene->GetEditorUI() : nullptr;
+
+            // 変更がない場合はそのまま閉じる
+            if (!editorUI || !editorUI->IsDirty()) {
+                return true;
+            }
+
+            int result = MessageBoxW(
+                GetWindow()->GetHandle(),
+                L"変更を保存しますか？",
+                L"UnoEngine",
+                MB_YESNOCANCEL | MB_ICONQUESTION
+            );
+
+            if (result == IDYES) {
+                editorUI->SaveScene("assets/scenes/default_scene.json");
+                return true;
+            } else if (result == IDNO) {
+                return true;
+            } else {
+                return false; // Cancel
+            }
+        });
     }
 
     void OnUpdate(float deltaTime) override {

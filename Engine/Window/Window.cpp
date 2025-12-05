@@ -110,6 +110,15 @@ LRESULT CALLBACK Window::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM l
     }
 
     switch (msg) {
+    case WM_CLOSE:
+        if (window && window->closeRequestCallback_) {
+            if (!window->closeRequestCallback_()) {
+                return 0; // キャンセル
+            }
+        }
+        DestroyWindow(hwnd);
+        return 0;
+
     case WM_DESTROY:
         PostQuitMessage(0);
         return 0;

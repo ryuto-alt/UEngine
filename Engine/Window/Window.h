@@ -20,6 +20,8 @@ class Window : public NonCopyable {
 public:
     // メッセージコールバック型
     using MessageCallback = std::function<void(UINT, WPARAM, LPARAM)>;
+    // クローズ要求コールバック（falseを返すとクローズをキャンセル）
+    using CloseRequestCallback = std::function<bool()>;
 
     explicit Window(const WindowConfig& config);
     ~Window();
@@ -29,6 +31,7 @@ public:
 
     // メッセージコールバック設定
     void SetMessageCallback(MessageCallback callback) { messageCallback_ = callback; }
+    void SetCloseRequestCallback(CloseRequestCallback callback) { closeRequestCallback_ = callback; }
 
     // アクセサ
     HWND GetHandle() const { return hwnd_; }
@@ -49,6 +52,7 @@ private:
     bool fullscreen_ = false;
     std::wstring className_;
     MessageCallback messageCallback_;
+    CloseRequestCallback closeRequestCallback_;
 };
 
 } // namespace UnoEngine

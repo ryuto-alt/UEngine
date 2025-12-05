@@ -10,6 +10,9 @@ void PostProcessManager::Initialize(GraphicsDevice* graphics, uint32 width, uint
 
     m_vignette = std::make_unique<VignettePostProcess>();
     m_vignette->Initialize(graphics);
+
+    m_fisheye = std::make_unique<FisheyePostProcess>();
+    m_fisheye->Initialize(graphics);
 }
 
 void PostProcessManager::Resize(GraphicsDevice* graphics, uint32 width, uint32 height) {
@@ -34,6 +37,11 @@ void PostProcessManager::Apply(GraphicsDevice* graphics, RenderTexture* source, 
         case PostProcessType::Vignette:
             if (m_vignette && m_vignette->IsEnabled()) {
                 m_vignette->Apply(graphics, source, destination);
+            }
+            break;
+        case PostProcessType::Fisheye:
+            if (m_fisheye && m_fisheye->IsEnabled()) {
+                m_fisheye->Apply(graphics, source, destination);
             }
             break;
         default:

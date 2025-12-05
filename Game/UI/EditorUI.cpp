@@ -1325,7 +1325,8 @@ namespace UnoEngine {
 					ImGui::SameLine(100.0f);
 					ImGui::SetNextItemWidth(-1);
 					if (ImGui::SliderFloat("##FOV", &fov, 1.0f, 179.0f)) {
-						// FOV設定
+						camComp->SetFieldOfView(fov * 0.0174533f);
+						isDirty_ = true;
 					}
 
 					// Clipping Planes
@@ -1336,11 +1337,17 @@ namespace UnoEngine {
 					ImGui::Text(U8("近"));
 					ImGui::SameLine(60.0f);
 					ImGui::SetNextItemWidth(100.0f);
-					ImGui::DragFloat("##Near", &nearClip, 0.01f, 0.01f, 10.0f);
+					if (ImGui::DragFloat("##Near", &nearClip, 0.01f, 0.01f, 10.0f)) {
+						camComp->SetNearClip(nearClip);
+						isDirty_ = true;
+					}
 					ImGui::Text(U8("遠"));
 					ImGui::SameLine(60.0f);
 					ImGui::SetNextItemWidth(100.0f);
-					ImGui::DragFloat("##Far", &farClip, 1.0f, 10.0f, 10000.0f);
+					if (ImGui::DragFloat("##Far", &farClip, 1.0f, 10.0f, 10000.0f)) {
+						camComp->SetFarClip(farClip);
+						isDirty_ = true;
+					}
 					ImGui::Unindent(20.0f);
 
 					// Viewport Rect
@@ -1442,6 +1449,25 @@ namespace UnoEngine {
 								ImGui::SameLine(80.0f);
 								ImGui::SetNextItemWidth(-1);
 								if (ImGui::SliderFloat("##VigIntensity", &params.intensity, 0.0f, 1.0f)) {
+									isDirty_ = true;
+								}
+							}
+						}
+						else if (effectType == PostProcessType::Fisheye) {
+							if (auto* fisheye = postProcessManager_->GetFisheye()) {
+								auto& params = fisheye->GetParams();
+
+								ImGui::Text(U8("歪み"));
+								ImGui::SameLine(80.0f);
+								ImGui::SetNextItemWidth(-1);
+								if (ImGui::SliderFloat("##FishStrength", &params.strength, -1.0f, 1.0f)) {
+									isDirty_ = true;
+								}
+
+								ImGui::Text(U8("ズーム"));
+								ImGui::SameLine(80.0f);
+								ImGui::SetNextItemWidth(-1);
+								if (ImGui::SliderFloat("##FishZoom", &params.zoom, 0.5f, 2.0f)) {
 									isDirty_ = true;
 								}
 							}

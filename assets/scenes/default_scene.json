@@ -62,11 +62,11 @@
                 {
                     "aspect": 1.7777777910232544,
                     "farClip": 1000.0,
-                    "fov": 1.047197937965393,
+                    "fov": 1.8617085218429565,
                     "isMain": true,
                     "isOrthographic": false,
                     "nearClip": 0.10000000149011612,
-                    "postProcessEffect": 2,
+                    "postProcessEffect": 3,
                     "postProcessEnabled": true,
                     "postProcessIntensity": 1.0,
                     "priority": 0,

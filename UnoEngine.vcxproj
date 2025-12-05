@@ -256,6 +256,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClCompile Include="Engine\PostProcess\PostProcessManager.cpp" />
     <ClCompile Include="Engine\PostProcess\GrayscalePostProcess.cpp" />
     <ClCompile Include="Engine\PostProcess\VignettePostProcess.cpp" />
+    <ClCompile Include="Engine\PostProcess\FisheyePostProcess.cpp" />
     <ClCompile Include="external\lua\src\lapi.c">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
@@ -475,6 +476,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClInclude Include="Engine\PostProcess\PostProcessManager.h" />
     <ClInclude Include="Engine\PostProcess\GrayscalePostProcess.h" />
     <ClInclude Include="Engine\PostProcess\VignettePostProcess.h" />
+    <ClInclude Include="Engine\PostProcess\FisheyePostProcess.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -617,6 +619,14 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\PostProcess\VignettePS.hlsl">
+      <ShaderType>Pixel</ShaderType>
+      <ShaderModel>6.5</ShaderModel>
+      <EntryPointName>main</EntryPointName>
+      <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Zi /Qembed_debug %(AdditionalOptions)</AdditionalOptions>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\FisheyePS.hlsl">
       <ShaderType>Pixel</ShaderType>
       <ShaderModel>6.5</ShaderModel>
       <EntryPointName>main</EntryPointName>

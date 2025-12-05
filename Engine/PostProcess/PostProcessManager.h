@@ -5,6 +5,7 @@
 #include "PostProcessType.h"
 #include "GrayscalePostProcess.h"
 #include "VignettePostProcess.h"
+#include "FisheyePostProcess.h"
 #include "../Graphics/RenderTexture.h"
 #include <memory>
 
@@ -33,11 +34,13 @@ public:
 
     // パラメータアクセス
     VignettePostProcess* GetVignette() { return m_vignette.get(); }
+    FisheyePostProcess* GetFisheye() { return m_fisheye.get(); }
 
 private:
     PostProcessType m_activeEffect = PostProcessType::None;
     std::unique_ptr<GrayscalePostProcess> m_grayscale;
     std::unique_ptr<VignettePostProcess> m_vignette;
+    std::unique_ptr<FisheyePostProcess> m_fisheye;
 };
 
 } // namespace UnoEngine

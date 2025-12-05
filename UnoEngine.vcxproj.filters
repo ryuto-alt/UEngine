@@ -79,6 +79,9 @@
     <Filter Include="External\Sol">
       <UniqueIdentifier>{c9d0e1f2-a3b4-5c6d-7e8f-9a0b1c2d3e4f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="External\ImGui">
+      <UniqueIdentifier>{d0e1f2a3-b4c5-6d7e-8f9a-0b1c2d3e4f5a}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Shaders">
       <UniqueIdentifier>{9d0e1f2a-3b4c-5d6e-7f8a-9b0c1d2e3f4a}</UniqueIdentifier>
     </Filter>
@@ -425,6 +428,28 @@
     </ClCompile>
     <ClCompile Include="external\lua\src\lzio.c">
       <Filter>External\Lua</Filter>
+    </ClCompile>
+    <!-- External\ImGui -->
+    <ClCompile Include="external\imgui\imgui.cpp">
+      <Filter>External\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="external\imgui\imgui_draw.cpp">
+      <Filter>External\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="external\imgui\imgui_tables.cpp">
+      <Filter>External\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="external\imgui\imgui_widgets.cpp">
+      <Filter>External\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="external\imgui\imgui_demo.cpp">
+      <Filter>External\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="external\imgui\backends\imgui_impl_win32.cpp">
+      <Filter>External\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="external\imgui\backends\imgui_impl_dx12.cpp">
+      <Filter>External\ImGui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

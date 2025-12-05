@@ -22,6 +22,27 @@
     <Filter Include="Engine\Graphics">
       <UniqueIdentifier>{2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Graphics\Core">
+      <UniqueIdentifier>{2b3c4d5e-0001-0001-0001-2f3a4b5c6d7e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Graphics\Buffer">
+      <UniqueIdentifier>{2b3c4d5e-0002-0002-0002-2f3a4b5c6d7e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Graphics\Pipeline">
+      <UniqueIdentifier>{2b3c4d5e-0003-0003-0003-2f3a4b5c6d7e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Graphics\Mesh">
+      <UniqueIdentifier>{2b3c4d5e-0004-0004-0004-2f3a4b5c6d7e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Graphics\Texture">
+      <UniqueIdentifier>{2b3c4d5e-0005-0005-0005-2f3a4b5c6d7e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Graphics\Light">
+      <UniqueIdentifier>{2b3c4d5e-0006-0006-0006-2f3a4b5c6d7e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Graphics\Renderer">
+      <UniqueIdentifier>{2b3c4d5e-0007-0007-0007-2f3a4b5c6d7e}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Engine\Window">
       <UniqueIdentifier>{3c4d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f}</UniqueIdentifier>
     </Filter>
@@ -149,60 +170,66 @@
     <ClCompile Include="Engine\Core\Logger.cpp">
       <Filter>Engine\Core</Filter>
     </ClCompile>
-    <!-- Engine\Graphics -->
+    <!-- Engine\Graphics\Core -->
     <ClCompile Include="Engine\Graphics\GraphicsDevice.cpp">
-      <Filter>Engine\Graphics</Filter>
+      <Filter>Engine\Graphics\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Graphics\Shader.cpp">
-      <Filter>Engine\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Graphics\Pipeline.cpp">
-      <Filter>Engine\Graphics</Filter>
-    </ClCompile>
+    <!-- Engine\Graphics\Buffer -->
     <ClCompile Include="Engine\Graphics\VertexBuffer.cpp">
-      <Filter>Engine\Graphics</Filter>
+      <Filter>Engine\Graphics\Buffer</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Graphics\IndexBuffer.cpp">
-      <Filter>Engine\Graphics</Filter>
+      <Filter>Engine\Graphics\Buffer</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Graphics\Mesh.cpp">
-      <Filter>Engine\Graphics</Filter>
+    <!-- Engine\Graphics\Pipeline -->
+    <ClCompile Include="Engine\Graphics\Shader.cpp">
+      <Filter>Engine\Graphics\Pipeline</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Graphics\Material.cpp">
-      <Filter>Engine\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Graphics\Sprite.cpp">
-      <Filter>Engine\Graphics</Filter>
+    <ClCompile Include="Engine\Graphics\Pipeline.cpp">
+      <Filter>Engine\Graphics\Pipeline</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Graphics\SpritePipeline.cpp">
-      <Filter>Engine\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Graphics\Texture2D.cpp">
-      <Filter>Engine\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Graphics\RenderTexture.cpp">
-      <Filter>Engine\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Graphics\DirectionalLight.cpp">
-      <Filter>Engine\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Graphics\MeshRenderer.cpp">
-      <Filter>Engine\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Graphics\DirectionalLightComponent.cpp">
-      <Filter>Engine\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Graphics\SkinnedMesh.cpp">
-      <Filter>Engine\Graphics</Filter>
+      <Filter>Engine\Graphics\Pipeline</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Graphics\SkinnedPipeline.cpp">
-      <Filter>Engine\Graphics</Filter>
+      <Filter>Engine\Graphics\Pipeline</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Graphics\DebugLinePipeline.cpp">
-      <Filter>Engine\Graphics</Filter>
+      <Filter>Engine\Graphics\Pipeline</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Graphics\InfiniteGridPipeline.cpp">
-      <Filter>Engine\Graphics</Filter>
+      <Filter>Engine\Graphics\Pipeline</Filter>
+    </ClCompile>
+    <!-- Engine\Graphics\Mesh -->
+    <ClCompile Include="Engine\Graphics\Mesh.cpp">
+      <Filter>Engine\Graphics\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\SkinnedMesh.cpp">
+      <Filter>Engine\Graphics\Mesh</Filter>
+    </ClCompile>
+    <!-- Engine\Graphics\Texture -->
+    <ClCompile Include="Engine\Graphics\Texture2D.cpp">
+      <Filter>Engine\Graphics\Texture</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\RenderTexture.cpp">
+      <Filter>Engine\Graphics\Texture</Filter>
+    </ClCompile>
+    <!-- Engine\Graphics\Light -->
+    <ClCompile Include="Engine\Graphics\DirectionalLight.cpp">
+      <Filter>Engine\Graphics\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\DirectionalLightComponent.cpp">
+      <Filter>Engine\Graphics\Light</Filter>
+    </ClCompile>
+    <!-- Engine\Graphics\Renderer -->
+    <ClCompile Include="Engine\Graphics\Material.cpp">
+      <Filter>Engine\Graphics\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\Sprite.cpp">
+      <Filter>Engine\Graphics\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\MeshRenderer.cpp">
+      <Filter>Engine\Graphics\Renderer</Filter>
     </ClCompile>
     <!-- Engine\Window -->
     <ClCompile Include="Engine\Window\Window.cpp">
@@ -530,72 +557,84 @@
     <ClInclude Include="Engine\Core\Types.h">
       <Filter>Engine\Core</Filter>
     </ClInclude>
-    <!-- Engine\Graphics -->
+    <!-- Engine\Graphics\Core -->
     <ClInclude Include="Engine\Graphics\ConstantBuffer.h">
-      <Filter>Engine\Graphics</Filter>
+      <Filter>Engine\Graphics\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\DynamicConstantBuffer.h">
+      <Filter>Engine\Graphics\Core</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\D3D12Common.h">
-      <Filter>Engine\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Graphics\GraphicsDevice.h">
-      <Filter>Engine\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Graphics\Shader.h">
-      <Filter>Engine\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Graphics\Pipeline.h">
-      <Filter>Engine\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Graphics\VertexBuffer.h">
-      <Filter>Engine\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Graphics\IndexBuffer.h">
-      <Filter>Engine\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Graphics\Mesh.h">
-      <Filter>Engine\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Graphics\Material.h">
-      <Filter>Engine\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Graphics\Sprite.h">
-      <Filter>Engine\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Graphics\SpritePipeline.h">
-      <Filter>Engine\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Graphics\Texture2D.h">
-      <Filter>Engine\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Graphics\RenderTexture.h">
-      <Filter>Engine\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Graphics\DirectionalLight.h">
-      <Filter>Engine\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Graphics\MeshRenderer.h">
-      <Filter>Engine\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Graphics\DirectionalLightComponent.h">
-      <Filter>Engine\Graphics</Filter>
+      <Filter>Engine\Graphics\Core</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\d3dx12.h">
-      <Filter>Engine\Graphics</Filter>
+      <Filter>Engine\Graphics\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Graphics\SkinnedMesh.h">
-      <Filter>Engine\Graphics</Filter>
+    <ClInclude Include="Engine\Graphics\GraphicsDevice.h">
+      <Filter>Engine\Graphics\Core</Filter>
+    </ClInclude>
+    <!-- Engine\Graphics\Buffer -->
+    <ClInclude Include="Engine\Graphics\VertexBuffer.h">
+      <Filter>Engine\Graphics\Buffer</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\IndexBuffer.h">
+      <Filter>Engine\Graphics\Buffer</Filter>
+    </ClInclude>
+    <!-- Engine\Graphics\Pipeline -->
+    <ClInclude Include="Engine\Graphics\Shader.h">
+      <Filter>Engine\Graphics\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\Pipeline.h">
+      <Filter>Engine\Graphics\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\SpritePipeline.h">
+      <Filter>Engine\Graphics\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\SkinnedPipeline.h">
-      <Filter>Engine\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Graphics\SkinnedVertex.h">
-      <Filter>Engine\Graphics</Filter>
+      <Filter>Engine\Graphics\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\DebugLinePipeline.h">
-      <Filter>Engine\Graphics</Filter>
+      <Filter>Engine\Graphics\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\InfiniteGridPipeline.h">
-      <Filter>Engine\Graphics</Filter>
+      <Filter>Engine\Graphics\Pipeline</Filter>
+    </ClInclude>
+    <!-- Engine\Graphics\Mesh -->
+    <ClInclude Include="Engine\Graphics\Mesh.h">
+      <Filter>Engine\Graphics\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\SkinnedMesh.h">
+      <Filter>Engine\Graphics\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\SkinnedVertex.h">
+      <Filter>Engine\Graphics\Mesh</Filter>
+    </ClInclude>
+    <!-- Engine\Graphics\Texture -->
+    <ClInclude Include="Engine\Graphics\Texture2D.h">
+      <Filter>Engine\Graphics\Texture</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\RenderTexture.h">
+      <Filter>Engine\Graphics\Texture</Filter>
+    </ClInclude>
+    <!-- Engine\Graphics\Light -->
+    <ClInclude Include="Engine\Graphics\DirectionalLight.h">
+      <Filter>Engine\Graphics\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\DirectionalLightComponent.h">
+      <Filter>Engine\Graphics\Light</Filter>
+    </ClInclude>
+    <!-- Engine\Graphics\Renderer -->
+    <ClInclude Include="Engine\Graphics\Material.h">
+      <Filter>Engine\Graphics\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\Sprite.h">
+      <Filter>Engine\Graphics\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\MeshRenderer.h">
+      <Filter>Engine\Graphics\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\SkinnedMeshRenderer.h">
+      <Filter>Engine\Graphics\Renderer</Filter>
     </ClInclude>
     <!-- Engine\Window -->
     <ClInclude Include="Engine\Window\Window.h">

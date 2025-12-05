@@ -3,6 +3,7 @@
 #include "Component.h"
 #include "Camera.h"
 #include "../Math/Math.h"
+#include "../PostProcess/PostProcessType.h"
 
 namespace UnoEngine {
 
@@ -59,6 +60,16 @@ public:
     // Frustum corners (for visualization)
     void GetFrustumCorners(Vector3 outNearCorners[4], Vector3 outFarCorners[4]) const;
 
+    // Post Processing
+    bool IsPostProcessEnabled() const { return postProcessEnabled_; }
+    void SetPostProcessEnabled(bool enabled) { postProcessEnabled_ = enabled; }
+
+    PostProcessType GetPostProcessEffect() const { return postProcessEffect_; }
+    void SetPostProcessEffect(PostProcessType effect) { postProcessEffect_ = effect; }
+
+    float GetPostProcessIntensity() const { return postProcessIntensity_; }
+    void SetPostProcessIntensity(float intensity) { postProcessIntensity_ = intensity; }
+
 private:
     void UpdateCameraTransform();
     void UpdateProjectionMatrix();
@@ -78,6 +89,11 @@ private:
     // カメラ設定
     int priority_ = 0;
     bool isMain_ = false;
+
+    // Post Processing設定
+    bool postProcessEnabled_ = false;
+    PostProcessType postProcessEffect_ = PostProcessType::None;
+    float postProcessIntensity_ = 1.0f;
 };
 
 } // namespace UnoEngine

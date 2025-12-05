@@ -94,6 +94,12 @@
     <Filter Include="Engine\Editor">
       <UniqueIdentifier>{c2d3e4f5-a6b7-8c9d-0e1f-2a3b4c5d6e7f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\PostProcess">
+      <UniqueIdentifier>{d3e4f5a6-b7c8-9d0e-1f2a-3b4c5d6e7f8a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\PostProcess">
+      <UniqueIdentifier>{e4f5a6b7-c8d9-0e1f-2a3b-4c5d6e7f8a9b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <!-- Main -->
@@ -306,6 +312,16 @@
     </ClCompile>
     <ClCompile Include="Engine\Editor\ParticleEditor.cpp">
       <Filter>Engine\Editor</Filter>
+    </ClCompile>
+    <!-- Engine\PostProcess -->
+    <ClCompile Include="Engine\PostProcess\PostProcessPipeline.cpp">
+      <Filter>Engine\PostProcess</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\PostProcess\PostProcessManager.cpp">
+      <Filter>Engine\PostProcess</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\PostProcess\GrayscalePostProcess.cpp">
+      <Filter>Engine\PostProcess</Filter>
     </ClCompile>
     <!-- Game -->
     <ClCompile Include="Game\GameApplication.cpp">
@@ -714,6 +730,22 @@
     <ClInclude Include="Engine\Editor\ParticleEditor.h">
       <Filter>Engine\Editor</Filter>
     </ClInclude>
+    <!-- Engine\PostProcess -->
+    <ClInclude Include="Engine\PostProcess\PostProcess.h">
+      <Filter>Engine\PostProcess</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\PostProcess\PostProcessType.h">
+      <Filter>Engine\PostProcess</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\PostProcess\PostProcessPipeline.h">
+      <Filter>Engine\PostProcess</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\PostProcess\PostProcessManager.h">
+      <Filter>Engine\PostProcess</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\PostProcess\GrayscalePostProcess.h">
+      <Filter>Engine\PostProcess</Filter>
+    </ClInclude>
     <!-- Game -->
     <ClInclude Include="Game\GameApplication.h">
       <Filter>Game</Filter>
@@ -804,6 +836,12 @@
     </FxCompile>
     <FxCompile Include="Shaders\Particle\ParticleProceduralPS.hlsl">
       <Filter>Shaders\Particle</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\FullscreenVS.hlsl">
+      <Filter>Shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\GrayscalePS.hlsl">
+      <Filter>Shaders\PostProcess</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

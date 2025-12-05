@@ -44,6 +44,13 @@ namespace UnoEngine {
 		gameViewTexture_.Create(graphics, 1280, 720, 3);
 		sceneViewTexture_.Create(graphics, 1280, 720, 4);
 
+		// ポストプロセス出力用テクスチャ (SRVインデックス 5)
+		postProcessOutput_.Create(graphics, 1280, 720, 5);
+
+		// ポストプロセスマネージャー初期化
+		postProcessManager_ = std::make_unique<PostProcessManager>();
+		postProcessManager_->Initialize(graphics, 1280, 720);
+
 		// Scene View用カメラの初期化（Main Cameraとは完全に独立）
 		sceneViewCamera_.SetPerspective(
 			60.0f * 0.0174533f,  // FOV 60度
@@ -678,7 +685,12 @@ namespace UnoEngine {
 			desiredGameViewWidth_ = static_cast<uint32>(imageSize.x);
 			desiredGameViewHeight_ = static_cast<uint32>(imageSize.y);
 
-			ImGui::Image((ImTextureID)gameViewTexture_.GetSRVHandle().ptr, imageSize);
+			// ポストプロセスが有効な場合は出力テクスチャを表示
+			D3D12_GPU_DESCRIPTOR_HANDLE displayHandle = gameViewTexture_.GetSRVHandle();
+			if (postProcessManager_ && postProcessManager_->GetActiveEffect() != PostProcessType::None) {
+				displayHandle = postProcessOutput_.GetSRVHandle();
+			}
+			ImGui::Image((ImTextureID)displayHandle.ptr, imageSize);
 
 			// Playモード時のマウスロック＋FPS視点操作
 			if (editorMode_ == EditorMode::Play) {
@@ -1353,6 +1365,48 @@ namespace UnoEngine {
 					ImGui::SameLine(100.0f);
 					ImGui::SetNextItemWidth(-1);
 					ImGui::DragInt("##Depth", &depth);
+
+					ImGui::Spacing();
+					ImGui::Separator();
+					ImGui::Spacing();
+
+					// Post Processing
+					ImGui::Text(U8("ポストプロセス"));
+					ImGui::Indent(20.0f);
+
+					bool ppEnabled = camComp->IsPostProcessEnabled();
+					if (ImGui::Checkbox(U8("有効##PostProcess"), &ppEnabled)) {
+						camComp->SetPostProcessEnabled(ppEnabled);
+					}
+
+					if (ppEnabled) {
+						int currentEffect = static_cast<int>(camComp->GetPostProcessEffect());
+						ImGui::Text(U8("エフェクト"));
+						ImGui::SameLine(80.0f);
+						ImGui::SetNextItemWidth(-1);
+						if (ImGui::BeginCombo("##PPEffect", PostProcessManager::GetEffectName(currentEffect))) {
+							for (int i = 0; i < PostProcessManager::GetEffectCount(); ++i) {
+								bool isSelected = (currentEffect == i);
+								if (ImGui::Selectable(PostProcessManager::GetEffectName(i), isSelected)) {
+									camComp->SetPostProcessEffect(static_cast<PostProcessType>(i));
+								}
+								if (isSelected) {
+									ImGui::SetItemDefaultFocus();
+								}
+							}
+							ImGui::EndCombo();
+						}
+
+						float intensity = camComp->GetPostProcessIntensity();
+						ImGui::Text(U8("強度"));
+						ImGui::SameLine(80.0f);
+						ImGui::SetNextItemWidth(-1);
+						if (ImGui::SliderFloat("##PPIntensity", &intensity, 0.0f, 1.0f)) {
+							camComp->SetPostProcessIntensity(intensity);
+						}
+					}
+
+					ImGui::Unindent(20.0f);
 				}
 			}
 

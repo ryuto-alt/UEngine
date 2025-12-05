@@ -169,6 +169,7 @@ void Scene::SetupDefaultCamera() {
     cameraComp->SetPerspective(60.0f * 0.0174533f, 16.0f / 9.0f, 0.1f, 1000.0f);
 
     SetActiveCamera(cameraComp->GetCamera());
+    SetActiveCameraComponent(cameraComp);
 }
 
 void Scene::OnUpdate(float deltaTime) {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../Engine/Graphics/RenderTexture.h"
+#include "../../Engine/PostProcess/PostProcessManager.h"
 #include "../../Engine/Core/GameObject.h"
 #include "../../Engine/Core/Camera.h"
 #include "../../Engine/Core/Types.h"
@@ -154,6 +155,10 @@ public:
 
     // Scene View描画前にカメラギズモをDebugRendererに追加
     void PrepareSceneViewGizmos(DebugRenderer* debugRenderer);
+
+    // ポストプロセス
+    PostProcessManager* GetPostProcessManager() { return postProcessManager_.get(); }
+    RenderTexture* GetPostProcessOutputTexture() { return &postProcessOutput_; }
 
 private:
     // 各パネルの描画メソッド
@@ -332,6 +337,10 @@ private:
 
     // カメラFrustum表示フラグ
     bool showCameraFrustum_ = false;
+
+    // ポストプロセスマネージャー
+    std::unique_ptr<PostProcessManager> postProcessManager_;
+    RenderTexture postProcessOutput_;  // ポストプロセス出力用テクスチャ
 
     // レイピッキング（SceneViewでのクリック選択）
     GameObject* PickObjectAtScreenPos(float screenX, float screenY);

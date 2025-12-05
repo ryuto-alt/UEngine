@@ -74,6 +74,32 @@ void GameApplication::OnRender() {
                     skinnedItems,
                     false  // デバッグ描画無効
                 );
+
+                // CameraComponentからポストプロセス設定を取得して適用
+                // Main Cameraを持つGameObjectからCameraComponentを探す
+                CameraComponent* camComp = nullptr;
+                for (auto& obj : scene->GetGameObjects()) {
+                    auto* cc = obj->GetComponent<CameraComponent>();
+                    if (cc && cc->IsMain()) {
+                        camComp = cc;
+                        break;
+                    }
+                }
+                if (camComp && camComp->IsPostProcessEnabled() && 
+                    camComp->GetPostProcessEffect() != PostProcessType::None) {
+                    auto* postProcessMgr = editorUI->GetPostProcessManager();
+                    auto* postProcessOutput = editorUI->GetPostProcessOutputTexture();
+                    if (postProcessMgr && postProcessOutput) {
+                        postProcessMgr->SetActiveEffect(camComp->GetPostProcessEffect());
+                        postProcessMgr->Apply(graphics_.get(), gameViewTex, postProcessOutput);
+                    }
+                } else {
+                    // ポストプロセス無効時はエフェクトをNoneに設定
+                    auto* postProcessMgr = editorUI->GetPostProcessManager();
+                    if (postProcessMgr) {
+                        postProcessMgr->SetActiveEffect(PostProcessType::None);
+                    }
+                }
             }
 
             // Scene Viewに描画（EditorCameraを使用）

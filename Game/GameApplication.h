@@ -4,6 +4,7 @@
 #include "../Engine/Animation/AnimationSystem.h"
 #include "../Engine/Audio/AudioSystem.h"
 #include "../Engine/Resource/ResourceManager.h"
+#include "../Engine/PostProcess/PostProcessType.h"
 #include "Systems/CameraSystem.h"
 #include <memory>
 

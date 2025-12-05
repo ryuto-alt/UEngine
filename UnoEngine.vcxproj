@@ -252,6 +252,9 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClCompile Include="Engine\Particle\ParticleSerializer.cpp" />
     <ClCompile Include="Engine\Editor\CurveEditor.cpp" />
     <ClCompile Include="Engine\Editor\ParticleEditor.cpp" />
+    <ClCompile Include="Engine\PostProcess\PostProcessPipeline.cpp" />
+    <ClCompile Include="Engine\PostProcess\PostProcessManager.cpp" />
+    <ClCompile Include="Engine\PostProcess\GrayscalePostProcess.cpp" />
     <ClCompile Include="external\lua\src\lapi.c">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
@@ -465,6 +468,11 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClInclude Include="Engine\Particle\ParticleSerializer.h" />
     <ClInclude Include="Engine\Editor\CurveEditor.h" />
     <ClInclude Include="Engine\Editor\ParticleEditor.h" />
+    <ClInclude Include="Engine\PostProcess\PostProcess.h" />
+    <ClInclude Include="Engine\PostProcess\PostProcessType.h" />
+    <ClInclude Include="Engine\PostProcess\PostProcessPipeline.h" />
+    <ClInclude Include="Engine\PostProcess\PostProcessManager.h" />
+    <ClInclude Include="Engine\PostProcess\GrayscalePostProcess.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -583,6 +591,22 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Particle\ParticleProceduralPS.hlsl">
+      <ShaderType>Pixel</ShaderType>
+      <ShaderModel>6.5</ShaderModel>
+      <EntryPointName>main</EntryPointName>
+      <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Zi /Qembed_debug %(AdditionalOptions)</AdditionalOptions>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\FullscreenVS.hlsl">
+      <ShaderType>Vertex</ShaderType>
+      <ShaderModel>6.5</ShaderModel>
+      <EntryPointName>main</EntryPointName>
+      <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Zi /Qembed_debug %(AdditionalOptions)</AdditionalOptions>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\GrayscalePS.hlsl">
       <ShaderType>Pixel</ShaderType>
       <ShaderModel>6.5</ShaderModel>
       <EntryPointName>main</EntryPointName>

@@ -2,6 +2,7 @@
 
 #include "GameObject.h"
 #include "Camera.h"
+#include "CameraComponent.h"
 #include "../Rendering/RenderView.h"
 #include <vector>
 #include <memory>
@@ -37,6 +38,9 @@ public:
     Camera* GetActiveCamera() const { return activeCamera_; }
     void SetActiveCamera(Camera* camera) { activeCamera_ = camera; }
 
+    CameraComponent* GetActiveCameraComponent() const { return activeCameraComponent_; }
+    void SetActiveCameraComponent(CameraComponent* camComp) { activeCameraComponent_ = camComp; }
+
     Application* GetApplication() const { return app_; }
     void SetApplication(Application* app) { app_ = app; }
 
@@ -63,6 +67,7 @@ private:
     std::vector<std::unique_ptr<GameObject>> gameObjects_;
     std::vector<GameObject*> pendingDestroy_;
     Camera* activeCamera_ = nullptr;
+    CameraComponent* activeCameraComponent_ = nullptr;
     Application* app_ = nullptr;
     bool isLoaded_ = false;
     GameObject* mainCamera_ = nullptr;

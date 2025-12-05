@@ -267,6 +267,14 @@ void EditorCamera::SaveSettings(const std::string& filepath) {
     settings["rotateSpeed"] = rotateSpeed_;
     settings["scrollSpeed"] = scrollSpeed_;
 
+    // カメラの位置と向きを保存
+    if (camera_) {
+        Vector3 pos = camera_->GetPosition();
+        settings["position"] = { pos.GetX(), pos.GetY(), pos.GetZ() };
+        settings["yaw"] = yaw_;
+        settings["pitch"] = pitch_;
+    }
+
     std::ofstream file(filepath);
     if (file.is_open()) {
         file << settings.dump(4);
@@ -289,6 +297,26 @@ void EditorCamera::LoadSettings(const std::string& filepath) {
         }
         if (settings.contains("scrollSpeed")) {
             scrollSpeed_ = settings["scrollSpeed"].get<float>();
+        }
+
+        // カメラの位置と向きを復元
+        if (settings.contains("position") && camera_) {
+            auto& pos = settings["position"];
+            camera_->SetPosition(Vector3(pos[0].get<float>(), pos[1].get<float>(), pos[2].get<float>()));
+        }
+        if (settings.contains("yaw")) {
+            yaw_ = settings["yaw"].get<float>();
+        }
+        if (settings.contains("pitch")) {
+            pitch_ = settings["pitch"].get<float>();
+        }
+
+        // yaw/pitchからカメラの向きを再計算（HandleMouseRotationと同じ方法）
+        if (camera_ && settings.contains("yaw") && settings.contains("pitch")) {
+            Quaternion rotY = Quaternion::RotationAxis(Vector3::UnitY(), yaw_);
+            Quaternion rotX = Quaternion::RotationAxis(Vector3::UnitX(), pitch_);
+            Quaternion rot = rotY * rotX;
+            camera_->SetRotation(rot);
         }
     } catch (...) {
         // JSONパースエラーの場合は無視（デフォルト値を使用）

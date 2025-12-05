@@ -66,6 +66,9 @@
                     "isMain": true,
                     "isOrthographic": false,
                     "nearClip": 0.10000000149011612,
+                    "postProcessEffect": 1,
+                    "postProcessEnabled": true,
+                    "postProcessIntensity": 1.0,
                     "priority": 0,
                     "type": "CameraComponent"
                 }

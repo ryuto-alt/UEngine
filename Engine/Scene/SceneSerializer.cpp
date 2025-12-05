@@ -6,6 +6,7 @@
 #include "../Audio/AudioSource.h"
 #include "../Audio/AudioListener.h"
 #include "../Core/CameraComponent.h"
+#include "../PostProcess/PostProcessType.h"
 #include <fstream>
 #include <iostream>
 
@@ -232,6 +233,9 @@ json SceneSerializer::SerializeComponent(const Component& component) {
         comp["isOrthographic"] = camera->IsOrthographic();
         comp["priority"] = camera->GetPriority();
         comp["isMain"] = camera->IsMain();
+        comp["postProcessEnabled"] = camera->IsPostProcessEnabled();
+        comp["postProcessEffect"] = static_cast<int>(camera->GetPostProcessEffect());
+        comp["postProcessIntensity"] = camera->GetPostProcessIntensity();
         return comp;
     }
 
@@ -326,6 +330,15 @@ void SceneSerializer::DeserializeComponent(const json& json, GameObject& gameObj
         }
         if (json.contains("isMain")) {
             camera->SetMain(json["isMain"].get<bool>());
+        }
+        if (json.contains("postProcessEnabled")) {
+            camera->SetPostProcessEnabled(json["postProcessEnabled"].get<bool>());
+        }
+        if (json.contains("postProcessEffect")) {
+            camera->SetPostProcessEffect(static_cast<PostProcessType>(json["postProcessEffect"].get<int>()));
+        }
+        if (json.contains("postProcessIntensity")) {
+            camera->SetPostProcessIntensity(json["postProcessIntensity"].get<float>());
         }
     }
 }

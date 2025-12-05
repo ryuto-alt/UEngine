@@ -159,10 +159,11 @@ void ProcessNode(const aiNode* node, const aiScene* scene,
                  GraphicsDevice* graphics, ID3D12GraphicsCommandList* commandList,
                  const std::string& baseDirectory,
                  std::vector<Mesh>& outMeshes) {
+    Logger::Debug("[StaticModelImporter] ノード '{}' 処理中 (メッシュ: {}, 子ノード: {})", 
+                  node->mName.C_Str(), node->mNumMeshes, node->mNumChildren);
+    
     for (uint32 i = 0; i < node->mNumMeshes; ++i) {
         const aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        // 静的モデルはボーンを持たないメッシュを処理
-        // ボーンを持つメッシュもスキニング無しで静的モデルとして処理可能
         outMeshes.push_back(ProcessStaticMesh(mesh, scene, graphics, commandList, baseDirectory));
     }
 
@@ -199,9 +200,13 @@ StaticModelData StaticModelImporter::Load(GraphicsDevice* graphics, ID3D12Graphi
 
     StaticModelData result;
 
+    Logger::Info("[StaticModelImporter] シーンのメッシュ総数: {}", scene->mNumMeshes);
+    
     ProcessNode(scene->mRootNode, scene, graphics, commandList,
                baseDirectory, result.meshes);
 
+    Logger::Info("[StaticModelImporter] 読み込み完了: メッシュ {}個", result.meshes.size());
+    
     return result;
 }
 

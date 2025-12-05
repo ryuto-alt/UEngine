@@ -45,14 +45,14 @@
                 ],
                 "rotation": [
                     0.0,
+                    0.7071067690849304,
                     0.0,
-                    0.0,
-                    1.0
+                    0.7071067690849304
                 ],
                 "scale": [
-                    0.10000000149011612,
-                    0.10000000149011612,
-                    0.10000000149011612
+                    0.05000000074505806,
+                    0.05000000074505806,
+                    0.05000000074505806
                 ]
             }
         },
@@ -70,7 +70,6 @@
                     "isOrthographic": false,
                     "nearClip": 0.10000000149011612,
                     "postProcessEffects": [
-                        1,
                         2,
                         3
                     ],
@@ -87,8 +86,8 @@
             "name": "Camera",
             "transform": {
                 "position": [
-                    0.2577941417694092,
-                    3.396432399749756,
+                    3.257794141769409,
+                    1.3964323997497559,
                     9.95559024810791
                 ],
                 "rotation": [
@@ -96,6 +95,64 @@
                     0.9999998807907104,
                     -0.0,
                     -1.1920928955078125e-07
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            }
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "modelPath": "assets/model/ground/ground.gltf",
+                    "type": "MeshRenderer"
+                }
+            ],
+            "layer": 1,
+            "name": "ground",
+            "transform": {
+                "position": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            }
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "modelPath": "assets/model/stageWall/stageWall.gltf",
+                    "type": "MeshRenderer"
+                }
+            ],
+            "layer": 1,
+            "name": "stageWall",
+            "transform": {
+                "position": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
                 ],
                 "scale": [
                     1.0,

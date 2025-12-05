@@ -145,11 +145,8 @@ void Scene::LoadSceneFromFile(const std::string& filepath) {
                 resourceManager->EndUpload();
 
                 if (modelData && !modelData->meshes.empty()) {
-                    meshRenderer->SetMesh(&modelData->meshes[0]);
-                    if (modelData->meshes[0].HasMaterial()) {
-                        meshRenderer->SetMaterial(const_cast<Material*>(modelData->meshes[0].GetMaterial()));
-                    }
-                    Logger::Info("[シーン] 静的モデル再ロード完了: {}", modelPath);
+                    meshRenderer->SetModel(modelData);
+                    Logger::Info("[シーン] 静的モデル再ロード完了: {} (メッシュ: {}個)", modelPath, modelData->meshes.size());
                 } else {
                     Logger::Warning("[シーン] 静的モデル再ロード失敗: {}", modelPath);
                 }

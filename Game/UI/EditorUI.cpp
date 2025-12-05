@@ -3118,14 +3118,8 @@ namespace UnoEngine {
 				// MeshRendererを追加
 				auto* renderer = newObject->AddComponent<MeshRenderer>();
 				renderer->SetModelPath(modelPath);  // パスを設定（シリアライズ用）
-				// 静的モデルの最初のメッシュを設定
-				if (!staticModelData->meshes.empty()) {
-					renderer->SetMesh(&staticModelData->meshes[0]);
-					if (staticModelData->meshes[0].HasMaterial()) {
-						renderer->SetMaterial(const_cast<Material*>(staticModelData->meshes[0].GetMaterial()));
-					}
-				}
-				consoleMessages_.push_back("[Editor] Loaded as static model");
+				renderer->SetModel(staticModelData);  // 全メッシュを含むモデルデータを設定
+				consoleMessages_.push_back("[Editor] Loaded as static model (" + std::to_string(staticModelData->meshes.size()) + " meshes)");
 			}
 
 			// 選択状態にする

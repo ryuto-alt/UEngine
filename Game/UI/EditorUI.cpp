@@ -164,6 +164,9 @@ namespace UnoEngine {
 			particleEditor_->Draw();
 		}
 
+		// ビルドダイアログ描画
+		RenderBuildDialog();
+
 		// エディタカメラの更新（Edit/Pauseモードのみ）
 		if (editorMode_ != EditorMode::Play) {
 			float deltaTime = ImGui::GetIO().DeltaTime;
@@ -338,6 +341,15 @@ namespace UnoEngine {
 					dockingLayoutInitialized_ = false;
 				}
 
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu(U8("ビルド"))) {
+				if (ImGui::MenuItem(U8("ゲームをエクスポート..."), "Ctrl+Shift+B")) {
+					showBuildDialog_ = true;
+				}
+				ImGui::Separator();
+				ImGui::TextDisabled(U8("出力先を選択してGame.exeを生成します"));
 				ImGui::EndMenu();
 			}
 
@@ -3512,6 +3524,135 @@ namespace UnoEngine {
 				}
 			}
 		}
+	}
+
+	void EditorUI::RenderBuildDialog() {
+		if (!showBuildDialog_) return;
+
+		ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
+		if (ImGui::Begin(U8("ゲームをエクスポート"), &showBuildDialog_)) {
+
+			ImGui::TextWrapped(U8("ゲームをスタンドアロン実行ファイルとしてエクスポートします。"));
+			ImGui::Separator();
+			ImGui::Spacing();
+
+			// 出力先パス
+			ImGui::Text(U8("出力先フォルダ:"));
+			static char outputPathBuf[512] = "";
+			if (exportSettings_.outputPath.empty() && outputPathBuf[0] == '\0') {
+				// デフォルトパスを設定
+				std::filesystem::path defaultPath = std::filesystem::current_path() / "Build";
+				wcstombs_s(nullptr, outputPathBuf, sizeof(outputPathBuf), defaultPath.wstring().c_str(), _TRUNCATE);
+			} else if (!exportSettings_.outputPath.empty()) {
+				wcstombs_s(nullptr, outputPathBuf, sizeof(outputPathBuf), exportSettings_.outputPath.c_str(), _TRUNCATE);
+			}
+
+			ImGui::SetNextItemWidth(-100);
+			ImGui::InputText("##OutputPath", outputPathBuf, sizeof(outputPathBuf));
+			ImGui::SameLine();
+			if (ImGui::Button(U8("参照..."))) {
+				std::wstring selectedPath = GameExporter::ShowFolderDialog(nullptr, L"出力先フォルダを選択");
+				if (!selectedPath.empty()) {
+					exportSettings_.outputPath = selectedPath;
+					wcstombs_s(nullptr, outputPathBuf, sizeof(outputPathBuf), selectedPath.c_str(), _TRUNCATE);
+				}
+			}
+
+			ImGui::Spacing();
+
+			// ゲーム名
+			ImGui::Text(U8("ゲーム名:"));
+			static char gameNameBuf[128] = "Game";
+			ImGui::SetNextItemWidth(-1);
+			ImGui::InputText("##GameName", gameNameBuf, sizeof(gameNameBuf));
+
+			ImGui::Spacing();
+			ImGui::Separator();
+			ImGui::Spacing();
+
+			// アセット設定
+			ImGui::Text(U8("含めるアセット:"));
+			ImGui::Checkbox(U8("シェーダー"), &exportSettings_.copyShaders);
+			ImGui::Checkbox(U8("シーン"), &exportSettings_.copyScenes);
+			ImGui::Checkbox(U8("モデル"), &exportSettings_.copyModels);
+			ImGui::Checkbox(U8("テクスチャ"), &exportSettings_.copyTextures);
+			ImGui::Checkbox(U8("オーディオ"), &exportSettings_.copyAudio);
+
+			ImGui::Spacing();
+			ImGui::Separator();
+			ImGui::Spacing();
+
+			// ステータスメッセージ
+			if (!buildStatusMessage_.empty()) {
+				if (buildStatusMessage_.find("成功") != std::string::npos ||
+					buildStatusMessage_.find("完了") != std::string::npos) {
+					ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.2f, 1.0f), "%s", buildStatusMessage_.c_str());
+				} else if (buildStatusMessage_.find("失敗") != std::string::npos ||
+						   buildStatusMessage_.find("エラー") != std::string::npos) {
+					ImGui::TextColored(ImVec4(0.8f, 0.2f, 0.2f, 1.0f), "%s", buildStatusMessage_.c_str());
+				} else {
+					ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.0f), "%s", buildStatusMessage_.c_str());
+				}
+				ImGui::Spacing();
+			}
+
+			// ビルドログ（エラー時に表示）
+			const auto& buildLog = gameExporter_.GetBuildLog();
+			if (!buildLog.empty() && buildStatusMessage_.find("失敗") != std::string::npos) {
+				if (ImGui::CollapsingHeader(U8("ビルドログ"))) {
+					if (ImGui::Button(U8("ログをコピー"))) {
+						ImGui::SetClipboardText(buildLog.c_str());
+					}
+					ImGui::BeginChild("BuildLog", ImVec2(0, 150), ImGuiChildFlags_Borders);
+					ImGui::TextWrapped("%s", buildLog.c_str());
+					ImGui::EndChild();
+				}
+			}
+
+			// ビルドボタン
+			ImGui::BeginDisabled(buildInProgress_);
+			if (ImGui::Button(U8("エクスポート"), ImVec2(120, 0))) {
+				// 設定を更新
+				std::wstring wOutputPath(outputPathBuf, outputPathBuf + strlen(outputPathBuf));
+				exportSettings_.outputPath = wOutputPath;
+
+				std::wstring wGameName(gameNameBuf, gameNameBuf + strlen(gameNameBuf));
+				exportSettings_.gameName = wGameName;
+
+				buildInProgress_ = true;
+				buildStatusMessage_ = U8("エクスポート中...");
+
+				// エクスポート実行
+				bool success = gameExporter_.Export(exportSettings_,
+					[this](const ExportProgress& progress) {
+						buildStatusMessage_ = progress.currentTask;
+					}
+				);
+
+				buildInProgress_ = false;
+				if (success) {
+					buildStatusMessage_ = U8("エクスポート完了!");
+					consoleMessages_.push_back("[Build] Export successful: " + std::string(outputPathBuf));
+				} else {
+					buildStatusMessage_ = U8("エクスポート失敗: ") + gameExporter_.GetLastError();
+					consoleMessages_.push_back("[Build] Export failed: " + gameExporter_.GetLastError());
+				}
+			}
+			ImGui::EndDisabled();
+
+			ImGui::SameLine();
+			if (ImGui::Button(U8("閉じる"), ImVec2(120, 0))) {
+				showBuildDialog_ = false;
+			}
+
+			ImGui::SameLine();
+			if (ImGui::Button(U8("フォルダを開く"), ImVec2(120, 0))) {
+				if (!exportSettings_.outputPath.empty()) {
+					ShellExecuteW(nullptr, L"open", exportSettings_.outputPath.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+				}
+			}
+		}
+		ImGui::End();
 	}
 
 } // namespace UnoEngine

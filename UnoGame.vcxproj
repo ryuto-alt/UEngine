@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}</ProjectGuid>
+    <RootNamespace>UnoGame</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(ProjectDir)build\Debug\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\Debug\UnoGame\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(ProjectDir)build\Release\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\Release\UnoGame\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NOMINMAX;UNO_GAME_BUILD;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)external\imgui;$(ProjectDir)external\imgui\backends;$(ProjectDir)external\assimp\include;$(ProjectDir)external\lua\src;$(ProjectDir)external;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)external\assimp\lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc145-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy "$(ProjectDir)assets" "$(OutDir)assets" /E /I /Y /D
+xcopy "$(ProjectDir)external\assimp\bin\Debug\*.dll" "$(OutDir)" /Y /D</Command>
+      <Message>Copying assets folder and assimp DLL to output directory...</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NOMINMAX;UNO_GAME_BUILD;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)external\imgui;$(ProjectDir)external\imgui\backends;$(ProjectDir)external\assimp\include;$(ProjectDir)external\lua\src;$(ProjectDir)external;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)external\assimp\lib\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc145-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy "$(ProjectDir)assets" "$(OutDir)assets" /E /I /Y /D
+xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Command>
+      <Message>Copying assets folder and assimp DLL to output directory...</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <!-- PCH -->
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <!-- Game Entry Point (エディタなし) -->
+    <ClCompile Include="Game\GameMain.cpp" />
+    <!-- Engine Core -->
+    <ClCompile Include="Engine\Core\Application.cpp" />
+    <ClCompile Include="Engine\Core\Camera.cpp" />
+    <ClCompile Include="Engine\Core\CameraComponent.cpp" />
+    <ClCompile Include="Engine\Core\Transform.cpp" />
+    <ClCompile Include="Engine\Core\GameObject.cpp" />
+    <ClCompile Include="Engine\Core\Scene.cpp" />
+    <ClCompile Include="Engine\Core\SceneManager.cpp" />
+    <ClCompile Include="Engine\Scene\SceneSerializer.cpp" />
+    <ClCompile Include="Engine\Core\OrbitController.cpp" />
+    <ClCompile Include="Engine\Core\Logger.cpp" />
+    <!-- Rendering -->
+    <ClCompile Include="Engine\Rendering\RenderSystem.cpp" />
+    <ClCompile Include="Engine\Rendering\LightManager.cpp" />
+    <ClCompile Include="Engine\Rendering\Renderer.cpp" />
+    <ClCompile Include="Engine\Rendering\SkinnedMeshRenderer.cpp" />
+    <ClCompile Include="Engine\Rendering\DebugRenderer.cpp" />
+    <!-- Graphics -->
+    <ClCompile Include="Engine\Graphics\GraphicsDevice.cpp" />
+    <ClCompile Include="Engine\Window\Window.cpp" />
+    <ClCompile Include="Engine\Graphics\Shader.cpp" />
+    <ClCompile Include="Engine\Graphics\Pipeline.cpp" />
+    <ClCompile Include="Engine\Graphics\VertexBuffer.cpp" />
+    <ClCompile Include="Engine\Graphics\IndexBuffer.cpp" />
+    <ClCompile Include="Engine\Graphics\Material.cpp" />
+    <ClCompile Include="Engine\Graphics\Mesh.cpp" />
+    <ClCompile Include="Engine\Graphics\Sprite.cpp" />
+    <ClCompile Include="Engine\Graphics\SpritePipeline.cpp" />
+    <ClCompile Include="Engine\Graphics\Texture2D.cpp" />
+    <ClCompile Include="Engine\Graphics\RenderTexture.cpp" />
+    <ClCompile Include="Engine\Graphics\DirectionalLight.cpp" />
+    <ClCompile Include="Engine\Graphics\MeshRenderer.cpp" />
+    <ClCompile Include="Engine\Graphics\DirectionalLightComponent.cpp" />
+    <ClCompile Include="Engine\Graphics\SkinnedMesh.cpp" />
+    <ClCompile Include="Engine\Graphics\SkinnedPipeline.cpp" />
+    <ClCompile Include="Engine\Graphics\DebugLinePipeline.cpp" />
+    <ClCompile Include="Engine\Graphics\InfiniteGridPipeline.cpp" />
+    <!-- Math -->
+    <ClCompile Include="Engine\Math\Quaternion.cpp" />
+    <!-- Input -->
+    <ClCompile Include="Engine\Input\Keyboard.cpp" />
+    <ClCompile Include="Engine\Input\Mouse.cpp" />
+    <ClCompile Include="Engine\Input\InputManager.cpp" />
+    <!-- Resource -->
+    <ClCompile Include="Engine\Resource\ModelImporter.cpp" />
+    <ClCompile Include="Engine\Resource\ResourceLoader.cpp" />
+    <ClCompile Include="Engine\Resource\SkinnedModelImporter.cpp" />
+    <ClCompile Include="Engine\Resource\StaticModelImporter.cpp" />
+    <ClCompile Include="Engine\Resource\ResourceManager.cpp" />
+    <!-- Game (エディタ関連以外) -->
+    <ClCompile Include="Game\GameApplication.cpp" />
+    <ClCompile Include="Game\Components\PlayerController.cpp" />
+    <ClCompile Include="Game\Systems\CameraSystem.cpp" />
+    <!-- Animation -->
+    <ClCompile Include="Engine\Animation\Skeleton.cpp" />
+    <ClCompile Include="Engine\Animation\AnimationClip.cpp" />
+    <ClCompile Include="Engine\Animation\AnimationState.cpp" />
+    <ClCompile Include="Engine\Animation\Animator.cpp" />
+    <ClCompile Include="Engine\Animation\AnimatorComponent.cpp" />
+    <ClCompile Include="Engine\Animation\AnimationSystem.cpp" />
+    <!-- Systems -->
+    <ClCompile Include="Engine\Systems\SystemManager.cpp" />
+    <!-- Audio -->
+    <ClCompile Include="Engine\Audio\AudioSystem.cpp" />
+    <ClCompile Include="Engine\Audio\AudioClip.cpp" />
+    <ClCompile Include="Engine\Audio\AudioSource.cpp" />
+    <ClCompile Include="Engine\Audio\AudioListener.cpp" />
+    <!-- Scripting -->
+    <ClCompile Include="Engine\Scripting\LuaState.cpp" />
+    <ClCompile Include="Engine\Scripting\LuaScriptComponent.cpp" />
+    <!-- Particle -->
+    <ClCompile Include="Engine\Particle\ParticleEmitter.cpp" />
+    <ClCompile Include="Engine\Particle\ParticleSystem.cpp" />
+    <ClCompile Include="Engine\Particle\ParticleSerializer.cpp" />
+    <!-- Editor (ParticleEditorはApplicationから参照される) -->
+    <ClCompile Include="Engine\Editor\CurveEditor.cpp" />
+    <ClCompile Include="Engine\Editor\ParticleEditor.cpp" />
+    <!-- PostProcess -->
+    <ClCompile Include="Engine\PostProcess\PostProcessPipeline.cpp" />
+    <ClCompile Include="Engine\PostProcess\PostProcessManager.cpp" />
+    <ClCompile Include="Engine\PostProcess\GrayscalePostProcess.cpp" />
+    <ClCompile Include="Engine\PostProcess\VignettePostProcess.cpp" />
+    <ClCompile Include="Engine\PostProcess\FisheyePostProcess.cpp" />
+    <!-- UI (ImGui - ゲームでも使う可能性あり) -->
+    <ClCompile Include="Engine\UI\ImGuiManager.cpp" />
+    <ClCompile Include="Engine\UI\imgui_toggle.cpp" />
+    <ClCompile Include="Engine\UI\imgui_toggle_presets.cpp" />
+    <ClCompile Include="Engine\UI\imgui_toggle_renderer.cpp" />
+    <ClCompile Include="Engine\UI\imgui_toggle_palette.cpp" />
+    <!-- Lua -->
+    <ClCompile Include="external\lua\src\lapi.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lauxlib.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lbaselib.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lcode.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lcorolib.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lctype.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\ldblib.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\ldebug.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\ldo.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\ldump.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lfunc.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lgc.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\linit.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\liolib.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\llex.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lmathlib.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lmem.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\loadlib.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lobject.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lopcodes.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\loslib.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lparser.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lstate.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lstring.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lstrlib.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\ltable.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\ltablib.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\ltm.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lundump.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lutf8lib.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lvm.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\lua\src\lzio.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <!-- ImGui -->
+    <ClCompile Include="external\imgui\imgui.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\imgui\imgui_draw.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\imgui\imgui_tables.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\imgui\imgui_widgets.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\imgui\imgui_demo.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\imgui\backends\imgui_impl_win32.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\imgui\backends\imgui_impl_dx12.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <!-- Headers省略（必要に応じて追加） -->
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="packages\directxtex_desktop_win10.2025.10.28.1\build\native\directxtex_desktop_win10.targets" Condition="Exists('packages\directxtex_desktop_win10.2025.10.28.1\build\native\directxtex_desktop_win10.targets')" />
+  </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>このプロジェクトは、このコンピューター上にない NuGet パッケージを参照しています。それらのパッケージをダウンロードするには、[NuGet パッケージの復元] を使用します。詳細については、http://go.microsoft.com/fwlink/?LinkID=322105 を参照してください。見つからないファイルは {0} です。</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('packages\directxtex_desktop_win10.2025.10.28.1\build\native\directxtex_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\directxtex_desktop_win10.2025.10.28.1\build\native\directxtex_desktop_win10.targets'))" />
+  </Target>
+</Project>

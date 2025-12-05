@@ -257,6 +257,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClCompile Include="Engine\PostProcess\GrayscalePostProcess.cpp" />
     <ClCompile Include="Engine\PostProcess\VignettePostProcess.cpp" />
     <ClCompile Include="Engine\PostProcess\FisheyePostProcess.cpp" />
+    <ClCompile Include="Game\Build\GameExporter.cpp" />
     <ClCompile Include="external\lua\src\lapi.c">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
@@ -477,6 +478,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClInclude Include="Engine\PostProcess\GrayscalePostProcess.h" />
     <ClInclude Include="Engine\PostProcess\VignettePostProcess.h" />
     <ClInclude Include="Engine\PostProcess\FisheyePostProcess.h" />
+    <ClInclude Include="Game\Build\GameExporter.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

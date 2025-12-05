@@ -11,6 +11,7 @@
 #include "../../Engine/Scripting/LuaScriptComponent.h"
 #include "EditorCamera.h"
 #include "GizmoSystem.h"
+#include "../Build/GameExporter.h"
 #include <vector>
 #include <string>
 #include <stack>
@@ -190,6 +191,9 @@ private:
     // ホットキー処理
     void ProcessHotkeys();
 
+    // ビルドダイアログ
+    void RenderBuildDialog();
+
 private:
     // RenderTexture
     RenderTexture gameViewTexture_;
@@ -358,6 +362,13 @@ private:
     // レイピッキング（SceneViewでのクリック選択）
     GameObject* PickObjectAtScreenPos(float screenX, float screenY);
     void HandleSceneViewPicking();
+
+    // ビルド/エクスポート関連
+    bool showBuildDialog_ = false;
+    GameExporter gameExporter_;
+    ExportSettings exportSettings_;
+    std::string buildStatusMessage_;
+    bool buildInProgress_ = false;
 };
 
 } // namespace UnoEngine

@@ -31,6 +31,7 @@ protected:
         auto scene = MakeUnique<Scene>();
         GetSceneManager()->LoadScene(std::move(scene));
 
+#ifdef _DEBUG
         // Set close request callback for save confirmation
         GetWindow()->SetCloseRequestCallback([this]() -> bool {
             auto* scene = GetSceneManager()->GetActiveScene();
@@ -57,6 +58,7 @@ protected:
                 return false; // Cancel
             }
         });
+#endif
     }
 
     void OnUpdate(float deltaTime) override {

@@ -6,6 +6,7 @@
 #include "GrayscalePostProcess.h"
 #include "VignettePostProcess.h"
 #include "FisheyePostProcess.h"
+#include "PS1PostProcess.h"
 #include "../Graphics/RenderTexture.h"
 #include <memory>
 #include <vector>
@@ -48,6 +49,7 @@ public:
     GrayscalePostProcess* GetGrayscale() { return m_grayscale.get(); }
     VignettePostProcess* GetVignette() { return m_vignette.get(); }
     FisheyePostProcess* GetFisheye() { return m_fisheye.get(); }
+    PS1PostProcess* GetPS1() { return m_ps1.get(); }
 
 private:
     PostProcess* GetEffectByType(PostProcessType type);
@@ -57,6 +59,7 @@ private:
     std::unique_ptr<GrayscalePostProcess> m_grayscale;
     std::unique_ptr<VignettePostProcess> m_vignette;
     std::unique_ptr<FisheyePostProcess> m_fisheye;
+    std::unique_ptr<PS1PostProcess> m_ps1;
 
     // Ping-Pong バッファ（チェーン処理用）
     std::unique_ptr<RenderTexture> m_intermediateA;

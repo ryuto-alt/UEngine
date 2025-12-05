@@ -258,6 +258,13 @@ json SceneSerializer::SerializeComponent(const Component& component) {
         const auto& grayscaleParams = camera->GetGrayscaleParams();
         comp["grayscaleIntensity"] = grayscaleParams.intensity;
 
+        // PS1 params
+        const auto& ps1Params = camera->GetPS1Params();
+        comp["ps1ColorDepth"] = ps1Params.colorDepth;
+        comp["ps1ResolutionScale"] = ps1Params.resolutionScale;
+        comp["ps1DitherEnabled"] = ps1Params.ditherEnabled;
+        comp["ps1DitherStrength"] = ps1Params.ditherStrength;
+
         return comp;
     }
 
@@ -401,6 +408,22 @@ void SceneSerializer::DeserializeComponent(const json& json, GameObject& gameObj
             grayscaleParams.intensity = json["grayscaleIntensity"].get<float>();
         }
         camera->SetGrayscaleParams(grayscaleParams);
+
+        // PS1 params
+        PS1Params ps1Params;
+        if (json.contains("ps1ColorDepth")) {
+            ps1Params.colorDepth = json["ps1ColorDepth"].get<std::uint32_t>();
+        }
+        if (json.contains("ps1ResolutionScale")) {
+            ps1Params.resolutionScale = json["ps1ResolutionScale"].get<float>();
+        }
+        if (json.contains("ps1DitherEnabled")) {
+            ps1Params.ditherEnabled = json["ps1DitherEnabled"].get<bool>();
+        }
+        if (json.contains("ps1DitherStrength")) {
+            ps1Params.ditherStrength = json["ps1DitherStrength"].get<float>();
+        }
+        camera->SetPS1Params(ps1Params);
     }
 }
 

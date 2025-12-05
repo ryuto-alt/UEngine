@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 namespace UnoEngine {
 
 enum class PostProcessType {
@@ -7,6 +9,7 @@ enum class PostProcessType {
     Grayscale,
     Vignette,
     Fisheye,
+    PS1,
     Count
 };
 
@@ -16,6 +19,7 @@ inline const char* PostProcessTypeToString(PostProcessType type) {
         case PostProcessType::Grayscale: return "Grayscale";
         case PostProcessType::Vignette: return "Vignette";
         case PostProcessType::Fisheye: return "Fisheye";
+        case PostProcessType::PS1: return "PS1";
         default: return "Unknown";
     }
 }
@@ -35,6 +39,13 @@ struct VignetteParams {
 struct FisheyeParams {
     float strength = 0.5f;   // 歪みの強さ (0=なし, 1=強い魚眼)
     float zoom = 1.0f;       // ズーム倍率
+};
+
+struct PS1Params {
+    std::uint32_t colorDepth = 5;   // RGB各チャネルのビット深度 (1-8, PS1は通常5bit)
+    float resolutionScale = 4.0f;   // 解像度低下倍率 (1=等倍, 4=1/4解像度)
+    bool ditherEnabled = true;      // ディザリング有効
+    float ditherStrength = 1.0f;    // ディザリング強度 (0-2)
 };
 
 } // namespace UnoEngine

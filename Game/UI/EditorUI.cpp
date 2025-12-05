@@ -1476,6 +1476,35 @@ namespace UnoEngine {
 										}
 									}
 								}
+								else if (effectType == PostProcessType::PS1) {
+									if (auto* ps1 = postProcessManager_->GetPS1()) {
+										auto& params = ps1->GetParams();
+										ImGui::SetNextItemWidth(-1);
+										int colorDepth = static_cast<int>(params.colorDepth);
+										if (ImGui::SliderInt("##PS1ColorDepth", &colorDepth, 1, 8, U8("色深度: %d bit"))) {
+											params.colorDepth = static_cast<uint32>(colorDepth);
+											camComp->SetPS1Params(params);
+											isDirty_ = true;
+										}
+										ImGui::SetNextItemWidth(-1);
+										if (ImGui::SliderFloat("##PS1ResScale", &params.resolutionScale, 1.0f, 8.0f, U8("解像度: 1/%.1f"))) {
+											camComp->SetPS1Params(params);
+											isDirty_ = true;
+										}
+										ImGui::SetNextItemWidth(-1);
+										if (ImGui::Checkbox(U8("ディザリング##PS1Dither"), &params.ditherEnabled)) {
+											camComp->SetPS1Params(params);
+											isDirty_ = true;
+										}
+										if (params.ditherEnabled) {
+											ImGui::SetNextItemWidth(-1);
+											if (ImGui::SliderFloat("##PS1DitherStr", &params.ditherStrength, 0.0f, 2.0f, U8("強度: %.2f"))) {
+												camComp->SetPS1Params(params);
+												isDirty_ = true;
+											}
+										}
+									}
+								}
 								ImGui::Unindent(20.0f);
 							}
 						}
@@ -2883,6 +2912,10 @@ namespace UnoEngine {
 			if (auto* grayscale = postProcessManager_->GetGrayscale()) {
 				camComp->SetGrayscaleParams(grayscale->GetParams());
 			}
+			// PS1パラメータを同期
+			if (auto* ps1 = postProcessManager_->GetPS1()) {
+				camComp->SetPS1Params(ps1->GetParams());
+			}
 			break;
 		}
 	}
@@ -2907,6 +2940,10 @@ namespace UnoEngine {
 			// Grayscaleパラメータを同期
 			if (auto* grayscale = postProcessManager_->GetGrayscale()) {
 				grayscale->SetParams(camComp->GetGrayscaleParams());
+			}
+			// PS1パラメータを同期
+			if (auto* ps1 = postProcessManager_->GetPS1()) {
+				ps1->SetParams(camComp->GetPS1Params());
 			}
 			// 最初のCameraComponentを見つけたら終了
 			break;

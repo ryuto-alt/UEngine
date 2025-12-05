@@ -19,6 +19,9 @@ void PostProcessManager::Initialize(GraphicsDevice* graphics, uint32 width, uint
     m_fisheye = std::make_unique<FisheyePostProcess>();
     m_fisheye->Initialize(graphics);
 
+    m_ps1 = std::make_unique<PS1PostProcess>();
+    m_ps1->Initialize(graphics);
+
     m_width = width;
     m_height = height;
 }
@@ -101,6 +104,7 @@ PostProcess* PostProcessManager::GetEffectByType(PostProcessType type) {
         case PostProcessType::Grayscale: return m_grayscale.get();
         case PostProcessType::Vignette: return m_vignette.get();
         case PostProcessType::Fisheye: return m_fisheye.get();
+        case PostProcessType::PS1: return m_ps1.get();
         default: return nullptr;
     }
 }

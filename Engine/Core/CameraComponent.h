@@ -89,6 +89,9 @@ public:
     const GrayscaleParams& GetGrayscaleParams() const { return grayscaleParams_; }
     void SetGrayscaleParams(const GrayscaleParams& params) { grayscaleParams_ = params; }
 
+    const PS1Params& GetPS1Params() const { return ps1Params_; }
+    void SetPS1Params(const PS1Params& params) { ps1Params_ = params; }
+
 private:
     void UpdateCameraTransform();
     void UpdateProjectionMatrix();
@@ -118,6 +121,7 @@ private:
     VignetteParams vignetteParams_;
     FisheyeParams fisheyeParams_;
     GrayscaleParams grayscaleParams_;
+    PS1Params ps1Params_;
 };
 
 } // namespace UnoEngine

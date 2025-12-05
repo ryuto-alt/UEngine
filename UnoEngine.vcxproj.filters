@@ -377,6 +377,9 @@
     <ClCompile Include="Engine\PostProcess\FisheyePostProcess.cpp">
       <Filter>Engine\PostProcess</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\PostProcess\PS1PostProcess.cpp">
+      <Filter>Engine\PostProcess</Filter>
+    </ClCompile>
     <!-- Game -->
     <ClCompile Include="Game\GameApplication.cpp">
       <Filter>Game</Filter>
@@ -818,6 +821,9 @@
     <ClInclude Include="Engine\PostProcess\FisheyePostProcess.h">
       <Filter>Engine\PostProcess</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\PostProcess\PS1PostProcess.h">
+      <Filter>Engine\PostProcess</Filter>
+    </ClInclude>
     <!-- Game -->
     <ClInclude Include="Game\GameApplication.h">
       <Filter>Game</Filter>
@@ -925,6 +931,9 @@
       <Filter>Shaders\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\PostProcess\FisheyePS.hlsl">
+      <Filter>Shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\PS1PS.hlsl">
       <Filter>Shaders\PostProcess</Filter>
     </FxCompile>
   </ItemGroup>

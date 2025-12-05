@@ -28,8 +28,10 @@ struct Transform3D {
         // カメラ回転適用
         float viewX = x * cosCam - z * sinCam;
         float viewZ = x * sinCam + z * cosCam;
-        float viewY = y * cosPitch - viewZ * sinPitch;
-        float finalZ = y * sinPitch + viewZ * cosPitch;
+        
+        // ピッチ回転（正のピッチで上から見下ろす）
+        float viewY = y * cosPitch + viewZ * sinPitch;
+        float finalZ = -y * sinPitch + viewZ * cosPitch;
 
         // 透視投影
         float depth = finalZ + orbitDistance;
@@ -50,9 +52,9 @@ struct Transform3D {
         float sinPitch = std::sin(camPitch);
 
         float viewZ = x * sinCam + z * cosCam;
-        return y * sinPitch + viewZ * cosPitch;
+        return -y * sinPitch + viewZ * cosPitch;
     }
-};
+};;
 
 ParticleEditor::ParticleEditor() = default;
 ParticleEditor::~ParticleEditor() = default;
@@ -90,16 +92,16 @@ void ParticleEditor::Draw() {
     // 左右分割レイアウト
     ImGui::Columns(2, "particle_editor_columns");
 
-    // 左側: プレビュー + エミッターリスト
-    if (showPreview_) {
-        DrawPreviewWindow();
-    }
+    // 左側: エミッターリスト + プロパティ
     DrawEmitterList();
+    DrawEmitterProperties();
 
     ImGui::NextColumn();
 
-    // 右側: プロパティ
-    DrawEmitterProperties();
+    // 右側: プレビュー
+    if (showPreview_) {
+        DrawPreviewWindow();
+    }
 
     ImGui::Columns(1);
 
@@ -433,13 +435,13 @@ void ParticleEditor::DrawPreviewWindow() {
 
     // カメラコントロール
     ImGui::Spacing();
-    ImGui::Text("カメラ操作: 左ドラッグ=回転, 右ドラッグ=パン, ホイール=ズーム");
+    ImGui::Text("カメラ操作: 左ドラッグ=回転, Ctrl+左ドラッグ=高さ, 右ドラッグ=パン, ホイール=ズーム");
     
     ImGui::Checkbox("自動回転", &autoRotatePreview_);
     ImGui::SameLine();
     if (ImGui::Button("リセット")) {
         previewOrbitAngle_ = 0.0f;
-        previewOrbitPitch_ = 1.0f;  // 斜め上から見下ろす
+        previewOrbitPitch_ = 0.785f;  // 45度斜め上から見下ろす
         previewOrbitDistance_ = 12.0f;
         previewOrbitTarget_ = { 0.0f, 1.0f, 0.0f };
         UpdatePreviewCamera();
@@ -479,7 +481,7 @@ void ParticleEditor::HandlePreviewInput(const ImVec2& canvasPos, const ImVec2& c
         UpdatePreviewCamera();
     }
     
-    // 左ドラッグでオービット回転
+    // 左ドラッグ
     if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
         if (!isOrbitDragging_) {
             isOrbitDragging_ = true;
@@ -489,12 +491,19 @@ void ParticleEditor::HandlePreviewInput(const ImVec2& canvasPos, const ImVec2& c
         float deltaX = io.MousePos.x - lastMousePos_.x;
         float deltaY = io.MousePos.y - lastMousePos_.y;
         
-        previewOrbitAngle_ -= deltaX * 0.01f;
-        previewOrbitPitch_ += deltaY * 0.01f;
-        
-        // ピッチ制限（真上・真下を防ぐ）
-        const float pitchLimit = 1.5f;
-        previewOrbitPitch_ = (std::max)(-pitchLimit, (std::min)(previewOrbitPitch_, pitchLimit));
+        if (io.KeyCtrl) {
+            // Ctrl+左ドラッグ: カメラ高さ調整（上ドラッグで下に移動）
+            float heightSpeed = previewOrbitDistance_ * 0.005f;
+            previewOrbitTarget_.y += deltaY * heightSpeed;
+        } else {
+            // 通常の左ドラッグ: オービット回転
+            previewOrbitAngle_ -= deltaX * 0.01f;
+            previewOrbitPitch_ -= deltaY * 0.01f;
+            
+            // ピッチ制限（真上・真下を防ぐ）
+            const float pitchLimit = 1.5f;
+            previewOrbitPitch_ = (std::max)(-pitchLimit, (std::min)(previewOrbitPitch_, pitchLimit));
+        }
         
         lastMousePos_ = io.MousePos;
         UpdatePreviewCamera();
@@ -519,7 +528,7 @@ void ParticleEditor::HandlePreviewInput(const ImVec2& canvasPos, const ImVec2& c
         float panSpeed = previewOrbitDistance_ * 0.002f;
         previewOrbitTarget_.x += (cosAngle * deltaX) * panSpeed;
         previewOrbitTarget_.z += (sinAngle * deltaX) * panSpeed;
-        previewOrbitTarget_.y += deltaY * panSpeed;
+        previewOrbitTarget_.y += deltaY * panSpeed;  // 上ドラッグで下に移動
         
         lastMousePos_ = io.MousePos;
         UpdatePreviewCamera();

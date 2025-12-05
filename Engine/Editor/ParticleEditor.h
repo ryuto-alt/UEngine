@@ -117,7 +117,7 @@ private:
     
     // オービットカメラパラメータ
     float previewOrbitAngle_ = 0.0f;         // 水平回転角（ラジアン）
-    float previewOrbitPitch_ = 1.0f;         // 垂直角（ラジアン）- 魔法陣を斜め上から見る
+    float previewOrbitPitch_ = 0.785f;       // 垂直角（ラジアン）- 45度斜め上から見下ろす
     float previewOrbitDistance_ = 12.0f;     // カメラ距離
     Float3 previewOrbitTarget_ = { 0.0f, 1.0f, 0.0f };  // 注視点（少し上）
     

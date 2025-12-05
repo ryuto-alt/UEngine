@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <Windows.h>
 #include <iostream>
+#include <cstdio>
 
 namespace UnoEngine {
 
@@ -24,6 +25,23 @@ void LogImportError(const std::string& message, const std::string& file) {
     MultiByteToWideChar(CP_UTF8, 0, fullMessage.c_str(), -1, &wideMessage[0], wideSize);
 
     MessageBoxW(nullptr, wideMessage.c_str(), L"静的モデル読み込みエラー", MB_OK | MB_ICONERROR);
+}
+
+std::string UrlDecode(const std::string& encoded) {
+    std::string decoded;
+    decoded.reserve(encoded.size());
+    for (size_t i = 0; i < encoded.size(); ++i) {
+        if (encoded[i] == '%' && i + 2 < encoded.size()) {
+            unsigned int value = 0;
+            if (sscanf_s(encoded.substr(i + 1, 2).c_str(), "%x", &value) == 1) {
+                decoded += static_cast<char>(value);
+                i += 2;
+                continue;
+            }
+        }
+        decoded += encoded[i];
+    }
+    return decoded;
 }
 
 MaterialData ConvertMaterial(const aiMaterial* aiMat, const std::string& baseDirectory) {
@@ -56,7 +74,8 @@ MaterialData ConvertMaterial(const aiMaterial* aiMat, const std::string& baseDir
     aiString texPath;
     if (aiMat->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == AI_SUCCESS) {
         namespace fs = std::filesystem;
-        fs::path texturePath(texPath.C_Str());
+        std::string decodedPath = UrlDecode(texPath.C_Str());
+        fs::path texturePath(decodedPath);
         material.diffuseTexturePath = texturePath.filename().string();
     }
 
@@ -90,7 +109,12 @@ Mesh ProcessStaticMesh(const aiMesh* aiMesh, const aiScene* scene,
             vertex.nz = 0.0f;
         }
 
-        if (aiMesh->HasTextureCoords(0)) {
+        // TEXCOORD_1があればそちらを優先（glTFのbaseColorTextureがtexCoord:1を指定している場合）
+        // なければTEXCOORD_0を使用
+        if (aiMesh->HasTextureCoords(1)) {
+            vertex.u = aiMesh->mTextureCoords[1][i].x;
+            vertex.v = aiMesh->mTextureCoords[1][i].y;
+        } else if (aiMesh->HasTextureCoords(0)) {
             vertex.u = aiMesh->mTextureCoords[0][i].x;
             vertex.v = aiMesh->mTextureCoords[0][i].y;
         } else {

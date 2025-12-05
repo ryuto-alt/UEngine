@@ -4,6 +4,7 @@
 #include "../Core/NonCopyable.h"
 #include "PostProcessType.h"
 #include "GrayscalePostProcess.h"
+#include "VignettePostProcess.h"
 #include "../Graphics/RenderTexture.h"
 #include <memory>
 
@@ -30,9 +31,13 @@ public:
     static constexpr int GetEffectCount() { return static_cast<int>(PostProcessType::Count); }
     static const char* GetEffectName(int index);
 
+    // パラメータアクセス
+    VignettePostProcess* GetVignette() { return m_vignette.get(); }
+
 private:
     PostProcessType m_activeEffect = PostProcessType::None;
     std::unique_ptr<GrayscalePostProcess> m_grayscale;
+    std::unique_ptr<VignettePostProcess> m_vignette;
 };
 
 } // namespace UnoEngine

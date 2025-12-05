@@ -5,9 +5,11 @@
 namespace UnoEngine {
 
 void PostProcessManager::Initialize(GraphicsDevice* graphics, uint32 width, uint32 height) {
-    // グレースケールエフェクト初期化
     m_grayscale = std::make_unique<GrayscalePostProcess>();
     m_grayscale->Initialize(graphics);
+
+    m_vignette = std::make_unique<VignettePostProcess>();
+    m_vignette->Initialize(graphics);
 }
 
 void PostProcessManager::Resize(GraphicsDevice* graphics, uint32 width, uint32 height) {
@@ -27,6 +29,11 @@ void PostProcessManager::Apply(GraphicsDevice* graphics, RenderTexture* source, 
         case PostProcessType::Grayscale:
             if (m_grayscale && m_grayscale->IsEnabled()) {
                 m_grayscale->Apply(graphics, source, destination);
+            }
+            break;
+        case PostProcessType::Vignette:
+            if (m_vignette && m_vignette->IsEnabled()) {
+                m_vignette->Apply(graphics, source, destination);
             }
             break;
         default:

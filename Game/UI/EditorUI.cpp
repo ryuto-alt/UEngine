@@ -1407,13 +1407,44 @@ namespace UnoEngine {
 							ImGui::EndCombo();
 						}
 
-						float intensity = camComp->GetPostProcessIntensity();
-						ImGui::Text(U8("強度"));
-						ImGui::SameLine(80.0f);
-						ImGui::SetNextItemWidth(-1);
-						if (ImGui::SliderFloat("##PPIntensity", &intensity, 0.0f, 1.0f)) {
-							camComp->SetPostProcessIntensity(intensity);
-						isDirty_ = true;
+						// エフェクト固有パラメータ
+						PostProcessType effectType = camComp->GetPostProcessEffect();
+
+						if (effectType == PostProcessType::Grayscale) {
+							float intensity = camComp->GetPostProcessIntensity();
+							ImGui::Text(U8("強度"));
+							ImGui::SameLine(80.0f);
+							ImGui::SetNextItemWidth(-1);
+							if (ImGui::SliderFloat("##PPIntensity", &intensity, 0.0f, 1.0f)) {
+								camComp->SetPostProcessIntensity(intensity);
+								isDirty_ = true;
+							}
+						}
+						else if (effectType == PostProcessType::Vignette) {
+							if (auto* vignette = postProcessManager_->GetVignette()) {
+								auto& params = vignette->GetParams();
+
+								ImGui::Text(U8("半径"));
+								ImGui::SameLine(80.0f);
+								ImGui::SetNextItemWidth(-1);
+								if (ImGui::SliderFloat("##VigRadius", &params.radius, 0.1f, 1.5f)) {
+									isDirty_ = true;
+								}
+
+								ImGui::Text(U8("柔らかさ"));
+								ImGui::SameLine(80.0f);
+								ImGui::SetNextItemWidth(-1);
+								if (ImGui::SliderFloat("##VigSoftness", &params.softness, 0.01f, 1.0f)) {
+									isDirty_ = true;
+								}
+
+								ImGui::Text(U8("強度"));
+								ImGui::SameLine(80.0f);
+								ImGui::SetNextItemWidth(-1);
+								if (ImGui::SliderFloat("##VigIntensity", &params.intensity, 0.0f, 1.0f)) {
+									isDirty_ = true;
+								}
+							}
 						}
 					}
 

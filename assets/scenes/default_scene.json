@@ -62,7 +62,10 @@
                 {
                     "aspect": 1.7777777910232544,
                     "farClip": 1000.0,
+                    "fisheyeStrength": 0.24899999797344208,
+                    "fisheyeZoom": 1.5499999523162842,
                     "fov": 1.5872554779052734,
+                    "grayscaleIntensity": 1.0,
                     "isMain": true,
                     "isOrthographic": false,
                     "nearClip": 0.10000000149011612,
@@ -70,7 +73,10 @@
                     "postProcessEnabled": true,
                     "postProcessIntensity": 1.0,
                     "priority": 0,
-                    "type": "CameraComponent"
+                    "type": "CameraComponent",
+                    "vignetteIntensity": 1.0,
+                    "vignetteRadius": 0.75,
+                    "vignetteSoftness": 0.44999998807907104
                 }
             ],
             "layer": 1,

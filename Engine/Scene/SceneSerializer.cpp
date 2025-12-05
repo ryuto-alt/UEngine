@@ -236,6 +236,22 @@ json SceneSerializer::SerializeComponent(const Component& component) {
         comp["postProcessEnabled"] = camera->IsPostProcessEnabled();
         comp["postProcessEffect"] = static_cast<int>(camera->GetPostProcessEffect());
         comp["postProcessIntensity"] = camera->GetPostProcessIntensity();
+
+        // Vignette params
+        const auto& vignetteParams = camera->GetVignetteParams();
+        comp["vignetteRadius"] = vignetteParams.radius;
+        comp["vignetteSoftness"] = vignetteParams.softness;
+        comp["vignetteIntensity"] = vignetteParams.intensity;
+
+        // Fisheye params
+        const auto& fisheyeParams = camera->GetFisheyeParams();
+        comp["fisheyeStrength"] = fisheyeParams.strength;
+        comp["fisheyeZoom"] = fisheyeParams.zoom;
+
+        // Grayscale params
+        const auto& grayscaleParams = camera->GetGrayscaleParams();
+        comp["grayscaleIntensity"] = grayscaleParams.intensity;
+
         return comp;
     }
 
@@ -340,6 +356,36 @@ void SceneSerializer::DeserializeComponent(const json& json, GameObject& gameObj
         if (json.contains("postProcessIntensity")) {
             camera->SetPostProcessIntensity(json["postProcessIntensity"].get<float>());
         }
+
+        // Vignette params
+        VignetteParams vignetteParams;
+        if (json.contains("vignetteRadius")) {
+            vignetteParams.radius = json["vignetteRadius"].get<float>();
+        }
+        if (json.contains("vignetteSoftness")) {
+            vignetteParams.softness = json["vignetteSoftness"].get<float>();
+        }
+        if (json.contains("vignetteIntensity")) {
+            vignetteParams.intensity = json["vignetteIntensity"].get<float>();
+        }
+        camera->SetVignetteParams(vignetteParams);
+
+        // Fisheye params
+        FisheyeParams fisheyeParams;
+        if (json.contains("fisheyeStrength")) {
+            fisheyeParams.strength = json["fisheyeStrength"].get<float>();
+        }
+        if (json.contains("fisheyeZoom")) {
+            fisheyeParams.zoom = json["fisheyeZoom"].get<float>();
+        }
+        camera->SetFisheyeParams(fisheyeParams);
+
+        // Grayscale params
+        GrayscaleParams grayscaleParams;
+        if (json.contains("grayscaleIntensity")) {
+            grayscaleParams.intensity = json["grayscaleIntensity"].get<float>();
+        }
+        camera->SetGrayscaleParams(grayscaleParams);
     }
 }
 

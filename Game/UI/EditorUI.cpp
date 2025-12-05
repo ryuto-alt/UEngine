@@ -1435,22 +1435,25 @@ namespace UnoEngine {
 								ImGui::SameLine(80.0f);
 								ImGui::SetNextItemWidth(-1);
 								if (ImGui::SliderFloat("##VigRadius", &params.radius, 0.1f, 1.5f)) {
-									isDirty_ = true;
-								}
+								camComp->SetVignetteParams(params);
+								isDirty_ = true;
+							}
 
 								ImGui::Text(U8("柔らかさ"));
 								ImGui::SameLine(80.0f);
 								ImGui::SetNextItemWidth(-1);
 								if (ImGui::SliderFloat("##VigSoftness", &params.softness, 0.01f, 1.0f)) {
-									isDirty_ = true;
-								}
+								camComp->SetVignetteParams(params);
+								isDirty_ = true;
+							}
 
 								ImGui::Text(U8("強度"));
 								ImGui::SameLine(80.0f);
 								ImGui::SetNextItemWidth(-1);
 								if (ImGui::SliderFloat("##VigIntensity", &params.intensity, 0.0f, 1.0f)) {
-									isDirty_ = true;
-								}
+								camComp->SetVignetteParams(params);
+								isDirty_ = true;
+							}
 							}
 						}
 						else if (effectType == PostProcessType::Fisheye) {
@@ -1461,15 +1464,17 @@ namespace UnoEngine {
 								ImGui::SameLine(80.0f);
 								ImGui::SetNextItemWidth(-1);
 								if (ImGui::SliderFloat("##FishStrength", &params.strength, -1.0f, 1.0f)) {
-									isDirty_ = true;
-								}
+								camComp->SetFisheyeParams(params);
+								isDirty_ = true;
+							}
 
 								ImGui::Text(U8("ズーム"));
 								ImGui::SameLine(80.0f);
 								ImGui::SetNextItemWidth(-1);
 								if (ImGui::SliderFloat("##FishZoom", &params.zoom, 0.5f, 2.0f)) {
-									isDirty_ = true;
-								}
+								camComp->SetFisheyeParams(params);
+								isDirty_ = true;
+							}
 							}
 						}
 					}
@@ -2819,6 +2824,9 @@ namespace UnoEngine {
 			return;
 		}
 
+		// 保存前にPostProcessManagerの現在値をCameraComponentに同期
+		SyncPostProcessParamsToCamera();
+
 		if (SceneSerializer::SaveScene(*gameObjects_, filepath)) {
 			consoleMessages_.push_back(U8("[エディタ] シーンを保存しました: ") + filepath);
 			// EditorCameraの設定も保存
@@ -2844,9 +2852,55 @@ namespace UnoEngine {
 			if (!gameObjects_->empty()) {
 				selectedObject_ = (*gameObjects_)[0].get();
 			}
+			// CameraComponentのPostProcessパラメータをPostProcessManagerに同期
+			SyncPostProcessParamsFromCamera();
 		}
 		else {
 			consoleMessages_.push_back(U8("[エディタ] シーン読み込みに失敗: ") + filepath);
+		}
+	}
+
+	// PostProcessManagerのパラメータをCameraComponentに同期（保存前）
+	void EditorUI::SyncPostProcessParamsToCamera() {
+		if (!gameObjects_ || !postProcessManager_) return;
+
+		for (const auto& obj : *gameObjects_) {
+			if (!obj) continue;
+			auto* camComp = obj->GetComponent<CameraComponent>();
+			if (!camComp) continue;
+
+			// Vignetteパラメータを同期
+			if (auto* vignette = postProcessManager_->GetVignette()) {
+				camComp->SetVignetteParams(vignette->GetParams());
+			}
+			// Fisheyeパラメータを同期
+			if (auto* fisheye = postProcessManager_->GetFisheye()) {
+				camComp->SetFisheyeParams(fisheye->GetParams());
+			}
+			// Grayscale has no adjustable params currently
+			break;
+		}
+	}
+
+	// CameraComponentのPostProcessパラメータをPostProcessManagerに同期（ロード後）
+	void EditorUI::SyncPostProcessParamsFromCamera() {
+		if (!gameObjects_ || !postProcessManager_) return;
+
+		for (const auto& obj : *gameObjects_) {
+			if (!obj) continue;
+			auto* camComp = obj->GetComponent<CameraComponent>();
+			if (!camComp) continue;
+
+			// Vignetteパラメータを同期
+			if (auto* vignette = postProcessManager_->GetVignette()) {
+				vignette->SetParams(camComp->GetVignetteParams());
+			}
+			// Fisheyeパラメータを同期
+			if (auto* fisheye = postProcessManager_->GetFisheye()) {
+				fisheye->SetParams(camComp->GetFisheyeParams());
+			}
+			// 最初のCameraComponentを見つけたら終了
+			break;
 		}
 	}
 

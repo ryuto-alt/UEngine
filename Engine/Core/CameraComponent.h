@@ -70,6 +70,16 @@ public:
     float GetPostProcessIntensity() const { return postProcessIntensity_; }
     void SetPostProcessIntensity(float intensity) { postProcessIntensity_ = intensity; }
 
+    // Effect-specific parameters
+    const VignetteParams& GetVignetteParams() const { return vignetteParams_; }
+    void SetVignetteParams(const VignetteParams& params) { vignetteParams_ = params; }
+
+    const FisheyeParams& GetFisheyeParams() const { return fisheyeParams_; }
+    void SetFisheyeParams(const FisheyeParams& params) { fisheyeParams_ = params; }
+
+    const GrayscaleParams& GetGrayscaleParams() const { return grayscaleParams_; }
+    void SetGrayscaleParams(const GrayscaleParams& params) { grayscaleParams_ = params; }
+
 private:
     void UpdateCameraTransform();
     void UpdateProjectionMatrix();
@@ -94,6 +104,11 @@ private:
     bool postProcessEnabled_ = false;
     PostProcessType postProcessEffect_ = PostProcessType::None;
     float postProcessIntensity_ = 1.0f;
+
+    // Effect-specific parameters
+    VignetteParams vignetteParams_;
+    FisheyeParams fisheyeParams_;
+    GrayscaleParams grayscaleParams_;
 };
 
 } // namespace UnoEngine

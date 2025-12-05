@@ -165,6 +165,11 @@ public:
     PostProcessManager* GetPostProcessManager() { return postProcessManager_.get(); }
     RenderTexture* GetPostProcessOutputTexture() { return &postProcessOutput_; }
 
+    // CameraComponentのPostProcessパラメータをPostProcessManagerに同期（ロード後）
+    void SyncPostProcessParamsFromCamera();
+    // PostProcessManagerのパラメータをCameraComponentに同期（保存前）
+    void SyncPostProcessParamsToCamera();
+
 private:
     // 各パネルの描画メソッド
     void RenderDockSpace();

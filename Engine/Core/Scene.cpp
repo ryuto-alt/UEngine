@@ -64,6 +64,11 @@ void Scene::OnLoad() {
     // D&Dでキューに入れられたモデルを読み込む
     editorUI_.ProcessPendingLoads();
 
+    // シーンファイルからロードした場合、PostProcessパラメータを同期
+    if (sceneFileExists) {
+        editorUI_.SyncPostProcessParamsFromCamera();
+    }
+
     editorUI_.AddConsoleMessage("[シーン] Scene 読み込み完了");
 #endif
 

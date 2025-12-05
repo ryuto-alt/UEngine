@@ -122,6 +122,9 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <!-- Engine\Core -->
+    <ClCompile Include="Engine\Core\CameraComponent.cpp">
+      <Filter>Engine\Core</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Core\Application.cpp">
       <Filter>Engine\Core</Filter>
     </ClCompile>
@@ -262,6 +265,9 @@
       <Filter>Engine\Resource</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Resource\ModelImporter.cpp">
+      <Filter>Engine\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Resource\StaticModelImporter.cpp">
       <Filter>Engine\Resource</Filter>
     </ClCompile>
     <!-- Engine\Systems -->

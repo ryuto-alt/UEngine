@@ -7,6 +7,10 @@
 #include <string>
 
 namespace UnoEngine {
+class GameObject;
+}
+
+namespace UnoEngine {
 
 // エディタ用カメラコントローラー
 // フリーカメラ、オービットカメラなどの操作を提供
@@ -59,6 +63,15 @@ public:
     // オービットターゲットがあるか
     bool HasOrbitTarget() const { return hasOrbitTarget_; }
 
+    // カメラ追従機能
+    void SetFollowTarget(GameObject* target) { followTarget_ = target; }
+    GameObject* GetFollowTarget() const { return followTarget_; }
+    bool IsFollowing() const { return followTarget_ != nullptr; }
+    void SetFollowHeight(float height) { followHeight_ = height; }
+    float GetFollowHeight() const { return followHeight_; }
+    void SetFollowDistance(float distance) { followDistance_ = distance; }
+    float GetFollowDistance() const { return followDistance_; }
+
     // 設定の保存/読み込み
     void SaveSettings(const std::string& filepath = "editor_camera_settings.json");
     void LoadSettings(const std::string& filepath = "editor_camera_settings.json");
@@ -104,6 +117,11 @@ private:
 
     // ビューポート矩形
     struct { float x, y, w, h; } viewportRect_ = { 0, 0, 0, 0 };
+
+    // カメラ追従機能
+    GameObject* followTarget_ = nullptr;
+    float followHeight_ = 10.0f;   // ターゲットからの高さ
+    float followDistance_ = 0.0f;  // XZ平面での距離（0なら真上から）
 };
 
 } // namespace UnoEngine

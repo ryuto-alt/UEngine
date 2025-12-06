@@ -1297,6 +1297,31 @@ namespace UnoEngine {
 				if (ImGui::IsItemDeactivatedAfterEdit()) EndInspectorEdit();
 			}
 
+			// エディターカメラ追従セクション
+			if (ImGui::CollapsingHeader(U8("エディターカメラ"))) {
+				bool isFollowing = (editorCamera_.GetFollowTarget() == selected);
+				if (ImGui::Checkbox(U8("カメラ追従"), &isFollowing)) {
+					if (isFollowing) {
+						editorCamera_.SetFollowTarget(selected);
+					} else {
+						editorCamera_.SetFollowTarget(nullptr);
+					}
+				}
+				if (ImGui::IsItemHovered()) {
+					ImGui::SetTooltip(U8("Play中にエディターカメラがこのオブジェクトを上から追従します"));
+				}
+
+				if (isFollowing) {
+					float height = editorCamera_.GetFollowHeight();
+					ImGui::Text(U8("追従高さ"));
+					ImGui::SameLine(80.0f);
+					ImGui::SetNextItemWidth(-1);
+					if (ImGui::DragFloat("##FollowHeight", &height, 0.5f, 1.0f, 100.0f)) {
+						editorCamera_.SetFollowHeight(height);
+					}
+				}
+			}
+
 			// Physics セクション（将来実装用）
 			if (ImGui::CollapsingHeader(U8("物理"))) {
 				ImGui::TextDisabled(U8("(物理コンポーネントなし)"));

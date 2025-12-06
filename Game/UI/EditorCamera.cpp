@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "EditorCamera.h"
+#include "../../Engine/Core/GameObject.h"
 #include "../../Engine/Math/Quaternion.h"
 #include <imgui.h>
 #include <cmath>
@@ -13,6 +14,21 @@ namespace UnoEngine {
 
 void EditorCamera::Update(float deltaTime) {
     if (!camera_) return;
+
+    // 追従モード: ターゲットを斜め上から見下ろすように追従
+    if (followTarget_) {
+        Vector3 targetPos = followTarget_->GetTransform().GetPosition();
+        
+        // 斜め後ろ上方に配置（Z方向に少し離れる）
+        float offsetZ = followHeight_ * 0.7f; // 高さに応じた距離
+        Vector3 cameraPos = targetPos + Vector3(0.0f, followHeight_, -offsetZ);
+        camera_->SetPosition(cameraPos);
+
+        // ターゲットを向くようにLookAt
+        Matrix4x4 viewMat = Matrix4x4::LookAtLH(cameraPos, targetPos, Vector3::UnitY());
+        Quaternion rot = Quaternion::FromRotationMatrix(viewMat.Inverse());
+        camera_->SetRotation(rot);
+    }
 
     ImGuiIO& io = ImGui::GetIO();
     bool rightMouseDown = io.MouseDown[1];

@@ -39,15 +39,15 @@
             "name": "Enemy",
             "transform": {
                 "position": [
-                    0.6707231998443604,
+                    2.9090819358825684,
                     0.0,
-                    1.9529671669006348
+                    1.0845750570297241
                 ],
                 "rotation": [
                     0.0,
-                    0.7071067690849304,
+                    0.008918517269194126,
                     0.0,
-                    0.7071067690849304
+                    0.9999602437019348
                 ],
                 "scale": [
                     0.05000000074505806,
@@ -70,16 +70,15 @@
                     "isOrthographic": false,
                     "nearClip": 0.10000000149011612,
                     "postProcessEffects": [
-                        2,
                         3
                     ],
                     "postProcessEnabled": true,
                     "postProcessIntensity": 1.0,
                     "priority": 0,
-                    "ps1ColorDepth": 4,
+                    "ps1ColorDepth": 2,
                     "ps1DitherEnabled": true,
                     "ps1DitherStrength": 2.0,
-                    "ps1ResolutionScale": 4.0,
+                    "ps1ResolutionScale": 8.0,
                     "type": "CameraComponent",
                     "vignetteIntensity": 1.0,
                     "vignetteRadius": 0.75,

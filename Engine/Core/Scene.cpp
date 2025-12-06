@@ -187,8 +187,25 @@ void Scene::OnUpdate(float deltaTime) {
     ProcessPendingStarts();
 
     // Update all game objects
+#ifdef _DEBUG
+    bool isPlayMode = editorUI_.IsPlaying();
+#else
+    bool isPlayMode = true;
+#endif
+
     for (auto& obj : gameObjects_) {
-        obj->OnUpdate(deltaTime);
+        if (!obj || !obj->IsActive()) continue;
+
+        for (auto& comp : obj->GetComponents()) {
+            if (!comp->IsEnabled()) continue;
+
+            // Skip LuaScriptComponent in edit mode
+            if (!isPlayMode && dynamic_cast<LuaScriptComponent*>(comp.get())) {
+                continue;
+            }
+
+            comp->OnUpdate(deltaTime);
+        }
     }
 
     // Destroy pending objects

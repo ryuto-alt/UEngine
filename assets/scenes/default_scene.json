@@ -163,6 +163,38 @@
                     1.0
                 ]
             }
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "modelPath": "assets/model/testmodel/human/walk.gltf",
+                    "type": "SkinnedMeshRenderer"
+                },
+                {
+                    "type": "AnimatorComponent"
+                }
+            ],
+            "layer": 1,
+            "name": "Player",
+            "transform": {
+                "position": [
+                    3.0,
+                    1.1920928955078125e-07,
+                    17.857919692993164
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            }
         }
     ],
     "scene_name": "Scene",

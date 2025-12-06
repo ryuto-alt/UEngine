@@ -167,9 +167,10 @@ namespace UnoEngine {
 		// ビルドダイアログ描画
 		RenderBuildDialog();
 
-		// エディタカメラの更新（常に有効 - Playモード中も右クリック+WASDで操作可能）
+		// エディタカメラの更新
 		float deltaTime = ImGui::GetIO().DeltaTime;
 		editorCamera_.SetMovementEnabled(true);
+		editorCamera_.SetPlaying(IsPlaying());
 		editorCamera_.Update(deltaTime);
 
 		// ステップフレームをリセット

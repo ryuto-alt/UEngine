@@ -42,6 +42,9 @@ public:
     // WASD移動を有効/無効にする（オブジェクト選択中は無効にする）
     void SetMovementEnabled(bool enabled) { movementEnabled_ = enabled; }
 
+    // 再生中かどうかを設定（編集中は右クリックなしでWASD移動可能）
+    void SetPlaying(bool playing) { isPlaying_ = playing; }
+
     // ビューポートの矩形を設定（マウスクリップ用）
     void SetViewportRect(float x, float y, float w, float h) {
         viewportRect_ = { x, y, w, h };
@@ -99,6 +102,7 @@ private:
     bool viewportFocused_ = false;
     bool isControlling_ = false;
     bool movementEnabled_ = true;  // WASD移動が有効か
+    bool isPlaying_ = false;       // 再生中か（再生中は右クリック必須）
 
     // マウス
     bool rightMousePressed_ = false;

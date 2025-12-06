@@ -170,8 +170,8 @@ void EditorCamera::Update(float deltaTime) {
 void EditorCamera::HandleFreeCameraMovement(float deltaTime) {
     if (!camera_) return;
 
-    // 右クリック中のみWASD移動を有効化
-    if (!rightMousePressed_) return;
+    // 再生中は右クリック必須、編集中は右クリック不要
+    if (isPlaying_ && !rightMousePressed_) return;
 
     // カメラの実際の向きから移動方向を計算（FPSスタイル）
     Vector3 camForward = camera_->GetForward();

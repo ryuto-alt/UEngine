@@ -1624,12 +1624,66 @@ namespace UnoEngine {
 				}
 			}
 
-			// コンポーネント追加ボタン
+			// ドロップターゲット処理のラムダ
+			auto handleDropTarget = [&]() {
+				if (ImGui::BeginDragDropTarget()) {
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("SCRIPT_PATH")) {
+						size_t index = *(const size_t*)payload->Data;
+						if (index < cachedScriptPaths_.size()) {
+							const std::string& scriptPath = cachedScriptPaths_[index];
+							auto* luaScript = selected->GetComponent<LuaScriptComponent>();
+							if (!luaScript) {
+								luaScript = selected->AddComponent<LuaScriptComponent>();
+								consoleMessages_.push_back("[Editor] Added LuaScriptComponent to: " + selected->GetName());
+							}
+							luaScript->SetScriptPath(scriptPath);
+							(void)luaScript->ReloadScript();
+							consoleMessages_.push_back("[Script] Set script: " + std::filesystem::path(scriptPath).filename().string());
+							isDirty_ = true;
+						}
+					}
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AUDIO_PATH")) {
+						size_t index = *(const size_t*)payload->Data;
+						if (index < cachedAudioPaths_.size()) {
+							const std::string& audioPath = cachedAudioPaths_[index];
+							auto* audioSource = selected->GetComponent<AudioSource>();
+							if (!audioSource) {
+								audioSource = selected->AddComponent<AudioSource>();
+								consoleMessages_.push_back("[Editor] Added AudioSource to: " + selected->GetName());
+							}
+							audioSource->SetClipPath(audioPath);
+							audioSource->LoadClip(audioPath);
+							consoleMessages_.push_back("[Audio] Set clip: " + std::filesystem::path(audioPath).filename().string());
+							isDirty_ = true;
+						}
+					}
+					ImGui::EndDragDropTarget();
+				}
+			};
+
+			// ドロップゾーン（上）
 			ImGui::Spacing();
 			ImGui::Separator();
+			ImGui::InvisibleButton("##PropertyDropZoneTop", ImVec2(ImGui::GetContentRegionAvail().x, 20.0f));
+			handleDropTarget();
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip(U8("スクリプトやオーディオをここにドロップ"));
+			}
+
+			// コンポーネント追加ボタン
 			float buttonWidth = ImGui::GetContentRegionAvail().x;
 			if (ImGui::Button(U8("コンポーネント追加"), ImVec2(buttonWidth, 0))) {
 				ImGui::OpenPopup("AddComponentPopup");
+			}
+
+			// ドロップゾーン（下） - 残りの空白全体
+			float remainingHeight = ImGui::GetContentRegionAvail().y;
+			if (remainingHeight > 10.0f) {
+				ImGui::InvisibleButton("##PropertyDropZoneBottom", ImVec2(ImGui::GetContentRegionAvail().x, remainingHeight));
+				handleDropTarget();
+				if (ImGui::IsItemHovered()) {
+					ImGui::SetTooltip(U8("スクリプトやオーディオをここにドロップ"));
+				}
 			}
 
 			if (ImGui::BeginPopup("AddComponentPopup")) {
@@ -1848,7 +1902,6 @@ namespace UnoEngine {
 						size_t index = *(const size_t*)payload->Data;
 						if (index < cachedAudioPaths_.size()) {
 							const std::string& audioPath = cachedAudioPaths_[index];
-							// AudioSourceがなければ追加
 							auto* audioSource = obj->GetComponent<AudioSource>();
 							if (!audioSource) {
 								audioSource = obj->AddComponent<AudioSource>();
@@ -1858,6 +1911,24 @@ namespace UnoEngine {
 							audioSource->LoadClip(audioPath);
 							consoleMessages_.push_back("[Audio] Set clip: " + std::filesystem::path(audioPath).filename().string());
 							selectedObject_ = obj;
+							isDirty_ = true;
+						}
+					}
+					// ScriptファイルのD&Dターゲット（オブジェクトにドロップ）
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("SCRIPT_PATH")) {
+						size_t index = *(const size_t*)payload->Data;
+						if (index < cachedScriptPaths_.size()) {
+							const std::string& scriptPath = cachedScriptPaths_[index];
+							auto* luaScript = obj->GetComponent<LuaScriptComponent>();
+							if (!luaScript) {
+								luaScript = obj->AddComponent<LuaScriptComponent>();
+								consoleMessages_.push_back("[Editor] Added LuaScriptComponent to: " + obj->GetName());
+							}
+							luaScript->SetScriptPath(scriptPath);
+							(void)luaScript->ReloadScript();
+							consoleMessages_.push_back("[Script] Set script: " + std::filesystem::path(scriptPath).filename().string());
+							selectedObject_ = obj;
+							isDirty_ = true;
 						}
 					}
 					ImGui::EndDragDropTarget();

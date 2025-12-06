@@ -2,6 +2,8 @@
 #include "LuaScriptComponent.h"
 #include "../Core/GameObject.h"
 #include "../Core/Logger.h"
+#include "../Input/InputManager.h"
+#include "../Animation/AnimatorComponent.h"
 
 namespace UnoEngine {
 
@@ -28,6 +30,11 @@ void LuaScriptComponent::Awake() {
 }
 
 void LuaScriptComponent::Start() {
+    // InputManagerが設定されていればAPIを再バインド
+    if (inputManager_ && luaState_) {
+        BindEngineAPI();
+    }
+
     if (scriptLoaded_ && !startCalledInLua_) {
         luaState_->CallStart();
         startCalledInLua_ = true;
@@ -51,6 +58,18 @@ void LuaScriptComponent::OnDestroy() {
 
 void LuaScriptComponent::SetScriptPath(std::string_view path) {
     scriptPath_ = std::string(path);
+    
+    // 空のパスが設定された場合はスクリプトをアンロード
+    if (scriptPath_.empty()) {
+        if (scriptLoaded_ && luaState_) {
+            luaState_->CallOnDestroy();
+        }
+        luaState_.reset();
+        scriptLoaded_ = false;
+        awakeCalledInLua_ = false;
+        startCalledInLua_ = false;
+        return;
+    }
     
     // 既にLuaStateが初期化されていればスクリプトを読み込む
     if (luaState_ && luaState_->GetScriptPath().empty()) {
@@ -241,6 +260,93 @@ void LuaScriptComponent::BindEngineAPI() {
         "forward", []() { return std::make_tuple(0.0f, 0.0f, 1.0f); },
         "right", []() { return std::make_tuple(1.0f, 0.0f, 0.0f); }
     );
+
+    // ===== Input API =====
+    if (inputManager_) {
+        auto* input = inputManager_;
+        lua["Input"] = lua.create_table_with(
+            // キーボード入力
+            "isKeyDown", [input](const std::string& keyName) -> bool {
+                auto& keyboard = input->GetKeyboard();
+                KeyCode key = KeyCode::A;
+                if (keyName == "W" || keyName == "w") key = KeyCode::W;
+                else if (keyName == "A" || keyName == "a") key = KeyCode::A;
+                else if (keyName == "S" || keyName == "s") key = KeyCode::S;
+                else if (keyName == "D" || keyName == "d") key = KeyCode::D;
+                else if (keyName == "Space" || keyName == "space") key = KeyCode::Space;
+                else if (keyName == "Shift" || keyName == "shift") key = KeyCode::Shift;
+                else if (keyName == "Control" || keyName == "ctrl") key = KeyCode::Control;
+                else if (keyName == "Up" || keyName == "up") key = KeyCode::Up;
+                else if (keyName == "Down" || keyName == "down") key = KeyCode::Down;
+                else if (keyName == "Left" || keyName == "left") key = KeyCode::Left;
+                else if (keyName == "Right" || keyName == "right") key = KeyCode::Right;
+                else if (keyName == "Escape" || keyName == "esc") key = KeyCode::Escape;
+                else if (keyName == "Enter" || keyName == "enter") key = KeyCode::Enter;
+                else if (keyName == "E" || keyName == "e") key = KeyCode::E;
+                else if (keyName == "Q" || keyName == "q") key = KeyCode::Q;
+                else if (keyName == "F" || keyName == "f") key = KeyCode::F;
+                else if (keyName == "R" || keyName == "r") key = KeyCode::R;
+                else if (keyName == "1") key = KeyCode::Num1;
+                else if (keyName == "2") key = KeyCode::Num2;
+                else if (keyName == "3") key = KeyCode::Num3;
+                else if (keyName == "4") key = KeyCode::Num4;
+                return keyboard.IsDown(key);
+            },
+            "isKeyPressed", [input](const std::string& keyName) -> bool {
+                auto& keyboard = input->GetKeyboard();
+                KeyCode key = KeyCode::A;
+                if (keyName == "W" || keyName == "w") key = KeyCode::W;
+                else if (keyName == "A" || keyName == "a") key = KeyCode::A;
+                else if (keyName == "S" || keyName == "s") key = KeyCode::S;
+                else if (keyName == "D" || keyName == "d") key = KeyCode::D;
+                else if (keyName == "Space" || keyName == "space") key = KeyCode::Space;
+                else if (keyName == "Shift" || keyName == "shift") key = KeyCode::Shift;
+                else if (keyName == "E" || keyName == "e") key = KeyCode::E;
+                else if (keyName == "Q" || keyName == "q") key = KeyCode::Q;
+                else if (keyName == "F" || keyName == "f") key = KeyCode::F;
+                else if (keyName == "R" || keyName == "r") key = KeyCode::R;
+                else if (keyName == "1") key = KeyCode::Num1;
+                else if (keyName == "2") key = KeyCode::Num2;
+                else if (keyName == "3") key = KeyCode::Num3;
+                else if (keyName == "4") key = KeyCode::Num4;
+                return keyboard.IsPressed(key);
+            },
+            // 軸入力（-1 ～ 1）
+            "getAxis", [input](const std::string& axisName) -> float {
+                auto& keyboard = input->GetKeyboard();
+                if (axisName == "Horizontal") {
+                    float value = 0.0f;
+                    if (keyboard.IsDown(KeyCode::A) || keyboard.IsDown(KeyCode::Left)) value -= 1.0f;
+                    if (keyboard.IsDown(KeyCode::D) || keyboard.IsDown(KeyCode::Right)) value += 1.0f;
+                    return value;
+                } else if (axisName == "Vertical") {
+                    float value = 0.0f;
+                    if (keyboard.IsDown(KeyCode::S) || keyboard.IsDown(KeyCode::Down)) value -= 1.0f;
+                    if (keyboard.IsDown(KeyCode::W) || keyboard.IsDown(KeyCode::Up)) value += 1.0f;
+                    return value;
+                }
+                return 0.0f;
+            }
+        );
+    }
+
+    // ===== Animation API =====
+    if (gameObject) {
+        auto* animator = gameObject->GetComponent<AnimatorComponent>();
+        if (animator) {
+            lua["Animator"] = lua.create_table_with(
+                "play", [animator](const std::string& animName, bool loop) {
+                    animator->Play(animName, loop);
+                },
+                "stop", [animator]() {
+                    animator->Stop();
+                },
+                "isPlaying", [animator]() -> bool {
+                    return animator->IsPlaying();
+                }
+            );
+        }
+    }
 
     Logger::Debug("[LuaScriptComponent] Engine API bound to Lua");
 }

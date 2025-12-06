@@ -7,6 +7,8 @@
 
 namespace UnoEngine {
 
+class InputManager;
+
 // Luaスクリプトコンポーネント
 // GameObjectにアタッチしてLuaスクリプトを実行する
 class LuaScriptComponent : public Component {
@@ -23,6 +25,9 @@ public:
     // スクリプト設定
     void SetScriptPath(std::string_view path);
     [[nodiscard]] const std::string& GetScriptPath() const { return scriptPath_; }
+
+    // InputManager設定（Sceneから呼び出される）
+    void SetInputManager(InputManager* input) { inputManager_ = input; }
 
     // スクリプトの読み込み
     [[nodiscard]] bool LoadScript();
@@ -50,6 +55,7 @@ private:
 private:
     std::unique_ptr<LuaState> luaState_;
     std::string scriptPath_;
+    InputManager* inputManager_ = nullptr;
     bool scriptLoaded_ = false;
     bool awakeCalledInLua_ = false;
     bool startCalledInLua_ = false;

@@ -15,6 +15,7 @@
 #include "../Systems/SystemManager.h"
 #include "../Resource/ResourceManager.h"
 #include "../Resource/StaticModelImporter.h"
+#include "../Scripting/LuaScriptComponent.h"
 #include "../../Game/GameApplication.h"
 #include <algorithm>
 #include <fstream>
@@ -264,6 +265,10 @@ void Scene::ProcessPendingStarts() {
 
         for (auto& comp : obj->GetComponents()) {
             if (comp->IsAwakeCalled() && !comp->HasStarted() && comp->IsEnabled()) {
+                // LuaScriptComponentにInputManagerを設定
+                if (auto* luaScript = dynamic_cast<LuaScriptComponent*>(comp.get())) {
+                    luaScript->SetInputManager(input_);
+                }
                 comp->Start();
                 comp->MarkStarted();
             }

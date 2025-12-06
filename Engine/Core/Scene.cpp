@@ -189,8 +189,10 @@ void Scene::OnUpdate(float deltaTime) {
     // Update all game objects
 #ifdef _DEBUG
     bool isPlayMode = editorUI_.IsPlaying();
+    bool editorCameraControlling = editorUI_.GetEditorCamera().IsControlling();
 #else
     bool isPlayMode = true;
+    bool editorCameraControlling = false;
 #endif
 
     for (auto& obj : gameObjects_) {
@@ -200,8 +202,10 @@ void Scene::OnUpdate(float deltaTime) {
             if (!comp->IsEnabled()) continue;
 
             // Skip LuaScriptComponent in edit mode
-            if (!isPlayMode && dynamic_cast<LuaScriptComponent*>(comp.get())) {
-                continue;
+            auto* luaScript = dynamic_cast<LuaScriptComponent*>(comp.get());
+            if (luaScript) {
+                if (!isPlayMode) continue;
+                luaScript->SetEditorCameraControlling(editorCameraControlling);
             }
 
             comp->OnUpdate(deltaTime);

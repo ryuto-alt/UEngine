@@ -154,13 +154,8 @@ void EditorCamera::Update(float deltaTime) {
 void EditorCamera::HandleFreeCameraMovement(float deltaTime) {
     if (!camera_) return;
 
-    ImGuiIO& io = ImGui::GetIO();
-    
-    // Scene Viewがホバーされていない場合はWASD移動を無効化
-    if (!viewportHovered_) return;
-    
-    // オブジェクト選択中はWASD移動を無効化
-    if (!movementEnabled_) return;
+    // 右クリック中のみWASD移動を有効化
+    if (!rightMousePressed_) return;
 
     // カメラの実際の向きから移動方向を計算（FPSスタイル）
     Vector3 camForward = camera_->GetForward();

@@ -29,6 +29,9 @@ public:
     // InputManager設定（Sceneから呼び出される）
     void SetInputManager(InputManager* input) { inputManager_ = input; }
 
+    // エディタカメラ操作中フラグ（操作中は入力をブロック）
+    void SetEditorCameraControlling(bool controlling) { editorCameraControlling_ = controlling; }
+
     // スクリプトの読み込み
     [[nodiscard]] bool LoadScript();
     [[nodiscard]] bool ReloadScript();
@@ -59,6 +62,7 @@ private:
     bool scriptLoaded_ = false;
     bool awakeCalledInLua_ = false;
     bool startCalledInLua_ = false;
+    bool editorCameraControlling_ = false;
 };
 
 } // namespace UnoEngine

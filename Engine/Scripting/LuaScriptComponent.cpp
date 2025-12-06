@@ -264,9 +264,11 @@ void LuaScriptComponent::BindEngineAPI() {
     // ===== Input API =====
     if (inputManager_) {
         auto* input = inputManager_;
+        bool* editorControlling = &editorCameraControlling_;
         lua["Input"] = lua.create_table_with(
             // キーボード入力
-            "isKeyDown", [input](const std::string& keyName) -> bool {
+            "isKeyDown", [input, editorControlling](const std::string& keyName) -> bool {
+                if (*editorControlling) return false;
                 auto& keyboard = input->GetKeyboard();
                 KeyCode key = KeyCode::A;
                 if (keyName == "W" || keyName == "w") key = KeyCode::W;
@@ -292,7 +294,8 @@ void LuaScriptComponent::BindEngineAPI() {
                 else if (keyName == "4") key = KeyCode::Num4;
                 return keyboard.IsDown(key);
             },
-            "isKeyPressed", [input](const std::string& keyName) -> bool {
+            "isKeyPressed", [input, editorControlling](const std::string& keyName) -> bool {
+                if (*editorControlling) return false;
                 auto& keyboard = input->GetKeyboard();
                 KeyCode key = KeyCode::A;
                 if (keyName == "W" || keyName == "w") key = KeyCode::W;
@@ -312,7 +315,8 @@ void LuaScriptComponent::BindEngineAPI() {
                 return keyboard.IsPressed(key);
             },
             // 軸入力（-1 ～ 1）
-            "getAxis", [input](const std::string& axisName) -> float {
+            "getAxis", [input, editorControlling](const std::string& axisName) -> float {
+                if (*editorControlling) return 0.0f;
                 auto& keyboard = input->GetKeyboard();
                 if (axisName == "Horizontal") {
                     float value = 0.0f;

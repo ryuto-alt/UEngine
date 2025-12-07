@@ -10,6 +10,7 @@
 #include <Windows.h>
 #include <iostream>
 #include <cstdio>
+#include <cfloat>
 
 namespace UnoEngine {
 
@@ -205,7 +206,33 @@ StaticModelData StaticModelImporter::Load(GraphicsDevice* graphics, ID3D12Graphi
     ProcessNode(scene->mRootNode, scene, graphics, commandList,
                baseDirectory, result.meshes);
 
-    Logger::Info("[StaticModelImporter] 読み込み完了: メッシュ {}個", result.meshes.size());
+    // Calculate bounding box from all mesh bounds
+    result.boundingBox.min = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
+    result.boundingBox.max = Vector3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+    for (const auto& mesh : result.meshes) {
+        Vector3 meshMin = mesh.GetBoundsMin();
+        Vector3 meshMax = mesh.GetBoundsMax();
+
+        if (meshMin.GetX() < result.boundingBox.min.GetX()) 
+            result.boundingBox.min = Vector3(meshMin.GetX(), result.boundingBox.min.GetY(), result.boundingBox.min.GetZ());
+        if (meshMin.GetY() < result.boundingBox.min.GetY()) 
+            result.boundingBox.min = Vector3(result.boundingBox.min.GetX(), meshMin.GetY(), result.boundingBox.min.GetZ());
+        if (meshMin.GetZ() < result.boundingBox.min.GetZ()) 
+            result.boundingBox.min = Vector3(result.boundingBox.min.GetX(), result.boundingBox.min.GetY(), meshMin.GetZ());
+
+        if (meshMax.GetX() > result.boundingBox.max.GetX()) 
+            result.boundingBox.max = Vector3(meshMax.GetX(), result.boundingBox.max.GetY(), result.boundingBox.max.GetZ());
+        if (meshMax.GetY() > result.boundingBox.max.GetY()) 
+            result.boundingBox.max = Vector3(result.boundingBox.max.GetX(), meshMax.GetY(), result.boundingBox.max.GetZ());
+        if (meshMax.GetZ() > result.boundingBox.max.GetZ()) 
+            result.boundingBox.max = Vector3(result.boundingBox.max.GetX(), result.boundingBox.max.GetY(), meshMax.GetZ());
+    }
+
+    Logger::Info("[StaticModelImporter] 読み込み完了: メッシュ {}個, BoundingBox: ({:.2f},{:.2f},{:.2f}) - ({:.2f},{:.2f},{:.2f})", 
+                 result.meshes.size(),
+                 result.boundingBox.min.GetX(), result.boundingBox.min.GetY(), result.boundingBox.min.GetZ(),
+                 result.boundingBox.max.GetX(), result.boundingBox.max.GetY(), result.boundingBox.max.GetZ());
     
     return result;
 }

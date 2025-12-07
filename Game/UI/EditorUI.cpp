@@ -18,6 +18,7 @@
 #include "../../Engine/Audio/AudioListener.h"
 #include "../../Engine/Audio/AudioClip.h"
 #include "../../Engine/Core/CameraComponent.h"
+#include "../../Engine/Core/CollisionComponent.h"
 #include "../../Engine/Editor/ParticleEditor.h"
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -1348,9 +1349,96 @@ namespace UnoEngine {
 				}
 			}
 
-			// Physics セクション（将来実装用）
-			if (ImGui::CollapsingHeader(U8("物理"))) {
-				ImGui::TextDisabled(U8("(物理コンポーネントなし)"));
+			// Collision セクション
+			if (auto* collision = selected->GetComponent<CollisionComponent>()) {
+				if (ImGui::CollapsingHeader(U8("コリジョン"), ImGuiTreeNodeFlags_DefaultOpen)) {
+					// 有効/無効
+					bool enabled = collision->IsEnabled();
+					ImGui::Text(U8("有効"));
+					ImGui::SameLine(100.0f);
+					if (ImGui::Checkbox("##CollisionEnabled", &enabled)) {
+						collision->SetEnabled(enabled);
+						isDirty_ = true;
+					}
+
+					// 衝突状態表示
+					bool isColliding = collision->IsColliding();
+					ImGui::Text(U8("衝突中"));
+					ImGui::SameLine(100.0f);
+					ImGui::TextColored(isColliding ? ImVec4(1, 0, 0, 1) : ImVec4(0, 1, 0, 1),
+						isColliding ? U8("はい") : U8("いいえ"));
+
+					// トリガー設定
+					bool isTrigger = collision->IsTrigger();
+					ImGui::Text(U8("トリガー"));
+					ImGui::SameLine(100.0f);
+					if (ImGui::Checkbox("##IsTrigger", &isTrigger)) {
+						collision->SetTrigger(isTrigger);
+						isDirty_ = true;
+					}
+
+					// 自動サイズ設定
+					bool autoSize = collision->IsAutoSized();
+					ImGui::Text(U8("自動サイズ"));
+					ImGui::SameLine(100.0f);
+					if (ImGui::Checkbox("##AutoSize", &autoSize)) {
+						collision->SetAutoSize(autoSize);
+						if (autoSize) {
+							collision->RecalculateFromMesh();
+						}
+						isDirty_ = true;
+					}
+
+					// AABB表示
+					const auto& aabb = collision->GetLocalAABB();
+					float aabbMin[3] = { aabb.min.GetX(), aabb.min.GetY(), aabb.min.GetZ() };
+					float aabbMax[3] = { aabb.max.GetX(), aabb.max.GetY(), aabb.max.GetZ() };
+
+					ImGui::Text(U8("AABB Min"));
+					ImGui::SameLine(100.0f);
+					ImGui::SetNextItemWidth(-1);
+					if (!autoSize) {
+						if (ImGui::DragFloat3("##AABBMin", aabbMin, 0.01f)) {
+							collision->SetLocalAABB(
+								Vector3(aabbMin[0], aabbMin[1], aabbMin[2]),
+								Vector3(aabbMax[0], aabbMax[1], aabbMax[2])
+							);
+							isDirty_ = true;
+						}
+					} else {
+						ImGui::Text("%.2f, %.2f, %.2f", aabbMin[0], aabbMin[1], aabbMin[2]);
+					}
+
+					ImGui::Text(U8("AABB Max"));
+					ImGui::SameLine(100.0f);
+					ImGui::SetNextItemWidth(-1);
+					if (!autoSize) {
+						if (ImGui::DragFloat3("##AABBMax", aabbMax, 0.01f)) {
+							collision->SetLocalAABB(
+								Vector3(aabbMin[0], aabbMin[1], aabbMin[2]),
+								Vector3(aabbMax[0], aabbMax[1], aabbMax[2])
+							);
+							isDirty_ = true;
+						}
+					} else {
+						ImGui::Text("%.2f, %.2f, %.2f", aabbMax[0], aabbMax[1], aabbMax[2]);
+					}
+
+					// メッシュから再計算ボタン
+					if (ImGui::Button(U8("メッシュから再計算"))) {
+						collision->RecalculateFromMesh();
+						isDirty_ = true;
+					}
+				}
+			} else {
+				// CollisionComponentがない場合
+				if (ImGui::CollapsingHeader(U8("物理"))) {
+					ImGui::TextDisabled(U8("(コリジョンなし)"));
+					if (ImGui::Button(U8("コリジョン追加"))) {
+						selected->AddComponent<CollisionComponent>();
+						isDirty_ = true;
+					}
+				}
 			}
 
 			// Camera セクション
@@ -2150,12 +2238,19 @@ namespace UnoEngine {
 							}
 						}
 						if (ImGui::MenuItem("AudioListener")) {
-							if (!obj->GetComponent<AudioListener>()) {
-								obj->AddComponent<AudioListener>();
-								consoleMessages_.push_back("[Editor] Added AudioListener to: " + obj->GetName());
-							}
+						if (!obj->GetComponent<AudioListener>()) {
+							obj->AddComponent<AudioListener>();
+							consoleMessages_.push_back("[Editor] Added AudioListener to: " + obj->GetName());
 						}
-						ImGui::EndMenu();
+					}
+					if (ImGui::MenuItem("Collision (AABB)")) {
+						if (!obj->GetComponent<CollisionComponent>()) {
+							obj->AddComponent<CollisionComponent>();
+							consoleMessages_.push_back("[Editor] Added CollisionComponent to: " + obj->GetName());
+							isDirty_ = true;
+						}
+					}
+					ImGui::EndMenu();
 					}
 					ImGui::EndPopup();
 				}
@@ -3635,6 +3730,26 @@ namespace UnoEngine {
 				Vector4 frustumColor(0.3f, 0.6f, 1.0f, 1.0f);
 				debugRenderer->AddCameraFrustum(nearCorners, farCorners, frustumColor);
 			}
+		}
+
+		// Collision AABBの描画
+		for (const auto& obj : *gameObjects_) {
+			auto* collision = obj->GetComponent<CollisionComponent>();
+			if (!collision || !collision->IsEnabled()) continue;
+
+			AABB worldAABB = collision->GetWorldAABB();
+			
+			// 衝突中は赤、通常は緑
+			Vector4 aabbColor = collision->IsColliding()
+				? Vector4(1.0f, 0.0f, 0.0f, 1.0f)  // 赤（衝突中）
+				: Vector4(0.0f, 1.0f, 0.0f, 1.0f); // 緑（通常）
+
+			// 選択中のオブジェクトは黄色
+			if (selectedObject_ == obj.get()) {
+				aabbColor = Vector4(1.0f, 1.0f, 0.0f, 1.0f); // 黄色（選択中）
+			}
+
+			debugRenderer->AddBox(worldAABB.min, worldAABB.max, aabbColor);
 		}
 	}
 

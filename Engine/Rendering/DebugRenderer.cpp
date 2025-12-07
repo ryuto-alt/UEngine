@@ -366,4 +366,36 @@ void DebugRenderer::AddCameraIcon(const Vector3& position, const Vector3& forwar
     AddLine(lensCorners[3], lensTip, color);
 }
 
+void DebugRenderer::AddBox(const Vector3& min, const Vector3& max, const Vector4& color) {
+    // AABBの8頂点を計算
+    Vector3 corners[8] = {
+        Vector3(min.GetX(), min.GetY(), min.GetZ()), // 0: 左下前
+        Vector3(max.GetX(), min.GetY(), min.GetZ()), // 1: 右下前
+        Vector3(max.GetX(), max.GetY(), min.GetZ()), // 2: 右上前
+        Vector3(min.GetX(), max.GetY(), min.GetZ()), // 3: 左上前
+        Vector3(min.GetX(), min.GetY(), max.GetZ()), // 4: 左下後
+        Vector3(max.GetX(), min.GetY(), max.GetZ()), // 5: 右下後
+        Vector3(max.GetX(), max.GetY(), max.GetZ()), // 6: 右上後
+        Vector3(min.GetX(), max.GetY(), max.GetZ())  // 7: 左上後
+    };
+
+    // 前面
+    AddLine(corners[0], corners[1], color);
+    AddLine(corners[1], corners[2], color);
+    AddLine(corners[2], corners[3], color);
+    AddLine(corners[3], corners[0], color);
+
+    // 後面
+    AddLine(corners[4], corners[5], color);
+    AddLine(corners[5], corners[6], color);
+    AddLine(corners[6], corners[7], color);
+    AddLine(corners[7], corners[4], color);
+
+    // 接続辺
+    AddLine(corners[0], corners[4], color);
+    AddLine(corners[1], corners[5], color);
+    AddLine(corners[2], corners[6], color);
+    AddLine(corners[3], corners[7], color);
+}
+
 } // namespace UnoEngine

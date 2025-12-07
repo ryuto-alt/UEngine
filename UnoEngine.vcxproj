@@ -186,6 +186,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClCompile Include="Engine\Core\GameObject.cpp" />
     <ClCompile Include="Engine\Core\Scene.cpp" />
     <ClCompile Include="Engine\Core\SceneManager.cpp" />
+    <ClCompile Include="Engine\Core\CollisionComponent.cpp" />
     <ClCompile Include="Engine\Scene\SceneSerializer.cpp" />
     <ClCompile Include="Engine\Core\OrbitController.cpp" />
     <ClCompile Include="Engine\Core\Logger.cpp" />
@@ -241,6 +242,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClCompile Include="Engine\Animation\AnimatorComponent.cpp" />
     <ClCompile Include="Engine\Animation\AnimationSystem.cpp" />
     <ClCompile Include="Engine\Systems\SystemManager.cpp" />
+    <ClCompile Include="Engine\Systems\CollisionSystem.cpp" />
     <ClCompile Include="Engine\Audio\AudioSystem.cpp" />
     <ClCompile Include="Engine\Audio\AudioClip.cpp" />
     <ClCompile Include="Engine\Audio\AudioSource.cpp" />
@@ -391,6 +393,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClInclude Include="Engine\Core\GameObject.h" />
     <ClInclude Include="Engine\Core\Scene.h" />
     <ClInclude Include="Engine\Core\SceneManager.h" />
+    <ClInclude Include="Engine\Core\CollisionComponent.h" />
     <ClInclude Include="Engine\Scene\SceneSerializer.h" />
     <ClInclude Include="Engine\Core\OrbitController.h" />
     <ClInclude Include="Engine\Core\Logger.h" />
@@ -462,6 +465,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClInclude Include="Engine\Animation\AnimatorComponent.h" />
     <ClInclude Include="Engine\Animation\AnimationSystem.h" />
     <ClInclude Include="Engine\Systems\SystemManager.h" />
+    <ClInclude Include="Engine\Systems\CollisionSystem.h" />
     <ClInclude Include="Engine\Scripting\LuaState.h" />
     <ClInclude Include="Engine\Scripting\LuaScriptComponent.h" />
     <ClInclude Include="Engine\Particle\Curve.h" />

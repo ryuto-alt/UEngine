@@ -6,6 +6,7 @@
 #include "../Audio/AudioSource.h"
 #include "../Audio/AudioListener.h"
 #include "../Core/CameraComponent.h"
+#include "../Core/CollisionComponent.h"
 #include "../PostProcess/PostProcessType.h"
 #include <fstream>
 #include <iostream>
@@ -280,6 +281,22 @@ json SceneSerializer::SerializeComponent(const Component& component) {
         return comp;
     }
 
+    // CollisionComponent
+    if (auto* collision = dynamic_cast<const CollisionComponent*>(&component)) {
+        comp["type"] = "CollisionComponent";
+        comp["enabled"] = collision->IsEnabled();
+        comp["isTrigger"] = collision->IsTrigger();
+        comp["autoSize"] = collision->IsAutoSized();
+        comp["collisionLayer"] = collision->GetCollisionLayer();
+        comp["collisionMask"] = collision->GetCollisionMask();
+
+        const auto& aabb = collision->GetLocalAABB();
+        comp["localAABBMin"] = { aabb.min.GetX(), aabb.min.GetY(), aabb.min.GetZ() };
+        comp["localAABBMax"] = { aabb.max.GetX(), aabb.max.GetY(), aabb.max.GetZ() };
+
+        return comp;
+    }
+
     return json();
 }
 
@@ -469,6 +486,34 @@ void SceneSerializer::DeserializeComponent(const json& json, GameObject& gameObj
         }
         if (json.contains("firstPersonMoveSpeed")) {
             camera->SetFirstPersonMoveSpeed(json["firstPersonMoveSpeed"].get<float>());
+        }
+    }
+    else if (type == "CollisionComponent") {
+        auto* collision = gameObject.AddComponent<CollisionComponent>();
+
+        if (json.contains("enabled")) {
+            collision->SetEnabled(json["enabled"].get<bool>());
+        }
+        if (json.contains("isTrigger")) {
+            collision->SetTrigger(json["isTrigger"].get<bool>());
+        }
+        if (json.contains("autoSize")) {
+            collision->SetAutoSize(json["autoSize"].get<bool>());
+        }
+        if (json.contains("collisionLayer")) {
+            collision->SetCollisionLayer(json["collisionLayer"].get<uint32_t>());
+        }
+        if (json.contains("collisionMask")) {
+            collision->SetCollisionMask(json["collisionMask"].get<uint32_t>());
+        }
+        if (json.contains("localAABBMin") && json.contains("localAABBMax")) {
+            auto minArr = json["localAABBMin"];
+            auto maxArr = json["localAABBMax"];
+            if (minArr.is_array() && maxArr.is_array() && minArr.size() >= 3 && maxArr.size() >= 3) {
+                Vector3 min(minArr[0].get<float>(), minArr[1].get<float>(), minArr[2].get<float>());
+                Vector3 max(maxArr[0].get<float>(), maxArr[1].get<float>(), maxArr[2].get<float>());
+                collision->SetLocalAABB(min, max);
+            }
         }
     }
 }

@@ -70,6 +70,9 @@ public:
     // カメラアイコン描画（簡易ワイヤーフレームカメラ形状）
     void AddCameraIcon(const Vector3& position, const Vector3& forward, const Vector3& up, float scale, const Vector4& color);
 
+    // AABB描画（ワイヤーフレームボックス）
+    void AddBox(const Vector3& min, const Vector3& max, const Vector4& color);
+
     // フレーム開始時にクリア
     void BeginFrame();
 

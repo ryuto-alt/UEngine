@@ -265,6 +265,18 @@ json SceneSerializer::SerializeComponent(const Component& component) {
         comp["ps1DitherEnabled"] = ps1Params.ditherEnabled;
         comp["ps1DitherStrength"] = ps1Params.ditherStrength;
 
+        // カメラ追従設定
+        comp["viewMode"] = static_cast<int>(camera->GetViewMode());
+        comp["followTargetName"] = camera->GetFollowTargetName();
+        comp["followDistance"] = camera->GetFollowDistance();
+        comp["followHeight"] = camera->GetFollowHeight();
+        comp["followPitch"] = camera->GetFollowPitch();
+        auto fpOffset = camera->GetFirstPersonOffset();
+        comp["firstPersonOffset"] = { fpOffset.GetX(), fpOffset.GetY(), fpOffset.GetZ() };
+        comp["followSmoothness"] = camera->GetFollowSmoothness();
+        comp["mouseSensitivity"] = camera->GetMouseSensitivity();
+        comp["firstPersonMoveSpeed"] = camera->GetFirstPersonMoveSpeed();
+
         return comp;
     }
 
@@ -424,6 +436,40 @@ void SceneSerializer::DeserializeComponent(const json& json, GameObject& gameObj
             ps1Params.ditherStrength = json["ps1DitherStrength"].get<float>();
         }
         camera->SetPS1Params(ps1Params);
+
+        // カメラ追従設定
+        if (json.contains("viewMode")) {
+            camera->SetViewMode(static_cast<CameraViewMode>(json["viewMode"].get<int>()));
+        }
+        if (json.contains("followTargetName")) {
+            camera->SetFollowTargetName(json["followTargetName"].get<std::string>());
+        }
+        if (json.contains("followDistance")) {
+            camera->SetFollowDistance(json["followDistance"].get<float>());
+        }
+        if (json.contains("followHeight")) {
+            camera->SetFollowHeight(json["followHeight"].get<float>());
+        }
+        if (json.contains("followPitch")) {
+            camera->SetFollowPitch(json["followPitch"].get<float>());
+        }
+        if (json.contains("firstPersonOffset") && json["firstPersonOffset"].is_array()) {
+            auto offset = json["firstPersonOffset"];
+            camera->SetFirstPersonOffset(Vector3(
+                offset[0].get<float>(),
+                offset[1].get<float>(),
+                offset[2].get<float>()
+            ));
+        }
+        if (json.contains("followSmoothness")) {
+            camera->SetFollowSmoothness(json["followSmoothness"].get<float>());
+        }
+        if (json.contains("mouseSensitivity")) {
+            camera->SetMouseSensitivity(json["mouseSensitivity"].get<float>());
+        }
+        if (json.contains("firstPersonMoveSpeed")) {
+            camera->SetFirstPersonMoveSpeed(json["firstPersonMoveSpeed"].get<float>());
+        }
     }
 }
 

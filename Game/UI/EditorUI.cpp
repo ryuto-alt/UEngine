@@ -173,6 +173,13 @@ namespace UnoEngine {
 		editorCamera_.SetPlaying(IsPlaying());
 		editorCamera_.Update(deltaTime);
 
+		// MainCameraのCameraComponentにも再生状態を設定
+		if (scene_) {
+			if (auto* camComp = scene_->GetActiveCameraComponent()) {
+				camComp->SetPlaying(IsPlaying());
+			}
+		}
+
 		// ステップフレームをリセット
 		stepFrame_ = false;
 	}
@@ -728,8 +735,25 @@ namespace UnoEngine {
 					while (ShowCursor(TRUE) < 0);
 				}
 
+				// CameraComponentにマウスロック状態を渡す
+				if (scene_) {
+					if (auto* camComp = scene_->GetActiveCameraComponent()) {
+						camComp->SetMouseLocked(gameViewMouseLocked_, gameViewLockMousePos_.x, gameViewLockMousePos_.y);
+					}
+				}
+
 				// マウスロック中の視点操作とWASD移動
-				if (gameViewMouseLocked_ && gameCamera_) {
+				// CameraComponentが一人称/三人称モードの場合はスキップ（CameraComponentに任せる）
+				bool cameraComponentHandlesInput = false;
+				if (scene_) {
+					if (auto* camComp = scene_->GetActiveCameraComponent()) {
+						if (camComp->GetViewMode() != CameraViewMode::Free) {
+							cameraComponentHandlesInput = true;
+						}
+					}
+				}
+
+				if (gameViewMouseLocked_ && gameCamera_ && !cameraComponentHandlesInput) {
 					POINT currentPos;
 					GetCursorPos(&currentPos);
 
@@ -749,8 +773,9 @@ namespace UnoEngine {
 					if (gameViewPitch_ < -maxPitch) gameViewPitch_ = -maxPitch;
 
 					// カメラの向きを更新
-					Quaternion rot = Quaternion::RotationRollPitchYaw(gameViewPitch_, gameViewYaw_, 0.0f);
-					gameCamera_->SetRotation(rot);
+					Quaternion rotY = Quaternion::RotationAxis(Vector3::UnitY(), gameViewYaw_);
+					Quaternion rotX = Quaternion::RotationAxis(Vector3::UnitX(), gameViewPitch_);
+					gameCamera_->SetRotation(rotY * rotX);
 
 					// WASD移動
 					Vector3 forward = gameCamera_->GetForward();
@@ -1419,6 +1444,121 @@ namespace UnoEngine {
 
 					ImGui::Spacing();
 					ImGui::Separator();
+					ImGui::Spacing();
+
+					// カメラ追従設定
+					ImGui::Text(U8("カメラ追従"));
+					ImGui::Indent(20.0f);
+					
+					// 視点モード
+					CameraViewMode viewMode = camComp->GetViewMode();
+					const char* viewModeNames[] = { U8("自由"), U8("一人称"), U8("三人称") };
+					int viewModeIdx = static_cast<int>(viewMode);
+					ImGui::Text(U8("視点モード"));
+					ImGui::SameLine(100.0f);
+					ImGui::SetNextItemWidth(-1);
+					if (ImGui::Combo("##ViewMode", &viewModeIdx, viewModeNames, 3)) {
+						camComp->SetViewMode(static_cast<CameraViewMode>(viewModeIdx));
+						isDirty_ = true;
+					}
+
+					if (viewMode != CameraViewMode::Free) {
+						// ターゲットオブジェクト選択
+						std::string targetName = camComp->GetFollowTargetName();
+						std::string displayTarget = targetName.empty() ? U8("(なし)") : targetName;
+						ImGui::Text(U8("ターゲット"));
+						ImGui::SameLine(100.0f);
+						ImGui::SetNextItemWidth(-1);
+						if (ImGui::BeginCombo("##FollowTarget", displayTarget.c_str())) {
+							if (ImGui::Selectable(U8("(なし)"), targetName.empty())) {
+								camComp->SetFollowTargetName("");
+								isDirty_ = true;
+							}
+							if (gameObjects_) {
+								for (auto& obj : *gameObjects_) {
+									if (obj.get() == selected) continue;
+									bool isSelected = (obj->GetName() == targetName);
+									if (ImGui::Selectable(obj->GetName().c_str(), isSelected)) {
+										camComp->SetFollowTargetName(obj->GetName());
+										isDirty_ = true;
+									}
+								}
+							}
+							ImGui::EndCombo();
+						}
+
+						// スムーズ
+						float smoothness = camComp->GetFollowSmoothness();
+						ImGui::Text(U8("滑らかさ"));
+						ImGui::SameLine(100.0f);
+						ImGui::SetNextItemWidth(-1);
+						if (ImGui::SliderFloat("##FollowSmooth", &smoothness, 1.0f, 30.0f)) {
+							camComp->SetFollowSmoothness(smoothness);
+							isDirty_ = true;
+						}
+
+						if (viewMode == CameraViewMode::FirstPerson) {
+									// 一人称視点オフセット
+									Vector3 offset = camComp->GetFirstPersonOffset();
+									float offsetArr[3] = { offset.GetX(), offset.GetY(), offset.GetZ() };
+									ImGui::Text(U8("目の位置"));
+									ImGui::SameLine(100.0f);
+									ImGui::SetNextItemWidth(-1);
+									if (ImGui::DragFloat3("##FPOffset", offsetArr, 0.1f)) {
+										camComp->SetFirstPersonOffset(Vector3(offsetArr[0], offsetArr[1], offsetArr[2]));
+										isDirty_ = true;
+									}
+
+									// マウス感度
+									float sensitivity = camComp->GetMouseSensitivity();
+									ImGui::Text(U8("マウス感度"));
+									ImGui::SameLine(100.0f);
+									ImGui::SetNextItemWidth(-1);
+									if (ImGui::SliderFloat("##MouseSens", &sensitivity, 0.05f, 1.0f)) {
+										camComp->SetMouseSensitivity(sensitivity);
+										isDirty_ = true;
+									}
+
+									// 移動速度
+									float moveSpeed = camComp->GetFirstPersonMoveSpeed();
+									ImGui::Text(U8("移動速度"));
+									ImGui::SameLine(100.0f);
+									ImGui::SetNextItemWidth(-1);
+									if (ImGui::SliderFloat("##FPMoveSpeed", &moveSpeed, 1.0f, 20.0f)) {
+										camComp->SetFirstPersonMoveSpeed(moveSpeed);
+										isDirty_ = true;
+									}
+								} else {
+							// 三人称視点設定
+							float distance = camComp->GetFollowDistance();
+							ImGui::Text(U8("距離"));
+							ImGui::SameLine(100.0f);
+							ImGui::SetNextItemWidth(-1);
+							if (ImGui::SliderFloat("##FollowDist", &distance, 1.0f, 30.0f)) {
+								camComp->SetFollowDistance(distance);
+								isDirty_ = true;
+							}
+
+							float height = camComp->GetFollowHeight();
+							ImGui::Text(U8("高さ"));
+							ImGui::SameLine(100.0f);
+							ImGui::SetNextItemWidth(-1);
+							if (ImGui::SliderFloat("##FollowHeight", &height, 0.0f, 20.0f)) {
+								camComp->SetFollowHeight(height);
+								isDirty_ = true;
+							}
+
+							float pitch = camComp->GetFollowPitch();
+							ImGui::Text(U8("見下ろし角"));
+							ImGui::SameLine(100.0f);
+							ImGui::SetNextItemWidth(-1);
+							if (ImGui::SliderFloat("##FollowPitch", &pitch, 0.0f, 60.0f)) {
+								camComp->SetFollowPitch(pitch);
+								isDirty_ = true;
+							}
+						}
+					}
+					ImGui::Unindent(20.0f);
 					ImGui::Spacing();
 
 					// Post Processing

@@ -95,11 +95,13 @@ void Scene::LoadSceneFromFile(const std::string& filepath) {
     for (auto& obj : GetGameObjects()) {
         // CameraComponentを持つオブジェクトを検出
         if (auto* cameraComp = obj->GetComponent<CameraComponent>()) {
+            cameraComp->SetScene(this);
             if (cameraComp->IsMain() || !foundMainCamera) {
                 mainCamera_ = obj.get();
                 obj->SetDeletable(false);
                 cameraComp->SetMain(true);
                 SetActiveCamera(cameraComp->GetCamera());
+                SetActiveCameraComponent(cameraComp);
                 foundMainCamera = true;
             }
         }
@@ -169,6 +171,7 @@ void Scene::SetupDefaultCamera() {
 
     auto* cameraComp = mainCamera_->AddComponent<CameraComponent>();
     cameraComp->SetMain(true);
+    cameraComp->SetScene(this);
     cameraComp->SetPerspective(60.0f * 0.0174533f, 16.0f / 9.0f, 0.1f, 1000.0f);
 
     SetActiveCamera(cameraComp->GetCamera());

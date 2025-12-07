@@ -2,7 +2,12 @@
 #include "CameraComponent.h"
 #include "GameObject.h"
 #include "Transform.h"
+#include "Scene.h"
+#include "../Input/InputManager.h"
+#include "../Input/Keyboard.h"
+#include <Windows.h>
 #include <algorithm>
+#include <cmath>
 
 namespace UnoEngine {
 
@@ -22,10 +27,13 @@ void CameraComponent::Start() {
 }
 
 void CameraComponent::OnUpdate(float deltaTime) {
-    (void)deltaTime;
-
-    // GameObjectのTransformからカメラのTransformを同期
-    UpdateCameraTransform();
+    // フォローモードの処理
+    if (viewMode_ != CameraViewMode::Free) {
+        UpdateFollowCamera(deltaTime);
+    } else {
+        // GameObjectのTransformからカメラのTransformを同期
+        UpdateCameraTransform();
+    }
 
     // 投影行列の更新が必要な場合
     if (updateProjection_) {
@@ -159,6 +167,130 @@ void CameraComponent::RemovePostProcessEffect(PostProcessType effect) {
 
 bool CameraComponent::HasPostProcessEffect(PostProcessType effect) const {
     return std::find(postProcessEffects_.begin(), postProcessEffects_.end(), effect) != postProcessEffects_.end();
+}
+
+GameObject* CameraComponent::FindFollowTarget() const {
+    if (!scene_ || followTargetName_.empty()) return nullptr;
+    
+    for (const auto& obj : scene_->GetGameObjects()) {
+        if (obj->GetName() == followTargetName_) {
+            return obj.get();
+        }
+    }
+    return nullptr;
+}
+
+void CameraComponent::UpdateFollowCamera(float deltaTime) {
+    GameObject* target = FindFollowTarget();
+    if (!target) {
+        UpdateCameraTransform();
+        return;
+    }
+
+    Vector3 targetPos = target->GetTransform().GetPosition();
+    
+    Vector3 desiredPos;
+    Quaternion desiredRot;
+
+    if (viewMode_ == CameraViewMode::FirstPerson) {
+        // 一人称視点: 回転はマウスで独立制御、移動はカメラの向きに基づく
+        
+        if (isPlaying_ && mouseLocked_ && scene_) {
+            if (auto* input = scene_->GetInputManager()) {
+                // マウスロック時はWin32 APIで直接delta取得してカーソルを戻す
+                POINT currentPos;
+                GetCursorPos(&currentPos);
+                
+                float deltaX = static_cast<float>(currentPos.x - mouseLockX_);
+                float deltaY = static_cast<float>(currentPos.y - mouseLockY_);
+                
+                // カーソルを中央に戻す
+                if (deltaX != 0.0f || deltaY != 0.0f) {
+                    SetCursorPos(mouseLockX_, mouseLockY_);
+                }
+                
+                cameraYaw_ += deltaX * mouseSensitivity_ * 0.01f;
+                cameraPitch_ += deltaY * mouseSensitivity_ * 0.01f;
+                
+                // Pitch制限（上下90度まで）
+                constexpr float maxPitch = 1.5f;
+                if (cameraPitch_ > maxPitch) cameraPitch_ = maxPitch;
+                if (cameraPitch_ < -maxPitch) cameraPitch_ = -maxPitch;
+                
+                // WASD移動（カメラの向きに基づいてターゲットを移動）
+                auto& keyboard = input->GetKeyboard();
+                
+                // カメラの向きから水平方向を計算
+                float sinYaw = std::sin(cameraYaw_);
+                float cosYaw = std::cos(cameraYaw_);
+                Vector3 forward(sinYaw, 0.0f, cosYaw);
+                Vector3 right(cosYaw, 0.0f, -sinYaw);
+                
+                Vector3 movement = Vector3::Zero();
+                if (keyboard.IsDown(KeyCode::W)) movement = movement + forward;
+                if (keyboard.IsDown(KeyCode::S)) movement = movement - forward;
+                if (keyboard.IsDown(KeyCode::A)) movement = movement - right;
+                if (keyboard.IsDown(KeyCode::D)) movement = movement + right;
+                if (keyboard.IsDown(KeyCode::Space)) movement = movement + Vector3::UnitY();
+                if (keyboard.IsDown(KeyCode::Shift)) movement = movement - Vector3::UnitY();
+                
+                if (movement.Length() > 0.001f) {
+                    movement = movement.Normalize() * firstPersonMoveSpeed_ * deltaTime;
+                    Vector3 newPos = target->GetTransform().GetPosition() + movement;
+                    target->GetTransform().SetPosition(newPos);
+                }
+            }
+        }
+        
+        // ターゲットもカメラのYaw方向に回転（常にカメラと同じ向きを向く）
+        Quaternion targetRotY = Quaternion::RotationAxis(Vector3::UnitY(), cameraYaw_);
+        target->GetTransform().SetRotation(targetRotY);
+        
+        // ターゲット位置を再取得（移動後）
+        targetPos = target->GetTransform().GetPosition();
+        desiredPos = targetPos + firstPersonOffset_;
+        
+        // Y軸回転（yaw）とX軸回転（pitch）を個別に作成して合成
+        Quaternion rotY = Quaternion::RotationAxis(Vector3::UnitY(), cameraYaw_);
+        Quaternion rotX = Quaternion::RotationAxis(Vector3::UnitX(), cameraPitch_);
+        desiredRot = rotY * rotX;
+    } else {
+        // 三人称視点: ターゲットの後ろから見下ろす
+        float pitchRad = followPitch_ * 0.0174533f;
+        
+        Vector3 targetForward = target->GetTransform().GetForward();
+        
+        Vector3 offset = -targetForward * followDistance_ * std::cos(pitchRad);
+        offset = offset + Vector3(0.0f, followHeight_ + followDistance_ * std::sin(pitchRad), 0.0f);
+        
+        desiredPos = targetPos + offset;
+        
+        // ターゲットを見るように回転
+        Vector3 lookDir = (targetPos + Vector3(0.0f, followHeight_ * 0.5f, 0.0f)) - desiredPos;
+        if (lookDir.Length() > 0.001f) {
+            lookDir = lookDir.Normalize();
+            float yaw = std::atan2(lookDir.GetX(), lookDir.GetZ());
+            float pitch = -std::asin(lookDir.GetY());
+            desiredRot = Quaternion::RotationRollPitchYaw(pitch, yaw, 0.0f);
+        }
+    }
+
+    // スムーズ補間
+    float t = 1.0f - std::exp(-followSmoothness_ * deltaTime);
+    Vector3 currentPos = camera_.GetPosition();
+    Quaternion currentRot = camera_.GetRotation();
+    
+    Vector3 newPos = currentPos + (desiredPos - currentPos) * t;
+    Quaternion newRot = Quaternion::Slerp(currentRot, desiredRot, t);
+    
+    camera_.SetPosition(newPos);
+    camera_.SetRotation(newRot);
+    
+    // GameObjectのTransformも同期（ギズモ表示用）
+    if (gameObject_) {
+        gameObject_->GetTransform().SetPosition(newPos);
+        gameObject_->GetTransform().SetRotation(newRot);
+    }
 }
 
 } // namespace UnoEngine

@@ -45,6 +45,7 @@ public:
     void SetApplication(Application* app) { app_ = app; }
 
     void SetInputManager(InputManager* input) { input_ = input; }
+    InputManager* GetInputManager() const { return input_; }
 
     // Call Start() on a specific GameObject's components (useful for runtime-created objects)
     void StartGameObject(GameObject* obj);

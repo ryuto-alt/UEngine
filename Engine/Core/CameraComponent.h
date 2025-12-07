@@ -5,8 +5,16 @@
 #include "../Math/Math.h"
 #include "../PostProcess/PostProcessType.h"
 #include <vector>
+#include <string>
 
 namespace UnoEngine {
+
+// カメラ視点モード
+enum class CameraViewMode {
+    Free,           // 自由カメラ（追従なし）
+    FirstPerson,    // 一人称視点
+    ThirdPerson     // 三人称視点
+};
 
 /// CameraComponent - GameObjectにアタッチ可能なカメラコンポーネント
 /// Unityと同様に、シーン内のカメラを管理する
@@ -92,7 +100,56 @@ public:
     const PS1Params& GetPS1Params() const { return ps1Params_; }
     void SetPS1Params(const PS1Params& params) { ps1Params_ = params; }
 
+    // カメラ追従設定
+    CameraViewMode GetViewMode() const { return viewMode_; }
+    void SetViewMode(CameraViewMode mode) { viewMode_ = mode; }
+
+    const std::string& GetFollowTargetName() const { return followTargetName_; }
+    void SetFollowTargetName(const std::string& name) { followTargetName_ = name; }
+
+    // 三人称視点設定
+    float GetFollowDistance() const { return followDistance_; }
+    void SetFollowDistance(float distance) { followDistance_ = distance; }
+
+    float GetFollowHeight() const { return followHeight_; }
+    void SetFollowHeight(float height) { followHeight_ = height; }
+
+    float GetFollowPitch() const { return followPitch_; }
+    void SetFollowPitch(float pitch) { followPitch_ = pitch; }
+
+    // 一人称視点オフセット
+    const Vector3& GetFirstPersonOffset() const { return firstPersonOffset_; }
+    void SetFirstPersonOffset(const Vector3& offset) { firstPersonOffset_ = offset; }
+
+    // 一人称視点マウス感度
+    float GetMouseSensitivity() const { return mouseSensitivity_; }
+    void SetMouseSensitivity(float sensitivity) { mouseSensitivity_ = sensitivity; }
+
+    // 一人称視点移動速度
+    float GetFirstPersonMoveSpeed() const { return firstPersonMoveSpeed_; }
+    void SetFirstPersonMoveSpeed(float speed) { firstPersonMoveSpeed_ = speed; }
+
+    // スムーズ追従
+    float GetFollowSmoothness() const { return followSmoothness_; }
+    void SetFollowSmoothness(float smoothness) { followSmoothness_ = smoothness; }
+
+    // シーン参照（ターゲット検索用）
+    void SetScene(class Scene* scene) { scene_ = scene; }
+
+    // 再生状態（編集中はマウスルック無効）
+    void SetPlaying(bool playing) { isPlaying_ = playing; }
+
+    // マウスロック状態（GameViewクリック時にtrueになる）
+    void SetMouseLocked(bool locked, int lockX = 0, int lockY = 0) { 
+        mouseLocked_ = locked; 
+        mouseLockX_ = lockX;
+        mouseLockY_ = lockY;
+    }
+    bool IsMouseLocked() const { return mouseLocked_; }
+
 private:
+    void UpdateFollowCamera(float deltaTime);
+    GameObject* FindFollowTarget() const;
     void UpdateCameraTransform();
     void UpdateProjectionMatrix();
 
@@ -122,6 +179,24 @@ private:
     FisheyeParams fisheyeParams_;
     GrayscaleParams grayscaleParams_;
     PS1Params ps1Params_;
+
+    // カメラ追従設定
+    CameraViewMode viewMode_ = CameraViewMode::Free;
+    std::string followTargetName_;
+    float followDistance_ = 5.0f;    // 三人称: ターゲットからの距離
+    float followHeight_ = 2.0f;      // 三人称: ターゲットからの高さ
+    float followPitch_ = 15.0f;      // 三人称: 見下ろし角度（度）
+    Vector3 firstPersonOffset_ = Vector3(0.0f, 1.7f, 0.0f);  // 一人称: 目の位置オフセット
+    float followSmoothness_ = 10.0f; // 追従の滑らかさ
+    float mouseSensitivity_ = 0.3f;  // 一人称: マウス感度
+    float firstPersonMoveSpeed_ = 5.0f; // 一人称: 移動速度
+    float cameraYaw_ = 0.0f;         // 一人称: 累積Yaw角度
+    float cameraPitch_ = 0.0f;       // 一人称: 累積Pitch角度
+    bool isPlaying_ = false;         // 再生中フラグ
+    bool mouseLocked_ = false;       // マウスロック状態
+    int mouseLockX_ = 0;             // マウスロック位置X
+    int mouseLockY_ = 0;             // マウスロック位置Y
+    class Scene* scene_ = nullptr;
 };
 
 } // namespace UnoEngine

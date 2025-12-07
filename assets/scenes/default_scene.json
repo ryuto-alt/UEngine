@@ -62,12 +62,24 @@
                 {
                     "aspect": 1.7777777910232544,
                     "farClip": 1000.0,
-                    "fisheyeStrength": 0.24899999797344208,
-                    "fisheyeZoom": 2.0,
+                    "firstPersonMoveSpeed": 5.0,
+                    "firstPersonOffset": [
+                        0.0,
+                        1.899999976158142,
+                        0.0
+                    ],
+                    "fisheyeStrength": 0.0,
+                    "fisheyeZoom": 1.4700000286102295,
+                    "followDistance": 5.0,
+                    "followHeight": 2.0,
+                    "followPitch": 15.0,
+                    "followSmoothness": 9.732000350952148,
+                    "followTargetName": "Player",
                     "fov": 1.5872554779052734,
                     "grayscaleIntensity": 1.0,
                     "isMain": true,
                     "isOrthographic": false,
+                    "mouseSensitivity": 0.30000001192092896,
                     "nearClip": 0.10000000149011612,
                     "postProcessEffects": [
                         3
@@ -75,11 +87,12 @@
                     "postProcessEnabled": true,
                     "postProcessIntensity": 1.0,
                     "priority": 0,
-                    "ps1ColorDepth": 2,
-                    "ps1DitherEnabled": true,
+                    "ps1ColorDepth": 6,
+                    "ps1DitherEnabled": false,
                     "ps1DitherStrength": 2.0,
-                    "ps1ResolutionScale": 8.0,
+                    "ps1ResolutionScale": 2.200000047683716,
                     "type": "CameraComponent",
+                    "viewMode": 1,
                     "vignetteIntensity": 1.0,
                     "vignetteRadius": 0.75,
                     "vignetteSoftness": 0.44999998807907104
@@ -89,15 +102,15 @@
             "name": "Camera",
             "transform": {
                 "position": [
-                    3.257794141769409,
-                    1.3964323997497559,
-                    9.95559024810791
+                    -16.934276580810547,
+                    12.609004974365234,
+                    -34.56475067138672
                 ],
                 "rotation": [
-                    0.0,
-                    0.9999998807907104,
-                    -0.0,
-                    -1.1920928955078125e-07
+                    0.14139927923679352,
+                    0.09232009947299957,
+                    -0.013245387934148312,
+                    0.9855495095252991
                 ],
                 "scale": [
                     1.0,
@@ -165,7 +178,7 @@
             }
         },
         {
-            "active": true,
+            "active": false,
             "components": [
                 {
                     "modelPath": "assets/model/testmodel/human/walk.gltf",
@@ -179,15 +192,15 @@
             "name": "Player",
             "transform": {
                 "position": [
-                    3.0,
-                    1.1920928955078125e-07,
-                    17.857919692993164
+                    -16.93426513671875,
+                    10.70901107788086,
+                    -34.564727783203125
                 ],
                 "rotation": [
                     0.0,
+                    0.09326538443565369,
                     0.0,
-                    0.0,
-                    1.0
+                    0.99564129114151
                 ],
                 "scale": [
                     1.0,

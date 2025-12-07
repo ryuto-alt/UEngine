@@ -1377,6 +1377,15 @@ namespace UnoEngine {
 						isDirty_ = true;
 					}
 
+					// 静的設定（壁や地形など動かないオブジェクト用）
+					bool isStatic = collision->IsStatic();
+					ImGui::Text(U8("静的"));
+					ImGui::SameLine(100.0f);
+					if (ImGui::Checkbox("##IsStatic", &isStatic)) {
+						collision->SetStatic(isStatic);
+						isDirty_ = true;
+					}
+
 					// 自動サイズ設定
 					bool autoSize = collision->IsAutoSized();
 					ImGui::Text(U8("自動サイズ"));

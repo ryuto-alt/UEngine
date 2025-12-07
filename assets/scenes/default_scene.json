@@ -32,6 +32,25 @@
                     "type": "SkinnedMeshRenderer"
                 },
                 {
+                    "autoSize": false,
+                    "collisionLayer": 0,
+                    "collisionMask": 4294967295,
+                    "enabled": true,
+                    "isStatic": false,
+                    "isTrigger": true,
+                    "localAABBMax": [
+                        21.863000869750977,
+                        63.9900016784668,
+                        35.0
+                    ],
+                    "localAABBMin": [
+                        -23.542999267578125,
+                        -3.618000030517578,
+                        -12.256532669067383
+                    ],
+                    "type": "CollisionComponent"
+                },
+                {
                     "type": "AnimatorComponent"
                 }
             ],
@@ -39,9 +58,9 @@
             "name": "Enemy",
             "transform": {
                 "position": [
-                    -15.586255073547363,
-                    -0.06300800293684006,
-                    15.860295295715332
+                    3.5,
+                    0.0,
+                    3.0
                 ],
                 "rotation": [
                     0.0,
@@ -62,24 +81,24 @@
                 {
                     "aspect": 1.7777777910232544,
                     "farClip": 1000.0,
-                    "firstPersonMoveSpeed": 5.0,
+                    "firstPersonMoveSpeed": 12.019000053405762,
                     "firstPersonOffset": [
                         0.0,
-                        3.5,
+                        1.7999999523162842,
                         0.0
                     ],
-                    "fisheyeStrength": 0.0,
-                    "fisheyeZoom": 1.4700000286102295,
+                    "fisheyeStrength": 0.10000000149011612,
+                    "fisheyeZoom": 1.3600000143051147,
                     "followDistance": 5.0,
                     "followHeight": 2.0,
                     "followPitch": 15.0,
-                    "followSmoothness": 16.201000213623047,
-                    "followTargetName": "Enemy",
-                    "fov": 1.5872554779052734,
+                    "followSmoothness": 30.0,
+                    "followTargetName": "Player",
+                    "fov": 1.5765740871429443,
                     "grayscaleIntensity": 1.0,
                     "isMain": true,
                     "isOrthographic": false,
-                    "mouseSensitivity": 0.30000001192092896,
+                    "mouseSensitivity": 0.13099999725818634,
                     "nearClip": 0.10000000149011612,
                     "postProcessEffects": [
                         3
@@ -90,7 +109,7 @@
                     "ps1ColorDepth": 6,
                     "ps1DitherEnabled": false,
                     "ps1DitherStrength": 2.0,
-                    "ps1ResolutionScale": 2.200000047683716,
+                    "ps1ResolutionScale": 3.4000000953674316,
                     "type": "CameraComponent",
                     "viewMode": 1,
                     "vignetteIntensity": 1.0,
@@ -102,15 +121,15 @@
             "name": "Camera",
             "transform": {
                 "position": [
-                    -15.586254119873047,
-                    3.4369921684265137,
-                    15.860296249389648
+                    17.40306854248047,
+                    2.0623929500579834,
+                    -47.62215042114258
                 ],
                 "rotation": [
-                    1.401298464324817e-45,
-                    1.401298464324817e-45,
-                    -1.401298464324817e-45,
-                    1.0
+                    -0.04205857217311859,
+                    0.7134144306182861,
+                    -0.04297768697142601,
+                    -0.6981574892997742
                 ],
                 "scale": [
                     1.0,
@@ -178,11 +197,30 @@
             }
         },
         {
-            "active": true,
+            "active": false,
             "components": [
                 {
                     "modelPath": "assets/model/testmodel/human/walk.gltf",
                     "type": "SkinnedMeshRenderer"
+                },
+                {
+                    "autoSize": false,
+                    "collisionLayer": 0,
+                    "collisionMask": 4294967295,
+                    "enabled": true,
+                    "isStatic": false,
+                    "isTrigger": true,
+                    "localAABBMax": [
+                        0.35899999737739563,
+                        1.6565660238265991,
+                        0.3089999854564667
+                    ],
+                    "localAABBMin": [
+                        -0.32899999618530273,
+                        -0.052000001072883606,
+                        -0.2070000022649765
+                    ],
+                    "type": "CollisionComponent"
                 },
                 {
                     "type": "AnimatorComponent"
@@ -192,15 +230,15 @@
             "name": "Player",
             "transform": {
                 "position": [
-                    -16.93426513671875,
-                    0.0,
-                    -34.564727783203125
+                    17.403066635131836,
+                    0.26239317655563354,
+                    -47.622154235839844
                 ],
                 "rotation": [
                     0.0,
+                    0.7147078514099121,
                     0.0,
-                    0.0,
-                    1.0
+                    -0.6994231343269348
                 ],
                 "scale": [
                     1.0,

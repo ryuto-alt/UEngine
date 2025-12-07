@@ -286,6 +286,7 @@ json SceneSerializer::SerializeComponent(const Component& component) {
         comp["type"] = "CollisionComponent";
         comp["enabled"] = collision->IsEnabled();
         comp["isTrigger"] = collision->IsTrigger();
+        comp["isStatic"] = collision->IsStatic();
         comp["autoSize"] = collision->IsAutoSized();
         comp["collisionLayer"] = collision->GetCollisionLayer();
         comp["collisionMask"] = collision->GetCollisionMask();
@@ -496,6 +497,9 @@ void SceneSerializer::DeserializeComponent(const json& json, GameObject& gameObj
         }
         if (json.contains("isTrigger")) {
             collision->SetTrigger(json["isTrigger"].get<bool>());
+        }
+        if (json.contains("isStatic")) {
+            collision->SetStatic(json["isStatic"].get<bool>());
         }
         if (json.contains("autoSize")) {
             collision->SetAutoSize(json["autoSize"].get<bool>());

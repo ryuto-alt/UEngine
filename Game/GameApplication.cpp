@@ -5,6 +5,7 @@
 #include "../Engine/Rendering/RenderSystem.h"
 #include "../Engine/Rendering/SkinnedRenderItem.h"
 #include "../Engine/Audio/AudioSystem.h"
+#include "../Engine/Systems/CollisionSystem.h"
 #include "../Engine/Core/Logger.h"
 
 namespace UnoEngine {
@@ -18,7 +19,8 @@ void GameApplication::OnInit() {
     GetSystemManager()->RegisterSystem<AnimationSystem>();
     GetSystemManager()->RegisterSystem<CameraSystem>();
     GetSystemManager()->RegisterSystem<AudioSystem>();
-    Logger::Info("[初期化] システム登録完了 (Animation, Camera, Audio)");
+    GetSystemManager()->RegisterSystem<CollisionSystem>();
+    Logger::Info("[初期化] システム登録完了 (Animation, Camera, Audio, Collision)");
 }
 
 Mesh* GameApplication::LoadMesh(const std::string& path) {

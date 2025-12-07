@@ -2,6 +2,7 @@
 
 #include "Component.h"
 #include "../Math/Vector.h"
+#include <vector>
 
 namespace UnoEngine {
 
@@ -51,12 +52,17 @@ public:
     [[nodiscard]] bool IsColliding() const { return isColliding_; }
     void SetColliding(bool colliding) { isColliding_ = colliding; }
 
-    // AABB accessors
+    // Single AABB (combined bounds)
     [[nodiscard]] const AABB& GetLocalAABB() const { return localAABB_; }
     [[nodiscard]] AABB GetWorldAABB() const;
 
+    // Multiple AABBs for complex meshes
+    [[nodiscard]] const std::vector<AABB>& GetLocalAABBs() const { return localAABBs_; }
+    [[nodiscard]] std::vector<AABB> GetWorldAABBs() const;
+    [[nodiscard]] bool HasMultipleAABBs() const { return !localAABBs_.empty(); }
+
     // Manual AABB override
-    void SetLocalAABB(const AABB& aabb) { localAABB_ = aabb; useAutoSize_ = false; }
+    void SetLocalAABB(const AABB& aabb) { localAABB_ = aabb; localAABBs_.clear(); useAutoSize_ = false; }
     void SetLocalAABB(const Vector3& min, const Vector3& max);
 
     // Auto-sizing from mesh bounds
@@ -75,16 +81,23 @@ public:
     [[nodiscard]] bool IsTrigger() const { return isTrigger_; }
     void SetTrigger(bool trigger) { isTrigger_ = trigger; }
 
+    // Static vs dynamic (static objects don't get pushed)
+    [[nodiscard]] bool IsStatic() const { return isStatic_; }
+    void SetStatic(bool isStatic) { isStatic_ = isStatic; }
+
     // Static collision check
     [[nodiscard]] static bool CheckAABBCollision(const AABB& a, const AABB& b);
+    [[nodiscard]] static Vector3 GetPenetrationVector(const AABB& a, const AABB& b);
 
 private:
     AABB localAABB_{ Vector3(-0.5f, -0.5f, -0.5f), Vector3(0.5f, 0.5f, 0.5f) };
+    std::vector<AABB> localAABBs_;
     bool enabled_ = true;
     bool isColliding_ = false;
     bool useAutoSize_ = true;
     bool isTrigger_ = false;
-    uint32_t collisionLayer_ = 1;
+    bool isStatic_ = false;
+    uint32_t collisionLayer_ = 0;  // Default to layer 0
     uint32_t collisionMask_ = 0xFFFFFFFF;
 };
 

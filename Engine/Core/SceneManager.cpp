@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "SceneManager.h"
 #include "Application.h"
+#include "../Systems/SystemManager.h"
 
 namespace UnoEngine {
 
@@ -13,6 +14,9 @@ void SceneManager::Update(float deltaTime) {
 void SceneManager::LoadScene(std::unique_ptr<Scene> scene) {
     if (activeScene_) {
         activeScene_->OnUnload();
+        if (app_) {
+            app_->GetSystemManager()->OnSceneEnd(activeScene_.get());
+        }
     }
 
     activeScene_ = std::move(scene);
@@ -24,6 +28,9 @@ void SceneManager::LoadScene(std::unique_ptr<Scene> scene) {
 
     if (activeScene_) {
         activeScene_->OnLoad();
+        if (app_) {
+            app_->GetSystemManager()->OnSceneStart(activeScene_.get());
+        }
     }
 }
 

@@ -12,6 +12,7 @@ class GameObject;
 struct CollisionPair {
     CollisionComponent* a = nullptr;
     CollisionComponent* b = nullptr;
+    Vector3 penetration;
 };
 
 using CollisionCallback = std::function<void(CollisionComponent*, CollisionComponent*)>;
@@ -46,6 +47,7 @@ public:
 private:
     void GatherCollisionComponents(Scene* scene);
     void CheckCollisions();
+    void ResolveCollisions();
     void UpdateCollisionStates();
     bool ShouldCheckCollision(CollisionComponent* a, CollisionComponent* b) const;
 
@@ -59,8 +61,8 @@ private:
 
     bool debugDraw_ = false;
 
-    // Simple layer collision matrix (32 layers max)
-    uint32_t layerCollisionMatrix_[32] = { 0xFFFFFFFF };
+    // Simple layer collision matrix (32 layers max) - initialized in OnSceneStart
+    uint32_t layerCollisionMatrix_[32] = {};
 };
 
 } // namespace UnoEngine

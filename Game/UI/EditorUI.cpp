@@ -20,6 +20,7 @@
 #include "../../Engine/Core/CameraComponent.h"
 #include "../../Engine/Core/CollisionComponent.h"
 #include "../../Engine/Editor/ParticleEditor.h"
+#include "../../Engine/AI/NavMesh/NavMeshSystem.h"
 #include <imgui.h>
 #include <imgui_internal.h>
 #include "../../Engine/UI/imgui_toggle.h"
@@ -167,6 +168,63 @@ namespace UnoEngine {
 
 		// ビルドダイアログ描画
 		RenderBuildDialog();
+
+		// NavMesh設定ウィンドウ描画
+		if (showNavMeshSettings_) {
+			ImGui::SetNextWindowSize(ImVec2(350, 400), ImGuiCond_FirstUseEver);
+			if (ImGui::Begin(U8("NavMesh設定"), &showNavMeshSettings_)) {
+				auto& navMeshSystem = NavMeshSystem::GetInstance();
+				auto& config = navMeshSystem.GetConfig();
+				
+				ImGui::SeparatorText(U8("エージェント設定"));
+				ImGui::DragFloat(U8("半径"), &config.agentRadius, 0.01f, 0.1f, 5.0f);
+				ImGui::DragFloat(U8("高さ"), &config.agentHeight, 0.1f, 0.5f, 10.0f);
+				ImGui::DragFloat(U8("最大傾斜角"), &config.maxSlope, 1.0f, 0.0f, 90.0f);
+				ImGui::DragFloat(U8("段差許容"), &config.stepHeight, 0.01f, 0.0f, 2.0f);
+				
+				ImGui::SeparatorText(U8("ボクセル設定"));
+				ImGui::DragFloat(U8("セルサイズ"), &config.cellSize, 0.01f, 0.1f, 2.0f);
+				ImGui::DragFloat(U8("セル高さ"), &config.cellHeight, 0.01f, 0.05f, 1.0f);
+				
+				ImGui::SeparatorText(U8("領域設定"));
+				ImGui::DragFloat(U8("最小領域面積"), &config.minRegionArea, 1.0f, 1.0f, 100.0f);
+				ImGui::DragFloat(U8("マージ領域面積"), &config.mergeRegionArea, 1.0f, 1.0f, 200.0f);
+				
+				ImGui::SeparatorText(U8("表示設定"));
+				auto debugColor = navMeshSystem.GetDebugDrawColor();
+				float color[4] = {debugColor.x, debugColor.y, debugColor.z, debugColor.w};
+				if (ImGui::ColorEdit4(U8("NavMesh色"), color)) {
+					navMeshSystem.SetDebugDrawColor({color[0], color[1], color[2], color[3]});
+				}
+				
+				ImGui::Separator();
+				
+				if (navMeshSystem.HasNavMesh()) {
+					ImGui::Text(U8("現在のNavMesh:"));
+					ImGui::Text(U8("  ポリゴン数: %d"), navMeshSystem.GetPolygonCount());
+					ImGui::Text(U8("  頂点数: %d"), navMeshSystem.GetVertexCount());
+				} else {
+					ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), U8("NavMeshが生成されていません"));
+				}
+				
+				ImGui::Separator();
+				
+				if (ImGui::Button(U8("NavMeshをベイク"), ImVec2(-1, 0))) {
+					if (scene_) {
+						navMeshSystem.SetProgressCallback([this](float progress, const char* stage) {
+							navMeshBakeProgress_ = progress;
+							navMeshBakeStage_ = stage;
+						});
+						if (navMeshSystem.BakeNavMesh(scene_)) {
+							AddConsoleMessage(U8("[NavMesh] ベイク完了"));
+						} else {
+							AddConsoleMessage(U8("[NavMesh] ベイク失敗"));
+						}
+					}
+				}
+			}
+			ImGui::End();
+		}
 
 		// エディタカメラの更新
 		float deltaTime = ImGui::GetIO().DeltaTime;
@@ -357,6 +415,93 @@ namespace UnoEngine {
 				}
 				ImGui::Separator();
 				ImGui::TextDisabled(U8("出力先を選択してGame.exeを生成します"));
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu(U8("ナビゲーション"))) {
+				auto& navMeshSystem = NavMeshSystem::GetInstance();
+				
+				if (ImGui::MenuItem(U8("NavMeshをベイク"), nullptr, false, scene_ != nullptr)) {
+					std::string lastStage;
+					navMeshSystem.SetProgressCallback([this, &lastStage](float progress, const char* stage) {
+						navMeshBakeProgress_ = progress;
+						navMeshBakeStage_ = stage;
+						lastStage = stage;
+					});
+					if (navMeshSystem.BakeNavMesh(scene_)) {
+						AddConsoleMessage(U8("[NavMesh] ベイク完了: ") + 
+							std::to_string(navMeshSystem.GetPolygonCount()) + U8(" ポリゴン, ") +
+							std::to_string(navMeshSystem.GetVertexCount()) + U8(" 頂点"));
+					} else {
+						AddConsoleMessage(U8("[NavMesh] ベイク失敗: ") + lastStage);
+					}
+				}
+				
+				if (ImGui::MenuItem(U8("NavMeshをクリア"), nullptr, false, navMeshSystem.HasNavMesh())) {
+					navMeshSystem.ClearNavMesh();
+					AddConsoleMessage(U8("[NavMesh] クリアしました"));
+				}
+				
+				ImGui::Separator();
+				
+				ImGui::MenuItem(U8("NavMeshを表示"), nullptr, &showNavMesh_);
+				navMeshSystem.SetDebugDrawEnabled(showNavMesh_);
+				
+				ImGui::MenuItem(U8("NavMesh設定"), nullptr, &showNavMeshSettings_);
+				
+				ImGui::Separator();
+				
+				if (ImGui::MenuItem(U8("NavMeshを保存..."), nullptr, false, navMeshSystem.HasNavMesh())) {
+					OPENFILENAMEA ofn = {};
+					char filename[MAX_PATH] = "";
+					ofn.lStructSize = sizeof(ofn);
+					ofn.hwndOwner = nullptr;
+					ofn.lpstrFilter = "NavMesh Files (*.navmesh)\0*.navmesh\0All Files (*.*)\0*.*\0";
+					ofn.lpstrFile = filename;
+					ofn.nMaxFile = MAX_PATH;
+					ofn.lpstrDefExt = "navmesh";
+					ofn.Flags = OFN_OVERWRITEPROMPT;
+					
+					if (GetSaveFileNameA(&ofn)) {
+						if (navMeshSystem.SaveNavMesh(filename)) {
+							AddConsoleMessage(U8("[NavMesh] 保存しました: ") + std::string(filename));
+						} else {
+							AddConsoleMessage(U8("[NavMesh] 保存失敗"));
+						}
+					}
+				}
+				
+				if (ImGui::MenuItem(U8("NavMeshを読み込み..."))) {
+					OPENFILENAMEA ofn = {};
+					char filename[MAX_PATH] = "";
+					ofn.lStructSize = sizeof(ofn);
+					ofn.hwndOwner = nullptr;
+					ofn.lpstrFilter = "NavMesh Files (*.navmesh)\0*.navmesh\0All Files (*.*)\0*.*\0";
+					ofn.lpstrFile = filename;
+					ofn.nMaxFile = MAX_PATH;
+					ofn.Flags = OFN_FILEMUSTEXIST;
+					
+					if (GetOpenFileNameA(&ofn)) {
+						if (navMeshSystem.LoadNavMesh(filename)) {
+							AddConsoleMessage(U8("[NavMesh] 読み込みました: ") + std::string(filename) +
+								U8(" (") + std::to_string(navMeshSystem.GetPolygonCount()) + U8(" ポリゴン)"));
+						} else {
+							AddConsoleMessage(U8("[NavMesh] 読み込み失敗"));
+						}
+					}
+				}
+				
+				ImGui::Separator();
+				
+				// 現在のNavMesh情報
+				if (navMeshSystem.HasNavMesh()) {
+					ImGui::TextDisabled(U8("ポリゴン: %d, 頂点: %d"), 
+						navMeshSystem.GetPolygonCount(), 
+						navMeshSystem.GetVertexCount());
+				} else {
+					ImGui::TextDisabled(U8("NavMeshなし"));
+				}
+				
 				ImGui::EndMenu();
 			}
 
@@ -1384,6 +1529,21 @@ namespace UnoEngine {
 					if (ImGui::Checkbox("##IsStatic", &isStatic)) {
 						collision->SetStatic(isStatic);
 						isDirty_ = true;
+					}
+
+					// NavMeshエリア設定
+					NavMeshAreaType navArea = collision->GetNavMeshArea();
+					const char* navAreaNames[] = { U8("なし"), U8("歩行可能") };
+					int navAreaIdx = static_cast<int>(navArea);
+					ImGui::Text(U8("NavMesh"));
+					ImGui::SameLine(100.0f);
+					ImGui::SetNextItemWidth(-1);
+					if (ImGui::Combo("##NavMeshArea", &navAreaIdx, navAreaNames, 2)) {
+						collision->SetNavMeshArea(static_cast<NavMeshAreaType>(navAreaIdx));
+						isDirty_ = true;
+					}
+					if (ImGui::IsItemHovered()) {
+						ImGui::SetTooltip(U8("「歩行可能」に設定するとNavMeshベイク時にこのコライダーが含まれます"));
 					}
 
 					// 自動サイズ設定
@@ -3768,6 +3928,12 @@ namespace UnoEngine {
 			}
 
 			debugRenderer->AddBox(worldAABB.min, worldAABB.max, aabbColor);
+		}
+
+		// NavMeshデバッグ描画
+		if (showNavMesh_) {
+			auto& navMeshSystem = NavMeshSystem::GetInstance();
+			navMeshSystem.DrawDebug(debugRenderer);
 		}
 	}
 

@@ -6,6 +6,13 @@
 
 namespace UnoEngine {
 
+// NavMeshエリアタイプ
+enum class NavMeshAreaType : uint8_t {
+    None = 0,       // NavMeshに含めない
+    Walkable = 1,   // 歩行可能
+    // 将来的に追加可能: Jump, Climb, Water など
+};
+
 struct AABB {
     Vector3 min;
     Vector3 max;
@@ -86,6 +93,11 @@ public:
     [[nodiscard]] bool IsStatic() const { return isStatic_; }
     void SetStatic(bool isStatic) { isStatic_ = isStatic; }
 
+    // NavMesh area type
+    [[nodiscard]] NavMeshAreaType GetNavMeshArea() const { return navMeshArea_; }
+    void SetNavMeshArea(NavMeshAreaType area) { navMeshArea_ = area; }
+    [[nodiscard]] bool IsNavMeshWalkable() const { return navMeshArea_ == NavMeshAreaType::Walkable; }
+
     // Static collision check
     [[nodiscard]] static bool CheckAABBCollision(const AABB& a, const AABB& b);
     [[nodiscard]] static Vector3 GetPenetrationVector(const AABB& a, const AABB& b);
@@ -98,6 +110,7 @@ private:
     bool useAutoSize_ = true;
     bool isTrigger_ = false;
     bool isStatic_ = false;
+    NavMeshAreaType navMeshArea_ = NavMeshAreaType::None;  // デフォルトはNavMeshに含めない
     uint32_t collisionLayer_ = 0;  // Default to layer 0
     uint32_t collisionMask_ = 0xFFFFFFFF;
 };

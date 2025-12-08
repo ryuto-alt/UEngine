@@ -2,7 +2,7 @@
 -- カメラの視点方向に基づいてWASD移動 + SHIFTダッシュ
 
 -- public変数（Inspectorに表示される）
-moveSpeed = 5.0
+moveSpeed = 6.0
 dashSpeedBonus = 4.0
 
 -- ローカル変数

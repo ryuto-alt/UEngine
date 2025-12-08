@@ -289,6 +289,7 @@ json SceneSerializer::SerializeComponent(const Component& component) {
         comp["enabled"] = collision->IsEnabled();
         comp["isTrigger"] = collision->IsTrigger();
         comp["isStatic"] = collision->IsStatic();
+        comp["navMeshArea"] = static_cast<int>(collision->GetNavMeshArea());
         comp["autoSize"] = collision->IsAutoSized();
         comp["collisionLayer"] = collision->GetCollisionLayer();
         comp["collisionMask"] = collision->GetCollisionMask();
@@ -317,6 +318,34 @@ json SceneSerializer::SerializeComponent(const Component& component) {
     if (auto* luaScript = dynamic_cast<const LuaScriptComponent*>(&component)) {
         comp["type"] = "LuaScriptComponent";
         comp["scriptPath"] = luaScript->GetScriptPath();
+        
+        // プロパティを保存
+        auto properties = luaScript->GetProperties();
+        if (!properties.empty()) {
+            json propsJson = json::array();
+            for (const auto& prop : properties) {
+                json propJson;
+                propJson["name"] = prop.name;
+                std::visit([&propJson](auto&& val) {
+                    using T = std::decay_t<decltype(val)>;
+                    if constexpr (std::is_same_v<T, bool>) {
+                        propJson["type"] = "bool";
+                        propJson["value"] = val;
+                    } else if constexpr (std::is_same_v<T, int32>) {
+                        propJson["type"] = "int";
+                        propJson["value"] = val;
+                    } else if constexpr (std::is_same_v<T, float>) {
+                        propJson["type"] = "float";
+                        propJson["value"] = val;
+                    } else if constexpr (std::is_same_v<T, std::string>) {
+                        propJson["type"] = "string";
+                        propJson["value"] = val;
+                    }
+                }, prop.value);
+                propsJson.push_back(propJson);
+            }
+            comp["properties"] = propsJson;
+        }
         return comp;
     }
 
@@ -526,6 +555,9 @@ void SceneSerializer::DeserializeComponent(const json& json, GameObject& gameObj
         if (json.contains("isStatic")) {
             collision->SetStatic(json["isStatic"].get<bool>());
         }
+        if (json.contains("navMeshArea")) {
+            collision->SetNavMeshArea(static_cast<NavMeshAreaType>(json["navMeshArea"].get<int>()));
+        }
         if (json.contains("autoSize")) {
             collision->SetAutoSize(json["autoSize"].get<bool>());
         }
@@ -573,6 +605,26 @@ void SceneSerializer::DeserializeComponent(const json& json, GameObject& gameObj
             std::string scriptPath = json["scriptPath"].get<std::string>();
             if (!scriptPath.empty()) {
                 luaScript->SetScriptPath(scriptPath);
+            }
+        }
+        // プロパティを復元
+        if (json.contains("properties") && json["properties"].is_array()) {
+            for (const auto& propJson : json["properties"]) {
+                if (!propJson.contains("name") || !propJson.contains("type") || !propJson.contains("value")) {
+                    continue;
+                }
+                std::string name = propJson["name"].get<std::string>();
+                std::string propType = propJson["type"].get<std::string>();
+                
+                if (propType == "bool") {
+                    luaScript->SetProperty(name, propJson["value"].get<bool>());
+                } else if (propType == "int") {
+                    luaScript->SetProperty(name, propJson["value"].get<int32>());
+                } else if (propType == "float") {
+                    luaScript->SetProperty(name, propJson["value"].get<float>());
+                } else if (propType == "string") {
+                    luaScript->SetProperty(name, propJson["value"].get<std::string>());
+                }
             }
         }
     }

@@ -355,6 +355,12 @@ private:
     // 表示フラグ
     bool showCameraFrustum_ = false;
     bool showGrid_ = true;
+    bool showNavMesh_ = false;
+    bool showNavMeshSettings_ = false;
+    
+    // NavMeshベイク進捗
+    float navMeshBakeProgress_ = 0.0f;
+    std::string navMeshBakeStage_;
 
     // ポストプロセスマネージャー
     std::unique_ptr<PostProcessManager> postProcessManager_;

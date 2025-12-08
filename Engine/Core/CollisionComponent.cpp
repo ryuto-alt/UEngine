@@ -173,9 +173,11 @@ void CollisionComponent::RecalculateFromMesh() {
 }
 
 bool CollisionComponent::CheckAABBCollision(const AABB& a, const AABB& b) {
-    if (a.max.GetX() < b.min.GetX() || a.min.GetX() > b.max.GetX()) return false;
-    if (a.max.GetY() < b.min.GetY() || a.min.GetY() > b.max.GetY()) return false;
-    if (a.max.GetZ() < b.min.GetZ() || a.min.GetZ() > b.max.GetZ()) return false;
+    // 厳密に分離している場合のみfalse（接触はOK、重なりのみ衝突）
+    constexpr float epsilon = 0.0001f;
+    if (a.max.GetX() <= b.min.GetX() + epsilon || a.min.GetX() >= b.max.GetX() - epsilon) return false;
+    if (a.max.GetY() <= b.min.GetY() + epsilon || a.min.GetY() >= b.max.GetY() - epsilon) return false;
+    if (a.max.GetZ() <= b.min.GetZ() + epsilon || a.min.GetZ() >= b.max.GetZ() - epsilon) return false;
     return true;
 }
 

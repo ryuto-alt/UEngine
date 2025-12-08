@@ -244,6 +244,10 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClCompile Include="Engine\Animation\AnimationSystem.cpp" />
     <ClCompile Include="Engine\Systems\SystemManager.cpp" />
     <ClCompile Include="Engine\Systems\CollisionSystem.cpp" />
+    <ClCompile Include="Engine\AI\NavMesh\NavMeshBuilder.cpp" />
+    <ClCompile Include="Engine\AI\NavMesh\NavMeshQuery.cpp" />
+    <ClCompile Include="Engine\AI\NavMesh\NavMeshSerializer.cpp" />
+    <ClCompile Include="Engine\AI\NavMesh\NavMeshSystem.cpp" />
     <ClCompile Include="Engine\Audio\AudioSystem.cpp" />
     <ClCompile Include="Engine\Audio\AudioClip.cpp" />
     <ClCompile Include="Engine\Audio\AudioSource.cpp" />
@@ -468,6 +472,11 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClInclude Include="Engine\Animation\AnimationSystem.h" />
     <ClInclude Include="Engine\Systems\SystemManager.h" />
     <ClInclude Include="Engine\Systems\CollisionSystem.h" />
+    <ClInclude Include="Engine\AI\NavMesh\NavMeshTypes.h" />
+    <ClInclude Include="Engine\AI\NavMesh\NavMeshBuilder.h" />
+    <ClInclude Include="Engine\AI\NavMesh\NavMeshQuery.h" />
+    <ClInclude Include="Engine\AI\NavMesh\NavMeshSerializer.h" />
+    <ClInclude Include="Engine\AI\NavMesh\NavMeshSystem.h" />
     <ClInclude Include="Engine\Scripting\LuaState.h" />
     <ClInclude Include="Engine\Scripting\LuaScriptComponent.h" />
     <ClInclude Include="Engine\Particle\Curve.h" />

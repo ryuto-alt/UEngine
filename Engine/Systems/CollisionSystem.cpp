@@ -43,8 +43,15 @@ void CollisionSystem::OnUpdate(Scene* scene, float deltaTime) {
 #endif
 
     GatherCollisionComponents(scene);
-    CheckCollisions();
-    ResolveCollisions();
+    
+    // 複数回イテレーションで衝突解決（トンネル効果と押し戻し後の再衝突を防ぐ）
+    constexpr int maxIterations = 4;
+    for (int iter = 0; iter < maxIterations; ++iter) {
+        CheckCollisions();
+        if (currentCollisions_.empty()) break;
+        ResolveCollisions();
+    }
+    
     UpdateCollisionStates();
 }
 
@@ -98,7 +105,6 @@ void CollisionSystem::CheckCollisions() {
     previousCollisions_ = std::move(currentCollisions_);
     currentCollisions_.clear();
 
-    // Reset collision states
     for (auto* comp : collisionComponents_) {
         comp->SetColliding(false);
     }
@@ -112,116 +118,122 @@ void CollisionSystem::CheckCollisions() {
             auto* b = collisionComponents_[j];
 
             if (!ShouldCheckCollision(a, b)) {
-                if (shouldLog) {
-                    Logger::Debug("[Collision] ShouldCheckCollision returned false for pair {}-{}", i, j);
-                }
                 continue;
             }
 
             bool collisionFound = false;
-            Vector3 totalPenetration(0.0f, 0.0f, 0.0f);
-
-            // Check with multiple AABBs if available
+            
             auto aabbsA = a->GetWorldAABBs();
             auto aabbsB = b->GetWorldAABBs();
             
             if (shouldLog) {
                 Logger::Debug("[Collision] Checking {} AABBs vs {} AABBs", aabbsA.size(), aabbsB.size());
-                if (!aabbsA.empty()) {
-                    auto& box = aabbsA[0];
-                    Logger::Debug("[Collision] A[0]: min({:.2f},{:.2f},{:.2f}) max({:.2f},{:.2f},{:.2f})",
-                        box.min.GetX(), box.min.GetY(), box.min.GetZ(),
-                        box.max.GetX(), box.max.GetY(), box.max.GetZ());
-                }
-                if (!aabbsB.empty()) {
-                    auto& box = aabbsB[0];
-                    Logger::Debug("[Collision] B[0]: min({:.2f},{:.2f},{:.2f}) max({:.2f},{:.2f},{:.2f})",
-                        box.min.GetX(), box.min.GetY(), box.min.GetZ(),
-                        box.max.GetX(), box.max.GetY(), box.max.GetZ());
-                }
             }
 
-            // 各軸の押し戻し方向を追跡（正・負・両方）
-            bool hasPositiveX = false, hasNegativeX = false;
-            bool hasPositiveY = false, hasNegativeY = false;
-            bool hasPositiveZ = false, hasNegativeZ = false;
-            float bestPenX = 0.0f, bestPenY = 0.0f, bestPenZ = 0.0f;
-            float minAbsX = FLT_MAX, minAbsY = FLT_MAX, minAbsZ = FLT_MAX;
+            // 各AABBペアごとに最小分離軸を計算し、軸ごとに蓄積
+            float maxPosX = 0.0f, maxNegX = 0.0f;
+            float maxPosY = 0.0f, maxNegY = 0.0f;
+            float maxPosZ = 0.0f, maxNegZ = 0.0f;
             
             bool hasStatic = a->IsStatic() || b->IsStatic();
             
             for (const auto& aabbA : aabbsA) {
                 for (const auto& aabbB : aabbsB) {
-                    if (CollisionComponent::CheckAABBCollision(aabbA, aabbB)) {
-                        collisionFound = true;
-                        Vector3 pen = CollisionComponent::GetPenetrationVector(aabbA, aabbB);
-                        
-                        // 各軸のペネトレーションを追跡
-                        if (std::abs(pen.GetX()) > 0.0001f) {
-                            if (pen.GetX() > 0) hasPositiveX = true;
-                            else hasNegativeX = true;
-                            if (std::abs(pen.GetX()) < minAbsX) {
-                                minAbsX = std::abs(pen.GetX());
-                                bestPenX = pen.GetX();
-                            }
-                        }
-                        if (std::abs(pen.GetY()) > 0.0001f) {
-                            if (pen.GetY() > 0) hasPositiveY = true;
-                            else hasNegativeY = true;
-                            if (std::abs(pen.GetY()) < minAbsY) {
-                                minAbsY = std::abs(pen.GetY());
-                                bestPenY = pen.GetY();
-                            }
-                        }
-                        if (std::abs(pen.GetZ()) > 0.0001f) {
-                            if (pen.GetZ() > 0) hasPositiveZ = true;
-                            else hasNegativeZ = true;
-                            if (std::abs(pen.GetZ()) < minAbsZ) {
-                                minAbsZ = std::abs(pen.GetZ());
-                                bestPenZ = pen.GetZ();
-                            }
-                        }
+                    if (!CollisionComponent::CheckAABBCollision(aabbA, aabbB)) {
+                        continue;
+                    }
+                    
+                    collisionFound = true;
+                    
+                    // このAABBペアの最小分離軸を計算
+                    Vector3 pen = CollisionComponent::GetPenetrationVector(aabbA, aabbB);
+                    float absX = std::abs(pen.GetX());
+                    float absY = std::abs(pen.GetY());
+                    float absZ = std::abs(pen.GetZ());
+                    
+                    // 壁との衝突ではY軸を無視
+                    if (hasStatic && (absX > 0.0001f || absZ > 0.0001f)) {
+                        absY = FLT_MAX;
+                    }
+                    
+                    // このペアの最小分離軸を選択
+                    float mtv = 0.0f;
+                    int axis = -1;  // 0=X, 1=Y, 2=Z
+                    
+                    if (absX <= absY && absX <= absZ && absX > 0.0001f) {
+                        mtv = pen.GetX();
+                        axis = 0;
+                    } else if (absY <= absX && absY <= absZ && absY > 0.0001f && absY < FLT_MAX) {
+                        mtv = pen.GetY();
+                        axis = 1;
+                    } else if (absZ > 0.0001f) {
+                        mtv = pen.GetZ();
+                        axis = 2;
+                    }
+                    
+                    // 軸ごとに押し戻しを蓄積（同方向は最大値、反対方向は別々に追跡）
+                    if (axis == 0) {
+                        if (mtv > 0.0001f) maxPosX = std::max(maxPosX, mtv);
+                        else if (mtv < -0.0001f) maxNegX = std::min(maxNegX, mtv);
+                    } else if (axis == 1) {
+                        if (mtv > 0.0001f) maxPosY = std::max(maxPosY, mtv);
+                        else if (mtv < -0.0001f) maxNegY = std::min(maxNegY, mtv);
+                    } else if (axis == 2) {
+                        if (mtv > 0.0001f) maxPosZ = std::max(maxPosZ, mtv);
+                        else if (mtv < -0.0001f) maxNegZ = std::min(maxNegZ, mtv);
                     }
                 }
             }
             
-            // 反対方向の衝突がある軸は無視（壁に挟まれている）
-            if (hasPositiveX && hasNegativeX) { bestPenX = 0.0f; minAbsX = FLT_MAX; }
-            if (hasPositiveY && hasNegativeY) { bestPenY = 0.0f; minAbsY = FLT_MAX; }
-            if (hasPositiveZ && hasNegativeZ) { bestPenZ = 0.0f; minAbsZ = FLT_MAX; }
+            if (!collisionFound) continue;
             
-            // 壁との衝突ではY軸を無視
-            if (hasStatic && (minAbsX < FLT_MAX || minAbsZ < FLT_MAX)) {
-                minAbsY = FLT_MAX;
-                bestPenY = 0.0f;
+            // 各軸の最終的な押し戻し量を決定
+            float pushX = 0.0f, pushY = 0.0f, pushZ = 0.0f;
+            
+            // X軸: 両方向なら挟まれている、片方のみなら採用
+            if (maxPosX > 0.0001f && maxNegX < -0.0001f) {
+                pushX = 0.0f;  // 挟まれている
+            } else if (maxPosX > 0.0001f) {
+                pushX = maxPosX;
+            } else if (maxNegX < -0.0001f) {
+                pushX = maxNegX;
             }
             
-            // 最小の脱出軸を選択
-            if (minAbsX <= minAbsY && minAbsX <= minAbsZ && minAbsX < FLT_MAX) {
-                totalPenetration = Vector3(bestPenX, 0.0f, 0.0f);
-            } else if (minAbsY <= minAbsX && minAbsY <= minAbsZ && minAbsY < FLT_MAX) {
-                totalPenetration = Vector3(0.0f, bestPenY, 0.0f);
-            } else if (minAbsZ < FLT_MAX) {
-                totalPenetration = Vector3(0.0f, 0.0f, bestPenZ);
+            // Y軸
+            if (maxPosY > 0.0001f && maxNegY < -0.0001f) {
+                pushY = 0.0f;
+            } else if (maxPosY > 0.0001f) {
+                pushY = maxPosY;
+            } else if (maxNegY < -0.0001f) {
+                pushY = maxNegY;
             }
-
-            if (collisionFound) {
-                a->SetColliding(true);
-                b->SetColliding(true);
-
-                CollisionPair pair;
-                pair.a = a;
-                pair.b = b;
-                pair.penetration = totalPenetration;
-                currentCollisions_.push_back(pair);
-
-                auto* goA = a->GetGameObject();
-                auto* goB = b->GetGameObject();
-                Logger::Debug("[Collision] HIT: {} <-> {} pen({:.3f},{:.3f},{:.3f})",
-                    goA ? goA->GetName() : "null",
-                    goB ? goB->GetName() : "null",
-                    totalPenetration.GetX(), totalPenetration.GetY(), totalPenetration.GetZ());
+            
+            // Z軸
+            if (maxPosZ > 0.0001f && maxNegZ < -0.0001f) {
+                pushZ = 0.0f;
+            } else if (maxPosZ > 0.0001f) {
+                pushZ = maxPosZ;
+            } else if (maxNegZ < -0.0001f) {
+                pushZ = maxNegZ;
             }
+            
+            Vector3 totalPenetration(pushX, pushY, pushZ);
+
+            a->SetColliding(true);
+            b->SetColliding(true);
+
+            CollisionPair pair;
+            pair.a = a;
+            pair.b = b;
+            pair.penetration = totalPenetration;
+            currentCollisions_.push_back(pair);
+
+            auto* goA = a->GetGameObject();
+            auto* goB = b->GetGameObject();
+            Logger::Debug("[Collision] HIT: {} <-> {} pen({:.3f},{:.3f},{:.3f})",
+                goA ? goA->GetName() : "null",
+                goB ? goB->GetName() : "null",
+                totalPenetration.GetX(), totalPenetration.GetY(), totalPenetration.GetZ());
         }
     }
 }
@@ -243,19 +255,25 @@ void CollisionSystem::ResolveCollisions() {
         // If both static, no resolution needed
         if (aStatic && bStatic) continue;
 
-        // ペネトレーションは既にCheckCollisionsで最小脱出軸が選択済み
         Vector3 resolution = pair.penetration;
         
-        // ジッタリング防止：押し戻し方向に小さなマージンを追加
-        constexpr float margin = 0.01f;
-        float marginX = (resolution.GetX() > 0) ? margin : (resolution.GetX() < 0) ? -margin : 0.0f;
-        float marginY = (resolution.GetY() > 0) ? margin : (resolution.GetY() < 0) ? -margin : 0.0f;
-        float marginZ = (resolution.GetZ() > 0) ? margin : (resolution.GetZ() < 0) ? -margin : 0.0f;
-        resolution = Vector3(
-            resolution.GetX() + marginX,
-            resolution.GetY() + marginY,
-            resolution.GetZ() + marginZ
-        );
+        // 押し戻し後の再衝突を防ぐマージン（CheckAABBCollisionのepsilonより大きく）
+        constexpr float margin = 0.002f;
+        float resX = resolution.GetX();
+        float resY = resolution.GetY();
+        float resZ = resolution.GetZ();
+        
+        if (std::abs(resX) > 0.0001f) {
+            resX += (resX > 0) ? margin : -margin;
+        }
+        if (std::abs(resY) > 0.0001f) {
+            resY += (resY > 0) ? margin : -margin;
+        }
+        if (std::abs(resZ) > 0.0001f) {
+            resZ += (resZ > 0) ? margin : -margin;
+        }
+        
+        resolution = Vector3(resX, resY, resZ);
 
         if (aStatic) {
             // Only move B

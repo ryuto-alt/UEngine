@@ -46,7 +46,10 @@ struct WalkableGridData
     DirectX::XMFLOAT3 origin{};
     float cellSize = 0.0f;
     float avgHeight = 0.0f;
-    
+
+    // 外周ライン（キャッシュ）
+    std::vector<DirectX::XMFLOAT3> boundaryLines; // 2点ずつペア
+
     bool IsValid() const { return !cells.empty() && width > 0 && height > 0; }
 };
 

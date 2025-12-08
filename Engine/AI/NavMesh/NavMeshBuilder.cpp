@@ -200,12 +200,49 @@ std::unique_ptr<NavMeshData> NavMeshBuilder::Build(const NavMeshInputGeometry& g
         }
         
         grid.avgHeight = (walkableCount > 0) ? (heightSum / walkableCount) : 0.0f;
-        
-        snprintf(debugBuf, sizeof(debugBuf), "WalkableGrid: %dx%d, walkable=%d, avgY=%.2f",
-                 grid.width, grid.height, walkableCount, grid.avgHeight);
+
+        // 外周ラインをキャッシュ
+        float y = grid.avgHeight + 0.08f;
+        auto isWalkable = [&grid](int x, int z) -> bool {
+            if (x < 0 || x >= grid.width || z < 0 || z >= grid.height) return false;
+            return grid.cells[z * grid.width + x] != 0;
+        };
+
+        for (int z = 0; z < grid.height; ++z)
+        {
+            for (int x = 0; x < grid.width; ++x)
+            {
+                if (!isWalkable(x, z)) continue;
+
+                float minX = grid.origin.x + x * grid.cellSize;
+                float maxX = grid.origin.x + (x + 1) * grid.cellSize;
+                float minZ = grid.origin.z + z * grid.cellSize;
+                float maxZ = grid.origin.z + (z + 1) * grid.cellSize;
+
+                if (!isWalkable(x, z - 1)) {
+                    grid.boundaryLines.push_back({minX, y, minZ});
+                    grid.boundaryLines.push_back({maxX, y, minZ});
+                }
+                if (!isWalkable(x + 1, z)) {
+                    grid.boundaryLines.push_back({maxX, y, minZ});
+                    grid.boundaryLines.push_back({maxX, y, maxZ});
+                }
+                if (!isWalkable(x, z + 1)) {
+                    grid.boundaryLines.push_back({maxX, y, maxZ});
+                    grid.boundaryLines.push_back({minX, y, maxZ});
+                }
+                if (!isWalkable(x - 1, z)) {
+                    grid.boundaryLines.push_back({minX, y, maxZ});
+                    grid.boundaryLines.push_back({minX, y, minZ});
+                }
+            }
+        }
+
+        snprintf(debugBuf, sizeof(debugBuf), "WalkableGrid: %dx%d, walkable=%d, lines=%zu",
+                 grid.width, grid.height, walkableCount, grid.boundaryLines.size() / 2);
         ReportProgress(0.85f, debugBuf);
     }
-    
+
     // 6. 隣接情報構築
     ReportProgress(0.9f, "Building neighbor connections...");
     BuildNeighborConnections(*navMesh);

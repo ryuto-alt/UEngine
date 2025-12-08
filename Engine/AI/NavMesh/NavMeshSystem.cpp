@@ -101,48 +101,17 @@ void NavMeshSystem::DrawDebug(DebugRenderer* debugRenderer) const
         return;
 
     const auto& grid = m_navMesh->walkableGrid;
-    if (!grid.IsValid())
+    if (grid.boundaryLines.empty())
         return;
 
     Vector4 edgeColor(0.0f, 1.0f, 0.5f, 0.9f);
-    float y = grid.avgHeight + 0.08f;
 
-    // セルが歩行可能かチェック
-    auto isWalkable = [&grid](int x, int z) -> bool {
-        if (x < 0 || x >= grid.width || z < 0 || z >= grid.height)
-            return false;
-        return grid.cells[z * grid.width + x] != 0;
-    };
-
-    // 歩行可能セルの外周エッジのみ描画
-    for (int z = 0; z < grid.height; ++z)
+    // キャッシュされた外周ラインを描画
+    for (size_t i = 0; i + 1 < grid.boundaryLines.size(); i += 2)
     {
-        for (int x = 0; x < grid.width; ++x)
-        {
-            if (!isWalkable(x, z))
-                continue;
-
-            float minX = grid.origin.x + x * grid.cellSize;
-            float maxX = grid.origin.x + (x + 1) * grid.cellSize;
-            float minZ = grid.origin.z + z * grid.cellSize;
-            float maxZ = grid.origin.z + (z + 1) * grid.cellSize;
-
-            // 下辺 (z-1が歩行不可)
-            if (!isWalkable(x, z - 1))
-                debugRenderer->AddLine(Vector3(minX, y, minZ), Vector3(maxX, y, minZ), edgeColor);
-
-            // 右辺 (x+1が歩行不可)
-            if (!isWalkable(x + 1, z))
-                debugRenderer->AddLine(Vector3(maxX, y, minZ), Vector3(maxX, y, maxZ), edgeColor);
-
-            // 上辺 (z+1が歩行不可)
-            if (!isWalkable(x, z + 1))
-                debugRenderer->AddLine(Vector3(maxX, y, maxZ), Vector3(minX, y, maxZ), edgeColor);
-
-            // 左辺 (x-1が歩行不可)
-            if (!isWalkable(x - 1, z))
-                debugRenderer->AddLine(Vector3(minX, y, maxZ), Vector3(minX, y, minZ), edgeColor);
-        }
+        const auto& p0 = grid.boundaryLines[i];
+        const auto& p1 = grid.boundaryLines[i + 1];
+        debugRenderer->AddLine(Vector3(p0.x, p0.y, p0.z), Vector3(p1.x, p1.y, p1.z), edgeColor);
     }
 }
 

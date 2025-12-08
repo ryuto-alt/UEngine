@@ -180,7 +180,7 @@ bool CollisionComponent::CheckAABBCollision(const AABB& a, const AABB& b) {
 }
 
 Vector3 CollisionComponent::GetPenetrationVector(const AABB& a, const AABB& b) {
-    // Calculate overlap on each axis
+    // Calculate overlap on each axis - 全軸のめり込み量を返す
     float overlapX1 = b.max.GetX() - a.min.GetX();
     float overlapX2 = a.max.GetX() - b.min.GetX();
     float overlapY1 = b.max.GetY() - a.min.GetY();
@@ -192,18 +192,8 @@ Vector3 CollisionComponent::GetPenetrationVector(const AABB& a, const AABB& b) {
     float overlapY = (overlapY1 < overlapY2) ? overlapY1 : -overlapY2;
     float overlapZ = (overlapZ1 < overlapZ2) ? overlapZ1 : -overlapZ2;
 
-    // Find minimum penetration axis
-    float absX = std::abs(overlapX);
-    float absY = std::abs(overlapY);
-    float absZ = std::abs(overlapZ);
-
-    if (absX <= absY && absX <= absZ) {
-        return Vector3(overlapX, 0.0f, 0.0f);
-    } else if (absY <= absX && absY <= absZ) {
-        return Vector3(0.0f, overlapY, 0.0f);
-    } else {
-        return Vector3(0.0f, 0.0f, overlapZ);
-    }
+    // 全軸のペネトレーションを返す（最小軸の選択はResolveCollisionsで行う）
+    return Vector3(overlapX, overlapY, overlapZ);
 }
 
 } // namespace UnoEngine

@@ -21,6 +21,20 @@ void Texture2D::LoadFromFile(GraphicsDevice* graphics, ID3D12GraphicsCommandList
         "Failed to load texture file"
     );
 
+    // Generate mipmaps if the image doesn't already have them
+    DirectX::ScratchImage mipChain;
+    if (metadata.mipLevels == 1 && metadata.width > 1 && metadata.height > 1) {
+        HRESULT hr = DirectX::GenerateMipMaps(
+            scratchImage.GetImages(), scratchImage.GetImageCount(), scratchImage.GetMetadata(),
+            DirectX::TEX_FILTER_LINEAR, 0, mipChain
+        );
+        
+        if (SUCCEEDED(hr)) {
+            scratchImage = std::move(mipChain);
+            metadata = scratchImage.GetMetadata();
+        }
+    }
+
     // 元のメタデータを保存
     DirectX::TexMetadata originalMetadata = metadata;
     

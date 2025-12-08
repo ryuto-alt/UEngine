@@ -37,6 +37,19 @@ struct NavMeshPolygon
     static constexpr uint32_t INVALID_ID = std::numeric_limits<uint32_t>::max();
 };
 
+// デバッグ用歩行可能グリッド
+struct WalkableGridData
+{
+    std::vector<uint8_t> cells;  // 0=歩行不可, 1=歩行可能
+    int width = 0;
+    int height = 0;
+    DirectX::XMFLOAT3 origin{};
+    float cellSize = 0.0f;
+    float avgHeight = 0.0f;
+    
+    bool IsValid() const { return !cells.empty() && width > 0 && height > 0; }
+};
+
 // NavMeshデータ
 struct NavMeshData
 {
@@ -44,9 +57,10 @@ struct NavMeshData
     std::vector<NavMeshPolygon> polygons;    // ポリゴン
     DirectX::BoundingBox bounds{};           // 全体のバウンディングボックス
     NavMeshConfig config{};                  // 生成に使用した設定
+    WalkableGridData walkableGrid;           // デバッグ描画用
     
     bool IsValid() const { return !vertices.empty() && !polygons.empty(); }
-    void Clear() { vertices.clear(); polygons.clear(); }
+    void Clear() { vertices.clear(); polygons.clear(); walkableGrid.cells.clear(); }
 };
 
 // パス検索結果

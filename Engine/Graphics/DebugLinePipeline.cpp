@@ -89,10 +89,10 @@ void DebugLinePipeline::CreatePipelineState(
     psoDesc.RasterizerState.MultisampleEnable = FALSE;
     psoDesc.RasterizerState.AntialiasedLineEnable = TRUE;  // アンチエイリアスライン
 
-    // デプスステンシルステート（常に手前に描画）
-    psoDesc.DepthStencilState.DepthEnable = FALSE;
+    // デプスステンシルステート（深度テスト有効、書き込みなし）
+    psoDesc.DepthStencilState.DepthEnable = TRUE;
     psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
-    psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+    psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
     psoDesc.DepthStencilState.StencilEnable = FALSE;
 
     psoDesc.InputLayout = { inputElements, _countof(inputElements) };

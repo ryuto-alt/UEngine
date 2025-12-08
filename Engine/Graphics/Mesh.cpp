@@ -22,6 +22,10 @@ void Mesh::Create(ID3D12Device* device, ID3D12GraphicsCommandList* commandList,
                        static_cast<uint32>(indices.size()));
 
     CalculateBounds(vertices);
+    
+    // NavMesh生成用にCPU側でも保持
+    cpuVertices_ = vertices;
+    cpuIndices_ = indices;
 }
 
 

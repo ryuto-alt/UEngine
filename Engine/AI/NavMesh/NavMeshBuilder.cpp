@@ -3,10 +3,13 @@
 #include "../../Core/Scene.h"
 #include "../../Core/GameObject.h"
 #include "../../Core/CollisionComponent.h"
+#include "../../Graphics/MeshRenderer.h"
+#include "../../Resource/StaticModelImporter.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <unordered_map>
+#include <unordered_set>
 #include <queue>
 
 namespace UnoEngine
@@ -89,6 +92,14 @@ std::unique_ptr<NavMeshData> NavMeshBuilder::Build(const NavMeshInputGeometry& g
         return nullptr;
     }
     
+    // 1.5. 障害物領域をカーブ（歩行不可としてマーク）
+    if (!geometry.obstacleAABBs.empty())
+    {
+        snprintf(debugBuf, sizeof(debugBuf), "Carving %zu obstacles...", geometry.obstacleAABBs.size());
+        ReportProgress(0.12f, debugBuf);
+        CarveObstacles(geometry, config, heightField);
+    }
+    
     // スパン数をカウント
     int totalSpans = 0;
     int walkableSpans = 0;
@@ -151,6 +162,48 @@ std::unique_ptr<NavMeshData> NavMeshBuilder::Build(const NavMeshInputGeometry& g
     if (!BuildPolygons(contours, config, *navMesh))
         return nullptr;
     
+    // 5.5. デバッグ用にHeightFieldからグリッド情報を保存
+    {
+        auto& grid = navMesh->walkableGrid;
+        grid.width = heightField.width;
+        grid.height = heightField.height;
+        grid.origin = heightField.origin;
+        grid.cellSize = heightField.cellSize;
+        grid.cells.resize(grid.width * grid.height, 0);
+        
+        float heightSum = 0.0f;
+        int walkableCount = 0;
+        
+        for (int z = 0; z < grid.height; ++z)
+        {
+            for (int x = 0; x < grid.width; ++x)
+            {
+                int idx = z * grid.width + x;
+                HeightSpan* span = heightField.spans[idx];
+                
+                // 最も上のスパンが歩行可能かチェック
+                bool walkable = false;
+                while (span)
+                {
+                    if (span->area > 0)
+                    {
+                        walkable = true;
+                        heightSum += heightField.origin.y + span->maxY * heightField.cellHeight;
+                        ++walkableCount;
+                    }
+                    span = span->next;
+                }
+                grid.cells[idx] = walkable ? 1 : 0;
+            }
+        }
+        
+        grid.avgHeight = (walkableCount > 0) ? (heightSum / walkableCount) : 0.0f;
+        
+        snprintf(debugBuf, sizeof(debugBuf), "WalkableGrid: %dx%d, walkable=%d, avgY=%.2f",
+                 grid.width, grid.height, walkableCount, grid.avgHeight);
+        ReportProgress(0.85f, debugBuf);
+    }
+    
     // 6. 隣接情報構築
     ReportProgress(0.9f, "Building neighbor connections...");
     BuildNeighborConnections(*navMesh);
@@ -190,29 +243,93 @@ void NavMeshBuilder::CollectGeometryFromScene(Scene* scene, NavMeshInputGeometry
     if (!scene) return;
     
     int totalObjects = 0;
-    int collidersFound = 0;
-    int walkableColliders = 0;
+    int walkableMeshes = 0;
+    int walkableAABBs = 0;
+    int obstacleColliders = 0;
+    int totalTriangles = 0;
     
     for (const auto& gameObject : scene->GetGameObjects())
     {
         ++totalObjects;
         auto* collider = gameObject->GetComponent<CollisionComponent>();
-        if (collider)
+        if (!collider || !collider->IsEnabled())
+            continue;
+        
+        if (collider->IsNavMeshWalkable())
         {
-            ++collidersFound;
-            // NavMeshAreaがWalkableに設定されているコライダーのみ使用
-            if (collider->IsEnabled() && collider->IsNavMeshWalkable())
+            // MeshRendererがあれば実際のメッシュ三角形を使用
+            auto* meshRenderer = gameObject->GetComponent<MeshRenderer>();
+            if (meshRenderer && meshRenderer->HasModel())
             {
-                ++walkableColliders;
+                auto* modelData = meshRenderer->GetModel();
+                auto& transform = gameObject->GetTransform();
+                Vector3 worldPos = transform.GetPosition();
+                Vector3 worldScale = transform.GetScale();
+                
+                for (const auto& mesh : modelData->meshes)
+                {
+                    if (!mesh.HasCpuData())
+                        continue;
+                    
+                    const auto& vertices = mesh.GetVertices();
+                    const auto& indices = mesh.GetIndices();
+                    
+                    // 三角形を追加（ワールド座標に変換）
+                    for (size_t i = 0; i + 2 < indices.size(); i += 3)
+                    {
+                        const auto& v0 = vertices[indices[i]];
+                        const auto& v1 = vertices[indices[i + 1]];
+                        const auto& v2 = vertices[indices[i + 2]];
+                        
+                        DirectX::XMFLOAT3 p0(
+                            worldPos.GetX() + v0.px * worldScale.GetX(),
+                            worldPos.GetY() + v0.py * worldScale.GetY(),
+                            worldPos.GetZ() + v0.pz * worldScale.GetZ()
+                        );
+                        DirectX::XMFLOAT3 p1(
+                            worldPos.GetX() + v1.px * worldScale.GetX(),
+                            worldPos.GetY() + v1.py * worldScale.GetY(),
+                            worldPos.GetZ() + v1.pz * worldScale.GetZ()
+                        );
+                        DirectX::XMFLOAT3 p2(
+                            worldPos.GetX() + v2.px * worldScale.GetX(),
+                            worldPos.GetY() + v2.py * worldScale.GetY(),
+                            worldPos.GetZ() + v2.pz * worldScale.GetZ()
+                        );
+                        
+                        outGeometry.AddTriangle(p0, p1, p2);
+                        ++totalTriangles;
+                    }
+                    ++walkableMeshes;
+                }
+            }
+            else
+            {
+                // メッシュがなければAABBを使用
                 CollectGeometryFromCollider(collider, outGeometry);
+                ++walkableAABBs;
+            }
+        }
+        else if (collider->IsNavMeshObstacle())
+        {
+            ++obstacleColliders;
+            if (collider->HasMultipleAABBs())
+            {
+                for (const auto& aabb : collider->GetWorldAABBs())
+                {
+                    outGeometry.AddObstacle(aabb);
+                }
+            }
+            else
+            {
+                outGeometry.AddObstacle(collider->GetWorldAABB());
             }
         }
     }
     
-    // デバッグ情報をプログレスコールバックで報告
     char debugMsg[256];
-    snprintf(debugMsg, sizeof(debugMsg), "Found %d objects, %d colliders (%d walkable), %zu triangles", 
-             totalObjects, collidersFound, walkableColliders, outGeometry.indices.size() / 3);
+    snprintf(debugMsg, sizeof(debugMsg), "Found %d objects, %d meshes, %d AABBs, %d obstacles, %zu triangles", 
+             totalObjects, walkableMeshes, walkableAABBs, obstacleColliders, outGeometry.indices.size() / 3);
     ReportProgress(0.05f, debugMsg);
 }
 
@@ -235,7 +352,7 @@ void NavMeshBuilder::CollectGeometryFromCollider(CollisionComponent* collider, N
 
 bool NavMeshBuilder::Voxelize(const NavMeshInputGeometry& geometry, const NavMeshConfig& config, HeightField& outHeightField)
 {
-    // ジオメトリのバウンディングボックスを計算
+    // ジオメトリのバウンディングボックスを計算（歩行可能領域 + 障害物を含む）
     DirectX::XMFLOAT3 minPt = geometry.vertices[0];
     DirectX::XMFLOAT3 maxPt = geometry.vertices[0];
     for (const auto& v : geometry.vertices)
@@ -246,6 +363,15 @@ bool NavMeshBuilder::Voxelize(const NavMeshInputGeometry& geometry, const NavMes
         maxPt.x = std::max(maxPt.x, v.x);
         maxPt.y = std::max(maxPt.y, v.y);
         maxPt.z = std::max(maxPt.z, v.z);
+    }
+    
+    // 障害物AABBも含めてバウンディングボックスを拡張
+    for (const auto& obstacle : geometry.obstacleAABBs)
+    {
+        minPt.x = std::min(minPt.x, obstacle.min.GetX());
+        minPt.z = std::min(minPt.z, obstacle.min.GetZ());
+        maxPt.x = std::max(maxPt.x, obstacle.max.GetX());
+        maxPt.z = std::max(maxPt.z, obstacle.max.GetZ());
     }
     
     // エージェント半径分だけ拡張
@@ -266,12 +392,32 @@ bool NavMeshBuilder::Voxelize(const NavMeshInputGeometry& geometry, const NavMes
     
     outHeightField.spans.resize(outHeightField.width * outHeightField.height, nullptr);
     
+    // 最大傾斜角をラジアンに変換
+    float maxSlopeRad = config.maxSlope * 3.14159265f / 180.0f;
+    float minNormalY = std::cos(maxSlopeRad); // 上向き法線のY成分の最小値
+    
     // 三角形をボクセル化
     for (size_t i = 0; i < geometry.indices.size(); i += 3)
     {
         const auto& v0 = geometry.vertices[geometry.indices[i]];
         const auto& v1 = geometry.vertices[geometry.indices[i + 1]];
         const auto& v2 = geometry.vertices[geometry.indices[i + 2]];
+        
+        // 三角形の法線を計算
+        float e1x = v1.x - v0.x, e1y = v1.y - v0.y, e1z = v1.z - v0.z;
+        float e2x = v2.x - v0.x, e2y = v2.y - v0.y, e2z = v2.z - v0.z;
+        float nx = e1y * e2z - e1z * e2y;
+        float ny = e1z * e2x - e1x * e2z;
+        float nz = e1x * e2y - e1y * e2x;
+        float len = std::sqrt(nx * nx + ny * ny + nz * nz);
+        if (len > 0.0001f)
+        {
+            ny /= len; // 正規化されたY成分のみ必要
+        }
+        
+        // 上向きでない面（壁や天井）はスキップ
+        if (ny < minNormalY)
+            continue;
         
         // 三角形のバウンディングボックス
         float triMinX = std::min({v0.x, v1.x, v2.x});
@@ -411,6 +557,85 @@ void NavMeshBuilder::FilterLedgeSpans(HeightField& heightField, float walkableCl
     }
 }
 
+void NavMeshBuilder::CarveObstacles(const NavMeshInputGeometry& geometry, const NavMeshConfig& config, HeightField& heightField)
+{
+    int carvedCells = 0;
+    int obstacleIdx = 0;
+    
+    char debugBuf[256];
+    snprintf(debugBuf, sizeof(debugBuf), "HeightField origin: (%.1f, %.1f, %.1f), size: %dx%d, cellSize: %.2f",
+             heightField.origin.x, heightField.origin.y, heightField.origin.z,
+             heightField.width, heightField.height, heightField.cellSize);
+    OutputDebugStringA(debugBuf);
+    OutputDebugStringA("\n");
+    
+    for (const auto& obstacle : geometry.obstacleAABBs)
+    {
+        // 障害物AABBをセル座標に変換（XZ平面のみ考慮）
+        float minX = obstacle.min.GetX();
+        float maxX = obstacle.max.GetX();
+        float minZ = obstacle.min.GetZ();
+        float maxZ = obstacle.max.GetZ();
+        
+        // デバッグ: 最初の5つと最後の5つの障害物をログ出力
+        if (obstacleIdx < 5 || obstacleIdx >= static_cast<int>(geometry.obstacleAABBs.size()) - 5)
+        {
+            snprintf(debugBuf, sizeof(debugBuf), "Obstacle[%d]: X(%.1f~%.1f) Z(%.1f~%.1f)",
+                     obstacleIdx, minX, maxX, minZ, maxZ);
+            OutputDebugStringA(debugBuf);
+            OutputDebugStringA("\n");
+        }
+        
+        // セル範囲を計算
+        int x0 = static_cast<int>((minX - heightField.origin.x) / heightField.cellSize);
+        int x1 = static_cast<int>((maxX - heightField.origin.x) / heightField.cellSize);
+        int z0 = static_cast<int>((minZ - heightField.origin.z) / heightField.cellSize);
+        int z1 = static_cast<int>((maxZ - heightField.origin.z) / heightField.cellSize);
+        
+        // クランプ
+        x0 = std::max(0, x0);
+        x1 = std::min(heightField.width - 1, x1);
+        z0 = std::max(0, z0);
+        z1 = std::min(heightField.height - 1, z1);
+        
+        int cellsThisObstacle = 0;
+        
+        // 障害物範囲内のスパンを全て歩行不可に設定（Y座標は無視）
+        for (int z = z0; z <= z1; ++z)
+        {
+            for (int x = x0; x <= x1; ++x)
+            {
+                int idx = z * heightField.width + x;
+                HeightSpan* span = heightField.spans[idx];
+                
+                while (span)
+                {
+                    if (span->area > 0)
+                    {
+                        span->area = 0; // 歩行不可
+                        ++carvedCells;
+                        ++cellsThisObstacle;
+                    }
+                    span = span->next;
+                }
+            }
+        }
+        
+        if (obstacleIdx < 5 || obstacleIdx >= static_cast<int>(geometry.obstacleAABBs.size()) - 5)
+        {
+            snprintf(debugBuf, sizeof(debugBuf), "  -> cells: x(%d~%d) z(%d~%d), carved: %d",
+                     x0, x1, z0, z1, cellsThisObstacle);
+            OutputDebugStringA(debugBuf);
+            OutputDebugStringA("\n");
+        }
+        
+        ++obstacleIdx;
+    }
+    
+    snprintf(debugBuf, sizeof(debugBuf), "Carved %d cells from %zu obstacles", carvedCells, geometry.obstacleAABBs.size());
+    ReportProgress(0.14f, debugBuf);
+}
+
 bool NavMeshBuilder::BuildRegions(HeightField& heightField, const NavMeshConfig& config, std::vector<Region>& outRegions)
 {
     // 単純なフラッドフィル領域分割
@@ -535,30 +760,133 @@ bool NavMeshBuilder::BuildRegions(HeightField& heightField, const NavMeshConfig&
 bool NavMeshBuilder::BuildContours(const HeightField& heightField, const std::vector<Region>& regions,
                                     const NavMeshConfig& config, std::vector<Contour>& outContours)
 {
-    // 各領域の輪郭を抽出
+    // 行ラン結合アルゴリズムで効率的にポリゴンを生成
+    // グリーディに矩形をマージ
+
+    struct Rect {
+        int startX, endX;  // X範囲 [startX, endX)
+        int startZ, endZ;  // Z範囲 [startZ, endZ)
+        bool active = true;
+    };
+
     for (const auto& region : regions)
     {
         if (region.cells.empty())
             continue;
-        
-        Contour contour;
-        contour.regionId = region.id;
-        contour.height = region.height;
-        
-        // 簡易的な矩形輪郭を生成
-        float minX = heightField.origin.x + region.minX * heightField.cellSize;
-        float maxX = heightField.origin.x + (region.maxX + 1) * heightField.cellSize;
-        float minZ = heightField.origin.z + region.minZ * heightField.cellSize;
-        float maxZ = heightField.origin.z + (region.maxZ + 1) * heightField.cellSize;
-        
-        contour.vertices.push_back({minX, region.height, minZ});
-        contour.vertices.push_back({maxX, region.height, minZ});
-        contour.vertices.push_back({maxX, region.height, maxZ});
-        contour.vertices.push_back({minX, region.height, maxZ});
-        
-        outContours.push_back(std::move(contour));
+
+        // セル座標をセットに変換
+        std::unordered_set<uint64_t> cellSet;
+        for (const auto& [cx, cz] : region.cells)
+        {
+            uint64_t key = (static_cast<uint64_t>(cz) << 32) | static_cast<uint64_t>(cx);
+            cellSet.insert(key);
+        }
+
+        auto isCellWalkable = [&cellSet](int x, int z) -> bool {
+            uint64_t key = (static_cast<uint64_t>(z) << 32) | static_cast<uint64_t>(x);
+            return cellSet.count(key) > 0;
+        };
+
+        // アクティブな矩形リスト（Z方向に成長中）
+        std::vector<Rect> activeRects;
+
+        for (int z = region.minZ; z <= region.maxZ + 1; ++z)
+        {
+            // この行のランを検出
+            std::vector<std::pair<int, int>> currentRuns;  // (startX, endX)
+
+            if (z <= region.maxZ)
+            {
+                int runStart = -1;
+                for (int x = region.minX; x <= region.maxX + 1; ++x)
+                {
+                    bool walkable = (x <= region.maxX) && isCellWalkable(x, z);
+
+                    if (walkable && runStart < 0)
+                    {
+                        runStart = x;
+                    }
+                    else if (!walkable && runStart >= 0)
+                    {
+                        currentRuns.push_back({runStart, x});
+                        runStart = -1;
+                    }
+                }
+            }
+
+            // アクティブ矩形を更新
+            for (auto& rect : activeRects)
+            {
+                if (!rect.active) continue;
+
+                // このランとマッチするか確認
+                bool matched = false;
+                for (const auto& [runStartX, runEndX] : currentRuns)
+                {
+                    if (runStartX == rect.startX && runEndX == rect.endX)
+                    {
+                        rect.endZ = z + 1;  // 矩形を延長
+                        matched = true;
+                        break;
+                    }
+                }
+
+                if (!matched)
+                {
+                    // マッチしなければ矩形を確定して出力
+                    Contour contour;
+                    contour.regionId = region.id;
+                    contour.height = region.height;
+
+                    float minX = heightField.origin.x + rect.startX * heightField.cellSize;
+                    float maxX = heightField.origin.x + rect.endX * heightField.cellSize;
+                    float minZ = heightField.origin.z + rect.startZ * heightField.cellSize;
+                    float maxZ = heightField.origin.z + rect.endZ * heightField.cellSize;
+
+                    contour.vertices.push_back({minX, region.height, minZ});
+                    contour.vertices.push_back({maxX, region.height, minZ});
+                    contour.vertices.push_back({maxX, region.height, maxZ});
+                    contour.vertices.push_back({minX, region.height, maxZ});
+
+                    outContours.push_back(std::move(contour));
+                    rect.active = false;
+                }
+            }
+
+            // 新しいランを追加
+            for (const auto& [runStartX, runEndX] : currentRuns)
+            {
+                // 既存のアクティブ矩形にマッチするか確認
+                bool existsInActive = false;
+                for (const auto& rect : activeRects)
+                {
+                    if (rect.active && rect.startX == runStartX && rect.endX == runEndX)
+                    {
+                        existsInActive = true;
+                        break;
+                    }
+                }
+
+                if (!existsInActive)
+                {
+                    activeRects.push_back({runStartX, runEndX, z, z + 1, true});
+                }
+            }
+
+            // 非アクティブ矩形を削除
+            activeRects.erase(
+                std::remove_if(activeRects.begin(), activeRects.end(),
+                    [](const Rect& r) { return !r.active; }),
+                activeRects.end());
+        }
     }
-    
+
+    char debugBuf[128];
+    snprintf(debugBuf, sizeof(debugBuf), "BuildContours: generated %zu quads from %zu regions",
+             outContours.size(), regions.size());
+    OutputDebugStringA(debugBuf);
+    OutputDebugStringA("\n");
+
     return !outContours.empty();
 }
 
@@ -591,52 +919,112 @@ bool NavMeshBuilder::BuildPolygons(const std::vector<Contour>& contours, const N
 
 void NavMeshBuilder::BuildNeighborConnections(NavMeshData& navMesh)
 {
-    // 隣接ポリゴンを検出（エッジを共有するポリゴン）
-    for (size_t i = 0; i < navMesh.polygons.size(); ++i)
+    // 空間ハッシュで高速化（O(n)に近づける）
+    float cellSize = navMesh.config.cellSize;
+    float epsilon = cellSize * 0.1f;
+
+    // エッジ中点をキーにしたハッシュマップ
+    auto hashKey = [cellSize](float x, float z) -> uint64_t {
+        int ix = static_cast<int>(std::floor(x / cellSize));
+        int iz = static_cast<int>(std::floor(z / cellSize));
+        return (static_cast<uint64_t>(iz + 100000) << 32) | static_cast<uint64_t>(ix + 100000);
+    };
+
+    struct EdgeInfo {
+        uint32_t polyIndex;
+        uint32_t edgeIndex;
+        DirectX::XMFLOAT3 v0, v1;
+    };
+
+    std::unordered_multimap<uint64_t, EdgeInfo> edgeMap;
+
+    auto vertexMatch = [epsilon](const DirectX::XMFLOAT3& p1, const DirectX::XMFLOAT3& p2) {
+        return std::abs(p1.x - p2.x) < epsilon &&
+               std::abs(p1.y - p2.y) < epsilon &&
+               std::abs(p1.z - p2.z) < epsilon;
+    };
+
+    // 全エッジをハッシュマップに登録
+    for (uint32_t i = 0; i < navMesh.polygons.size(); ++i)
+    {
+        auto& poly = navMesh.polygons[i];
+        for (uint32_t e = 0; e < poly.vertexIndices.size(); ++e)
+        {
+            const auto& v0 = navMesh.vertices[poly.vertexIndices[e]];
+            const auto& v1 = navMesh.vertices[poly.vertexIndices[(e + 1) % poly.vertexIndices.size()]];
+
+            float midX = (v0.x + v1.x) * 0.5f;
+            float midZ = (v0.z + v1.z) * 0.5f;
+            uint64_t key = hashKey(midX, midZ);
+
+            edgeMap.insert({key, {i, e, v0, v1}});
+        }
+    }
+
+    // 隣接関係を検出
+    for (uint32_t i = 0; i < navMesh.polygons.size(); ++i)
     {
         auto& polyA = navMesh.polygons[i];
-        
-        for (size_t j = i + 1; j < navMesh.polygons.size(); ++j)
+        for (uint32_t edgeA = 0; edgeA < polyA.vertexIndices.size(); ++edgeA)
         {
-            auto& polyB = navMesh.polygons[j];
-            
-            // ポリゴンAの各エッジをチェック
-            for (size_t edgeA = 0; edgeA < polyA.vertexIndices.size(); ++edgeA)
+            if (polyA.neighbors[edgeA] != NavMeshPolygon::INVALID_ID)
+                continue;  // 既に接続済み
+
+            const auto& va0 = navMesh.vertices[polyA.vertexIndices[edgeA]];
+            const auto& va1 = navMesh.vertices[polyA.vertexIndices[(edgeA + 1) % polyA.vertexIndices.size()]];
+
+            float midX = (va0.x + va1.x) * 0.5f;
+            float midZ = (va0.z + va1.z) * 0.5f;
+            uint64_t key = hashKey(midX, midZ);
+
+            // 同じセルと隣接セルを検索
+            for (int dz = -1; dz <= 1; ++dz)
             {
-                uint32_t a0 = polyA.vertexIndices[edgeA];
-                uint32_t a1 = polyA.vertexIndices[(edgeA + 1) % polyA.vertexIndices.size()];
-                
-                // ポリゴンBの各エッジと比較
-                for (size_t edgeB = 0; edgeB < polyB.vertexIndices.size(); ++edgeB)
+                for (int dx = -1; dx <= 1; ++dx)
                 {
-                    uint32_t b0 = polyB.vertexIndices[edgeB];
-                    uint32_t b1 = polyB.vertexIndices[(edgeB + 1) % polyB.vertexIndices.size()];
-                    
-                    // 頂点が十分近いかチェック（共有エッジ）
-                    const auto& va0 = navMesh.vertices[a0];
-                    const auto& va1 = navMesh.vertices[a1];
-                    const auto& vb0 = navMesh.vertices[b0];
-                    const auto& vb1 = navMesh.vertices[b1];
-                    
-                    float epsilon = navMesh.config.cellSize * 0.1f;
-                    
-                    auto vertexMatch = [epsilon](const DirectX::XMFLOAT3& p1, const DirectX::XMFLOAT3& p2) {
-                        return std::abs(p1.x - p2.x) < epsilon &&
-                               std::abs(p1.y - p2.y) < epsilon &&
-                               std::abs(p1.z - p2.z) < epsilon;
-                    };
-                    
-                    // エッジが一致するか（方向は逆）
-                    if ((vertexMatch(va0, vb1) && vertexMatch(va1, vb0)) ||
-                        (vertexMatch(va0, vb0) && vertexMatch(va1, vb1)))
+                    uint64_t neighborKey = hashKey(midX + dx * cellSize, midZ + dz * cellSize);
+                    auto range = edgeMap.equal_range(neighborKey);
+
+                    for (auto it = range.first; it != range.second; ++it)
                     {
-                        polyA.neighbors[edgeA] = static_cast<uint32_t>(j);
-                        polyB.neighbors[edgeB] = static_cast<uint32_t>(i);
+                        const auto& edgeB = it->second;
+                        if (edgeB.polyIndex == i)
+                            continue;  // 自分自身
+
+                        // エッジが一致するか（方向は逆または同じ）
+                        if ((vertexMatch(va0, edgeB.v1) && vertexMatch(va1, edgeB.v0)) ||
+                            (vertexMatch(va0, edgeB.v0) && vertexMatch(va1, edgeB.v1)))
+                        {
+                            polyA.neighbors[edgeA] = edgeB.polyIndex;
+                            navMesh.polygons[edgeB.polyIndex].neighbors[edgeB.edgeIndex] = i;
+                            break;
+                        }
                     }
+
+                    if (polyA.neighbors[edgeA] != NavMeshPolygon::INVALID_ID)
+                        break;
                 }
+                if (polyA.neighbors[edgeA] != NavMeshPolygon::INVALID_ID)
+                    break;
             }
         }
     }
+
+    // デバッグ: 接続数をカウント
+    int connectionCount = 0;
+    for (const auto& poly : navMesh.polygons)
+    {
+        for (uint32_t n : poly.neighbors)
+        {
+            if (n != NavMeshPolygon::INVALID_ID)
+                ++connectionCount;
+        }
+    }
+    char debugBuf[128];
+    snprintf(debugBuf, sizeof(debugBuf), "BuildNeighborConnections: %zu polygons, %d connections",
+             navMesh.polygons.size(), connectionCount / 2);
+    OutputDebugStringA(debugBuf);
+    OutputDebugStringA("\n");
 }
 
 void NavMeshBuilder::ReportProgress(float progress, const char* stage)

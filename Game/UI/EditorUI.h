@@ -356,6 +356,7 @@ private:
     bool showCameraFrustum_ = false;
     bool showGrid_ = true;
     bool showNavMesh_ = false;
+	bool showCollision_ = false;
     bool showNavMeshSettings_ = false;
     
     // NavMeshベイク進捗

@@ -21,6 +21,8 @@
 #include "../../Engine/Core/CollisionComponent.h"
 #include "../../Engine/Editor/ParticleEditor.h"
 #include "../../Engine/AI/NavMesh/NavMeshSystem.h"
+#include "../../Engine/Systems/CollisionSystem.h"
+#include "../../Engine/Core/Application.h"
 #include <imgui.h>
 #include <imgui_internal.h>
 #include "../../Engine/UI/imgui_toggle.h"
@@ -446,6 +448,13 @@ namespace UnoEngine {
 				
 				ImGui::MenuItem(U8("NavMeshを表示"), nullptr, &showNavMesh_);
 				navMeshSystem.SetDebugDrawEnabled(showNavMesh_);
+				
+				if (auto* app = scene_->GetApplication()) {
+					if (auto* collisionSystem = app->GetSystemManager()->GetSystem<CollisionSystem>()) {
+						ImGui::MenuItem(U8("コリジョンを表示"), nullptr, &showCollision_);
+						collisionSystem->SetDebugDraw(showCollision_);
+					}
+				}
 				
 				ImGui::MenuItem(U8("NavMesh設定"), nullptr, &showNavMeshSettings_);
 				
@@ -1533,17 +1542,17 @@ namespace UnoEngine {
 
 					// NavMeshエリア設定
 					NavMeshAreaType navArea = collision->GetNavMeshArea();
-					const char* navAreaNames[] = { U8("なし"), U8("歩行可能") };
+					const char* navAreaNames[] = { U8("なし"), U8("歩行可能"), U8("障害物") };
 					int navAreaIdx = static_cast<int>(navArea);
 					ImGui::Text(U8("NavMesh"));
 					ImGui::SameLine(100.0f);
 					ImGui::SetNextItemWidth(-1);
-					if (ImGui::Combo("##NavMeshArea", &navAreaIdx, navAreaNames, 2)) {
+					if (ImGui::Combo("##NavMeshArea", &navAreaIdx, navAreaNames, 3)) {
 						collision->SetNavMeshArea(static_cast<NavMeshAreaType>(navAreaIdx));
 						isDirty_ = true;
 					}
 					if (ImGui::IsItemHovered()) {
-						ImGui::SetTooltip(U8("「歩行可能」に設定するとNavMeshベイク時にこのコライダーが含まれます"));
+						ImGui::SetTooltip(U8("歩行可能: 地面として使用\n障害物: この領域は歩行不可"));
 					}
 
 					// 自動サイズ設定

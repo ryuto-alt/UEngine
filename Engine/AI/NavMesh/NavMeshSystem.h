@@ -76,6 +76,6 @@ private:
     
     bool m_debugDrawEnabled = false;
     DirectX::XMFLOAT4 m_debugDrawColor = {0.0f, 0.8f, 0.4f, 0.7f}; // 緑色
-};;
+};
 
 } // namespace UnoEngine

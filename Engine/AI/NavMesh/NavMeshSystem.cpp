@@ -2,6 +2,7 @@
 #include "NavMeshSystem.h"
 #include "../../Rendering/DebugRenderer.h"
 #include "../../Math/Vector.h"
+#include <cfloat>
 
 namespace {
     // XMFLOAT3 -> Vector3 変換ヘルパー
@@ -96,10 +97,14 @@ bool NavMeshSystem::LoadNavMesh(const std::filesystem::path& filePath)
 
 void NavMeshSystem::DrawDebug(DebugRenderer* debugRenderer) const
 {
-    if (!debugRenderer || !m_debugDrawEnabled || !m_navMesh || !m_navMesh->IsValid())
+    if (!debugRenderer || !m_debugDrawEnabled || !m_navMesh)
         return;
     
-    // 各ポリゴンのエッジを描画
+    // ポリゴンベースの描画
+    Vector4 fillColor(0.0f, 0.6f, 1.0f, 0.4f);
+    Vector4 edgeColor(0.0f, 1.0f, 0.5f, 0.9f);
+    float yOffset = 0.08f;
+    
     for (const auto& poly : m_navMesh->polygons)
     {
         if (poly.vertexIndices.size() < 3)
@@ -112,44 +117,16 @@ void NavMeshSystem::DrawDebug(DebugRenderer* debugRenderer) const
             const auto& v0 = m_navMesh->vertices[poly.vertexIndices[i]];
             const auto& v1 = m_navMesh->vertices[poly.vertexIndices[nextIdx]];
             
-            // 少し上にオフセット（地面に埋まらないように）
-            Vector3 p0(v0.x, v0.y + 0.05f, v0.z);
-            Vector3 p1(v1.x, v1.y + 0.05f, v1.z);
+            Vector3 p0(v0.x, v0.y + yOffset, v0.z);
+            Vector3 p1(v1.x, v1.y + yOffset, v1.z);
             
-            debugRenderer->AddLine(p0, p1, ToVector4(m_debugDrawColor));
+            debugRenderer->AddLine(p0, p1, edgeColor);
         }
         
-        // 中心点を描画（小さな十字）
-        float crossSize = 0.1f;
-        float cx = poly.center.x, cy = poly.center.y + 0.05f, cz = poly.center.z;
-        Vector4 crossColor(1.0f, 1.0f, 1.0f, 0.5f);
-        debugRenderer->AddLine(
-            Vector3(cx - crossSize, cy, cz),
-            Vector3(cx + crossSize, cy, cz),
-            crossColor
-        );
-        debugRenderer->AddLine(
-            Vector3(cx, cy, cz - crossSize),
-            Vector3(cx, cy, cz + crossSize),
-            crossColor
-        );
-    }
-    
-    // 隣接接続を描画（オプション）
-    Vector4 connectionColor(0.5f, 0.5f, 1.0f, 0.3f);
-    for (size_t i = 0; i < m_navMesh->polygons.size(); ++i)
-    {
-        const auto& poly = m_navMesh->polygons[i];
-        for (uint32_t neighborId : poly.neighbors)
-        {
-            if (neighborId != NavMeshPolygon::INVALID_ID && neighborId > i)
-            {
-                const auto& neighbor = m_navMesh->polygons[neighborId];
-                Vector3 p0(poly.center.x, poly.center.y + 0.1f, poly.center.z);
-                Vector3 p1(neighbor.center.x, neighbor.center.y + 0.1f, neighbor.center.z);
-                debugRenderer->AddLine(p0, p1, connectionColor);
-            }
-        }
+        // 中心点に十字を描画
+        float cx = poly.center.x, cy = poly.center.y + yOffset, cz = poly.center.z;
+        debugRenderer->AddLine(Vector3(cx - 0.2f, cy, cz), Vector3(cx + 0.2f, cy, cz), fillColor);
+        debugRenderer->AddLine(Vector3(cx, cy, cz - 0.2f), Vector3(cx, cy, cz + 0.2f), fillColor);
     }
 }
 

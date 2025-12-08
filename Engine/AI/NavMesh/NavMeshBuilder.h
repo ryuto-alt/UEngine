@@ -16,9 +16,13 @@ struct NavMeshInputGeometry
     std::vector<DirectX::XMFLOAT3> vertices;
     std::vector<uint32_t> indices; // 三角形インデックス（3つで1三角形）
     
+    // 障害物AABB（これらの領域は歩行不可としてマーク）
+    std::vector<AABB> obstacleAABBs;
+    
     void AddTriangle(const DirectX::XMFLOAT3& v0, const DirectX::XMFLOAT3& v1, const DirectX::XMFLOAT3& v2);
     void AddAABB(const AABB& aabb);
-    void Clear() { vertices.clear(); indices.clear(); }
+    void AddObstacle(const AABB& aabb) { obstacleAABBs.push_back(aabb); }
+    void Clear() { vertices.clear(); indices.clear(); obstacleAABBs.clear(); }
     bool IsEmpty() const { return vertices.empty() || indices.empty(); }
 };
 
@@ -46,6 +50,7 @@ private:
     void CollectGeometryFromCollider(CollisionComponent* collider, NavMeshInputGeometry& outGeometry);
     
     bool Voxelize(const NavMeshInputGeometry& geometry, const NavMeshConfig& config, HeightField& outHeightField);
+    void CarveObstacles(const NavMeshInputGeometry& geometry, const NavMeshConfig& config, HeightField& heightField);
     void FilterWalkableLowHeightSpans(HeightField& heightField, float walkableHeight);
     void FilterLedgeSpans(HeightField& heightField, float walkableClimb);
     

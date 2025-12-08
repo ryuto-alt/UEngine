@@ -3,6 +3,7 @@
 #include "../Engine/Core/Application.h"
 #include "../Engine/Animation/AnimationSystem.h"
 #include "../Engine/Audio/AudioSystem.h"
+#include "../Engine/Systems/CollisionSystem.h"
 #include "../Engine/Resource/ResourceManager.h"
 #include "../Engine/PostProcess/PostProcessType.h"
 #include "Systems/CameraSystem.h"
@@ -26,6 +27,7 @@ public:
     // Accessors
     CameraSystem* GetCameraSystem() { return GetSystemManager()->GetSystem<CameraSystem>(); }
     AudioSystem* GetAudioSystem() { return GetSystemManager()->GetSystem<AudioSystem>(); }
+    CollisionSystem* GetCollisionSystem() { return GetSystemManager()->GetSystem<CollisionSystem>(); }
     GraphicsDevice* GetGraphicsDevice() { return graphics_.get(); }
     Renderer* GetRenderer() { return renderer_.get(); }
     LightManager* GetLightManager() { return lightManager_.get(); }

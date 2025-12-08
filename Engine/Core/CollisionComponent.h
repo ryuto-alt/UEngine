@@ -10,7 +10,7 @@ namespace UnoEngine {
 enum class NavMeshAreaType : uint8_t {
     None = 0,       // NavMeshに含めない
     Walkable = 1,   // 歩行可能
-    // 将来的に追加可能: Jump, Climb, Water など
+    Obstacle = 2,   // 障害物（この領域は歩行不可）
 };
 
 struct AABB {
@@ -97,6 +97,7 @@ public:
     [[nodiscard]] NavMeshAreaType GetNavMeshArea() const { return navMeshArea_; }
     void SetNavMeshArea(NavMeshAreaType area) { navMeshArea_ = area; }
     [[nodiscard]] bool IsNavMeshWalkable() const { return navMeshArea_ == NavMeshAreaType::Walkable; }
+    [[nodiscard]] bool IsNavMeshObstacle() const { return navMeshArea_ == NavMeshAreaType::Obstacle; }
 
     // Static collision check
     [[nodiscard]] static bool CheckAABBCollision(const AABB& a, const AABB& b);

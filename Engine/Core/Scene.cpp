@@ -3,6 +3,7 @@
 #include "Component.h"
 #include "Logger.h"
 #include "CameraComponent.h"
+#include "CollisionComponent.h"
 #include "../Scene/SceneSerializer.h"
 #include "../Rendering/SkinnedMeshRenderer.h"
 #include "../Graphics/MeshRenderer.h"
@@ -150,6 +151,13 @@ void Scene::LoadSceneFromFile(const std::string& filepath) {
                 if (modelData && !modelData->meshes.empty()) {
                     meshRenderer->SetModel(modelData);
                     Logger::Info("[シーン] 静的モデル再ロード完了: {} (メッシュ: {}個)", modelPath, modelData->meshes.size());
+                    
+                    // モデル読み込み後にCollisionComponentのAABBを再計算
+                    auto* collision = obj->GetComponent<CollisionComponent>();
+                    if (collision) {
+                        Logger::Info("[シーン] CollisionComponent found, autoSize={}", collision->IsAutoSized());
+                        collision->RecalculateFromMesh();
+                    }
                 } else {
                     Logger::Warning("[シーン] 静的モデル再ロード失敗: {}", modelPath);
                 }

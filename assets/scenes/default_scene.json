@@ -227,8 +227,8 @@
                     "collisionLayer": 0,
                     "collisionMask": 4294967295,
                     "enabled": true,
-                    "isStatic": true,
-                    "isTrigger": true,
+                    "isStatic": false,
+                    "isTrigger": false,
                     "localAABBMax": [
                         0.5889710187911987,
                         1.6565660238265991,

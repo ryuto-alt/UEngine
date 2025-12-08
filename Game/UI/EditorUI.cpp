@@ -1625,7 +1625,14 @@ namespace UnoEngine {
 										camComp->SetFirstPersonMoveSpeed(moveSpeed);
 										isDirty_ = true;
 									}
-								} else {
+
+								// ターゲットモデルを非表示にするか
+								bool hideTarget = camComp->GetHideTargetInFirstPerson();
+								if (ImGui::Checkbox(U8("ターゲットモデル非表示"), &hideTarget)) {
+									camComp->SetHideTargetInFirstPerson(hideTarget);
+									isDirty_ = true;
+								}
+							} else {
 							// 三人称視点設定
 							float distance = camComp->GetFollowDistance();
 							ImGui::Text(U8("距離"));

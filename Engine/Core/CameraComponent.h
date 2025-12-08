@@ -129,6 +129,10 @@ public:
     float GetFirstPersonMoveSpeed() const { return firstPersonMoveSpeed_; }
     void SetFirstPersonMoveSpeed(float speed) { firstPersonMoveSpeed_ = speed; }
 
+    // 一人称視点でターゲットモデルを非表示にするか
+    bool GetHideTargetInFirstPerson() const { return hideTargetInFirstPerson_; }
+    void SetHideTargetInFirstPerson(bool hide) { hideTargetInFirstPerson_ = hide; }
+
     // スムーズ追従
     float GetFollowSmoothness() const { return followSmoothness_; }
     void SetFollowSmoothness(float smoothness) { followSmoothness_ = smoothness; }
@@ -150,6 +154,9 @@ public:
     // カメラのYaw/Pitch取得（Lua用）
     float GetCameraYaw() const { return cameraYaw_; }
     float GetCameraPitch() const { return cameraPitch_; }
+
+    // 一人称視点で除外すべきGameObjectを返す
+    GameObject* GetFirstPersonExcludeTarget() const;
 
 private:
     void UpdateFollowCamera(float deltaTime);
@@ -194,6 +201,7 @@ private:
     float followSmoothness_ = 10.0f; // 追従の滑らかさ
     float mouseSensitivity_ = 0.3f;  // 一人称: マウス感度
     float firstPersonMoveSpeed_ = 5.0f; // 一人称: 移動速度
+    bool hideTargetInFirstPerson_ = true; // 一人称: ターゲットモデルを非表示にするか
     float cameraYaw_ = 0.0f;         // 一人称: 累積Yaw角度
     float cameraPitch_ = 0.0f;       // 一人称: 累積Pitch角度
     bool isPlaying_ = false;         // 再生中フラグ

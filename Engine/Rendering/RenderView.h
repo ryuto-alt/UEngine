@@ -6,6 +6,8 @@
 
 namespace UnoEngine {
 
+class GameObject;
+
 /// レンダリングビューの設定
 /// OnRenderメソッドで使用され、どのカメラでどのレイヤーをレンダリングするかを指定します
 struct RenderView {
@@ -20,6 +22,9 @@ struct RenderView {
     /// ビューの識別名
     /// デバッグやプロファイリング時にビューを区別するために使用されます
     std::string viewName = "Main";
+
+    /// 一人称視点で除外するオブジェクト（nullptrの場合は全て描画）
+    GameObject* excludeFromFirstPerson = nullptr;
 };
 
 } // namespace UnoEngine

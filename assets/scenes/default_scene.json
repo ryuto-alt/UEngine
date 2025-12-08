@@ -96,6 +96,7 @@
                     "followTargetName": "player",
                     "fov": 1.5765740871429443,
                     "grayscaleIntensity": 1.0,
+                    "hideTargetInFirstPerson": true,
                     "isMain": true,
                     "isOrthographic": false,
                     "mouseSensitivity": 0.13099999725818634,
@@ -121,15 +122,15 @@
             "name": "Camera",
             "transform": {
                 "position": [
-                    0.542811393737793,
-                    1.7999999523162842,
-                    51.524147033691406
+                    27.219999313354492,
+                    1.8000000715255737,
+                    44.06106185913086
                 ],
                 "rotation": [
-                    1.401298464324817e-45,
-                    1.401298464324817e-45,
-                    1.401298464324817e-45,
-                    -1.0
+                    -0.006522867362946272,
+                    -0.026645125821232796,
+                    -0.000173868058482185,
+                    0.9996236562728882
                 ],
                 "scale": [
                     1.0,
@@ -1072,20 +1073,20 @@
                     "type": "CollisionComponent"
                 },
                 {
-                    "type": "AnimatorComponent"
-                },
-                {
                     "scriptPath": "assets/scripts/PlayerController.lua",
                     "type": "LuaScriptComponent"
+                },
+                {
+                    "type": "AnimatorComponent"
                 }
             ],
             "layer": 1,
             "name": "player",
             "transform": {
                 "position": [
-                    0.5428113341331482,
+                    27.21999740600586,
                     0.0,
-                    51.52414321899414
+                    44.061065673828125
                 ],
                 "rotation": [
                     -0.0,

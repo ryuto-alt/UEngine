@@ -40,6 +40,21 @@ void GameApplication::OnRender() {
         RenderView view;
         scene->OnRender(view);
 
+        // Main Cameraを持つGameObjectからCameraComponentを探す
+        CameraComponent* camComp = nullptr;
+        for (auto& obj : scene->GetGameObjects()) {
+            auto* cc = obj->GetComponent<CameraComponent>();
+            if (cc && cc->IsMain()) {
+                camComp = cc;
+                break;
+            }
+        }
+
+        // 一人称視点でターゲットモデルを除外する設定
+        if (camComp) {
+            view.excludeFromFirstPerson = camComp->GetFirstPersonExcludeTarget();
+        }
+
         // Collect render items via RenderSystem
         auto items = renderSystem_->CollectRenderables(scene, view);
         auto skinnedItems = renderSystem_->CollectSkinnedRenderables(scene, view);
@@ -77,16 +92,7 @@ void GameApplication::OnRender() {
                     false  // デバッグ描画無効
                 );
 
-                // CameraComponentからポストプロセス設定を取得して適用
-                // Main Cameraを持つGameObjectからCameraComponentを探す
-                CameraComponent* camComp = nullptr;
-                for (auto& obj : scene->GetGameObjects()) {
-                    auto* cc = obj->GetComponent<CameraComponent>();
-                    if (cc && cc->IsMain()) {
-                        camComp = cc;
-                        break;
-                    }
-                }
+                // ポストプロセス設定を取得して適用
                 if (camComp && camComp->IsPostProcessEnabled() && 
                     !camComp->GetPostProcessEffects().empty()) {
                     auto* postProcessMgr = editorUI->GetPostProcessManager();

@@ -21,6 +21,9 @@ std::vector<RenderItem> RenderSystem::CollectRenderables(Scene* scene, const Ren
         if (!go->IsActive()) continue;
         
         if (!PassesLayerMask(go->GetLayer(), view.layerMask)) continue;
+
+        // 一人称視点での除外チェック
+        if (view.excludeFromFirstPerson && go.get() == view.excludeFromFirstPerson) continue;
         
         auto* meshRenderer = go->GetComponent<MeshRenderer>();
         if (!meshRenderer) continue;
@@ -69,6 +72,9 @@ std::vector<SkinnedRenderItem> RenderSystem::CollectSkinnedRenderables(Scene* sc
         if (!go->IsActive()) continue;
         
         if (!PassesLayerMask(go->GetLayer(), view.layerMask)) continue;
+
+        // 一人称視点での除外チェック
+        if (view.excludeFromFirstPerson && go.get() == view.excludeFromFirstPerson) continue;
         
         auto* skinnedRenderer = go->GetComponent<SkinnedMeshRenderer>();
         if (!skinnedRenderer) continue;

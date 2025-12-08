@@ -180,6 +180,13 @@ GameObject* CameraComponent::FindFollowTarget() const {
     return nullptr;
 }
 
+GameObject* CameraComponent::GetFirstPersonExcludeTarget() const {
+    if (viewMode_ != CameraViewMode::FirstPerson || !hideTargetInFirstPerson_) {
+        return nullptr;
+    }
+    return FindFollowTarget();
+}
+
 void CameraComponent::UpdateFollowCamera(float deltaTime) {
     GameObject* target = FindFollowTarget();
     if (!target) {

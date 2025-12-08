@@ -278,6 +278,7 @@ json SceneSerializer::SerializeComponent(const Component& component) {
         comp["followSmoothness"] = camera->GetFollowSmoothness();
         comp["mouseSensitivity"] = camera->GetMouseSensitivity();
         comp["firstPersonMoveSpeed"] = camera->GetFirstPersonMoveSpeed();
+        comp["hideTargetInFirstPerson"] = camera->GetHideTargetInFirstPerson();
 
         return comp;
     }
@@ -508,6 +509,9 @@ void SceneSerializer::DeserializeComponent(const json& json, GameObject& gameObj
         }
         if (json.contains("firstPersonMoveSpeed")) {
             camera->SetFirstPersonMoveSpeed(json["firstPersonMoveSpeed"].get<float>());
+        }
+        if (json.contains("hideTargetInFirstPerson")) {
+            camera->SetHideTargetInFirstPerson(json["hideTargetInFirstPerson"].get<bool>());
         }
     }
     else if (type == "CollisionComponent") {

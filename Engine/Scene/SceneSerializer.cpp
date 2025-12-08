@@ -7,6 +7,7 @@
 #include "../Audio/AudioListener.h"
 #include "../Core/CameraComponent.h"
 #include "../Core/CollisionComponent.h"
+#include "../Scripting/LuaScriptComponent.h"
 #include "../PostProcess/PostProcessType.h"
 #include <fstream>
 #include <iostream>
@@ -311,6 +312,13 @@ json SceneSerializer::SerializeComponent(const Component& component) {
         return comp;
     }
 
+    // LuaScriptComponent
+    if (auto* luaScript = dynamic_cast<const LuaScriptComponent*>(&component)) {
+        comp["type"] = "LuaScriptComponent";
+        comp["scriptPath"] = luaScript->GetScriptPath();
+        return comp;
+    }
+
     return json();
 }
 
@@ -552,6 +560,15 @@ void SceneSerializer::DeserializeComponent(const json& json, GameObject& gameObj
                 Logger::Debug("[SceneSerializer] Loaded {} AABBs for {}", 
                     collision->GetLocalAABBs().size(),
                     gameObject.GetName());
+            }
+        }
+    }
+    else if (type == "LuaScriptComponent") {
+        auto* luaScript = gameObject.AddComponent<LuaScriptComponent>();
+        if (json.contains("scriptPath")) {
+            std::string scriptPath = json["scriptPath"].get<std::string>();
+            if (!scriptPath.empty()) {
+                luaScript->SetScriptPath(scriptPath);
             }
         }
     }

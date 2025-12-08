@@ -193,64 +193,33 @@ void CameraComponent::UpdateFollowCamera(float deltaTime) {
     Quaternion desiredRot;
 
     if (viewMode_ == CameraViewMode::FirstPerson) {
-        // 一人称視点: 回転はマウスで独立制御、移動はカメラの向きに基づく
-        
+        // 一人称視点: マウスで視点回転のみ（移動はLuaスクリプトで管理）
+
         if (isPlaying_ && mouseLocked_ && scene_) {
             if (auto* input = scene_->GetInputManager()) {
-                // マウスロック時はWin32 APIで直接delta取得してカーソルを戻す
                 POINT currentPos;
                 GetCursorPos(&currentPos);
-                
+
                 float deltaX = static_cast<float>(currentPos.x - mouseLockX_);
                 float deltaY = static_cast<float>(currentPos.y - mouseLockY_);
-                
-                // カーソルを中央に戻す
+
                 if (deltaX != 0.0f || deltaY != 0.0f) {
                     SetCursorPos(mouseLockX_, mouseLockY_);
                 }
-                
+
                 cameraYaw_ += deltaX * mouseSensitivity_ * 0.01f;
                 cameraPitch_ += deltaY * mouseSensitivity_ * 0.01f;
-                
-                // Pitch制限（上下90度まで）
+
                 constexpr float maxPitch = 1.5f;
                 if (cameraPitch_ > maxPitch) cameraPitch_ = maxPitch;
                 if (cameraPitch_ < -maxPitch) cameraPitch_ = -maxPitch;
-                
-                // WASD移動（カメラの向きに基づいてターゲットを移動）
-                auto& keyboard = input->GetKeyboard();
-                
-                // カメラの向きから水平方向を計算
-                float sinYaw = std::sin(cameraYaw_);
-                float cosYaw = std::cos(cameraYaw_);
-                Vector3 forward(sinYaw, 0.0f, cosYaw);
-                Vector3 right(cosYaw, 0.0f, -sinYaw);
-                
-                Vector3 movement = Vector3::Zero();
-                if (keyboard.IsDown(KeyCode::W)) movement = movement + forward;
-                if (keyboard.IsDown(KeyCode::S)) movement = movement - forward;
-                if (keyboard.IsDown(KeyCode::A)) movement = movement - right;
-                if (keyboard.IsDown(KeyCode::D)) movement = movement + right;
-                if (keyboard.IsDown(KeyCode::Space)) movement = movement + Vector3::UnitY();
-                if (keyboard.IsDown(KeyCode::Shift)) movement = movement - Vector3::UnitY();
-                
-                if (movement.Length() > 0.001f) {
-                    movement = movement.Normalize() * firstPersonMoveSpeed_ * deltaTime;
-                    Vector3 newPos = target->GetTransform().GetPosition() + movement;
-                    target->GetTransform().SetPosition(newPos);
-                }
             }
         }
-        
-        // ターゲットもカメラのYaw方向に回転（常にカメラと同じ向きを向く）
-        Quaternion targetRotY = Quaternion::RotationAxis(Vector3::UnitY(), cameraYaw_);
-        target->GetTransform().SetRotation(targetRotY);
-        
-        // ターゲット位置を再取得（移動後）
-        targetPos = target->GetTransform().GetPosition();
+
+        // ターゲット位置にオフセットを加えた位置にカメラを配置
         desiredPos = targetPos + firstPersonOffset_;
-        
-        // Y軸回転（yaw）とX軸回転（pitch）を個別に作成して合成
+
+        // Y軸回転（yaw）とX軸回転（pitch）を合成
         Quaternion rotY = Quaternion::RotationAxis(Vector3::UnitY(), cameraYaw_);
         Quaternion rotX = Quaternion::RotationAxis(Vector3::UnitX(), cameraPitch_);
         desiredRot = rotY * rotX;

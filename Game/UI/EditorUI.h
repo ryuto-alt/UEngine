@@ -352,8 +352,9 @@ private:
     // 変更追跡フラグ
     bool isDirty_ = false;
 
-    // カメラFrustum表示フラグ
+    // 表示フラグ
     bool showCameraFrustum_ = false;
+    bool showGrid_ = true;
 
     // ポストプロセスマネージャー
     std::unique_ptr<PostProcessManager> postProcessManager_;

@@ -572,7 +572,7 @@ namespace UnoEngine {
 			ImGui::OpenPopup("GizmosPopup");
 		}
 		if (ImGui::BeginPopup("GizmosPopup")) {
-			ImGui::Checkbox(U8("グリッド表示"), &showCameraFrustum_);
+			ImGui::Checkbox(U8("グリッド表示"), &showGrid_);
 			ImGui::Checkbox(U8("カメラ視錐台"), &showCameraFrustum_);
 			ImGui::EndPopup();
 		}
@@ -3651,13 +3651,15 @@ namespace UnoEngine {
 	}
 
 	void EditorUI::PrepareSceneViewGizmos(DebugRenderer* debugRenderer) {
-		// DebugRendererがない場合は何もしない
-		if (!debugRenderer || !gameObjects_) {
+		if (!debugRenderer) {
 			return;
 		}
 
-		// Scene View表示中のみカメラギズモを描画
-		if (!showSceneView_) {
+		// グリッド表示フラグを同期（常に実行）
+		debugRenderer->SetShowGrid(showGrid_);
+
+		// GameObjectsがない、またはScene View非表示なら以降の処理をスキップ
+		if (!gameObjects_ || !showSceneView_) {
 			return;
 		}
 
@@ -3683,8 +3685,8 @@ namespace UnoEngine {
 			float iconScale = 0.5f;
 			debugRenderer->AddCameraIcon(camPos, camForward, camUp, iconScale, iconColor);
 
-			// 選択中のカメラはFrustumも描画
-			if (selectedObject_ == obj.get() || showCameraFrustum_) {
+			// Frustum表示が有効な場合のみ描画
+			if (showCameraFrustum_) {
 				Vector3 nearCorners[4];
 				Vector3 farCorners[4];
 

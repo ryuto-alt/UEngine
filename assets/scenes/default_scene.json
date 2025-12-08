@@ -93,7 +93,7 @@
                     "followHeight": 2.0,
                     "followPitch": 15.0,
                     "followSmoothness": 30.0,
-                    "followTargetName": "Player",
+                    "followTargetName": "player",
                     "fov": 1.5765740871429443,
                     "grayscaleIntensity": 1.0,
                     "isMain": true,
@@ -121,15 +121,15 @@
             "name": "Camera",
             "transform": {
                 "position": [
-                    17.40306854248047,
-                    2.0623929500579834,
-                    -47.62215042114258
+                    -27.047157287597656,
+                    2.676290988922119,
+                    3.871480941772461
                 ],
                 "rotation": [
-                    -0.04205857217311859,
-                    0.7134144306182861,
-                    -0.04297768697142601,
-                    -0.6981574892997742
+                    -0.002532422775402665,
+                    0.9960299134254456,
+                    -0.08372881263494492,
+                    -0.030125459656119347
                 ],
                 "scale": [
                     1.0,
@@ -197,48 +197,29 @@
             }
         },
         {
-            "active": false,
+            "active": true,
             "components": [
                 {
                     "modelPath": "assets/model/testmodel/human/walk.gltf",
                     "type": "SkinnedMeshRenderer"
                 },
                 {
-                    "autoSize": false,
-                    "collisionLayer": 0,
-                    "collisionMask": 4294967295,
-                    "enabled": true,
-                    "isStatic": false,
-                    "isTrigger": true,
-                    "localAABBMax": [
-                        0.35899999737739563,
-                        1.6565660238265991,
-                        0.3089999854564667
-                    ],
-                    "localAABBMin": [
-                        -0.32899999618530273,
-                        -0.052000001072883606,
-                        -0.2070000022649765
-                    ],
-                    "type": "CollisionComponent"
-                },
-                {
                     "type": "AnimatorComponent"
                 }
             ],
             "layer": 1,
-            "name": "Player",
+            "name": "player",
             "transform": {
                 "position": [
-                    17.403066635131836,
-                    0.26239317655563354,
-                    -47.622154235839844
+                    -27.04715919494629,
+                    0.8762909173965454,
+                    3.871480703353882
                 ],
                 "rotation": [
-                    0.0,
-                    0.7147078514099121,
-                    0.0,
-                    -0.6994231343269348
+                    -0.0,
+                    -0.9999732971191406,
+                    -0.0,
+                    0.0073065864853560925
                 ],
                 "scale": [
                     1.0,

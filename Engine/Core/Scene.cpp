@@ -289,9 +289,10 @@ void Scene::ProcessPendingStarts() {
 
         for (auto& comp : obj->GetComponents()) {
             if (comp->IsAwakeCalled() && !comp->HasStarted() && comp->IsEnabled()) {
-                // LuaScriptComponentにInputManagerを設定
+                // LuaScriptComponentにInputManagerとSceneを設定
                 if (auto* luaScript = dynamic_cast<LuaScriptComponent*>(comp.get())) {
                     luaScript->SetInputManager(input_);
+                    luaScript->SetScene(this);
                 }
                 comp->Start();
                 comp->MarkStarted();

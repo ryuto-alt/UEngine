@@ -8,6 +8,7 @@
 namespace UnoEngine {
 
 class InputManager;
+class Scene;
 
 // Luaスクリプトコンポーネント
 // GameObjectにアタッチしてLuaスクリプトを実行する
@@ -28,6 +29,9 @@ public:
 
     // InputManager設定（Sceneから呼び出される）
     void SetInputManager(InputManager* input) { inputManager_ = input; }
+
+    // Scene設定
+    void SetScene(Scene* scene) { scene_ = scene; }
 
     // エディタカメラ操作中フラグ（操作中は入力をブロック）
     void SetEditorCameraControlling(bool controlling) { editorCameraControlling_ = controlling; }
@@ -59,6 +63,7 @@ private:
     std::unique_ptr<LuaState> luaState_;
     std::string scriptPath_;
     InputManager* inputManager_ = nullptr;
+    Scene* scene_ = nullptr;
     bool scriptLoaded_ = false;
     bool awakeCalledInLua_ = false;
     bool startCalledInLua_ = false;

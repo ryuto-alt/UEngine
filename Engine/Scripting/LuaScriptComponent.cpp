@@ -2,6 +2,8 @@
 #include "LuaScriptComponent.h"
 #include "../Core/GameObject.h"
 #include "../Core/Logger.h"
+#include "../Core/Scene.h"
+#include "../Core/CameraComponent.h"
 #include "../Input/InputManager.h"
 #include "../Animation/AnimatorComponent.h"
 
@@ -351,6 +353,42 @@ void LuaScriptComponent::BindEngineAPI() {
             );
         }
     }
+
+    // ===== Camera API =====
+    // MainCameraのYaw/Pitchを取得（一人称視点用）
+    Scene* scenePtr = scene_;
+    lua["Camera"] = lua.create_table_with(
+        "getYaw", [scenePtr]() -> float {
+            if (!scenePtr) return 0.0f;
+            auto* camComp = scenePtr->GetActiveCameraComponent();
+            if (!camComp) return 0.0f;
+            return camComp->GetCameraYaw();
+        },
+        "getPitch", [scenePtr]() -> float {
+            if (!scenePtr) return 0.0f;
+            auto* camComp = scenePtr->GetActiveCameraComponent();
+            if (!camComp) return 0.0f;
+            return camComp->GetCameraPitch();
+        },
+        "getForward", [scenePtr]() -> std::tuple<float, float, float> {
+            if (!scenePtr) return {0.0f, 0.0f, 1.0f};
+            auto* camComp = scenePtr->GetActiveCameraComponent();
+            if (!camComp) return {0.0f, 0.0f, 1.0f};
+            float yaw = camComp->GetCameraYaw();
+            float sinYaw = std::sin(yaw);
+            float cosYaw = std::cos(yaw);
+            return {sinYaw, 0.0f, cosYaw};
+        },
+        "getRight", [scenePtr]() -> std::tuple<float, float, float> {
+            if (!scenePtr) return {1.0f, 0.0f, 0.0f};
+            auto* camComp = scenePtr->GetActiveCameraComponent();
+            if (!camComp) return {1.0f, 0.0f, 0.0f};
+            float yaw = camComp->GetCameraYaw();
+            float cosYaw = std::cos(yaw);
+            float sinYaw = std::sin(yaw);
+            return {cosYaw, 0.0f, -sinYaw};
+        }
+    );
 
     Logger::Debug("[LuaScriptComponent] Engine API bound to Lua");
 }

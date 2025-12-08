@@ -140,12 +140,16 @@ public:
     void SetPlaying(bool playing) { isPlaying_ = playing; }
 
     // マウスロック状態（GameViewクリック時にtrueになる）
-    void SetMouseLocked(bool locked, int lockX = 0, int lockY = 0) { 
-        mouseLocked_ = locked; 
+    void SetMouseLocked(bool locked, int lockX = 0, int lockY = 0) {
+        mouseLocked_ = locked;
         mouseLockX_ = lockX;
         mouseLockY_ = lockY;
     }
     bool IsMouseLocked() const { return mouseLocked_; }
+
+    // カメラのYaw/Pitch取得（Lua用）
+    float GetCameraYaw() const { return cameraYaw_; }
+    float GetCameraPitch() const { return cameraPitch_; }
 
 private:
     void UpdateFollowCamera(float deltaTime);

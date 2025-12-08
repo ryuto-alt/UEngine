@@ -6,8 +6,10 @@
 #include "../../Graphics/MeshRenderer.h"
 #include "../../Resource/StaticModelImporter.h"
 #include <algorithm>
+#include <cfloat>
 #include <cmath>
 #include <cstdio>
+#include <set>
 #include <unordered_map>
 #include <unordered_set>
 #include <queue>
@@ -760,13 +762,9 @@ bool NavMeshBuilder::BuildRegions(HeightField& heightField, const NavMeshConfig&
 bool NavMeshBuilder::BuildContours(const HeightField& heightField, const std::vector<Region>& regions,
                                     const NavMeshConfig& config, std::vector<Contour>& outContours)
 {
-    // 行ラン結合アルゴリズムで効率的にポリゴンを生成
-    // グリーディに矩形をマージ
-
-    struct Rect {
-        int startX, endX;  // X範囲 [startX, endX)
-        int startZ, endZ;  // Z範囲 [startZ, endZ)
-        bool active = true;
+    // Greedy Row-Run: 行方向にマージして矩形を生成
+    auto cellHash = [](const std::pair<int, int>& p) {
+        return std::hash<int64_t>{}((static_cast<int64_t>(p.first) << 32) | static_cast<uint32_t>(p.second));
     };
 
     for (const auto& region : regions)
@@ -774,116 +772,66 @@ bool NavMeshBuilder::BuildContours(const HeightField& heightField, const std::ve
         if (region.cells.empty())
             continue;
 
-        // セル座標をセットに変換
-        std::unordered_set<uint64_t> cellSet;
-        for (const auto& [cx, cz] : region.cells)
+        std::vector<std::pair<int, int>> sortedCells = region.cells;
+        std::sort(sortedCells.begin(), sortedCells.end(), [](const auto& a, const auto& b) {
+            if (a.second != b.second) return a.second < b.second;
+            return a.first < b.first;
+        });
+
+        std::unordered_set<std::pair<int, int>, decltype(cellHash)> cellSet(sortedCells.begin(), sortedCells.end(), 0, cellHash);
+        std::unordered_set<std::pair<int, int>, decltype(cellHash)> processed(0, cellHash);
+
+        for (const auto& [cx, cz] : sortedCells)
         {
-            uint64_t key = (static_cast<uint64_t>(cz) << 32) | static_cast<uint64_t>(cx);
-            cellSet.insert(key);
-        }
+            if (processed.count({cx, cz}))
+                continue;
 
-        auto isCellWalkable = [&cellSet](int x, int z) -> bool {
-            uint64_t key = (static_cast<uint64_t>(z) << 32) | static_cast<uint64_t>(x);
-            return cellSet.count(key) > 0;
-        };
+            int width = 0;
+            while (cellSet.count({cx + width, cz}) && !processed.count({cx + width, cz}))
+                ++width;
 
-        // アクティブな矩形リスト（Z方向に成長中）
-        std::vector<Rect> activeRects;
+            if (width == 0) continue;
 
-        for (int z = region.minZ; z <= region.maxZ + 1; ++z)
-        {
-            // この行のランを検出
-            std::vector<std::pair<int, int>> currentRuns;  // (startX, endX)
-
-            if (z <= region.maxZ)
+            int height = 1;
+            while (true)
             {
-                int runStart = -1;
-                for (int x = region.minX; x <= region.maxX + 1; ++x)
+                bool canExtend = true;
+                for (int x = cx; x < cx + width; ++x)
                 {
-                    bool walkable = (x <= region.maxX) && isCellWalkable(x, z);
-
-                    if (walkable && runStart < 0)
+                    if (!cellSet.count({x, cz + height}) || processed.count({x, cz + height}))
                     {
-                        runStart = x;
-                    }
-                    else if (!walkable && runStart >= 0)
-                    {
-                        currentRuns.push_back({runStart, x});
-                        runStart = -1;
-                    }
-                }
-            }
-
-            // アクティブ矩形を更新
-            for (auto& rect : activeRects)
-            {
-                if (!rect.active) continue;
-
-                // このランとマッチするか確認
-                bool matched = false;
-                for (const auto& [runStartX, runEndX] : currentRuns)
-                {
-                    if (runStartX == rect.startX && runEndX == rect.endX)
-                    {
-                        rect.endZ = z + 1;  // 矩形を延長
-                        matched = true;
+                        canExtend = false;
                         break;
                     }
                 }
-
-                if (!matched)
-                {
-                    // マッチしなければ矩形を確定して出力
-                    Contour contour;
-                    contour.regionId = region.id;
-                    contour.height = region.height;
-
-                    float minX = heightField.origin.x + rect.startX * heightField.cellSize;
-                    float maxX = heightField.origin.x + rect.endX * heightField.cellSize;
-                    float minZ = heightField.origin.z + rect.startZ * heightField.cellSize;
-                    float maxZ = heightField.origin.z + rect.endZ * heightField.cellSize;
-
-                    contour.vertices.push_back({minX, region.height, minZ});
-                    contour.vertices.push_back({maxX, region.height, minZ});
-                    contour.vertices.push_back({maxX, region.height, maxZ});
-                    contour.vertices.push_back({minX, region.height, maxZ});
-
-                    outContours.push_back(std::move(contour));
-                    rect.active = false;
-                }
+                if (!canExtend) break;
+                ++height;
             }
 
-            // 新しいランを追加
-            for (const auto& [runStartX, runEndX] : currentRuns)
-            {
-                // 既存のアクティブ矩形にマッチするか確認
-                bool existsInActive = false;
-                for (const auto& rect : activeRects)
-                {
-                    if (rect.active && rect.startX == runStartX && rect.endX == runEndX)
-                    {
-                        existsInActive = true;
-                        break;
-                    }
-                }
+            for (int z = cz; z < cz + height; ++z)
+                for (int x = cx; x < cx + width; ++x)
+                    processed.insert({x, z});
 
-                if (!existsInActive)
-                {
-                    activeRects.push_back({runStartX, runEndX, z, z + 1, true});
-                }
-            }
+            Contour contour;
+            contour.regionId = region.id;
+            contour.height = region.height;
 
-            // 非アクティブ矩形を削除
-            activeRects.erase(
-                std::remove_if(activeRects.begin(), activeRects.end(),
-                    [](const Rect& r) { return !r.active; }),
-                activeRects.end());
+            float minX = heightField.origin.x + cx * heightField.cellSize;
+            float maxX = heightField.origin.x + (cx + width) * heightField.cellSize;
+            float minZ = heightField.origin.z + cz * heightField.cellSize;
+            float maxZ = heightField.origin.z + (cz + height) * heightField.cellSize;
+
+            contour.vertices.push_back({minX, region.height, minZ});
+            contour.vertices.push_back({maxX, region.height, minZ});
+            contour.vertices.push_back({maxX, region.height, maxZ});
+            contour.vertices.push_back({minX, region.height, maxZ});
+
+            outContours.push_back(std::move(contour));
         }
     }
 
     char debugBuf[128];
-    snprintf(debugBuf, sizeof(debugBuf), "BuildContours: generated %zu quads from %zu regions",
-             outContours.size(), regions.size());
+    snprintf(debugBuf, sizeof(debugBuf), "BuildContours: %zu rectangles", outContours.size());
     OutputDebugStringA(debugBuf);
     OutputDebugStringA("\n");
 
@@ -919,111 +867,57 @@ bool NavMeshBuilder::BuildPolygons(const std::vector<Contour>& contours, const N
 
 void NavMeshBuilder::BuildNeighborConnections(NavMeshData& navMesh)
 {
-    // 空間ハッシュで高速化（O(n)に近づける）
-    float cellSize = navMesh.config.cellSize;
-    float epsilon = cellSize * 0.1f;
+    // AABBベース隣接検出（パスファインディング用）
+    float eps = navMesh.config.cellSize * 0.5f;
 
-    // エッジ中点をキーにしたハッシュマップ
-    auto hashKey = [cellSize](float x, float z) -> uint64_t {
-        int ix = static_cast<int>(std::floor(x / cellSize));
-        int iz = static_cast<int>(std::floor(z / cellSize));
-        return (static_cast<uint64_t>(iz + 100000) << 32) | static_cast<uint64_t>(ix + 100000);
-    };
+    struct Rect { float minX, maxX, minZ, maxZ; };
+    std::vector<Rect> rects(navMesh.polygons.size());
 
-    struct EdgeInfo {
-        uint32_t polyIndex;
-        uint32_t edgeIndex;
-        DirectX::XMFLOAT3 v0, v1;
-    };
-
-    std::unordered_multimap<uint64_t, EdgeInfo> edgeMap;
-
-    auto vertexMatch = [epsilon](const DirectX::XMFLOAT3& p1, const DirectX::XMFLOAT3& p2) {
-        return std::abs(p1.x - p2.x) < epsilon &&
-               std::abs(p1.y - p2.y) < epsilon &&
-               std::abs(p1.z - p2.z) < epsilon;
-    };
-
-    // 全エッジをハッシュマップに登録
-    for (uint32_t i = 0; i < navMesh.polygons.size(); ++i)
+    for (size_t i = 0; i < navMesh.polygons.size(); ++i)
     {
-        auto& poly = navMesh.polygons[i];
-        for (uint32_t e = 0; e < poly.vertexIndices.size(); ++e)
+        auto& r = rects[i];
+        r.minX = FLT_MAX; r.maxX = -FLT_MAX;
+        r.minZ = FLT_MAX; r.maxZ = -FLT_MAX;
+        for (uint32_t vi : navMesh.polygons[i].vertexIndices)
         {
-            const auto& v0 = navMesh.vertices[poly.vertexIndices[e]];
-            const auto& v1 = navMesh.vertices[poly.vertexIndices[(e + 1) % poly.vertexIndices.size()]];
-
-            float midX = (v0.x + v1.x) * 0.5f;
-            float midZ = (v0.z + v1.z) * 0.5f;
-            uint64_t key = hashKey(midX, midZ);
-
-            edgeMap.insert({key, {i, e, v0, v1}});
+            r.minX = std::min(r.minX, navMesh.vertices[vi].x);
+            r.maxX = std::max(r.maxX, navMesh.vertices[vi].x);
+            r.minZ = std::min(r.minZ, navMesh.vertices[vi].z);
+            r.maxZ = std::max(r.maxZ, navMesh.vertices[vi].z);
         }
     }
 
-    // 隣接関係を検出
-    for (uint32_t i = 0; i < navMesh.polygons.size(); ++i)
+    int connections = 0;
+    for (size_t i = 0; i < navMesh.polygons.size(); ++i)
     {
-        auto& polyA = navMesh.polygons[i];
-        for (uint32_t edgeA = 0; edgeA < polyA.vertexIndices.size(); ++edgeA)
+        for (size_t j = i + 1; j < navMesh.polygons.size(); ++j)
         {
-            if (polyA.neighbors[edgeA] != NavMeshPolygon::INVALID_ID)
-                continue;  // 既に接続済み
+            const auto& a = rects[i];
+            const auto& b = rects[j];
 
-            const auto& va0 = navMesh.vertices[polyA.vertexIndices[edgeA]];
-            const auto& va1 = navMesh.vertices[polyA.vertexIndices[(edgeA + 1) % polyA.vertexIndices.size()]];
+            bool xTouch = std::abs(a.maxX - b.minX) < eps || std::abs(a.minX - b.maxX) < eps;
+            bool zTouch = std::abs(a.maxZ - b.minZ) < eps || std::abs(a.minZ - b.maxZ) < eps;
+            bool xOverlap = (a.maxX > b.minX) && (a.minX < b.maxX);
+            bool zOverlap = (a.maxZ > b.minZ) && (a.minZ < b.maxZ);
 
-            float midX = (va0.x + va1.x) * 0.5f;
-            float midZ = (va0.z + va1.z) * 0.5f;
-            uint64_t key = hashKey(midX, midZ);
-
-            // 同じセルと隣接セルを検索
-            for (int dz = -1; dz <= 1; ++dz)
+            if ((xTouch && zOverlap) || (zTouch && xOverlap))
             {
-                for (int dx = -1; dx <= 1; ++dx)
-                {
-                    uint64_t neighborKey = hashKey(midX + dx * cellSize, midZ + dz * cellSize);
-                    auto range = edgeMap.equal_range(neighborKey);
+                // 簡易接続（詳細なエッジ情報は描画で使わないので省略）
+                auto& polyA = navMesh.polygons[i];
+                auto& polyB = navMesh.polygons[j];
 
-                    for (auto it = range.first; it != range.second; ++it)
-                    {
-                        const auto& edgeB = it->second;
-                        if (edgeB.polyIndex == i)
-                            continue;  // 自分自身
-
-                        // エッジが一致するか（方向は逆または同じ）
-                        if ((vertexMatch(va0, edgeB.v1) && vertexMatch(va1, edgeB.v0)) ||
-                            (vertexMatch(va0, edgeB.v0) && vertexMatch(va1, edgeB.v1)))
-                        {
-                            polyA.neighbors[edgeA] = edgeB.polyIndex;
-                            navMesh.polygons[edgeB.polyIndex].neighbors[edgeB.edgeIndex] = i;
-                            break;
-                        }
-                    }
-
-                    if (polyA.neighbors[edgeA] != NavMeshPolygon::INVALID_ID)
-                        break;
-                }
-                if (polyA.neighbors[edgeA] != NavMeshPolygon::INVALID_ID)
-                    break;
+                for (auto& n : polyA.neighbors)
+                    if (n == NavMeshPolygon::INVALID_ID) { n = static_cast<uint32_t>(j); break; }
+                for (auto& n : polyB.neighbors)
+                    if (n == NavMeshPolygon::INVALID_ID) { n = static_cast<uint32_t>(i); break; }
+                ++connections;
             }
         }
     }
 
-    // デバッグ: 接続数をカウント
-    int connectionCount = 0;
-    for (const auto& poly : navMesh.polygons)
-    {
-        for (uint32_t n : poly.neighbors)
-        {
-            if (n != NavMeshPolygon::INVALID_ID)
-                ++connectionCount;
-        }
-    }
-    char debugBuf[128];
-    snprintf(debugBuf, sizeof(debugBuf), "BuildNeighborConnections: %zu polygons, %d connections",
-             navMesh.polygons.size(), connectionCount / 2);
-    OutputDebugStringA(debugBuf);
+    char buf[128];
+    snprintf(buf, sizeof(buf), "Neighbors: %zu polys, %d connections", navMesh.polygons.size(), connections);
+    OutputDebugStringA(buf);
     OutputDebugStringA("\n");
 }
 

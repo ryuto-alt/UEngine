@@ -99,34 +99,50 @@ void NavMeshSystem::DrawDebug(DebugRenderer* debugRenderer) const
 {
     if (!debugRenderer || !m_debugDrawEnabled || !m_navMesh)
         return;
-    
-    // ポリゴンベースの描画
-    Vector4 fillColor(0.0f, 0.6f, 1.0f, 0.4f);
+
+    const auto& grid = m_navMesh->walkableGrid;
+    if (!grid.IsValid())
+        return;
+
     Vector4 edgeColor(0.0f, 1.0f, 0.5f, 0.9f);
-    float yOffset = 0.08f;
-    
-    for (const auto& poly : m_navMesh->polygons)
+    float y = grid.avgHeight + 0.08f;
+
+    // セルが歩行可能かチェック
+    auto isWalkable = [&grid](int x, int z) -> bool {
+        if (x < 0 || x >= grid.width || z < 0 || z >= grid.height)
+            return false;
+        return grid.cells[z * grid.width + x] != 0;
+    };
+
+    // 歩行可能セルの外周エッジのみ描画
+    for (int z = 0; z < grid.height; ++z)
     {
-        if (poly.vertexIndices.size() < 3)
-            continue;
-        
-        // ポリゴンの輪郭を描画
-        for (size_t i = 0; i < poly.vertexIndices.size(); ++i)
+        for (int x = 0; x < grid.width; ++x)
         {
-            size_t nextIdx = (i + 1) % poly.vertexIndices.size();
-            const auto& v0 = m_navMesh->vertices[poly.vertexIndices[i]];
-            const auto& v1 = m_navMesh->vertices[poly.vertexIndices[nextIdx]];
-            
-            Vector3 p0(v0.x, v0.y + yOffset, v0.z);
-            Vector3 p1(v1.x, v1.y + yOffset, v1.z);
-            
-            debugRenderer->AddLine(p0, p1, edgeColor);
+            if (!isWalkable(x, z))
+                continue;
+
+            float minX = grid.origin.x + x * grid.cellSize;
+            float maxX = grid.origin.x + (x + 1) * grid.cellSize;
+            float minZ = grid.origin.z + z * grid.cellSize;
+            float maxZ = grid.origin.z + (z + 1) * grid.cellSize;
+
+            // 下辺 (z-1が歩行不可)
+            if (!isWalkable(x, z - 1))
+                debugRenderer->AddLine(Vector3(minX, y, minZ), Vector3(maxX, y, minZ), edgeColor);
+
+            // 右辺 (x+1が歩行不可)
+            if (!isWalkable(x + 1, z))
+                debugRenderer->AddLine(Vector3(maxX, y, minZ), Vector3(maxX, y, maxZ), edgeColor);
+
+            // 上辺 (z+1が歩行不可)
+            if (!isWalkable(x, z + 1))
+                debugRenderer->AddLine(Vector3(maxX, y, maxZ), Vector3(minX, y, maxZ), edgeColor);
+
+            // 左辺 (x-1が歩行不可)
+            if (!isWalkable(x - 1, z))
+                debugRenderer->AddLine(Vector3(minX, y, maxZ), Vector3(minX, y, minZ), edgeColor);
         }
-        
-        // 中心点に十字を描画
-        float cx = poly.center.x, cy = poly.center.y + yOffset, cz = poly.center.z;
-        debugRenderer->AddLine(Vector3(cx - 0.2f, cy, cz), Vector3(cx + 0.2f, cy, cz), fillColor);
-        debugRenderer->AddLine(Vector3(cx, cy, cz - 0.2f), Vector3(cx, cy, cz + 0.2f), fillColor);
     }
 }
 

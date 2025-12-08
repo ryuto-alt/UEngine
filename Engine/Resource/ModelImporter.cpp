@@ -153,7 +153,16 @@ Mesh ProcessMesh(const aiMesh* aiMesh, const aiScene* scene,
     if (aiMesh->mMaterialIndex < scene->mNumMaterials) {
         const aiMaterial* aiMat = scene->mMaterials[aiMesh->mMaterialIndex];
         MaterialData materialData = ConvertMaterial(aiMat, baseDirectory);
-        mesh.LoadMaterial(materialData, graphics, commandList, baseDirectory, 0);
+        uint32 srvIndex = graphics->AllocateSRVIndex();
+        
+        char matDebug[512];
+        sprintf_s(matDebug, "Material: %s, Texture: %s, SRV: %u\n",
+                  materialData.name.c_str(),
+                  materialData.diffuseTexturePath.empty() ? "(none)" : materialData.diffuseTexturePath.c_str(),
+                  srvIndex);
+        OutputDebugStringA(matDebug);
+        
+        mesh.LoadMaterial(materialData, graphics, commandList, baseDirectory, srvIndex);
     }
 
     char debugMsg[512];

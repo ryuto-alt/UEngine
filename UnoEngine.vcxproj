@@ -208,6 +208,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClCompile Include="Engine\Graphics\Sprite.cpp" />
     <ClCompile Include="Engine\Graphics\SpritePipeline.cpp" />
     <ClCompile Include="Engine\Graphics\Texture2D.cpp" />
+    <ClCompile Include="Engine\Graphics\MipmapGenerator.cpp" />
     <ClCompile Include="Engine\Graphics\RenderTexture.cpp" />
     <ClCompile Include="Engine\Graphics\DirectionalLight.cpp" />
     <ClCompile Include="Engine\Graphics\MeshRenderer.cpp" />
@@ -428,6 +429,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClInclude Include="Engine\Graphics\Sprite.h" />
     <ClInclude Include="Engine\Graphics\SpritePipeline.h" />
     <ClInclude Include="Engine\Graphics\Texture2D.h" />
+    <ClInclude Include="Engine\Graphics\MipmapGenerator.h" />
     <ClInclude Include="Engine\Graphics\RenderTexture.h" />
     <ClInclude Include="Engine\Graphics\DirectionalLight.h" />
     <ClInclude Include="Engine\Graphics\MeshRenderer.h" />
@@ -661,6 +663,14 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <FxCompile Include="Shaders\PostProcess\PS1PS.hlsl">
       <ShaderType>Pixel</ShaderType>
       <ShaderModel>6.5</ShaderModel>
+      <EntryPointName>main</EntryPointName>
+      <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Zi /Qembed_debug %(AdditionalOptions)</AdditionalOptions>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\GenerateMips.hlsl">
+      <ShaderType>Compute</ShaderType>
+      <ShaderModel>5.1</ShaderModel>
       <EntryPointName>main</EntryPointName>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Zi /Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

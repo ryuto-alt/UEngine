@@ -21,42 +21,52 @@ void Texture2D::LoadFromFile(GraphicsDevice* graphics, ID3D12GraphicsCommandList
         "Failed to load texture file"
     );
 
-    // Generate mipmaps if the image doesn't already have them
-    DirectX::ScratchImage mipChain;
-    if (metadata.mipLevels == 1 && metadata.width > 1 && metadata.height > 1) {
-        HRESULT hr = DirectX::GenerateMipMaps(
-            scratchImage.GetImages(), scratchImage.GetImageCount(), scratchImage.GetMetadata(),
-            DirectX::TEX_FILTER_LINEAR, 0, mipChain
-        );
-        
-        if (SUCCEEDED(hr)) {
-            scratchImage = std::move(mipChain);
-            metadata = scratchImage.GetMetadata();
-        }
-    }
-
     // 元のメタデータを保存
     DirectX::TexMetadata originalMetadata = metadata;
     
-    // リソース作成用にsRGBフォーマットに変換（ガンマ補正用）
-    if (!DirectX::IsSRGB(metadata.format)) {
-        metadata.format = DirectX::MakeSRGB(metadata.format);
-    }
+    // Calculate mip levels for GPU generation
+    uint32 maxDim = static_cast<uint32>(std::max(metadata.width, metadata.height));
+    uint32 mipLevels = static_cast<uint32>(std::floor(std::log2(maxDim))) + 1;
+    
+    // UAVはsRGBフォーマットをサポートしないため、非sRGBフォーマットを使用
+    // シェーダー内でsRGB変換を行う
+    DXGI_FORMAT resourceFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+    // Create texture with full mip chain and UAV flag for GPU mip generation
+    D3D12_RESOURCE_DESC texDesc = {};
+    texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+    texDesc.Width = metadata.width;
+    texDesc.Height = static_cast<UINT>(metadata.height);
+    texDesc.DepthOrArraySize = 1;
+    texDesc.MipLevels = static_cast<UINT16>(mipLevels);
+    texDesc.Format = resourceFormat;
+    texDesc.SampleDesc.Count = 1;
+    texDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+
+    D3D12_HEAP_PROPERTIES defaultHeapProps = {};
+    defaultHeapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
 
     ThrowIfFailed(
-        DirectX::CreateTexture(device, metadata, &resource_),
+        device->CreateCommittedResource(
+            &defaultHeapProps,
+            D3D12_HEAP_FLAG_NONE,
+            &texDesc,
+            D3D12_RESOURCE_STATE_COPY_DEST,
+            nullptr,
+            IID_PPV_ARGS(&resource_)
+        ),
         "Failed to create texture resource"
     );
 
+    // Only upload the base mip level
     std::vector<D3D12_SUBRESOURCE_DATA> subresources;
     ThrowIfFailed(
-        DirectX::PrepareUpload(device, scratchImage.GetImages(), scratchImage.GetImageCount(),
+        DirectX::PrepareUpload(device, scratchImage.GetImages(), 1,
                               originalMetadata, subresources),
         "Failed to prepare texture upload"
     );
 
-    const uint64 uploadBufferSize = GetRequiredIntermediateSize(resource_.Get(), 0,
-                                                                static_cast<uint32>(subresources.size()));
+    const uint64 uploadBufferSize = GetRequiredIntermediateSize(resource_.Get(), 0, 1);
 
     D3D12_HEAP_PROPERTIES uploadHeapProps = {};
     uploadHeapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
@@ -84,20 +94,24 @@ void Texture2D::LoadFromFile(GraphicsDevice* graphics, ID3D12GraphicsCommandList
     );
 
     UpdateSubresources(commandList, resource_.Get(), uploadBuffer_.Get(),
-                      0, 0, static_cast<uint32>(subresources.size()), subresources.data());
+                      0, 0, 1, subresources.data());
 
-    D3D12_RESOURCE_BARRIER barrier = {};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Transition.pResource = resource_.Get();
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-
-    commandList->ResourceBarrier(1, &barrier);
+    // Generate mipmaps on GPU
+    if (mipLevels > 1) {
+        graphics->GetMipmapGenerator()->GenerateMips(
+            commandList, resource_.Get(), D3D12_RESOURCE_STATE_COPY_DEST
+        );
+    } else {
+        // No mips to generate, just transition to shader resource
+        D3D12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+            resource_.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
+        );
+        commandList->ResourceBarrier(1, &barrier);
+    }
 
     width_ = static_cast<uint32>(metadata.width);
     height_ = static_cast<uint32>(metadata.height);
-    mipLevels_ = static_cast<uint32>(metadata.mipLevels);
+    mipLevels_ = mipLevels;
     srvIndex_ = srvIndex;
 
     graphics->CreateSRV(resource_.Get(), srvIndex);

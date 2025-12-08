@@ -162,6 +162,12 @@ Mesh ProcessStaticMesh(const aiMesh* aiMesh, const aiScene* scene,
         const aiMaterial* aiMat = scene->mMaterials[aiMesh->mMaterialIndex];
         MaterialData materialData = ConvertMaterial(aiMat, baseDirectory);
         uint32 srvIndex = graphics->AllocateSRVIndex();
+        
+        Logger::Debug("[StaticModelImporter] Material: {}, Texture: {}, SRV: {}",
+                      materialData.name,
+                      materialData.diffuseTexturePath.empty() ? "(none)" : materialData.diffuseTexturePath,
+                      srvIndex);
+        
         mesh.LoadMaterial(materialData, graphics, commandList, baseDirectory, srvIndex);
     }
 

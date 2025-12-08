@@ -55,6 +55,9 @@ void GraphicsDevice::Initialize(Window* window) {
 
     // 初期状態はクローズ
     commandList_->Close();
+    
+    // Initialize mipmap generator
+    m_mipmapGenerator.Initialize(this);
 }
 
 void GraphicsDevice::EnableDebugLayer() {
@@ -258,8 +261,12 @@ void GraphicsDevice::CreateSRV(ID3D12Resource* resource, uint32 index) {
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     DXGI_FORMAT format = resource->GetDesc().Format;
     
-    // リソースフォーマットをそのまま使用（既にsRGBの場合はsRGBで扱われる）
-    srvDesc.Format = format;
+    // R8G8B8A8_UNORMの場合、sRGBとして解釈（ガンマ補正を適用）
+    if (format == DXGI_FORMAT_R8G8B8A8_UNORM) {
+        srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+    } else {
+        srvDesc.Format = format;
+    }
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
     srvDesc.Texture2D.MipLevels = resource->GetDesc().MipLevels;

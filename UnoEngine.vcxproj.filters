@@ -214,6 +214,9 @@
     <ClCompile Include="Engine\Graphics\RenderTexture.cpp">
       <Filter>Engine\Graphics\Texture</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Graphics\MipmapGenerator.cpp">
+      <Filter>Engine\Graphics\Texture</Filter>
+    </ClCompile>
     <!-- Engine\Graphics\Light -->
     <ClCompile Include="Engine\Graphics\DirectionalLight.cpp">
       <Filter>Engine\Graphics\Light</Filter>
@@ -619,6 +622,9 @@
     <ClInclude Include="Engine\Graphics\RenderTexture.h">
       <Filter>Engine\Graphics\Texture</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Graphics\MipmapGenerator.h">
+      <Filter>Engine\Graphics\Texture</Filter>
+    </ClInclude>
     <!-- Engine\Graphics\Light -->
     <ClInclude Include="Engine\Graphics\DirectionalLight.h">
       <Filter>Engine\Graphics\Light</Filter>
@@ -935,6 +941,9 @@
     </FxCompile>
     <FxCompile Include="Shaders\PostProcess\PS1PS.hlsl">
       <Filter>Shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\GenerateMips.hlsl">
+      <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

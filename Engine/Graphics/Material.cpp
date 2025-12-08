@@ -26,6 +26,9 @@ void Material::LoadFromData(const MaterialData& data, GraphicsDevice* graphics,
         if (fs::exists(texturePath)) {
             diffuseTexture_ = std::make_unique<Texture2D>();
             diffuseTexture_->LoadFromFile(graphics, commandList, texturePath.wstring(), srvIndex);
+            OutputDebugStringA(("[Material] Texture loaded: " + texturePath.string() + " SRV=" + std::to_string(srvIndex) + "\n").c_str());
+        } else {
+            OutputDebugStringA(("[Material] Texture NOT FOUND: " + texturePath.string() + "\n").c_str());
         }
     }
 }

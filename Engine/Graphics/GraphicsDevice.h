@@ -3,6 +3,7 @@
 #include "D3D12Common.h"
 #include "../Core/NonCopyable.h"
 #include "../Window/Window.h"
+#include "MipmapGenerator.h"
 
 namespace UnoEngine {
 
@@ -46,6 +47,9 @@ public:
     // SRVインデックス自動割り当て（テクスチャ等に使用）
     uint32 AllocateSRVIndex();
     uint32 GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type) const;
+    
+    // Mipmap generation
+    MipmapGenerator* GetMipmapGenerator() { return &m_mipmapGenerator; }
 
 private:
     void EnableDebugLayer();
@@ -95,6 +99,9 @@ private:
 
     // 状態
     uint32 currentBackBufferIndex_ = 0;
+    
+    // Mipmap generator
+    MipmapGenerator m_mipmapGenerator;
 };
 
 } // namespace UnoEngine

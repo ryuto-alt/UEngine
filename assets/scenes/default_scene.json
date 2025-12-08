@@ -35,7 +35,7 @@
                     "autoSize": false,
                     "collisionLayer": 0,
                     "collisionMask": 4294967295,
-                    "enabled": true,
+                    "enabled": false,
                     "isStatic": false,
                     "isTrigger": true,
                     "localAABBMax": [
@@ -121,15 +121,15 @@
             "name": "Camera",
             "transform": {
                 "position": [
-                    -27.047157287597656,
-                    2.676290988922119,
-                    3.871480941772461
+                    16.53492546081543,
+                    1.7999999523162842,
+                    -14.51492691040039
                 ],
                 "rotation": [
-                    -0.002532422775402665,
-                    0.9960299134254456,
-                    -0.08372881263494492,
-                    -0.030125459656119347
+                    -0.0890318900346756,
+                    0.6756152510643005,
+                    -0.0827198475599289,
+                    -0.7271690368652344
                 ],
                 "scale": [
                     1.0,
@@ -173,6 +173,25 @@
                 {
                     "modelPath": "assets/model/stageWall/stageWall.gltf",
                     "type": "MeshRenderer"
+                },
+                {
+                    "autoSize": true,
+                    "collisionLayer": 0,
+                    "collisionMask": 4294967295,
+                    "enabled": true,
+                    "isStatic": true,
+                    "isTrigger": false,
+                    "localAABBMax": [
+                        31.0,
+                        6.0,
+                        28.0
+                    ],
+                    "localAABBMin": [
+                        -31.0,
+                        0.0,
+                        -52.0
+                    ],
+                    "type": "CollisionComponent"
                 }
             ],
             "layer": 1,
@@ -181,7 +200,7 @@
                 "position": [
                     0.0,
                     0.0,
-                    0.0
+                    27.61376953125
                 ],
                 "rotation": [
                     0.0,
@@ -204,6 +223,25 @@
                     "type": "SkinnedMeshRenderer"
                 },
                 {
+                    "autoSize": false,
+                    "collisionLayer": 0,
+                    "collisionMask": 4294967295,
+                    "enabled": true,
+                    "isStatic": true,
+                    "isTrigger": true,
+                    "localAABBMax": [
+                        0.5889710187911987,
+                        1.6565660238265991,
+                        0.33936578035354614
+                    ],
+                    "localAABBMin": [
+                        -0.5889710187911987,
+                        0.0081110168248415,
+                        -0.3872952163219452
+                    ],
+                    "type": "CollisionComponent"
+                },
+                {
                     "type": "AnimatorComponent"
                 }
             ],
@@ -211,9 +249,9 @@
             "name": "player",
             "transform": {
                 "position": [
-                    -27.04715919494629,
-                    0.8762909173965454,
-                    3.871480703353882
+                    16.534927368164063,
+                    0.0,
+                    -14.514925956726074
                 ],
                 "rotation": [
                     -0.0,

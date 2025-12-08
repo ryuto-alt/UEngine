@@ -64,6 +64,7 @@ public:
     // Manual AABB override
     void SetLocalAABB(const AABB& aabb) { localAABB_ = aabb; localAABBs_.clear(); useAutoSize_ = false; }
     void SetLocalAABB(const Vector3& min, const Vector3& max);
+    void SetLocalAABBs(std::vector<AABB> aabbs) { localAABBs_ = std::move(aabbs); useAutoSize_ = false; }
 
     // Auto-sizing from mesh bounds
     [[nodiscard]] bool IsAutoSized() const { return useAutoSize_; }

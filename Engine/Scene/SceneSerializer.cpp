@@ -295,6 +295,19 @@ json SceneSerializer::SerializeComponent(const Component& component) {
         comp["localAABBMin"] = { aabb.min.GetX(), aabb.min.GetY(), aabb.min.GetZ() };
         comp["localAABBMax"] = { aabb.max.GetX(), aabb.max.GetY(), aabb.max.GetZ() };
 
+        // Save multiple AABBs if present
+        const auto& localAABBs = collision->GetLocalAABBs();
+        if (!localAABBs.empty()) {
+            json aabbsArray = json::array();
+            for (const auto& box : localAABBs) {
+                json boxJson;
+                boxJson["min"] = { box.min.GetX(), box.min.GetY(), box.min.GetZ() };
+                boxJson["max"] = { box.max.GetX(), box.max.GetY(), box.max.GetZ() };
+                aabbsArray.push_back(boxJson);
+            }
+            comp["localAABBs"] = aabbsArray;
+        }
+
         return comp;
     }
 
@@ -517,6 +530,28 @@ void SceneSerializer::DeserializeComponent(const json& json, GameObject& gameObj
                 Vector3 min(minArr[0].get<float>(), minArr[1].get<float>(), minArr[2].get<float>());
                 Vector3 max(maxArr[0].get<float>(), maxArr[1].get<float>(), maxArr[2].get<float>());
                 collision->SetLocalAABB(min, max);
+            }
+        }
+        // Load multiple AABBs if present
+        if (json.contains("localAABBs") && json["localAABBs"].is_array()) {
+            std::vector<AABB> aabbs;
+            for (const auto& boxJson : json["localAABBs"]) {
+                if (boxJson.contains("min") && boxJson.contains("max")) {
+                    auto minArr = boxJson["min"];
+                    auto maxArr = boxJson["max"];
+                    if (minArr.is_array() && maxArr.is_array() && minArr.size() >= 3 && maxArr.size() >= 3) {
+                        AABB box;
+                        box.min = Vector3(minArr[0].get<float>(), minArr[1].get<float>(), minArr[2].get<float>());
+                        box.max = Vector3(maxArr[0].get<float>(), maxArr[1].get<float>(), maxArr[2].get<float>());
+                        aabbs.push_back(box);
+                    }
+                }
+            }
+            if (!aabbs.empty()) {
+                collision->SetLocalAABBs(std::move(aabbs));
+                Logger::Debug("[SceneSerializer] Loaded {} AABBs for {}", 
+                    collision->GetLocalAABBs().size(),
+                    gameObject.GetName());
             }
         }
     }

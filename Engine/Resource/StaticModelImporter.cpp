@@ -85,25 +85,37 @@ MaterialData ConvertMaterial(const aiMaterial* aiMat, const std::string& baseDir
 
 Mesh ProcessStaticMesh(const aiMesh* aiMesh, const aiScene* scene,
                        GraphicsDevice* graphics, ID3D12GraphicsCommandList* commandList,
-                       const std::string& baseDirectory) {
+                       const std::string& baseDirectory,
+                       const aiMatrix4x4& transform) {
     std::vector<Vertex> vertices;
     std::vector<uint32> indices;
 
     vertices.resize(aiMesh->mNumVertices);
+    
+    // 法線用のトランスフォーム（逆転置行列）
+    aiMatrix3x3 normalMatrix(transform);
+    normalMatrix.Inverse();
+    normalMatrix.Transpose();
 
     for (uint32 i = 0; i < aiMesh->mNumVertices; ++i) {
         Vertex& vertex = vertices[i];
 
+        // トランスフォームを適用
+        aiVector3D pos = transform * aiMesh->mVertices[i];
+        
         // 座標変換: X座標を反転（右手→左手座標系）
-        vertex.px = -aiMesh->mVertices[i].x;
-        vertex.py = aiMesh->mVertices[i].y;
-        vertex.pz = aiMesh->mVertices[i].z;
+        vertex.px = -pos.x;
+        vertex.py = pos.y;
+        vertex.pz = pos.z;
 
         if (aiMesh->HasNormals()) {
+            // 法線にトランスフォームを適用（スケールに影響されないよう逆転置行列を使用）
+            aiVector3D normal = normalMatrix * aiMesh->mNormals[i];
+            normal.Normalize();
             // 法線もX成分を反転
-            vertex.nx = -aiMesh->mNormals[i].x;
-            vertex.ny = aiMesh->mNormals[i].y;
-            vertex.nz = aiMesh->mNormals[i].z;
+            vertex.nx = -normal.x;
+            vertex.ny = normal.y;
+            vertex.nz = normal.z;
         } else {
             vertex.nx = 0.0f;
             vertex.ny = 1.0f;
@@ -159,18 +171,22 @@ Mesh ProcessStaticMesh(const aiMesh* aiMesh, const aiScene* scene,
 void ProcessNode(const aiNode* node, const aiScene* scene,
                  GraphicsDevice* graphics, ID3D12GraphicsCommandList* commandList,
                  const std::string& baseDirectory,
-                 std::vector<Mesh>& outMeshes) {
+                 std::vector<Mesh>& outMeshes,
+                 const aiMatrix4x4& parentTransform = aiMatrix4x4()) {
+    // 親のトランスフォームと現在のノードのトランスフォームを合成
+    aiMatrix4x4 globalTransform = parentTransform * node->mTransformation;
+    
     Logger::Debug("[StaticModelImporter] ノード '{}' 処理中 (メッシュ: {}, 子ノード: {})", 
                   node->mName.C_Str(), node->mNumMeshes, node->mNumChildren);
     
     for (uint32 i = 0; i < node->mNumMeshes; ++i) {
         const aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        outMeshes.push_back(ProcessStaticMesh(mesh, scene, graphics, commandList, baseDirectory));
+        outMeshes.push_back(ProcessStaticMesh(mesh, scene, graphics, commandList, baseDirectory, globalTransform));
     }
 
     for (uint32 i = 0; i < node->mNumChildren; ++i) {
         ProcessNode(node->mChildren[i], scene, graphics, commandList,
-                   baseDirectory, outMeshes);
+                   baseDirectory, outMeshes, globalTransform);
     }
 }
 
@@ -181,10 +197,11 @@ StaticModelData StaticModelImporter::Load(GraphicsDevice* graphics, ID3D12Graphi
     Assimp::Importer importer;
 
     // 静的モデル用のインポートフラグ
+    // NOTE: aiProcess_PreTransformVerticesを使わない - メッシュがマージされてAABBが失われる
     unsigned int flags = aiProcess_Triangulate |
                         aiProcess_FlipUVs |
-                        aiProcess_GenNormals |        // 法線がない場合は生成
-                        aiProcess_CalcTangentSpace;   // タンジェント空間を計算
+                        aiProcess_GenNormals |           // 法線がない場合は生成
+                        aiProcess_CalcTangentSpace;      // タンジェント空間を計算
 
     const aiScene* scene = importer.ReadFile(filepath, flags);
 

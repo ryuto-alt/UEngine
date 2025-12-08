@@ -12,12 +12,12 @@
 namespace UnoEngine {
 
 void CollisionComponent::Awake() {
-    if (useAutoSize_) {
-        RecalculateFromMesh();
-    }
 }
 
 void CollisionComponent::Start() {
+    if (useAutoSize_) {
+        RecalculateFromMesh();
+    }
 }
 
 void CollisionComponent::OnUpdate(float deltaTime) {
@@ -118,33 +118,41 @@ void CollisionComponent::RecalculateFromMesh() {
     localAABBs_.clear();
     
     if (!GetGameObject()) {
+        Logger::Debug("[Collision] RecalculateFromMesh: No GameObject");
         return;
     }
 
-    // Try MeshRenderer (static models with multiple meshes)
-    auto* meshRenderer = GetGameObject()->GetComponent<MeshRenderer>();
-    if (meshRenderer && meshRenderer->HasModel()) {
-        auto* modelData = meshRenderer->GetModel();
-        if (modelData) {
-            // Combined bounding box
-            localAABB_.min = modelData->boundingBox.min;
-            localAABB_.max = modelData->boundingBox.max;
+    auto* go = GetGameObject();
+    Logger::Info("[Collision] RecalculateFromMesh for: {}", go->GetName());
 
-            // Per-mesh AABBs for complex models
-            if (modelData->meshes.size() > 1) {
+    // Try MeshRenderer (static models with multiple meshes)
+    auto* meshRenderer = go->GetComponent<MeshRenderer>();
+    if (meshRenderer) {
+        Logger::Info("[Collision] Found MeshRenderer, HasModel={}", meshRenderer->HasModel());
+        if (meshRenderer->HasModel()) {
+            auto* modelData = meshRenderer->GetModel();
+            if (modelData) {
+                // Combined bounding box
+                localAABB_.min = modelData->boundingBox.min;
+                localAABB_.max = modelData->boundingBox.max;
+
+                Logger::Info("[Collision] {} has {} meshes", go->GetName(), modelData->meshes.size());
+
+                // Per-mesh AABBs for complex models - always create per-mesh AABBs
                 localAABBs_.reserve(modelData->meshes.size());
-                for (const auto& mesh : modelData->meshes) {
+                for (size_t i = 0; i < modelData->meshes.size(); ++i) {
+                    const auto& mesh = modelData->meshes[i];
                     AABB meshAABB;
                     meshAABB.min = mesh.GetBoundsMin();
                     meshAABB.max = mesh.GetBoundsMax();
                     localAABBs_.push_back(meshAABB);
                 }
-                Logger::Debug("[Collision] Created {} AABBs from MeshRenderer", localAABBs_.size());
-            } else {
-                Logger::Debug("[Collision] Auto-sized single AABB from MeshRenderer");
+                Logger::Info("[Collision] Created {} AABBs for {}", localAABBs_.size(), go->GetName());
+                return;
             }
-            return;
         }
+    } else {
+        Logger::Info("[Collision] No MeshRenderer found on {}", go->GetName());
     }
 
     // Try SkinnedMeshRenderer

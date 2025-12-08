@@ -44,7 +44,7 @@ public:
     }
 
 private:
-    static inline LogLevel currentLevel_ = LogLevel::Info;
+    static inline LogLevel currentLevel_ = LogLevel::Debug;
 };
 
 } // namespace UnoEngine

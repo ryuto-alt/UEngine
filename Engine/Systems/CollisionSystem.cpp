@@ -74,15 +74,20 @@ void CollisionSystem::GatherCollisionComponents(Scene* scene) {
         Logger::Debug("[Collision] Active components: {}", collisionComponents_.size());
         for (auto* comp : collisionComponents_) {
             auto* go = comp->GetGameObject();
-            auto aabb = comp->GetWorldAABB();
-            Logger::Debug("  - {} layer={} trigger={} static={}",
+            auto worldAABBs = comp->GetWorldAABBs();
+            Logger::Debug("  - {} layer={} trigger={} static={} aabbCount={}",
                 go ? go->GetName() : "null",
                 comp->GetCollisionLayer(),
                 comp->IsTrigger(),
-                comp->IsStatic());
-            Logger::Debug("    AABB: ({:.2f},{:.2f},{:.2f}) - ({:.2f},{:.2f},{:.2f})",
-                aabb.min.GetX(), aabb.min.GetY(), aabb.min.GetZ(),
-                aabb.max.GetX(), aabb.max.GetY(), aabb.max.GetZ());
+                comp->IsStatic(),
+                worldAABBs.size());
+            for (size_t i = 0; i < worldAABBs.size(); ++i) {
+                const auto& aabb = worldAABBs[i];
+                Logger::Debug("    AABB[{}]: ({:.2f},{:.2f},{:.2f}) - ({:.2f},{:.2f},{:.2f})",
+                    i,
+                    aabb.min.GetX(), aabb.min.GetY(), aabb.min.GetZ(),
+                    aabb.max.GetX(), aabb.max.GetY(), aabb.max.GetZ());
+            }
         }
     }
 }

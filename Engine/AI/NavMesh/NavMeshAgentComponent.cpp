@@ -3,6 +3,8 @@
 #include "NavMeshSystem.h"
 #include "../../Core/GameObject.h"
 #include "../../Core/Transform.h"
+#include "../../Rendering/DebugRenderer.h"
+#include "../../Math/MathCommon.h"
 #include <cmath>
 
 namespace UnoEngine {
@@ -218,6 +220,103 @@ XMFLOAT3 NavMeshAgentComponent::GetNextWaypoint() const {
         return m_destination;
 
     return m_currentPath.waypoints[m_currentWaypointIndex];
+}
+
+void NavMeshAgentComponent::DrawDebug(DebugRenderer* debugRenderer) const {
+    if (!debugRenderer || !m_debugDrawEnabled)
+        return;
+
+    Vector3 center(m_currentPosition.x, m_currentPosition.y, m_currentPosition.z);
+    
+    // 色設定
+    Vector4 radiusColor(0.0f, 0.8f, 1.0f, 0.8f);    // シアン
+    Vector4 heightColor(1.0f, 0.8f, 0.0f, 0.6f);    // オレンジ
+    Vector4 directionColor(0.0f, 1.0f, 0.0f, 1.0f); // 緑
+
+    constexpr int segments = 24;
+    const float angleStep = Math::TWO_PI / segments;
+
+    // 底面の円（半径表示）
+    for (int i = 0; i < segments; ++i) {
+        float angle1 = i * angleStep;
+        float angle2 = (i + 1) * angleStep;
+
+        Vector3 p1(
+            center.GetX() + m_radius * std::cos(angle1),
+            center.GetY() + 0.05f,
+            center.GetZ() + m_radius * std::sin(angle1)
+        );
+        Vector3 p2(
+            center.GetX() + m_radius * std::cos(angle2),
+            center.GetY() + 0.05f,
+            center.GetZ() + m_radius * std::sin(angle2)
+        );
+        debugRenderer->AddLine(p1, p2, radiusColor);
+    }
+
+    // 上面の円
+    for (int i = 0; i < segments; ++i) {
+        float angle1 = i * angleStep;
+        float angle2 = (i + 1) * angleStep;
+
+        Vector3 p1(
+            center.GetX() + m_radius * std::cos(angle1),
+            center.GetY() + m_height,
+            center.GetZ() + m_radius * std::sin(angle1)
+        );
+        Vector3 p2(
+            center.GetX() + m_radius * std::cos(angle2),
+            center.GetY() + m_height,
+            center.GetZ() + m_radius * std::sin(angle2)
+        );
+        debugRenderer->AddLine(p1, p2, heightColor);
+    }
+
+    // 縦の線（4本）
+    for (int i = 0; i < 4; ++i) {
+        float angle = i * Math::HALF_PI;
+        Vector3 bottom(
+            center.GetX() + m_radius * std::cos(angle),
+            center.GetY() + 0.05f,
+            center.GetZ() + m_radius * std::sin(angle)
+        );
+        Vector3 top(
+            center.GetX() + m_radius * std::cos(angle),
+            center.GetY() + m_height,
+            center.GetZ() + m_radius * std::sin(angle)
+        );
+        debugRenderer->AddLine(bottom, top, heightColor);
+    }
+
+    // 移動方向の矢印
+    if (m_isMoving) {
+        Vector3 dirStart = center;
+        dirStart = Vector3(dirStart.GetX(), dirStart.GetY() + m_height * 0.5f, dirStart.GetZ());
+        
+        Vector3 dirEnd(
+            dirStart.GetX() + m_steeringDirection.x * m_radius * 2.0f,
+            dirStart.GetY(),
+            dirStart.GetZ() + m_steeringDirection.z * m_radius * 2.0f
+        );
+        debugRenderer->AddLine(dirStart, dirEnd, directionColor);
+
+        // 矢じり
+        float arrowSize = m_radius * 0.3f;
+        float dirAngle = std::atan2(m_steeringDirection.z, m_steeringDirection.x);
+        
+        Vector3 arrow1(
+            dirEnd.GetX() - arrowSize * std::cos(dirAngle - 0.5f),
+            dirEnd.GetY(),
+            dirEnd.GetZ() - arrowSize * std::sin(dirAngle - 0.5f)
+        );
+        Vector3 arrow2(
+            dirEnd.GetX() - arrowSize * std::cos(dirAngle + 0.5f),
+            dirEnd.GetY(),
+            dirEnd.GetZ() - arrowSize * std::sin(dirAngle + 0.5f)
+        );
+        debugRenderer->AddLine(dirEnd, arrow1, directionColor);
+        debugRenderer->AddLine(dirEnd, arrow2, directionColor);
+    }
 }
 
 } // namespace UnoEngine

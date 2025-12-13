@@ -70,6 +70,11 @@ public:
     const NavMeshPath& GetCurrentPath() const { return m_currentPath; }
     int GetCurrentWaypointIndex() const { return m_currentWaypointIndex; }
 
+    // デバッグ描画（半径・高さの可視化）
+    void DrawDebug(class DebugRenderer* debugRenderer) const;
+    void SetDebugDrawEnabled(bool enabled) { m_debugDrawEnabled = enabled; }
+    bool IsDebugDrawEnabled() const { return m_debugDrawEnabled; }
+
 private:
     void UpdatePathFollowing(float deltaTime);
     void CalculateDesiredVelocity(float deltaTime);
@@ -100,6 +105,9 @@ private:
     DirectX::XMFLOAT3 m_desiredVelocity = {0, 0, 0};
     DirectX::XMFLOAT3 m_steeringDirection = {0, 0, 1};
     float m_currentSpeed = 0.0f;
+
+    // === デバッグ ===
+    bool m_debugDrawEnabled = false;
 };
 
 } // namespace UnoEngine

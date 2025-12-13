@@ -313,6 +313,15 @@ namespace UnoEngine {
 							ImGui::Text(U8("残距離: %.2f m"), agent->GetRemainingDistance());
 							ImGui::Text(U8("現在速度: %.2f m/s"), agent->GetCurrentSpeed());
 
+							ImGui::SeparatorText(U8("デバッグ表示"));
+							bool debugDraw = agent->IsDebugDrawEnabled();
+							if (ImGui::Checkbox(U8("サイズを可視化"), &debugDraw)) {
+								agent->SetDebugDrawEnabled(debugDraw);
+							}
+							if (ImGui::IsItemHovered()) {
+								ImGui::SetTooltip(U8("エージェントの半径と高さを円柱で表示"));
+							}
+
 							ImGui::Separator();
 							if (ImGui::Button(U8("停止"), ImVec2(100, 0))) {
 								agent->Stop();
@@ -4020,6 +4029,15 @@ namespace UnoEngine {
 		if (showNavMesh_) {
 			auto& navMeshSystem = NavMeshSystem::GetInstance();
 			navMeshSystem.DrawDebug(debugRenderer);
+		}
+
+		// NavMeshAgentデバッグ描画
+		if (gameObjects_) {
+			for (const auto& obj : *gameObjects_) {
+				if (auto* agent = obj->GetComponent<NavMeshAgentComponent>()) {
+					agent->DrawDebug(debugRenderer);
+				}
+			}
 		}
 	}
 

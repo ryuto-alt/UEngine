@@ -298,6 +298,9 @@ private:
     TransformSnapshot preInspectorSnapshot_;  // インスペクター編集開始時のスナップショット
     bool isInspectorEditing_ = false;
 
+    // Play開始時のTransform保存（Stop時に復元用）
+    std::vector<TransformSnapshot> playModeSnapshots_;
+
     // Undo/Redoヘルパー
     void PushUndoSnapshot(const TransformSnapshot& snapshot);
     void PerformUndo();

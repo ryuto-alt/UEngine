@@ -66,6 +66,13 @@ void LuaScriptComponent::OnDestroy() {
     }
 }
 
+void LuaScriptComponent::ResetMouseLock() {
+    if (mouseLocked_) {
+        mouseLocked_ = false;
+        while (ShowCursor(TRUE) < 0);
+    }
+}
+
 void LuaScriptComponent::SetScriptPath(std::string_view path) {
     scriptPath_ = std::string(path);
     
@@ -294,6 +301,7 @@ void LuaScriptComponent::BindEngineAPI() {
                 else if (keyName == "Right" || keyName == "right") key = KeyCode::Right;
                 else if (keyName == "Escape" || keyName == "esc") key = KeyCode::Escape;
                 else if (keyName == "Enter" || keyName == "enter") key = KeyCode::Enter;
+                else if (keyName == "Tab" || keyName == "tab") key = KeyCode::Tab;
                 else if (keyName == "E" || keyName == "e") key = KeyCode::E;
                 else if (keyName == "Q" || keyName == "q") key = KeyCode::Q;
                 else if (keyName == "F" || keyName == "f") key = KeyCode::F;
@@ -314,6 +322,8 @@ void LuaScriptComponent::BindEngineAPI() {
                 else if (keyName == "D" || keyName == "d") key = KeyCode::D;
                 else if (keyName == "Space" || keyName == "space") key = KeyCode::Space;
                 else if (keyName == "Shift" || keyName == "shift") key = KeyCode::Shift;
+                else if (keyName == "Escape" || keyName == "esc") key = KeyCode::Escape;
+                else if (keyName == "Tab" || keyName == "tab") key = KeyCode::Tab;
                 else if (keyName == "E" || keyName == "e") key = KeyCode::E;
                 else if (keyName == "Q" || keyName == "q") key = KeyCode::Q;
                 else if (keyName == "F" || keyName == "f") key = KeyCode::F;
@@ -407,19 +417,19 @@ void LuaScriptComponent::BindEngineAPI() {
             if (!scenePtr) return {0.0f, 0.0f, 1.0f};
             auto* camComp = scenePtr->GetActiveCameraComponent();
             if (!camComp) return {0.0f, 0.0f, 1.0f};
-            float yaw = camComp->GetCameraYaw();
-            float sinYaw = std::sin(yaw);
-            float cosYaw = std::cos(yaw);
-            return {sinYaw, 0.0f, cosYaw};
+            auto* camera = camComp->GetCamera();
+            if (!camera) return {0.0f, 0.0f, 1.0f};
+            Vector3 fwd = camera->GetForward();
+            return {fwd.GetX(), fwd.GetY(), fwd.GetZ()};
         },
         "getRight", [scenePtr]() -> std::tuple<float, float, float> {
             if (!scenePtr) return {1.0f, 0.0f, 0.0f};
             auto* camComp = scenePtr->GetActiveCameraComponent();
             if (!camComp) return {1.0f, 0.0f, 0.0f};
-            float yaw = camComp->GetCameraYaw();
-            float cosYaw = std::cos(yaw);
-            float sinYaw = std::sin(yaw);
-            return {cosYaw, 0.0f, -sinYaw};
+            auto* camera = camComp->GetCamera();
+            if (!camera) return {1.0f, 0.0f, 0.0f};
+            Vector3 right = camera->GetRight();
+            return {right.GetX(), right.GetY(), right.GetZ()};
         }
     );
 

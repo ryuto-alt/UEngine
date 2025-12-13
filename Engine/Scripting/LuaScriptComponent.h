@@ -37,6 +37,9 @@ public:
     // エディタカメラ操作中フラグ（操作中は入力をブロック）
     void SetEditorCameraControlling(bool controlling) { editorCameraControlling_ = controlling; }
 
+    // マウスロック状態をリセット（Playモード終了時に呼ぶ）
+    void ResetMouseLock();
+
     // スクリプトの読み込み
     [[nodiscard]] bool LoadScript();
     [[nodiscard]] bool ReloadScript();

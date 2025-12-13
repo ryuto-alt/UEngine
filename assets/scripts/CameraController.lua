@@ -1,10 +1,12 @@
 -- CameraController.lua
 -- FPS/TPSカメラコントローラー
--- Unity/Unreal風の操作: クリックで視点操作開始、Escで解除
+-- Play開始時に自動で視点操作、TABで解除、クリックで再開
 
 -- public変数（Inspectorに表示される）
 moveSpeed = 5.0
 mouseSensitivity = 1.4
+
+local initialized = false
 
 function Awake()
     Debug.log("CameraController initialized")
@@ -12,23 +14,31 @@ end
 
 function Start()
     Debug.log("Camera script attached to: " .. gameObject.name)
-    Debug.log("Click to enable mouse look, press Escape to release cursor")
+    Debug.log("Press TAB to release cursor, click to re-enable mouse look")
+    initialized = true
 end
 
 function Update(deltaTime)
-    -- 左クリックでカーソルをロック（視点操作開始）
+    -- 初期化後の最初のフレームでカーソルロック
+    if initialized and not Cursor.isLocked() then
+        Cursor.lock()
+        Debug.log("Cursor locked - mouse look enabled")
+        initialized = false
+    end
+
+    -- TABキーでカーソルをアンロック
+    if Input.isKeyPressed("Tab") then
+        if Cursor.isLocked() then
+            Cursor.unlock()
+            Debug.log("Cursor unlocked (TAB)")
+        end
+    end
+
+    -- 左クリックでカーソルを再ロック
     if Input.isMouseButtonPressed(0) then
         if not Cursor.isLocked() then
             Cursor.lock()
             Debug.log("Cursor locked - mouse look enabled")
-        end
-    end
-
-    -- Escapeキーでカーソルをアンロック
-    if Input.isKeyPressed("Escape") then
-        if Cursor.isLocked() then
-            Cursor.unlock()
-            Debug.log("Cursor unlocked")
         end
     end
 

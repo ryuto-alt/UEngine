@@ -44,6 +44,17 @@
 namespace UnoEngine {
 
 	void EditorUI::Initialize(GraphicsDevice* graphics) {
+		// カーソルカウンターを確実に0にリセット
+		int cursorCount = ShowCursor(TRUE);
+		if (cursorCount < 0) {
+			while (cursorCount < 0) {
+				cursorCount = ShowCursor(TRUE);
+			}
+		}
+		while (cursorCount > 0) {
+			cursorCount = ShowCursor(FALSE);
+		}
+
 		// RenderTexture setup (SRVインデックス 3と4を使用) - 16:9 aspect ratio
 		gameViewTexture_.Create(graphics, 1280, 720, 3);
 		sceneViewTexture_.Create(graphics, 1280, 720, 4);
@@ -84,6 +95,11 @@ namespace UnoEngine {
 	}
 
 	void EditorUI::Render(const EditorContext& context) {
+		// Editモード時かつカメラ操作中でなければカーソルを強制表示
+		if (editorMode_ == EditorMode::Edit && !editorCamera_.IsControlling()) {
+			while (ShowCursor(TRUE) < 0);
+		}
+
 		// ImGuizmoフレーム開始
 		ImGuizmo::BeginFrame();
 
@@ -248,6 +264,21 @@ namespace UnoEngine {
 	void EditorUI::Play() {
 		if (editorMode_ == EditorMode::Edit) {
 			editorMode_ = EditorMode::Play;
+			// 全GameObjectのTransformを保存（Stop時に復元用）
+			playModeSnapshots_.clear();
+			if (gameObjects_) {
+				for (auto& obj : *gameObjects_) {
+					TransformSnapshot snapshot;
+					snapshot.targetObject = obj.get();
+					snapshot.position = obj->GetTransform().GetLocalPosition();
+					snapshot.rotation = obj->GetTransform().GetLocalRotation();
+					snapshot.scale = obj->GetTransform().GetLocalScale();
+					playModeSnapshots_.push_back(snapshot);
+				}
+			}
+			// GameViewにフォーカスを切り替え
+			showGameView_ = true;
+			ImGui::SetWindowFocus(U8("ゲーム"));
 			// アニメーション再生開始
 			if (animationSystem_) {
 				animationSystem_->SetPlaying(true);
@@ -314,7 +345,24 @@ namespace UnoEngine {
 	void EditorUI::Stop() {
 		if (editorMode_ != EditorMode::Edit) {
 			editorMode_ = EditorMode::Edit;
-			// 停止時は常にカーソルを表示（Luaでロックされていた場合も解除）
+			// LuaScriptComponentのマウスロック状態をリセット
+			if (gameObjects_) {
+				for (auto& obj : *gameObjects_) {
+					if (auto* luaScript = obj->GetComponent<LuaScriptComponent>()) {
+						luaScript->ResetMouseLock();
+					}
+				}
+			}
+			// Play開始時のTransformを復元
+			for (auto& snapshot : playModeSnapshots_) {
+				if (snapshot.targetObject) {
+					snapshot.targetObject->GetTransform().SetLocalPosition(snapshot.position);
+					snapshot.targetObject->GetTransform().SetLocalRotation(snapshot.rotation);
+					snapshot.targetObject->GetTransform().SetLocalScale(snapshot.scale);
+				}
+			}
+			playModeSnapshots_.clear();
+			// 停止時は常にカーソルを表示（念のため）
 			while (ShowCursor(TRUE) < 0);
 			// アニメーション停止
 			if (animationSystem_) {

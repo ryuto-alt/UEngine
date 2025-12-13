@@ -100,13 +100,17 @@ void NavMeshSystem::DrawDebug(DebugRenderer* debugRenderer) const
     if (!debugRenderer || !m_debugDrawEnabled || !m_navMesh)
         return;
 
-    // ポリゴンを緑色で塗りつぶし描画
+    // UIで設定した色を使用
+    const auto& baseColor = m_debugDrawColor;
+    Vector4 fillColor(baseColor.x, baseColor.y, baseColor.z, baseColor.w * 0.4f);
+    Vector4 edgeColor(baseColor.x, baseColor.y, baseColor.z, 0.9f);
+
+    // ポリゴンを塗りつぶし描画
     const auto& vertices = m_navMesh->vertices;
     const auto& polygons = m_navMesh->polygons;
     
     if (!vertices.empty() && !polygons.empty())
     {
-        Vector4 fillColor(0.0f, 0.8f, 0.3f, 0.35f);
         constexpr float yOffset = 0.02f;
 
         for (const auto& poly : polygons)
@@ -134,8 +138,6 @@ void NavMeshSystem::DrawDebug(DebugRenderer* debugRenderer) const
     const auto& grid = m_navMesh->walkableGrid;
     if (!grid.boundaryLines.empty())
     {
-        Vector4 edgeColor(0.0f, 1.0f, 0.5f, 0.9f);
-
         for (size_t i = 0; i + 1 < grid.boundaryLines.size(); i += 2)
         {
             const auto& p0 = grid.boundaryLines[i];

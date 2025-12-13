@@ -200,8 +200,8 @@ void Scene::OnUpdate(float deltaTime) {
     // Update all game objects
 #ifdef _DEBUG
     bool isPlayMode = editorUI_.IsPlaying();
-    // GameViewフォーカス時はスクリプト入力をブロックしない
-    bool editorCameraControlling = editorUI_.GetEditorCamera().IsControlling() && !editorUI_.IsGameViewFocused();
+    // Playモード中はスクリプト入力を常に許可
+    bool editorCameraControlling = !isPlayMode && editorUI_.GetEditorCamera().IsControlling();
 #else
     bool isPlayMode = true;
     bool editorCameraControlling = false;

@@ -83,6 +83,10 @@ private:
     // マウスボタンの前フレーム状態（GetAsyncKeyState用）
     std::array<bool, 3> prevMouseButtonState_ = {false, false, false};
     std::array<bool, 3> currMouseButtonState_ = {false, false, false};
+
+    // TABキーの前フレーム状態（GetAsyncKeyState用）
+    bool prevTabKeyState_ = false;
+    bool currTabKeyState_ = false;
 };
 
 } // namespace UnoEngine

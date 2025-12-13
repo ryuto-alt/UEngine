@@ -97,7 +97,7 @@
                     "followTargetName": "player",
                     "fov": 1.5765740871429443,
                     "grayscaleIntensity": 1.0,
-                    "hideTargetInFirstPerson": false,
+                    "hideTargetInFirstPerson": true,
                     "isMain": true,
                     "isOrthographic": false,
                     "mouseSensitivity": 0.13099999725818634,
@@ -122,14 +122,14 @@
                 {
                     "properties": [
                         {
-                            "name": "moveSpeed",
-                            "type": "int",
-                            "value": 5
-                        },
-                        {
                             "name": "mouseSensitivity",
                             "type": "float",
                             "value": 1.399999976158142
+                        },
+                        {
+                            "name": "moveSpeed",
+                            "type": "int",
+                            "value": 5
                         }
                     ],
                     "scriptPath": "assets/scripts/CameraController.lua",
@@ -140,14 +140,14 @@
             "name": "Camera",
             "transform": {
                 "position": [
-                    -2.802596928649634e-45,
+                    2.802596928649634e-45,
                     1.7999999523162842,
-                    -2.000000238418579
+                    -1.9999998807907104
                 ],
                 "rotation": [
-                    1.401298464324817e-45,
-                    1.401298464324817e-45,
-                    -1.401298464324817e-45,
+                    2.802596928649634e-45,
+                    2.802596928649634e-45,
+                    -2.802596928649634e-45,
                     1.0
                 ],
                 "scale": [
@@ -1129,14 +1129,14 @@
                 {
                     "properties": [
                         {
-                            "name": "dashSpeedBonus",
-                            "type": "int",
-                            "value": 4
-                        },
-                        {
                             "name": "moveSpeed",
                             "type": "int",
                             "value": 6
+                        },
+                        {
+                            "name": "dashSpeedBonus",
+                            "type": "int",
+                            "value": 4
                         }
                     ],
                     "scriptPath": "assets/scripts/PlayerController.lua",

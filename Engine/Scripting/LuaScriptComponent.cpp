@@ -52,6 +52,10 @@ void LuaScriptComponent::OnUpdate(float deltaTime) {
     currMouseButtonState_[1] = (GetAsyncKeyState(VK_RBUTTON) & 0x8000) != 0;
     currMouseButtonState_[2] = (GetAsyncKeyState(VK_MBUTTON) & 0x8000) != 0;
 
+    // TABキー状態を更新（GetAsyncKeyState使用）
+    prevTabKeyState_ = currTabKeyState_;
+    currTabKeyState_ = (GetAsyncKeyState(VK_TAB) & 0x8000) != 0;
+
     // ホットリロードチェック
     CheckHotReload();
 
@@ -312,8 +316,12 @@ void LuaScriptComponent::BindEngineAPI() {
                 else if (keyName == "4") key = KeyCode::Num4;
                 return keyboard.IsDown(key);
             },
-            "isKeyPressed", [input, editorControlling](const std::string& keyName) -> bool {
+            "isKeyPressed", [this, input, editorControlling](const std::string& keyName) -> bool {
                 if (*editorControlling) return false;
+                // TABキーはGetAsyncKeyStateで直接取得（ImGuiに消費されない）
+                if (keyName == "Tab" || keyName == "tab") {
+                    return currTabKeyState_ && !prevTabKeyState_;
+                }
                 auto& keyboard = input->GetKeyboard();
                 KeyCode key = KeyCode::A;
                 if (keyName == "W" || keyName == "w") key = KeyCode::W;
@@ -323,7 +331,6 @@ void LuaScriptComponent::BindEngineAPI() {
                 else if (keyName == "Space" || keyName == "space") key = KeyCode::Space;
                 else if (keyName == "Shift" || keyName == "shift") key = KeyCode::Shift;
                 else if (keyName == "Escape" || keyName == "esc") key = KeyCode::Escape;
-                else if (keyName == "Tab" || keyName == "tab") key = KeyCode::Tab;
                 else if (keyName == "E" || keyName == "e") key = KeyCode::E;
                 else if (keyName == "Q" || keyName == "q") key = KeyCode::Q;
                 else if (keyName == "F" || keyName == "f") key = KeyCode::F;

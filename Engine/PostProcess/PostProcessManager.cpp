@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "PostProcessManager.h"
 #include "../Graphics/GraphicsDevice.h"
+#include "../Graphics/Shader.h"
+#include "../Graphics/d3dx12.h"
 #include <algorithm>
 
 namespace UnoEngine {
@@ -157,6 +159,66 @@ void PostProcessManager::Apply(GraphicsDevice* graphics, RenderTexture* source, 
 
 const char* PostProcessManager::GetEffectName(int index) {
     return PostProcessTypeToString(static_cast<PostProcessType>(index));
+}
+
+void PostProcessManager::InitializeCopyPipeline(GraphicsDevice* graphics) {
+    if (m_copyPipeline) return;
+
+    Shader vs;
+    vs.CompileFromFile(L"Shaders/PostProcess/FullscreenVS.hlsl", ShaderStage::Vertex);
+
+    Shader ps;
+    ps.CompileFromFile(L"Shaders/PostProcess/CopyPS.hlsl", ShaderStage::Pixel);
+
+    m_copyPipeline = std::make_unique<PostProcessPipeline>();
+    m_copyPipeline->Initialize(graphics->GetDevice(),
+                               vs.GetBytecode()->GetBufferPointer(), vs.GetBytecode()->GetBufferSize(),
+                               ps.GetBytecode()->GetBufferPointer(), ps.GetBytecode()->GetBufferSize());
+}
+
+void PostProcessManager::BlitToBackBuffer(GraphicsDevice* graphics, RenderTexture* source) {
+    InitializeCopyPipeline(graphics);
+
+    auto* cmdList = graphics->GetCommandList();
+    auto* heap = graphics->GetSRVHeap();
+
+    // ソーステクスチャをシェーダーリソースに遷移
+    D3D12_RESOURCE_BARRIER barrier = {};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.pResource = source->GetResource();
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    cmdList->ResourceBarrier(1, &barrier);
+
+    // バックバッファをレンダーターゲットとして設定
+    graphics->SetBackBufferAsRenderTarget();
+
+    // ビューポート設定（ソーステクスチャのサイズを使用）
+    D3D12_VIEWPORT viewport = {};
+    viewport.Width = static_cast<float>(source->GetWidth());
+    viewport.Height = static_cast<float>(source->GetHeight());
+    viewport.MaxDepth = 1.0f;
+
+    D3D12_RECT scissorRect = {};
+    scissorRect.right = source->GetWidth();
+    scissorRect.bottom = source->GetHeight();
+
+    cmdList->RSSetViewports(1, &viewport);
+    cmdList->RSSetScissorRects(1, &scissorRect);
+
+    // パイプライン設定
+    cmdList->SetPipelineState(m_copyPipeline->GetPipelineState());
+    cmdList->SetGraphicsRootSignature(m_copyPipeline->GetRootSignature());
+
+    // デスクリプタヒープ設定
+    ID3D12DescriptorHeap* heaps[] = {heap};
+    cmdList->SetDescriptorHeaps(1, heaps);
+    cmdList->SetGraphicsRootDescriptorTable(0, source->GetSRVHandle());
+
+    // フルスクリーン描画
+    cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    cmdList->DrawInstanced(3, 1, 0, 0);
 }
 
 } // namespace UnoEngine

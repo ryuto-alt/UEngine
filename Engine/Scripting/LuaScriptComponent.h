@@ -4,6 +4,7 @@
 #include "LuaState.h"
 #include <memory>
 #include <string>
+#include <array>
 
 namespace UnoEngine {
 
@@ -68,6 +69,17 @@ private:
     bool awakeCalledInLua_ = false;
     bool startCalledInLua_ = false;
     bool editorCameraControlling_ = false;
+
+    // マウスロック状態（Lua側から制御）
+    bool mouseLocked_ = false;
+    int mouseLockX_ = 0;
+    int mouseLockY_ = 0;
+    float cameraYaw_ = 0.0f;
+    float cameraPitch_ = 0.0f;
+
+    // マウスボタンの前フレーム状態（GetAsyncKeyState用）
+    std::array<bool, 3> prevMouseButtonState_ = {false, false, false};
+    std::array<bool, 3> currMouseButtonState_ = {false, false, false};
 };
 
 } // namespace UnoEngine

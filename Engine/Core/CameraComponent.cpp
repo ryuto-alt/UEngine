@@ -203,24 +203,22 @@ void CameraComponent::UpdateFollowCamera(float deltaTime) {
         // 一人称視点: マウスで視点回転のみ（移動はLuaスクリプトで管理）
 
         if (isPlaying_ && mouseLocked_ && scene_) {
-            if (auto* input = scene_->GetInputManager()) {
-                POINT currentPos;
-                GetCursorPos(&currentPos);
+            POINT currentPos;
+            GetCursorPos(&currentPos);
 
-                float deltaX = static_cast<float>(currentPos.x - mouseLockX_);
-                float deltaY = static_cast<float>(currentPos.y - mouseLockY_);
+            float deltaX = static_cast<float>(currentPos.x - mouseLockX_);
+            float deltaY = static_cast<float>(currentPos.y - mouseLockY_);
 
-                if (deltaX != 0.0f || deltaY != 0.0f) {
-                    SetCursorPos(mouseLockX_, mouseLockY_);
-                }
-
-                cameraYaw_ += deltaX * mouseSensitivity_ * 0.01f;
-                cameraPitch_ += deltaY * mouseSensitivity_ * 0.01f;
-
-                constexpr float maxPitch = 1.5f;
-                if (cameraPitch_ > maxPitch) cameraPitch_ = maxPitch;
-                if (cameraPitch_ < -maxPitch) cameraPitch_ = -maxPitch;
+            if (deltaX != 0.0f || deltaY != 0.0f) {
+                SetCursorPos(mouseLockX_, mouseLockY_);
             }
+
+            cameraYaw_ += deltaX * mouseSensitivity_ * 0.01f;
+            cameraPitch_ += deltaY * mouseSensitivity_ * 0.01f;
+
+            constexpr float maxPitch = 1.5f;
+            if (cameraPitch_ > maxPitch) cameraPitch_ = maxPitch;
+            if (cameraPitch_ < -maxPitch) cameraPitch_ = -maxPitch;
         }
 
         // ターゲット位置にオフセットを加えた位置にカメラを配置

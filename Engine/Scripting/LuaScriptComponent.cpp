@@ -6,6 +6,8 @@
 #include "../Core/CameraComponent.h"
 #include "../Input/InputManager.h"
 #include "../Animation/AnimatorComponent.h"
+#include <Windows.h>
+#include <cmath>
 
 namespace UnoEngine {
 
@@ -44,6 +46,12 @@ void LuaScriptComponent::Start() {
 }
 
 void LuaScriptComponent::OnUpdate(float deltaTime) {
+    // マウスボタン状態を更新（GetAsyncKeyState使用）
+    prevMouseButtonState_ = currMouseButtonState_;
+    currMouseButtonState_[0] = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+    currMouseButtonState_[1] = (GetAsyncKeyState(VK_RBUTTON) & 0x8000) != 0;
+    currMouseButtonState_[2] = (GetAsyncKeyState(VK_MBUTTON) & 0x8000) != 0;
+
     // ホットリロードチェック
     CheckHotReload();
 
@@ -332,6 +340,31 @@ void LuaScriptComponent::BindEngineAPI() {
                     return value;
                 }
                 return 0.0f;
+            },
+            // マウスボタン入力（GetAsyncKeyStateで直接取得、ImGui内でも動作）
+            "isMouseButtonDown", [this, editorControlling](int button) -> bool {
+                if (*editorControlling) return false;
+                if (button < 0 || button > 2) return false;
+                return currMouseButtonState_[button];
+            },
+            "isMouseButtonPressed", [this, editorControlling](int button) -> bool {
+                if (*editorControlling) return false;
+                if (button < 0 || button > 2) return false;
+                return currMouseButtonState_[button] && !prevMouseButtonState_[button];
+            },
+            "isMouseButtonReleased", [this, editorControlling](int button) -> bool {
+                if (*editorControlling) return false;
+                if (button < 0 || button > 2) return false;
+                return !currMouseButtonState_[button] && prevMouseButtonState_[button];
+            },
+            // マウス座標
+            "getMousePosition", [input]() -> std::tuple<int, int> {
+                auto& mouse = input->GetMouse();
+                return {mouse.GetX(), mouse.GetY()};
+            },
+            "getMouseDelta", [input]() -> std::tuple<int, int> {
+                auto& mouse = input->GetMouse();
+                return {mouse.GetDeltaX(), mouse.GetDeltaY()};
             }
         );
     }
@@ -388,6 +421,89 @@ void LuaScriptComponent::BindEngineAPI() {
             float sinYaw = std::sin(yaw);
             return {cosYaw, 0.0f, -sinYaw};
         }
+    );
+
+    // ===== Cursor API（マウスロック制御）=====
+    bool* mouseLockedPtr = &mouseLocked_;
+    int* mouseLockXPtr = &mouseLockX_;
+    int* mouseLockYPtr = &mouseLockY_;
+    float* cameraYawPtr = &cameraYaw_;
+    float* cameraPitchPtr = &cameraPitch_;
+
+    lua["Cursor"] = lua.create_table_with(
+        "lock", [mouseLockedPtr, mouseLockXPtr, mouseLockYPtr, cameraYawPtr, cameraPitchPtr, scenePtr]() {
+            if (*mouseLockedPtr) return;
+            *mouseLockedPtr = true;
+            POINT cursorPos;
+            GetCursorPos(&cursorPos);
+            *mouseLockXPtr = cursorPos.x;
+            *mouseLockYPtr = cursorPos.y;
+            while (ShowCursor(FALSE) >= 0);
+
+            // カメラの向きからyaw/pitchを初期化
+            if (scenePtr) {
+                auto* camComp = scenePtr->GetActiveCameraComponent();
+                if (camComp) {
+                    auto* camera = camComp->GetCamera();
+                    if (camera) {
+                        Vector3 forward = camera->GetForward();
+                        *cameraYawPtr = std::atan2(forward.GetX(), forward.GetZ());
+                        *cameraPitchPtr = std::asin(-forward.GetY());
+                    }
+                }
+            }
+        },
+        "unlock", [mouseLockedPtr]() {
+            if (!*mouseLockedPtr) return;
+            *mouseLockedPtr = false;
+            while (ShowCursor(TRUE) < 0);
+        },
+        "isLocked", [mouseLockedPtr]() -> bool {
+            return *mouseLockedPtr;
+        },
+        "getDelta", [mouseLockedPtr, mouseLockXPtr, mouseLockYPtr]() -> std::tuple<float, float> {
+            if (!*mouseLockedPtr) return {0.0f, 0.0f};
+            POINT currentPos;
+            GetCursorPos(&currentPos);
+            float deltaX = static_cast<float>(currentPos.x - *mouseLockXPtr);
+            float deltaY = static_cast<float>(currentPos.y - *mouseLockYPtr);
+            if (deltaX != 0.0f || deltaY != 0.0f) {
+                SetCursorPos(*mouseLockXPtr, *mouseLockYPtr);
+            }
+            return {deltaX, deltaY};
+        },
+        "lookAround", [mouseLockedPtr, mouseLockXPtr, mouseLockYPtr, cameraYawPtr, cameraPitchPtr, scenePtr](float sensitivity) {
+            if (!*mouseLockedPtr || !scenePtr) return;
+
+            POINT currentPos;
+            GetCursorPos(&currentPos);
+            float deltaX = static_cast<float>(currentPos.x - *mouseLockXPtr);
+            float deltaY = static_cast<float>(currentPos.y - *mouseLockYPtr);
+            if (deltaX != 0.0f || deltaY != 0.0f) {
+                SetCursorPos(*mouseLockXPtr, *mouseLockYPtr);
+            }
+
+            *cameraYawPtr += deltaX * sensitivity * 0.001f;
+            *cameraPitchPtr += deltaY * sensitivity * 0.001f;
+
+            // Pitch制限
+            constexpr float maxPitch = 1.5f;
+            if (*cameraPitchPtr > maxPitch) *cameraPitchPtr = maxPitch;
+            if (*cameraPitchPtr < -maxPitch) *cameraPitchPtr = -maxPitch;
+
+            // カメラに適用
+            auto* camComp = scenePtr->GetActiveCameraComponent();
+            if (camComp) {
+                auto* camera = camComp->GetCamera();
+                if (camera) {
+                    Quaternion rotY = Quaternion::RotationAxis(Vector3::UnitY(), *cameraYawPtr);
+                    Quaternion rotX = Quaternion::RotationAxis(Vector3::UnitX(), *cameraPitchPtr);
+                    camera->SetRotation(rotY * rotX);
+                }
+            }
+        },
+        "getYaw", [cameraYawPtr]() -> float { return *cameraYawPtr; },
+        "getPitch", [cameraPitchPtr]() -> float { return *cameraPitchPtr; }
     );
 
     Logger::Debug("[LuaScriptComponent] Engine API bound to Lua");

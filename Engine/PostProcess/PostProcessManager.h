@@ -3,6 +3,7 @@
 #include "../Core/Types.h"
 #include "../Core/NonCopyable.h"
 #include "PostProcessType.h"
+#include "PostProcessPipeline.h"
 #include "GrayscalePostProcess.h"
 #include "VignettePostProcess.h"
 #include "FisheyePostProcess.h"
@@ -41,6 +42,9 @@ public:
     // ソーステクスチャにポストプロセスを適用し、結果をdestinationに出力
     void Apply(GraphicsDevice* graphics, RenderTexture* source, RenderTexture* destination);
 
+    // テクスチャをバックバッファにコピー（Release用）
+    void BlitToBackBuffer(GraphicsDevice* graphics, RenderTexture* source);
+
     // 利用可能なエフェクト一覧取得（UI用）
     static constexpr int GetEffectCount() { return static_cast<int>(PostProcessType::Count); }
     static const char* GetEffectName(int index);
@@ -54,8 +58,10 @@ public:
 private:
     PostProcess* GetEffectByType(PostProcessType type);
     void CreateIntermediateBuffers(GraphicsDevice* graphics, uint32 width, uint32 height);
+    void InitializeCopyPipeline(GraphicsDevice* graphics);
 
     std::vector<PostProcessType> m_effectChain;
+    std::unique_ptr<PostProcessPipeline> m_copyPipeline;
     std::unique_ptr<GrayscalePostProcess> m_grayscale;
     std::unique_ptr<VignettePostProcess> m_vignette;
     std::unique_ptr<FisheyePostProcess> m_fisheye;

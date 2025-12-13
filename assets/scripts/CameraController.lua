@@ -1,39 +1,62 @@
 -- CameraController.lua
--- FPS/TPSカメラコントローラーサンプル
+-- FPS/TPSカメラコントローラー
+-- Unity/Unreal風の操作: クリックで視点操作開始、Escで解除
 
 -- public変数（Inspectorに表示される）
 moveSpeed = 5.0
 mouseSensitivity = 1.4
 
--- ローカル変数
-local yaw = 0
-local pitch = 0
-local isMouseLocked = false
-
 function Awake()
-    print("CameraController initialized")
-    Debug.log("Camera script attached to: " .. gameObject.name)
+    Debug.log("CameraController initialized")
 end
 
 function Start()
-    -- 初期位置を設定
-    local x, y, z = transform.getPosition()
-    Debug.log(string.format("Initial position: (%.2f, %.2f, %.2f)", x, y, z))
+    Debug.log("Camera script attached to: " .. gameObject.name)
+    Debug.log("Click to enable mouse look, press Escape to release cursor")
 end
 
 function Update(deltaTime)
-    -- 移動処理
-    local moveX = 0
-    local moveZ = 0
-    
-    -- WASDキー入力はInputシステム経由で取得（Phase3で実装）
-    -- 今はテスト用に自動移動
-    
-    -- Transformを使った移動のデモ
-    -- transform.translate(moveX * moveSpeed * deltaTime, 0, moveZ * moveSpeed * deltaTime)
+    -- 左クリックでカーソルをロック（視点操作開始）
+    if Input.isMouseButtonPressed(0) then
+        if not Cursor.isLocked() then
+            Cursor.lock()
+            Debug.log("Cursor locked - mouse look enabled")
+        end
+    end
+
+    -- Escapeキーでカーソルをアンロック
+    if Input.isKeyPressed("Escape") then
+        if Cursor.isLocked() then
+            Cursor.unlock()
+            Debug.log("Cursor unlocked")
+        end
+    end
+
+    -- カーソルがロックされていれば視点移動
+    if Cursor.isLocked() then
+        Cursor.lookAround(mouseSensitivity)
+    end
+
+    -- WASD移動（カメラの向きに基づく）
+    local horizontal = Input.getAxis("Horizontal")
+    local vertical = Input.getAxis("Vertical")
+
+    if horizontal ~= 0 or vertical ~= 0 then
+        -- カメラの向きから移動方向を計算
+        local fx, fy, fz = Camera.getForward()
+        local rx, ry, rz = Camera.getRight()
+
+        local moveX = (fx * vertical + rx * horizontal) * moveSpeed * deltaTime
+        local moveZ = (fz * vertical + rz * horizontal) * moveSpeed * deltaTime
+
+        transform.translate(moveX, 0, moveZ)
+    end
 end
 
 function OnDestroy()
-    print("CameraController destroyed")
+    -- 終了時にカーソルを解放
+    if Cursor.isLocked() then
+        Cursor.unlock()
+    end
+    Debug.log("CameraController destroyed")
 end
-

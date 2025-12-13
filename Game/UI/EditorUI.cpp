@@ -314,11 +314,8 @@ namespace UnoEngine {
 	void EditorUI::Stop() {
 		if (editorMode_ != EditorMode::Edit) {
 			editorMode_ = EditorMode::Edit;
-			// マウスロック解除
-			if (gameViewMouseLocked_) {
-				gameViewMouseLocked_ = false;
-				while (ShowCursor(TRUE) < 0);
-			}
+			// 停止時は常にカーソルを表示（Luaでロックされていた場合も解除）
+			while (ShowCursor(TRUE) < 0);
 			// アニメーション停止
 			if (animationSystem_) {
 				animationSystem_->SetPlaying(false);
@@ -868,95 +865,9 @@ namespace UnoEngine {
 			// Playモード時のマウスロック＋FPS視点操作
 			if (editorMode_ == EditorMode::Play) {
 				ImGuiIO& io = ImGui::GetIO();
-				bool imageHovered = ImGui::IsItemHovered();
-
-				// Game View画像上で左クリックしたらマウスロック開始
-				if (imageHovered && io.MouseClicked[0] && !gameViewMouseLocked_) {
-					gameViewMouseLocked_ = true;
-					GetCursorPos(&gameViewLockMousePos_);
-					while (ShowCursor(FALSE) >= 0);
-
-					// 現在のカメラの向きからyaw/pitchを初期化
-					if (gameCamera_) {
-						Vector3 forward = gameCamera_->GetForward();
-						gameViewYaw_ = std::atan2(forward.GetX(), forward.GetZ());
-						gameViewPitch_ = std::asin(-forward.GetY());
-					}
-				}
-
-				// TABキーでマウスロック解除（Playモードは継続）
-				if (gameViewMouseLocked_ && ImGui::IsKeyPressed(ImGuiKey_Tab)) {
-					gameViewMouseLocked_ = false;
-					while (ShowCursor(TRUE) < 0);
-				}
-
-				// CameraComponentにマウスロック状態を渡す
-				if (scene_) {
-					if (auto* camComp = scene_->GetActiveCameraComponent()) {
-						camComp->SetMouseLocked(gameViewMouseLocked_, gameViewLockMousePos_.x, gameViewLockMousePos_.y);
-					}
-				}
-
-				// マウスロック中の視点操作とWASD移動
-				// CameraComponentが一人称/三人称モードの場合はスキップ（CameraComponentに任せる）
-				bool cameraComponentHandlesInput = false;
-				if (scene_) {
-					if (auto* camComp = scene_->GetActiveCameraComponent()) {
-						if (camComp->GetViewMode() != CameraViewMode::Free) {
-							cameraComponentHandlesInput = true;
-						}
-					}
-				}
-
-				if (gameViewMouseLocked_ && gameCamera_ && !cameraComponentHandlesInput) {
-					POINT currentPos;
-					GetCursorPos(&currentPos);
-
-					float deltaX = static_cast<float>(currentPos.x - gameViewLockMousePos_.x);
-					float deltaY = static_cast<float>(currentPos.y - gameViewLockMousePos_.y);
-
-					SetCursorPos(gameViewLockMousePos_.x, gameViewLockMousePos_.y);
-
-					// 感度
-					float sensitivity = editorCamera_.GetRotateSpeed() * io.DeltaTime;
-					gameViewYaw_ += deltaX * sensitivity;
-					gameViewPitch_ += deltaY * sensitivity;
-
-					// ピッチ制限
-					const float maxPitch = 1.5f;
-					if (gameViewPitch_ > maxPitch) gameViewPitch_ = maxPitch;
-					if (gameViewPitch_ < -maxPitch) gameViewPitch_ = -maxPitch;
-
-					// カメラの向きを更新
-					Quaternion rotY = Quaternion::RotationAxis(Vector3::UnitY(), gameViewYaw_);
-					Quaternion rotX = Quaternion::RotationAxis(Vector3::UnitX(), gameViewPitch_);
-					gameCamera_->SetRotation(rotY * rotX);
-
-					// WASD移動
-					Vector3 forward = gameCamera_->GetForward();
-					Vector3 right = Vector3::UnitY().Cross(forward).Normalize();
-
-					// 水平面に投影
-					Vector3 forwardXZ(forward.GetX(), 0.0f, forward.GetZ());
-					if (forwardXZ.Length() > 0.001f) {
-						forwardXZ = forwardXZ.Normalize();
-					}
-
-					Vector3 movement = Vector3::Zero();
-					float moveSpeed = editorCamera_.GetMoveSpeed() * io.DeltaTime;
-
-					if (ImGui::IsKeyDown(ImGuiKey_W)) movement = movement + forwardXZ;
-					if (ImGui::IsKeyDown(ImGuiKey_S)) movement = movement - forwardXZ;
-					if (ImGui::IsKeyDown(ImGuiKey_A)) movement = movement - right;
-					if (ImGui::IsKeyDown(ImGuiKey_D)) movement = movement + right;
-					if (ImGui::IsKeyDown(ImGuiKey_Space)) movement = movement + Vector3::UnitY();
-					if (ImGui::IsKeyDown(ImGuiKey_LeftShift)) movement = movement - Vector3::UnitY();
-
-					if (movement.Length() > 0.001f) {
-						movement = movement.Normalize() * moveSpeed;
-						gameCamera_->SetPosition(gameCamera_->GetPosition() + movement);
-					}
-				}
+				// マウスロック/視点操作はLuaスクリプト（Cursor API）で制御
+				// エディターからのハードコードは削除済み
+				(void)0;
 			} else {
 				// Playモード以外ではマウスロック解除
 				if (gameViewMouseLocked_) {

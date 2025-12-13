@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+    EngineCommon.props
+    Engine/以下の全ソースファイルを自動収集
+    新ファイル追加時、vcxproj編集不要
+  -->
+
+  <ItemGroup>
+    <!-- Engine Core -->
+    <ClCompile Include="$(MSBuildThisFileDirectory)Engine\Core\*.cpp" />
+
+    <!-- Engine Graphics -->
+    <ClCompile Include="$(MSBuildThisFileDirectory)Engine\Graphics\*.cpp" />
+
+    <!-- Engine Rendering -->
+    <ClCompile Include="$(MSBuildThisFileDirectory)Engine\Rendering\*.cpp" />
+
+    <!-- Engine Math -->
+    <ClCompile Include="$(MSBuildThisFileDirectory)Engine\Math\*.cpp" />
+
+    <!-- Engine Input -->
+    <ClCompile Include="$(MSBuildThisFileDirectory)Engine\Input\*.cpp" />
+
+    <!-- Engine Window -->
+    <ClCompile Include="$(MSBuildThisFileDirectory)Engine\Window\*.cpp" />
+
+    <!-- Engine Resource -->
+    <ClCompile Include="$(MSBuildThisFileDirectory)Engine\Resource\*.cpp" />
+
+    <!-- Engine Animation -->
+    <ClCompile Include="$(MSBuildThisFileDirectory)Engine\Animation\*.cpp" />
+
+    <!-- Engine Systems -->
+    <ClCompile Include="$(MSBuildThisFileDirectory)Engine\Systems\*.cpp" />
+
+    <!-- Engine Audio -->
+    <ClCompile Include="$(MSBuildThisFileDirectory)Engine\Audio\*.cpp" />
+
+    <!-- Engine Scripting -->
+    <ClCompile Include="$(MSBuildThisFileDirectory)Engine\Scripting\*.cpp" />
+
+    <!-- Engine Particle -->
+    <ClCompile Include="$(MSBuildThisFileDirectory)Engine\Particle\*.cpp" />
+
+    <!-- Engine Editor -->
+    <ClCompile Include="$(MSBuildThisFileDirectory)Engine\Editor\*.cpp" />
+
+    <!-- Engine PostProcess -->
+    <ClCompile Include="$(MSBuildThisFileDirectory)Engine\PostProcess\*.cpp" />
+
+    <!-- Engine Scene -->
+    <ClCompile Include="$(MSBuildThisFileDirectory)Engine\Scene\*.cpp" />
+
+    <!-- Engine UI -->
+    <ClCompile Include="$(MSBuildThisFileDirectory)Engine\UI\*.cpp" />
+  </ItemGroup>
+
+  <!-- Game Common (エディタ・ゲーム共通) -->
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Game\GameApplication.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Game\Components\*.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Game\Systems\*.cpp" />
+  </ItemGroup>
+</Project>

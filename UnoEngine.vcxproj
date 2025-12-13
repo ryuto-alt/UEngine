@@ -249,6 +249,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClCompile Include="Engine\AI\NavMesh\NavMeshQuery.cpp" />
     <ClCompile Include="Engine\AI\NavMesh\NavMeshSerializer.cpp" />
     <ClCompile Include="Engine\AI\NavMesh\NavMeshSystem.cpp" />
+    <ClCompile Include="Engine\AI\NavMesh\NavMeshAgentComponent.cpp" />
     <ClCompile Include="Engine\Audio\AudioSystem.cpp" />
     <ClCompile Include="Engine\Audio\AudioClip.cpp" />
     <ClCompile Include="Engine\Audio\AudioSource.cpp" />
@@ -479,6 +480,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClInclude Include="Engine\AI\NavMesh\NavMeshQuery.h" />
     <ClInclude Include="Engine\AI\NavMesh\NavMeshSerializer.h" />
     <ClInclude Include="Engine\AI\NavMesh\NavMeshSystem.h" />
+    <ClInclude Include="Engine\AI\NavMesh\NavMeshAgentComponent.h" />
     <ClInclude Include="Engine\Scripting\LuaState.h" />
     <ClInclude Include="Engine\Scripting\LuaScriptComponent.h" />
     <ClInclude Include="Engine\Particle\Curve.h" />

@@ -335,6 +335,9 @@
     <ClCompile Include="Engine\AI\NavMesh\NavMeshSystem.cpp">
       <Filter>Engine\AI\NavMesh</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\AI\NavMesh\NavMeshAgentComponent.cpp">
+      <Filter>Engine\AI\NavMesh</Filter>
+    </ClCompile>
     <!-- Engine\Animation -->
     <ClCompile Include="Engine\Animation\Skeleton.cpp">
       <Filter>Engine\Animation</Filter>
@@ -794,6 +797,9 @@
       <Filter>Engine\AI\NavMesh</Filter>
     </ClInclude>
     <ClInclude Include="Engine\AI\NavMesh\NavMeshSystem.h">
+      <Filter>Engine\AI\NavMesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\AI\NavMesh\NavMeshAgentComponent.h">
       <Filter>Engine\AI\NavMesh</Filter>
     </ClInclude>
     <!-- Engine\Animation -->

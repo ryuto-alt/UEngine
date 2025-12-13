@@ -21,6 +21,7 @@
 #include "../../Engine/Core/CollisionComponent.h"
 #include "../../Engine/Editor/ParticleEditor.h"
 #include "../../Engine/AI/NavMesh/NavMeshSystem.h"
+#include "../../Engine/AI/NavMesh/NavMeshAgentComponent.h"
 #include "../../Engine/Systems/CollisionSystem.h"
 #include "../../Engine/Core/Application.h"
 #include <imgui.h>
@@ -189,56 +190,173 @@ namespace UnoEngine {
 
 		// NavMesh設定ウィンドウ描画
 		if (showNavMeshSettings_) {
-			ImGui::SetNextWindowSize(ImVec2(350, 400), ImGuiCond_FirstUseEver);
+			ImGui::SetNextWindowSize(ImVec2(380, 600), ImGuiCond_FirstUseEver);
 			if (ImGui::Begin(U8("NavMesh設定"), &showNavMeshSettings_)) {
 				auto& navMeshSystem = NavMeshSystem::GetInstance();
 				auto& config = navMeshSystem.GetConfig();
-				
-				ImGui::SeparatorText(U8("エージェント設定"));
-				ImGui::DragFloat(U8("半径"), &config.agentRadius, 0.01f, 0.1f, 5.0f);
-				ImGui::DragFloat(U8("高さ"), &config.agentHeight, 0.1f, 0.5f, 10.0f);
-				ImGui::DragFloat(U8("最大傾斜角"), &config.maxSlope, 1.0f, 0.0f, 90.0f);
-				ImGui::DragFloat(U8("段差許容"), &config.stepHeight, 0.01f, 0.0f, 2.0f);
-				
-				ImGui::SeparatorText(U8("ボクセル設定"));
-				ImGui::DragFloat(U8("セルサイズ"), &config.cellSize, 0.01f, 0.1f, 2.0f);
-				ImGui::DragFloat(U8("セル高さ"), &config.cellHeight, 0.01f, 0.05f, 1.0f);
-				
-				ImGui::SeparatorText(U8("領域設定"));
-				ImGui::DragFloat(U8("最小領域面積"), &config.minRegionArea, 1.0f, 1.0f, 100.0f);
-				ImGui::DragFloat(U8("マージ領域面積"), &config.mergeRegionArea, 1.0f, 1.0f, 200.0f);
-				
-				ImGui::SeparatorText(U8("表示設定"));
-				auto debugColor = navMeshSystem.GetDebugDrawColor();
-				float color[4] = {debugColor.x, debugColor.y, debugColor.z, debugColor.w};
-				if (ImGui::ColorEdit4(U8("NavMesh色"), color)) {
-					navMeshSystem.SetDebugDrawColor({color[0], color[1], color[2], color[3]});
-				}
-				
-				ImGui::Separator();
-				
-				if (navMeshSystem.HasNavMesh()) {
-					ImGui::Text(U8("現在のNavMesh:"));
-					ImGui::Text(U8("  ポリゴン数: %d"), navMeshSystem.GetPolygonCount());
-					ImGui::Text(U8("  頂点数: %d"), navMeshSystem.GetVertexCount());
-				} else {
-					ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), U8("NavMeshが生成されていません"));
-				}
-				
-				ImGui::Separator();
-				
-				if (ImGui::Button(U8("NavMeshをベイク"), ImVec2(-1, 0))) {
-					if (scene_) {
-						navMeshSystem.SetProgressCallback([this](float progress, const char* stage) {
-							navMeshBakeProgress_ = progress;
-							navMeshBakeStage_ = stage;
-						});
-						if (navMeshSystem.BakeNavMesh(scene_)) {
-							AddConsoleMessage(U8("[NavMesh] ベイク完了"));
+
+				if (ImGui::BeginTabBar("NavMeshTabs")) {
+					// ベイク設定タブ
+					if (ImGui::BeginTabItem(U8("ベイク設定"))) {
+						ImGui::SeparatorText(U8("エージェントサイズ"));
+						ImGui::DragFloat(U8("半径"), &config.agentRadius, 0.01f, 0.1f, 5.0f);
+						ImGui::DragFloat(U8("高さ"), &config.agentHeight, 0.1f, 0.5f, 10.0f);
+						ImGui::DragFloat(U8("最大傾斜角"), &config.maxSlope, 1.0f, 0.0f, 90.0f);
+						ImGui::DragFloat(U8("段差許容"), &config.stepHeight, 0.01f, 0.0f, 2.0f);
+						
+						ImGui::SeparatorText(U8("ボクセル設定"));
+						ImGui::DragFloat(U8("セルサイズ"), &config.cellSize, 0.01f, 0.1f, 2.0f);
+						ImGui::DragFloat(U8("セル高さ"), &config.cellHeight, 0.01f, 0.05f, 1.0f);
+						
+						ImGui::SeparatorText(U8("領域設定"));
+						ImGui::DragFloat(U8("最小領域面積"), &config.minRegionArea, 1.0f, 1.0f, 100.0f);
+						ImGui::DragFloat(U8("マージ領域面積"), &config.mergeRegionArea, 1.0f, 1.0f, 200.0f);
+						
+						ImGui::Separator();
+						
+						if (navMeshSystem.HasNavMesh()) {
+							ImGui::Text(U8("現在のNavMesh:"));
+							ImGui::Text(U8("  ポリゴン数: %d"), navMeshSystem.GetPolygonCount());
+							ImGui::Text(U8("  頂点数: %d"), navMeshSystem.GetVertexCount());
 						} else {
-							AddConsoleMessage(U8("[NavMesh] ベイク失敗"));
+							ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), U8("NavMeshが生成されていません"));
 						}
+						
+						ImGui::Separator();
+						
+						if (ImGui::Button(U8("NavMeshをベイク"), ImVec2(-1, 0))) {
+							if (scene_) {
+								navMeshSystem.SetProgressCallback([this](float progress, const char* stage) {
+									navMeshBakeProgress_ = progress;
+									navMeshBakeStage_ = stage;
+								});
+								if (navMeshSystem.BakeNavMesh(scene_)) {
+									AddConsoleMessage(U8("[NavMesh] ベイク完了"));
+								} else {
+									AddConsoleMessage(U8("[NavMesh] ベイク失敗"));
+								}
+							}
+						}
+						ImGui::EndTabItem();
 					}
+
+					// エージェント設定タブ（選択オブジェクト）
+					if (ImGui::BeginTabItem(U8("エージェント"))) {
+						GameObject* selected = selectedObject_;
+						NavMeshAgentComponent* agent = selected ? selected->GetComponent<NavMeshAgentComponent>() : nullptr;
+
+						if (agent) {
+							ImGui::Text(U8("オブジェクト: %s"), selected->GetName().c_str());
+							ImGui::Separator();
+
+							// 有効/無効
+							bool enabled = agent->IsEnabled();
+							if (ImGui::Checkbox(U8("有効"), &enabled)) {
+								agent->SetEnabled(enabled);
+								isDirty_ = true;
+							}
+
+							ImGui::SeparatorText(U8("エージェント設定"));
+
+							float radius = agent->GetRadius();
+							if (ImGui::DragFloat(U8("半径##Agent"), &radius, 0.01f, 0.1f, 5.0f)) {
+								agent->SetRadius(radius);
+								isDirty_ = true;
+							}
+
+							float height = agent->GetHeight();
+							if (ImGui::DragFloat(U8("高さ##Agent"), &height, 0.1f, 0.5f, 10.0f)) {
+								agent->SetHeight(height);
+								isDirty_ = true;
+							}
+
+							ImGui::SeparatorText(U8("移動設定"));
+
+							float maxSpeed = agent->GetMaxSpeed();
+							if (ImGui::DragFloat(U8("最大速度"), &maxSpeed, 0.1f, 0.1f, 20.0f)) {
+								agent->SetMaxSpeed(maxSpeed);
+								isDirty_ = true;
+							}
+
+							float accel = agent->GetAcceleration();
+							if (ImGui::DragFloat(U8("加速度"), &accel, 0.1f, 0.1f, 50.0f)) {
+								agent->SetAcceleration(accel);
+								isDirty_ = true;
+							}
+
+							float angSpeed = agent->GetAngularSpeed();
+							if (ImGui::DragFloat(U8("回転速度"), &angSpeed, 1.0f, 0.0f, 720.0f)) {
+								agent->SetAngularSpeed(angSpeed);
+								isDirty_ = true;
+							}
+
+							float stopDist = agent->GetStoppingDistance();
+							if (ImGui::DragFloat(U8("停止距離"), &stopDist, 0.01f, 0.0f, 5.0f)) {
+								agent->SetStoppingDistance(stopDist);
+								isDirty_ = true;
+							}
+
+							bool autoBrake = agent->GetAutoBraking();
+							if (ImGui::Checkbox(U8("自動減速"), &autoBrake)) {
+								agent->SetAutoBraking(autoBrake);
+								isDirty_ = true;
+							}
+
+							ImGui::SeparatorText(U8("状態"));
+
+							bool hasPath = agent->HasPath();
+							bool isMoving = agent->IsMoving();
+							ImGui::TextColored(hasPath ? ImVec4(0, 1, 0, 1) : ImVec4(0.5f, 0.5f, 0.5f, 1),
+								U8("パス: %s"), hasPath ? U8("あり") : U8("なし"));
+							ImGui::TextColored(isMoving ? ImVec4(0, 1, 0, 1) : ImVec4(0.5f, 0.5f, 0.5f, 1),
+								U8("移動中: %s"), isMoving ? U8("はい") : U8("いいえ"));
+							ImGui::Text(U8("残距離: %.2f m"), agent->GetRemainingDistance());
+							ImGui::Text(U8("現在速度: %.2f m/s"), agent->GetCurrentSpeed());
+
+							ImGui::Separator();
+							if (ImGui::Button(U8("停止"), ImVec2(100, 0))) {
+								agent->Stop();
+							}
+							ImGui::SameLine();
+							if (ImGui::Button(U8("パスリセット"), ImVec2(100, 0))) {
+								agent->ResetPath();
+							}
+
+						} else if (selected) {
+							ImGui::Text(U8("オブジェクト: %s"), selected->GetName().c_str());
+							ImGui::Separator();
+							ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), U8("NavMeshAgentがありません"));
+							ImGui::Spacing();
+							if (ImGui::Button(U8("エージェント追加"), ImVec2(-1, 0))) {
+								selected->AddComponent<NavMeshAgentComponent>();
+								isDirty_ = true;
+							}
+						} else {
+							ImGui::TextDisabled(U8("オブジェクトを選択してください"));
+						}
+						ImGui::EndTabItem();
+					}
+
+					// 表示設定タブ
+					if (ImGui::BeginTabItem(U8("表示"))) {
+						bool showNavMesh = navMeshSystem.IsDebugDrawEnabled();
+						if (ImGui::Checkbox(U8("NavMeshを表示"), &showNavMesh)) {
+							navMeshSystem.SetDebugDrawEnabled(showNavMesh);
+							showNavMesh_ = showNavMesh;
+						}
+
+						ImGui::Separator();
+
+						auto debugColor = navMeshSystem.GetDebugDrawColor();
+						float color[4] = {debugColor.x, debugColor.y, debugColor.z, debugColor.w};
+						if (ImGui::ColorEdit4(U8("塗りつぶし色"), color)) {
+							navMeshSystem.SetDebugDrawColor({color[0], color[1], color[2], color[3]});
+						}
+
+						ImGui::EndTabItem();
+					}
+
+					ImGui::EndTabBar();
 				}
 			}
 			ImGui::End();

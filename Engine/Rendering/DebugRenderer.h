@@ -4,6 +4,7 @@
 #include "../Graphics/D3D12Common.h"
 #include "../Graphics/DebugLinePipeline.h"
 #include "../Graphics/DebugTrianglePipeline.h"
+#include "../Graphics/DebugXRayLinePipeline.h"
 #include "../Graphics/InfiniteGridPipeline.h"
 #include "../Graphics/ConstantBuffer.h"
 #include "../Math/Matrix.h"
@@ -77,6 +78,10 @@ public:
     // AABB描画（ワイヤーフレームボックス）
     void AddBox(const Vector3& min, const Vector3& max, const Vector4& color);
 
+    // X-Ray描画（深度テスト無効、常に最前面）
+    void AddLineXRay(const Vector3& start, const Vector3& end, const Vector4& color);
+    void AddSphereXRay(const Vector3& center, float radius, const Vector4& color, int segments = 8);
+
     // フレーム開始時にクリア
     void BeginFrame();
 
@@ -99,10 +104,12 @@ private:
     void CreateDynamicVertexBuffer(ID3D12Device* device);
     void UpdateVertexBuffer();
     void UpdateTriangleVertexBuffer();
+    void UpdateXRayVertexBuffer();
 
     GraphicsDevice* graphics_ = nullptr;
     UniquePtr<DebugLinePipeline> pipeline_;
     UniquePtr<DebugTrianglePipeline> trianglePipeline_;
+    UniquePtr<DebugXRayLinePipeline> xrayPipeline_;
     ConstantBuffer<DebugTransformCB> transformBuffer_;
 
     // グリッド用
@@ -121,9 +128,16 @@ private:
     DebugLineVertex* mappedTriangleVertices_ = nullptr;
     static constexpr uint32 MAX_TRIANGLE_VERTICES = 65536;
 
+    // X-Ray用動的頂点バッファ
+    ComPtr<ID3D12Resource> xrayVertexBuffer_;
+    D3D12_VERTEX_BUFFER_VIEW xrayVertexBufferView_ = {};
+    DebugLineVertex* mappedXRayVertices_ = nullptr;
+    static constexpr uint32 MAX_XRAY_VERTICES = 16384;
+
     // フレーム内の頂点データ
     std::vector<DebugLineVertex> vertices_;
     std::vector<DebugLineVertex> triangleVertices_;
+    std::vector<DebugLineVertex> xrayVertices_;
 
     // 設定
 #ifdef NDEBUG

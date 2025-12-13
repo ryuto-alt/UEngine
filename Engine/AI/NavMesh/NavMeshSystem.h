@@ -6,6 +6,9 @@
 #include "NavMeshSerializer.h"
 #include <memory>
 #include <filesystem>
+#include <thread>
+#include <atomic>
+#include <mutex>
 
 namespace UnoEngine
 {
@@ -18,9 +21,17 @@ class NavMeshSystem
 public:
     static NavMeshSystem& GetInstance();
     
-    // NavMesh生成
+    // NavMesh生成（同期）
     bool BakeNavMesh(Scene* scene);
     bool BakeNavMesh(Scene* scene, const NavMeshConfig& config);
+    
+    // NavMesh生成（非同期）
+    void BakeNavMeshAsync(Scene* scene);
+    void BakeNavMeshAsync(Scene* scene, const NavMeshConfig& config);
+    bool IsBaking() const { return m_isBaking.load(); }
+    float GetBakeProgress() const { return m_bakeProgress.load(); }
+    const char* GetBakeStage() const { return m_bakeStage; }
+    bool FinishBakeIfReady();  // 完了時にNavMeshを適用、成功ならtrue
     
     // NavMesh管理
     void ClearNavMesh();
@@ -73,6 +84,16 @@ private:
     NavMeshQuery m_query;
     NavMeshConfig m_config;
     ProgressCallback m_progressCallback;
+    
+    // 非同期ベイク用
+    std::atomic<bool> m_isBaking{false};
+    std::atomic<float> m_bakeProgress{0.0f};
+    char m_bakeStage[128] = "";
+    std::unique_ptr<std::thread> m_bakeThread;
+    std::unique_ptr<NavMeshData> m_pendingNavMesh;
+    std::atomic<bool> m_bakeComplete{false};
+    std::atomic<bool> m_bakeSuccess{false};
+    std::mutex m_bakeMutex;
     
     bool m_debugDrawEnabled = false;
     DirectX::XMFLOAT4 m_debugDrawColor = {0.0f, 0.8f, 0.4f, 0.7f}; // 緑色

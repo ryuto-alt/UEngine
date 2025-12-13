@@ -232,6 +232,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClCompile Include="Engine\Graphics\SkinnedPipeline.cpp" />
     <ClCompile Include="Engine\Graphics\DebugLinePipeline.cpp" />
     <ClCompile Include="Engine\Graphics\DebugTrianglePipeline.cpp" />
+    <ClCompile Include="Engine\Graphics\DebugXRayLinePipeline.cpp" />
     <ClCompile Include="Engine\Graphics\InfiniteGridPipeline.cpp" />
     <ClCompile Include="Engine\Rendering\DebugRenderer.cpp" />
     <ClCompile Include="Engine\Resource\SkinnedModelImporter.cpp" />
@@ -457,6 +458,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClInclude Include="Engine\Graphics\SkinnedPipeline.h" />
     <ClInclude Include="Engine\Graphics\DebugLinePipeline.h" />
     <ClInclude Include="Engine\Graphics\DebugTrianglePipeline.h" />
+    <ClInclude Include="Engine\Graphics\DebugXRayLinePipeline.h" />
     <ClInclude Include="Engine\Graphics\InfiniteGridPipeline.h" />
     <ClInclude Include="Engine\Rendering\DebugRenderer.h" />
     <ClInclude Include="Engine\Graphics\SkinnedVertex.h" />

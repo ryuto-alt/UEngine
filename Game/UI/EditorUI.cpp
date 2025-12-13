@@ -101,6 +101,64 @@ namespace UnoEngine {
 			while (ShowCursor(TRUE) < 0);
 		}
 
+		// NavMeshベイク中モーダル（他の操作をブロック）
+		{
+			auto& navMeshSystem = NavMeshSystem::GetInstance();
+			
+			// 滑らかな進捗表示用（静的変数）
+			static float smoothProgress = 0.0f;
+			
+			if (navMeshSystem.IsBaking()) {
+				ImGui::OpenPopup(U8("NavMeshベイク中"));
+			} else {
+				smoothProgress = 0.0f;  // リセット
+			}
+			
+			// モーダルウィンドウ（画面中央、閉じられない）
+			ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+			ImGui::SetNextWindowPos(center, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+			ImGui::SetNextWindowSize(ImVec2(450, 140));
+			
+			if (ImGui::BeginPopupModal(U8("NavMeshベイク中"), nullptr, 
+				ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse)) {
+				
+				float targetProgress = navMeshSystem.GetBakeProgress();
+				const char* stage = navMeshSystem.GetBakeStage();
+				
+				// 滑らかに補間（ターゲットに向かって滑らかに進む）
+				float dt = ImGui::GetIO().DeltaTime;
+				smoothProgress += (targetProgress - smoothProgress) * std::min(1.0f, dt * 8.0f);
+				if (smoothProgress > targetProgress) smoothProgress = targetProgress;
+				
+				ImGui::Text(U8("NavMeshを生成しています..."));
+				ImGui::Spacing();
+				
+				// プログレスバー（緑色）
+				ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.2f, 0.8f, 0.3f, 1.0f));
+				ImGui::ProgressBar(smoothProgress, ImVec2(-1, 28));
+				ImGui::PopStyleColor();
+				
+				ImGui::Spacing();
+				ImGui::Text(U8("ステージ: %s"), stage);
+				ImGui::Text(U8("進捗: %.0f%%"), smoothProgress * 100.0f);
+				
+				// ベイク完了チェック
+				if (navMeshSystem.FinishBakeIfReady()) {
+					AddConsoleMessage(U8("[NavMesh] ベイク完了: ") + 
+						std::to_string(navMeshSystem.GetPolygonCount()) + U8(" ポリゴン, ") +
+						std::to_string(navMeshSystem.GetVertexCount()) + U8(" 頂点"));
+					ImGui::CloseCurrentPopup();
+				}
+				
+				// ベイクが終了したら閉じる
+				if (!navMeshSystem.IsBaking()) {
+					ImGui::CloseCurrentPopup();
+				}
+				
+				ImGui::EndPopup();
+			}
+		}
+
 		// ImGuizmoフレーム開始
 		ImGuizmo::BeginFrame();
 
@@ -224,19 +282,15 @@ namespace UnoEngine {
 						
 						ImGui::Separator();
 						
+						// ベイクボタン（ベイク中は無効化）
+						ImGui::BeginDisabled(navMeshSystem.IsBaking());
 						if (ImGui::Button(U8("NavMeshをベイク"), ImVec2(-1, 0))) {
 							if (scene_) {
-								navMeshSystem.SetProgressCallback([this](float progress, const char* stage) {
-									navMeshBakeProgress_ = progress;
-									navMeshBakeStage_ = stage;
-								});
-								if (navMeshSystem.BakeNavMesh(scene_)) {
-									AddConsoleMessage(U8("[NavMesh] ベイク完了"));
-								} else {
-									AddConsoleMessage(U8("[NavMesh] ベイク失敗"));
-								}
+								navMeshSystem.BakeNavMeshAsync(scene_);
+								AddConsoleMessage(U8("[NavMesh] ベイク開始..."));
 							}
 						}
+						ImGui::EndDisabled();
 						ImGui::EndTabItem();
 					}
 
@@ -595,20 +649,17 @@ namespace UnoEngine {
 			if (ImGui::BeginMenu(U8("ナビゲーション"))) {
 				auto& navMeshSystem = NavMeshSystem::GetInstance();
 				
-				if (ImGui::MenuItem(U8("NavMeshをベイク"), nullptr, false, scene_ != nullptr)) {
-					std::string lastStage;
-					navMeshSystem.SetProgressCallback([this, &lastStage](float progress, const char* stage) {
-						navMeshBakeProgress_ = progress;
-						navMeshBakeStage_ = stage;
-						lastStage = stage;
-					});
-					if (navMeshSystem.BakeNavMesh(scene_)) {
-						AddConsoleMessage(U8("[NavMesh] ベイク完了: ") + 
-							std::to_string(navMeshSystem.GetPolygonCount()) + U8(" ポリゴン, ") +
-							std::to_string(navMeshSystem.GetVertexCount()) + U8(" 頂点"));
-					} else {
-						AddConsoleMessage(U8("[NavMesh] ベイク失敗: ") + lastStage);
-					}
+				// ベイク中は無効化
+				bool canBake = scene_ != nullptr && !navMeshSystem.IsBaking();
+				if (ImGui::MenuItem(U8("NavMeshをベイク"), nullptr, false, canBake)) {
+					navMeshSystem.BakeNavMeshAsync(scene_);
+					AddConsoleMessage(U8("[NavMesh] ベイク開始..."));
+				}
+				
+				// ベイク中の表示
+				if (navMeshSystem.IsBaking()) {
+					ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), 
+						U8("ベイク中... %.0f%%"), navMeshSystem.GetBakeProgress() * 100.0f);
 				}
 				
 				if (ImGui::MenuItem(U8("NavMeshをクリア"), nullptr, false, navMeshSystem.HasNavMesh())) {

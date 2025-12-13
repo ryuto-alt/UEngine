@@ -1,5 +1,11 @@
 #include "pch.h"
 #include "NavMeshSystem.h"
+#include "../../Core/Scene.h"
+#include "../../Core/GameObject.h"
+#include "../../Core/Transform.h"
+#include "../../Core/CollisionComponent.h"
+#include "../../Graphics/MeshRenderer.h"
+#include "../../Resource/StaticModelImporter.h"
 #include "../../Rendering/DebugRenderer.h"
 #include "../../Math/Vector.h"
 #include <cfloat>
@@ -46,6 +52,173 @@ bool NavMeshSystem::BakeNavMesh(Scene* scene, const NavMeshConfig& config)
     }
     
     return false;
+}
+
+void NavMeshSystem::BakeNavMeshAsync(Scene* scene)
+{
+    BakeNavMeshAsync(scene, m_config);
+}
+
+void NavMeshSystem::BakeNavMeshAsync(Scene* scene, const NavMeshConfig& config)
+{
+    if (!scene || m_isBaking.load())
+        return;
+    
+    // 前のスレッドが残っていれば待機
+    if (m_bakeThread && m_bakeThread->joinable())
+    {
+        m_bakeThread->join();
+    }
+    
+    m_isBaking.store(true);
+    m_bakeComplete.store(false);
+    m_bakeSuccess.store(false);
+    m_bakeProgress.store(0.0f);
+    snprintf(m_bakeStage, sizeof(m_bakeStage), "Starting...");
+    
+    // シーンからジオメトリを事前収集（メインスレッドで）
+    NavMeshBuilder preBuilder;
+    NavMeshInputGeometry geometry;
+    preBuilder.SetProgressCallback([this](float progress, const char* stage) {
+        m_bakeProgress.store(progress);
+        snprintf(m_bakeStage, sizeof(m_bakeStage), "%s", stage);
+    });
+    
+    // ジオメトリ収集はシーンアクセスが必要なのでメインスレッドで
+    for (const auto& gameObject : scene->GetGameObjects())
+    {
+        auto* collider = gameObject->GetComponent<CollisionComponent>();
+        if (!collider || !collider->IsEnabled())
+            continue;
+        
+        if (collider->IsNavMeshWalkable())
+        {
+            auto* meshRenderer = gameObject->GetComponent<MeshRenderer>();
+            if (meshRenderer && meshRenderer->HasModel())
+            {
+                auto* modelData = meshRenderer->GetModel();
+                auto& transform = gameObject->GetTransform();
+                Vector3 worldPos = transform.GetPosition();
+                Vector3 worldScale = transform.GetScale();
+                
+                for (const auto& mesh : modelData->meshes)
+                {
+                    if (!mesh.HasCpuData())
+                        continue;
+                    
+                    const auto& vertices = mesh.GetVertices();
+                    const auto& indices = mesh.GetIndices();
+                    
+                    for (size_t i = 0; i + 2 < indices.size(); i += 3)
+                    {
+                        const auto& v0 = vertices[indices[i]];
+                        const auto& v1 = vertices[indices[i + 1]];
+                        const auto& v2 = vertices[indices[i + 2]];
+                        
+                        DirectX::XMFLOAT3 p0(
+                            worldPos.GetX() + v0.px * worldScale.GetX(),
+                            worldPos.GetY() + v0.py * worldScale.GetY(),
+                            worldPos.GetZ() + v0.pz * worldScale.GetZ()
+                        );
+                        DirectX::XMFLOAT3 p1(
+                            worldPos.GetX() + v1.px * worldScale.GetX(),
+                            worldPos.GetY() + v1.py * worldScale.GetY(),
+                            worldPos.GetZ() + v1.pz * worldScale.GetZ()
+                        );
+                        DirectX::XMFLOAT3 p2(
+                            worldPos.GetX() + v2.px * worldScale.GetX(),
+                            worldPos.GetY() + v2.py * worldScale.GetY(),
+                            worldPos.GetZ() + v2.pz * worldScale.GetZ()
+                        );
+                        
+                        geometry.AddTriangle(p0, p1, p2);
+                    }
+                }
+            }
+            else
+            {
+                if (collider->HasMultipleAABBs())
+                {
+                    for (const auto& aabb : collider->GetWorldAABBs())
+                        geometry.AddAABB(aabb);
+                }
+                else
+                {
+                    geometry.AddAABB(collider->GetWorldAABB());
+                }
+            }
+        }
+        else if (collider->IsNavMeshObstacle())
+        {
+            if (collider->HasMultipleAABBs())
+            {
+                for (const auto& aabb : collider->GetWorldAABBs())
+                    geometry.AddObstacle(aabb);
+            }
+            else
+            {
+                geometry.AddObstacle(collider->GetWorldAABB());
+            }
+        }
+    }
+    
+    if (geometry.IsEmpty())
+    {
+        m_isBaking.store(false);
+        m_bakeComplete.store(true);
+        m_bakeSuccess.store(false);
+        snprintf(m_bakeStage, sizeof(m_bakeStage), "No geometry found");
+        return;
+    }
+    
+    // 重い処理を別スレッドで実行
+    NavMeshConfig configCopy = config;
+    m_bakeThread = std::make_unique<std::thread>([this, geometry = std::move(geometry), configCopy]() {
+        NavMeshBuilder builder;
+        builder.SetProgressCallback([this](float progress, const char* stage) {
+            m_bakeProgress.store(progress);
+            snprintf(m_bakeStage, sizeof(m_bakeStage), "%s", stage);
+        });
+        
+        auto result = builder.Build(geometry, configCopy);
+        
+        {
+            std::lock_guard<std::mutex> lock(m_bakeMutex);
+            m_pendingNavMesh = std::move(result);
+            m_bakeSuccess.store(m_pendingNavMesh && m_pendingNavMesh->IsValid());
+        }
+        
+        m_bakeComplete.store(true);
+        m_isBaking.store(false);
+        snprintf(m_bakeStage, sizeof(m_bakeStage), m_bakeSuccess.load() ? "Complete!" : "Failed");
+    });
+}
+
+bool NavMeshSystem::FinishBakeIfReady()
+{
+    if (!m_bakeComplete.load())
+        return false;
+    
+    if (m_bakeThread && m_bakeThread->joinable())
+    {
+        m_bakeThread->join();
+        m_bakeThread.reset();
+    }
+    
+    bool success = false;
+    {
+        std::lock_guard<std::mutex> lock(m_bakeMutex);
+        if (m_pendingNavMesh && m_pendingNavMesh->IsValid())
+        {
+            m_navMesh = std::move(m_pendingNavMesh);
+            m_query.SetNavMesh(m_navMesh.get());
+            success = true;
+        }
+        m_pendingNavMesh.reset();
+    }
+    
+    m_bakeComplete.store(false);
+    return success;
 }
 
 void NavMeshSystem::ClearNavMesh()

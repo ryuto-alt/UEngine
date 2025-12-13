@@ -236,7 +236,7 @@ void NavMeshAgentComponent::DrawDebug(DebugRenderer* debugRenderer) const {
     constexpr int segments = 24;
     const float angleStep = Math::TWO_PI / segments;
 
-    // 底面の円（半径表示）
+    // 底面の円（半径表示）- X-Ray描画でモデルに隠れない
     for (int i = 0; i < segments; ++i) {
         float angle1 = i * angleStep;
         float angle2 = (i + 1) * angleStep;
@@ -251,7 +251,7 @@ void NavMeshAgentComponent::DrawDebug(DebugRenderer* debugRenderer) const {
             center.GetY() + 0.05f,
             center.GetZ() + m_radius * std::sin(angle2)
         );
-        debugRenderer->AddLine(p1, p2, radiusColor);
+        debugRenderer->AddLineXRay(p1, p2, radiusColor);
     }
 
     // 上面の円
@@ -269,7 +269,7 @@ void NavMeshAgentComponent::DrawDebug(DebugRenderer* debugRenderer) const {
             center.GetY() + m_height,
             center.GetZ() + m_radius * std::sin(angle2)
         );
-        debugRenderer->AddLine(p1, p2, heightColor);
+        debugRenderer->AddLineXRay(p1, p2, heightColor);
     }
 
     // 縦の線（4本）
@@ -285,7 +285,7 @@ void NavMeshAgentComponent::DrawDebug(DebugRenderer* debugRenderer) const {
             center.GetY() + m_height,
             center.GetZ() + m_radius * std::sin(angle)
         );
-        debugRenderer->AddLine(bottom, top, heightColor);
+        debugRenderer->AddLineXRay(bottom, top, heightColor);
     }
 
     // 移動方向の矢印
@@ -298,7 +298,7 @@ void NavMeshAgentComponent::DrawDebug(DebugRenderer* debugRenderer) const {
             dirStart.GetY(),
             dirStart.GetZ() + m_steeringDirection.z * m_radius * 2.0f
         );
-        debugRenderer->AddLine(dirStart, dirEnd, directionColor);
+        debugRenderer->AddLineXRay(dirStart, dirEnd, directionColor);
 
         // 矢じり
         float arrowSize = m_radius * 0.3f;
@@ -314,8 +314,8 @@ void NavMeshAgentComponent::DrawDebug(DebugRenderer* debugRenderer) const {
             dirEnd.GetY(),
             dirEnd.GetZ() - arrowSize * std::sin(dirAngle + 0.5f)
         );
-        debugRenderer->AddLine(dirEnd, arrow1, directionColor);
-        debugRenderer->AddLine(dirEnd, arrow2, directionColor);
+        debugRenderer->AddLineXRay(dirEnd, arrow1, directionColor);
+        debugRenderer->AddLineXRay(dirEnd, arrow2, directionColor);
     }
 }
 

@@ -3,6 +3,7 @@
 #include "../../Core/Scene.h"
 #include "../../Core/GameObject.h"
 #include "../../Core/CollisionComponent.h"
+#include "../../Core/Logger.h"
 #include "../../Graphics/MeshRenderer.h"
 #include "../../Resource/StaticModelImporter.h"
 #include <algorithm>
@@ -960,6 +961,9 @@ void NavMeshBuilder::BuildNeighborConnections(NavMeshData& navMesh)
 
 void NavMeshBuilder::ReportProgress(float progress, const char* stage)
 {
+    // コンソールにログ出力（UIがフリーズしても進捗が見える）
+    Logger::Info("[NavMesh {:3.0f}%] {}", progress * 100.0f, stage);
+    
     if (m_progressCallback)
     {
         m_progressCallback(progress, stage);

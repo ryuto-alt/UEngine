@@ -25,6 +25,10 @@ void DebugRenderer::Initialize(GraphicsDevice* graphics) {
     trianglePipeline_ = MakeUnique<DebugTrianglePipeline>();
     trianglePipeline_->Initialize(device, vertexShader, pixelShader);
 
+    // X-Rayパイプライン作成（深度テスト無効、常に最前面）
+    xrayPipeline_ = MakeUnique<DebugXRayLinePipeline>();
+    xrayPipeline_->Initialize(device, vertexShader, pixelShader);
+
     // 定数バッファ作成
     transformBuffer_.Create(device);
 
@@ -113,11 +117,37 @@ void DebugRenderer::CreateDynamicVertexBuffer(ID3D12Device* device) {
     triangleVertexBufferView_.BufferLocation = triangleVertexBuffer_->GetGPUVirtualAddress();
     triangleVertexBufferView_.SizeInBytes = triangleBufferSize;
     triangleVertexBufferView_.StrideInBytes = sizeof(DebugLineVertex);
+
+    // X-Ray用バッファ
+    const uint32 xrayBufferSize = MAX_XRAY_VERTICES * sizeof(DebugLineVertex);
+    resDesc.Width = xrayBufferSize;
+
+    ThrowIfFailed(
+        device->CreateCommittedResource(
+            &heapProps,
+            D3D12_HEAP_FLAG_NONE,
+            &resDesc,
+            D3D12_RESOURCE_STATE_GENERIC_READ,
+            nullptr,
+            IID_PPV_ARGS(&xrayVertexBuffer_)
+        ),
+        "Failed to create debug xray vertex buffer"
+    );
+
+    ThrowIfFailed(
+        xrayVertexBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&mappedXRayVertices_)),
+        "Failed to map debug xray vertex buffer"
+    );
+
+    xrayVertexBufferView_.BufferLocation = xrayVertexBuffer_->GetGPUVirtualAddress();
+    xrayVertexBufferView_.SizeInBytes = xrayBufferSize;
+    xrayVertexBufferView_.StrideInBytes = sizeof(DebugLineVertex);
 }
 
 void DebugRenderer::BeginFrame() {
     vertices_.clear();
     triangleVertices_.clear();
+    xrayVertices_.clear();
 }
 
 void DebugRenderer::AddLine(const Vector3& start, const Vector3& end, const Vector4& color) {
@@ -289,8 +319,9 @@ void DebugRenderer::Render(
 ) {
     const bool hasLines = !vertices_.empty();
     const bool hasTriangles = !triangleVertices_.empty();
+    const bool hasXRayLines = !xrayVertices_.empty();
 
-    if (!hasLines && !hasTriangles) {
+    if (!hasLines && !hasTriangles && !hasXRayLines) {
         return;
     }
 
@@ -322,6 +353,18 @@ void DebugRenderer::Render(
         cmdList->IASetVertexBuffers(0, 1, &vertexBufferView_);
         cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
         cmdList->DrawInstanced(static_cast<uint32>(vertices_.size()), 1, 0, 0);
+    }
+
+    // X-Rayラインを最後に描画（深度テスト無効、常に最前面）
+    if (hasXRayLines) {
+        UpdateXRayVertexBuffer();
+
+        cmdList->SetPipelineState(xrayPipeline_->GetPipelineState());
+        cmdList->SetGraphicsRootSignature(xrayPipeline_->GetRootSignature());
+        cmdList->SetGraphicsRootConstantBufferView(0, transformBuffer_.GetGPUAddress());
+        cmdList->IASetVertexBuffers(0, 1, &xrayVertexBufferView_);
+        cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
+        cmdList->DrawInstanced(static_cast<uint32>(xrayVertices_.size()), 1, 0, 0);
     }
 }
 
@@ -468,6 +511,87 @@ void DebugRenderer::AddBox(const Vector3& min, const Vector3& max, const Vector4
     AddLine(corners[1], corners[5], color);
     AddLine(corners[2], corners[6], color);
     AddLine(corners[3], corners[7], color);
+}
+
+void DebugRenderer::AddLineXRay(const Vector3& start, const Vector3& end, const Vector4& color) {
+    if (xrayVertices_.size() + 2 > MAX_XRAY_VERTICES) {
+        return;
+    }
+
+    DebugLineVertex v1, v2;
+    v1.position[0] = start.GetX();
+    v1.position[1] = start.GetY();
+    v1.position[2] = start.GetZ();
+    v1.color[0] = color.GetX();
+    v1.color[1] = color.GetY();
+    v1.color[2] = color.GetZ();
+    v1.color[3] = color.GetW();
+
+    v2.position[0] = end.GetX();
+    v2.position[1] = end.GetY();
+    v2.position[2] = end.GetZ();
+    v2.color[0] = color.GetX();
+    v2.color[1] = color.GetY();
+    v2.color[2] = color.GetZ();
+    v2.color[3] = color.GetW();
+
+    xrayVertices_.push_back(v1);
+    xrayVertices_.push_back(v2);
+}
+
+void DebugRenderer::AddSphereXRay(const Vector3& center, float radius, const Vector4& color, int segments) {
+    const float angleStep = Math::TWO_PI / segments;
+
+    // XY平面
+    for (int i = 0; i < segments; ++i) {
+        float angle1 = i * angleStep;
+        float angle2 = (i + 1) * angleStep;
+
+        Vector3 p1(center.GetX() + radius * std::cos(angle1),
+                   center.GetY() + radius * std::sin(angle1),
+                   center.GetZ());
+        Vector3 p2(center.GetX() + radius * std::cos(angle2),
+                   center.GetY() + radius * std::sin(angle2),
+                   center.GetZ());
+        AddLineXRay(p1, p2, color);
+    }
+
+    // XZ平面
+    for (int i = 0; i < segments; ++i) {
+        float angle1 = i * angleStep;
+        float angle2 = (i + 1) * angleStep;
+
+        Vector3 p1(center.GetX() + radius * std::cos(angle1),
+                   center.GetY(),
+                   center.GetZ() + radius * std::sin(angle1));
+        Vector3 p2(center.GetX() + radius * std::cos(angle2),
+                   center.GetY(),
+                   center.GetZ() + radius * std::sin(angle2));
+        AddLineXRay(p1, p2, color);
+    }
+
+    // YZ平面
+    for (int i = 0; i < segments; ++i) {
+        float angle1 = i * angleStep;
+        float angle2 = (i + 1) * angleStep;
+
+        Vector3 p1(center.GetX(),
+                   center.GetY() + radius * std::cos(angle1),
+                   center.GetZ() + radius * std::sin(angle1));
+        Vector3 p2(center.GetX(),
+                   center.GetY() + radius * std::cos(angle2),
+                   center.GetZ() + radius * std::sin(angle2));
+        AddLineXRay(p1, p2, color);
+    }
+}
+
+void DebugRenderer::UpdateXRayVertexBuffer() {
+    if (xrayVertices_.empty() || !mappedXRayVertices_) {
+        return;
+    }
+
+    const uint32 copySize = static_cast<uint32>(xrayVertices_.size()) * sizeof(DebugLineVertex);
+    memcpy(mappedXRayVertices_, xrayVertices_.data(), copySize);
 }
 
 } // namespace UnoEngine

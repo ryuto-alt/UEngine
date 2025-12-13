@@ -209,6 +209,9 @@
     <ClCompile Include="Engine\Graphics\DebugLinePipeline.cpp">
       <Filter>Engine\Graphics\Pipeline</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Graphics\DebugTrianglePipeline.cpp">
+      <Filter>Engine\Graphics\Pipeline</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Graphics\InfiniteGridPipeline.cpp">
       <Filter>Engine\Graphics\Pipeline</Filter>
     </ClCompile>
@@ -635,6 +638,9 @@
       <Filter>Engine\Graphics\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\DebugLinePipeline.h">
+      <Filter>Engine\Graphics\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\DebugTrianglePipeline.h">
       <Filter>Engine\Graphics\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\InfiniteGridPipeline.h">

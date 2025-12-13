@@ -100,18 +100,48 @@ void NavMeshSystem::DrawDebug(DebugRenderer* debugRenderer) const
     if (!debugRenderer || !m_debugDrawEnabled || !m_navMesh)
         return;
 
-    const auto& grid = m_navMesh->walkableGrid;
-    if (grid.boundaryLines.empty())
-        return;
-
-    Vector4 edgeColor(0.0f, 1.0f, 0.5f, 0.9f);
-
-    // キャッシュされた外周ラインを描画
-    for (size_t i = 0; i + 1 < grid.boundaryLines.size(); i += 2)
+    // ポリゴンを緑色で塗りつぶし描画
+    const auto& vertices = m_navMesh->vertices;
+    const auto& polygons = m_navMesh->polygons;
+    
+    if (!vertices.empty() && !polygons.empty())
     {
-        const auto& p0 = grid.boundaryLines[i];
-        const auto& p1 = grid.boundaryLines[i + 1];
-        debugRenderer->AddLine(Vector3(p0.x, p0.y, p0.z), Vector3(p1.x, p1.y, p1.z), edgeColor);
+        Vector4 fillColor(0.0f, 0.8f, 0.3f, 0.35f);
+        constexpr float yOffset = 0.02f;
+
+        for (const auto& poly : polygons)
+        {
+            if (poly.vertexIndices.size() < 3)
+                continue;
+
+            // Fan三角形分割
+            const auto& idx = poly.vertexIndices;
+            const auto& v0 = vertices[idx[0]];
+            Vector3 p0(v0.x, v0.y + yOffset, v0.z);
+
+            for (size_t i = 1; i + 1 < idx.size(); ++i)
+            {
+                const auto& v1 = vertices[idx[i]];
+                const auto& v2 = vertices[idx[i + 1]];
+                Vector3 p1(v1.x, v1.y + yOffset, v1.z);
+                Vector3 p2(v2.x, v2.y + yOffset, v2.z);
+                debugRenderer->AddTriangle(p0, p1, p2, fillColor);
+            }
+        }
+    }
+
+    // 外周ラインを描画
+    const auto& grid = m_navMesh->walkableGrid;
+    if (!grid.boundaryLines.empty())
+    {
+        Vector4 edgeColor(0.0f, 1.0f, 0.5f, 0.9f);
+
+        for (size_t i = 0; i + 1 < grid.boundaryLines.size(); i += 2)
+        {
+            const auto& p0 = grid.boundaryLines[i];
+            const auto& p1 = grid.boundaryLines[i + 1];
+            debugRenderer->AddLine(Vector3(p0.x, p0.y, p0.z), Vector3(p1.x, p1.y, p1.z), edgeColor);
+        }
     }
 }
 

@@ -147,6 +147,11 @@ namespace UnoEngine {
 					AddConsoleMessage(U8("[NavMesh] ベイク完了: ") + 
 						std::to_string(navMeshSystem.GetPolygonCount()) + U8(" ポリゴン, ") +
 						std::to_string(navMeshSystem.GetVertexCount()) + U8(" 頂点"));
+					
+					// 自動でNavMeshを表示
+					navMeshSystem.SetDebugDrawEnabled(true);
+					showNavMesh_ = true;
+					
 					ImGui::CloseCurrentPopup();
 				}
 				

@@ -1,0 +1,24 @@
+{
+    "config": {
+        "agentHeight": 2.0,
+        "agentRadius": 1.559999942779541,
+        "cellHeight": 0.20000000298023224,
+        "cellSize": 0.30000001192092896,
+        "maxEdgeError": 1.2999999523162842,
+        "maxEdgeLength": 12,
+        "maxSlope": 45.0,
+        "mergeRegionArea": 20.0,
+        "minRegionArea": 1.0,
+        "stepHeight": 0.30000001192092896,
+        "vertsPerPoly": 6
+    },
+    "debug": {
+        "color": [
+            0.0,
+            0.800000011920929,
+            0.4000000059604645,
+            0.699999988079071
+        ],
+        "enabled": true
+    }
+}

@@ -5,6 +5,7 @@
 #include <vector>
 #include <cstdint>
 #include <limits>
+#include <algorithm>
 
 namespace UnoEngine
 {
@@ -53,6 +54,28 @@ struct WalkableGridData
     bool IsValid() const { return !cells.empty() && width > 0 && height > 0; }
 };
 
+// 空間分割用グリッド（高速なポリゴン検索用）
+struct PolygonGrid
+{
+    std::vector<std::vector<uint32_t>> cells; // 各セルに含まれるポリゴンIDリスト
+    int width = 0;                            // X方向のセル数
+    int height = 0;                           // Z方向のセル数
+    float cellSize = 5.0f;                    // セルサイズ（デフォルト5m）
+    DirectX::XMFLOAT3 origin{};               // グリッド原点
+    
+    bool IsValid() const { return !cells.empty() && width > 0 && height > 0; }
+    
+    // ワールド座標からセルインデックスを取得
+    int GetCellIndex(float x, float z) const
+    {
+        int cx = static_cast<int>((x - origin.x) / cellSize);
+        int cz = static_cast<int>((z - origin.z) / cellSize);
+        cx = std::max(0, std::min(cx, width - 1));
+        cz = std::max(0, std::min(cz, height - 1));
+        return cz * width + cx;
+    }
+};
+
 // NavMeshデータ
 struct NavMeshData
 {
@@ -61,9 +84,10 @@ struct NavMeshData
     DirectX::BoundingBox bounds{};           // 全体のバウンディングボックス
     NavMeshConfig config{};                  // 生成に使用した設定
     WalkableGridData walkableGrid;           // デバッグ描画用
+    PolygonGrid polygonGrid;                 // 空間分割（高速検索用）
     
     bool IsValid() const { return !vertices.empty() && !polygons.empty(); }
-    void Clear() { vertices.clear(); polygons.clear(); walkableGrid.cells.clear(); }
+    void Clear() { vertices.clear(); polygons.clear(); walkableGrid.cells.clear(); polygonGrid.cells.clear(); }
 };
 
 // パス検索結果
@@ -80,23 +104,101 @@ struct NavMeshPath
 // ボクセル化用の中間データ
 struct HeightSpan
 {
-    int minY = 0;       // 最小高さ（セル単位）
-    int maxY = 0;       // 最大高さ（セル単位）
-    uint16_t area = 0;  // 領域ID
-    HeightSpan* next = nullptr; // 同じXZ位置の次のスパン
+    int minY = 0;           // 最小高さ（セル単位）
+    int maxY = 0;           // 最大高さ（セル単位）
+    uint16_t area = 0;      // 領域ID（0=歩行不可）
+    int32_t nextIndex = -1; // 同じXZ位置の次のスパン（-1=なし）
 };
 
 struct HeightField
 {
-    int width = 0;                     // X方向のセル数
-    int height = 0;                    // Z方向のセル数
-    DirectX::XMFLOAT3 origin{};        // グリッド原点
-    float cellSize = 0.0f;             // セルサイズ (XZ)
-    float cellHeight = 0.0f;           // セル高さ (Y)
-    std::vector<HeightSpan*> spans;    // 各セルのスパンリスト
+    int width = 0;                      // X方向のセル数
+    int height = 0;                     // Z方向のセル数
+    DirectX::XMFLOAT3 origin{};         // グリッド原点
+    float cellSize = 0.0f;              // セルサイズ (XZ)
+    float cellHeight = 0.0f;            // セル高さ (Y)
+    std::vector<HeightSpan> spanStorage; // スパンのストレージ（所有）
+    std::vector<int32_t> spans;         // 各セルの最初のスパンインデックス（-1=なし）
     
-    void Clear();
-    ~HeightField() { Clear(); }
+    // スパンを追加し、インデックスを返す
+    int32_t AddSpan(int minY, int maxY, uint16_t area)
+    {
+        int32_t index = static_cast<int32_t>(spanStorage.size());
+        spanStorage.push_back({minY, maxY, area, -1});
+        return index;
+    }
+    
+    // セルにスパンをリンク（高さ順でマージ）
+    void LinkSpanToCell(int cellIndex, int32_t spanIndex)
+    {
+        HeightSpan& newSpan = spanStorage[spanIndex];
+        
+        if (spans[cellIndex] == -1)
+        {
+            spans[cellIndex] = spanIndex;
+            return;
+        }
+        
+        // 既存スパンとマージを試みる
+        int32_t prevIdx = -1;
+        int32_t curIdx = spans[cellIndex];
+        
+        while (curIdx >= 0)
+        {
+            HeightSpan& curSpan = spanStorage[curIdx];
+            
+            // スパンが重なるか隣接している場合はマージ
+            if (newSpan.minY <= curSpan.maxY + 1 && newSpan.maxY >= curSpan.minY - 1)
+            {
+                // マージ: 範囲を拡張
+                curSpan.minY = std::min(curSpan.minY, newSpan.minY);
+                curSpan.maxY = std::max(curSpan.maxY, newSpan.maxY);
+                // 歩行可能ならそのまま
+                if (newSpan.area > 0) curSpan.area = newSpan.area;
+                return; // マージ完了、新スパンは使わない
+            }
+            
+            // 新スパンがこのスパンより下にある場合、ここに挿入
+            if (newSpan.maxY < curSpan.minY)
+            {
+                newSpan.nextIndex = curIdx;
+                if (prevIdx >= 0)
+                    spanStorage[prevIdx].nextIndex = spanIndex;
+                else
+                    spans[cellIndex] = spanIndex;
+                return;
+            }
+            
+            prevIdx = curIdx;
+            curIdx = curSpan.nextIndex;
+        }
+        
+        // リストの末尾に追加
+        if (prevIdx >= 0)
+            spanStorage[prevIdx].nextIndex = spanIndex;
+        else
+            spans[cellIndex] = spanIndex;
+    }
+    
+    // スパンを取得（nullptrチェック不要）
+    HeightSpan* GetSpan(int32_t index)
+    {
+        return (index >= 0 && index < static_cast<int32_t>(spanStorage.size())) 
+               ? &spanStorage[index] : nullptr;
+    }
+    
+    const HeightSpan* GetSpan(int32_t index) const
+    {
+        return (index >= 0 && index < static_cast<int32_t>(spanStorage.size())) 
+               ? &spanStorage[index] : nullptr;
+    }
+    
+    void Clear()
+    {
+        spanStorage.clear();
+        spans.clear();
+        width = height = 0;
+    }
 };
 
 // 領域データ

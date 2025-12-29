@@ -5,6 +5,9 @@
 #include "CameraComponent.h"
 #include "CollisionComponent.h"
 #include "../Scene/SceneSerializer.h"
+#include "../AI/NavMesh/NavMeshSystem.h"
+#include "../AI/NavMesh/NavMeshAgentComponent.h"
+#include <filesystem>
 #include "../Rendering/SkinnedMeshRenderer.h"
 #include "../Graphics/MeshRenderer.h"
 #include "../Animation/AnimatorComponent.h"
@@ -165,6 +168,16 @@ void Scene::LoadSceneFromFile(const std::string& filepath) {
         }
     }
 
+    // NavMeshを読み込み
+    std::filesystem::path scenePath(filepath);
+    std::filesystem::path navMeshPath = scenePath.parent_path() / (scenePath.stem().string() + ".navmesh");
+    if (std::filesystem::exists(navMeshPath)) {
+        auto& navMeshSystem = NavMeshSystem::GetInstance();
+        if (navMeshSystem.LoadNavMesh(navMeshPath)) {
+            Logger::Info("[シーン] NavMesh読み込み完了: {}", navMeshPath.string());
+        }
+    }
+
     // Main Cameraがシーンに存在しない場合は作成
     if (!foundMainCamera) {
         SetupDefaultCamera();
@@ -213,12 +226,15 @@ void Scene::OnUpdate(float deltaTime) {
         for (auto& comp : obj->GetComponents()) {
             if (!comp->IsEnabled()) continue;
 
-            // Skip LuaScriptComponent in edit mode
+            // Skip LuaScriptComponent and NavMeshAgentComponent in edit mode
             auto* luaScript = dynamic_cast<LuaScriptComponent*>(comp.get());
             if (luaScript) {
                 if (!isPlayMode) continue;
                 luaScript->SetEditorCameraControlling(editorCameraControlling);
             }
+            
+            auto* navAgent = dynamic_cast<NavMeshAgentComponent*>(comp.get());
+            if (navAgent && !isPlayMode) continue;
 
             comp->OnUpdate(deltaTime);
         }

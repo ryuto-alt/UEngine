@@ -35,6 +35,12 @@ public:
     // レイキャスト（NavMesh上で直線が通れるか）
     bool Raycast(const DirectX::XMFLOAT3& start, const DirectX::XMFLOAT3& end, DirectX::XMFLOAT3& hitPoint) const;
     
+    // NavMesh上のランダムな点を取得
+    std::optional<DirectX::XMFLOAT3> FindRandomPoint() const;
+    
+    // 指定した点から一定範囲内のNavMesh上のランダムな点を取得
+    std::optional<DirectX::XMFLOAT3> FindRandomPointInRadius(const DirectX::XMFLOAT3& center, float radius) const;
+    
 private:
     // A*用のノード
     struct PathNode
@@ -52,11 +58,18 @@ private:
     // ポリゴン間のエッジ中点を取得
     DirectX::XMFLOAT3 GetPortalMidpoint(uint32_t fromPoly, uint32_t toPoly) const;
     
+    // ポリゴン間のポータルエッジ（左右の頂点）を取得
+    bool GetPortalEdge(uint32_t fromPoly, uint32_t toPoly, 
+                       DirectX::XMFLOAT3& outLeft, DirectX::XMFLOAT3& outRight) const;
+    
     // ポリゴン上の最も近い点を取得
     DirectX::XMFLOAT3 ClosestPointOnPolygon(const DirectX::XMFLOAT3& point, uint32_t polygonId) const;
     
-    // String pulling（ファンネルアルゴリズム）でパスを最適化
+    // Simple Stupid Funnel Algorithmでパスを最適化
     void StringPull(NavMeshPath& path, const DirectX::XMFLOAT3& start, const DirectX::XMFLOAT3& goal) const;
+    
+    // 2Dクロス積（XZ平面）
+    static float Cross2D(const DirectX::XMFLOAT3& o, const DirectX::XMFLOAT3& a, const DirectX::XMFLOAT3& b);
     
     const NavMeshData* m_navMesh = nullptr;
 };

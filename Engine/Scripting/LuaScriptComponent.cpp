@@ -6,6 +6,8 @@
 #include "../Core/CameraComponent.h"
 #include "../Input/InputManager.h"
 #include "../Animation/AnimatorComponent.h"
+#include "../AI/NavMesh/NavMeshAgentComponent.h"
+#include "../AI/NavMesh/NavMeshSystem.h"
 #include <Windows.h>
 #include <cmath>
 
@@ -522,6 +524,155 @@ void LuaScriptComponent::BindEngineAPI() {
         "getYaw", [cameraYawPtr]() -> float { return *cameraYawPtr; },
         "getPitch", [cameraPitchPtr]() -> float { return *cameraPitchPtr; }
     );
+
+    // ===== NavMesh Agent API =====
+    // コンポーネントの追加順序に依存しないよう、毎回動的に取得
+    if (gameObject) {
+        GameObject* go = gameObject;
+        lua["NavMeshAgent"] = lua.create_table_with(
+            // 目的地を設定
+            "setDestination", [go](float x, float y, float z) -> bool {
+                auto* agent = go->GetComponent<NavMeshAgentComponent>();
+                if (!agent) {
+                    Logger::Warning("[Lua] NavMeshAgent.setDestination: No NavMeshAgentComponent found");
+                    return false;
+                }
+                return agent->SetDestination(DirectX::XMFLOAT3(x, y, z));
+            },
+            // 停止
+            "stop", [go]() {
+                auto* agent = go->GetComponent<NavMeshAgentComponent>();
+                if (agent) agent->Stop();
+            },
+            // パスリセット
+            "resetPath", [go]() {
+                auto* agent = go->GetComponent<NavMeshAgentComponent>();
+                if (agent) agent->ResetPath();
+            },
+            // 状態取得
+            "hasPath", [go]() -> bool {
+                auto* agent = go->GetComponent<NavMeshAgentComponent>();
+                return agent ? agent->HasPath() : false;
+            },
+            "isMoving", [go]() -> bool {
+                auto* agent = go->GetComponent<NavMeshAgentComponent>();
+                return agent ? agent->IsMoving() : false;
+            },
+            "hasReachedDestination", [go]() -> bool {
+                auto* agent = go->GetComponent<NavMeshAgentComponent>();
+                return agent ? agent->HasReachedDestination() : true;
+            },
+            "getRemainingDistance", [go]() -> float {
+                auto* agent = go->GetComponent<NavMeshAgentComponent>();
+                return agent ? agent->GetRemainingDistance() : 0.0f;
+            },
+            // 速度関連
+            "getSpeed", [go]() -> float {
+                auto* agent = go->GetComponent<NavMeshAgentComponent>();
+                return agent ? agent->GetSpeed() : 0.0f;
+            },
+            "setSpeed", [go](float speed) {
+                auto* agent = go->GetComponent<NavMeshAgentComponent>();
+                if (agent) agent->SetSpeed(speed);
+            },
+            "getCurrentSpeed", [go]() -> float {
+                auto* agent = go->GetComponent<NavMeshAgentComponent>();
+                return agent ? agent->GetCurrentSpeed() : 0.0f;
+            },
+            "getDesiredVelocity", [go]() -> std::tuple<float, float, float> {
+                auto* agent = go->GetComponent<NavMeshAgentComponent>();
+                if (!agent) return {0.0f, 0.0f, 0.0f};
+                auto vel = agent->GetDesiredVelocity();
+                return {vel.x, vel.y, vel.z};
+            },
+            // 移動パラメータ
+            "getRadius", [go]() -> float {
+                auto* agent = go->GetComponent<NavMeshAgentComponent>();
+                return agent ? agent->GetRadius() : 0.5f;
+            },
+            "setRadius", [go](float r) {
+                auto* agent = go->GetComponent<NavMeshAgentComponent>();
+                if (agent) agent->SetRadius(r);
+            },
+            "getHeight", [go]() -> float {
+                auto* agent = go->GetComponent<NavMeshAgentComponent>();
+                return agent ? agent->GetHeight() : 2.0f;
+            },
+            "setHeight", [go](float h) {
+                auto* agent = go->GetComponent<NavMeshAgentComponent>();
+                if (agent) agent->SetHeight(h);
+            },
+            "getStoppingDistance", [go]() -> float {
+                auto* agent = go->GetComponent<NavMeshAgentComponent>();
+                return agent ? agent->GetStoppingDistance() : 0.1f;
+            },
+            "setStoppingDistance", [go](float d) {
+                auto* agent = go->GetComponent<NavMeshAgentComponent>();
+                if (agent) agent->SetStoppingDistance(d);
+            },
+            "getAngularSpeed", [go]() -> float {
+                auto* agent = go->GetComponent<NavMeshAgentComponent>();
+                return agent ? agent->GetAngularSpeed() : 120.0f;
+            },
+            "setAngularSpeed", [go](float s) {
+                auto* agent = go->GetComponent<NavMeshAgentComponent>();
+                if (agent) agent->SetAngularSpeed(s);
+            },
+            "getAcceleration", [go]() -> float {
+                auto* agent = go->GetComponent<NavMeshAgentComponent>();
+                return agent ? agent->GetAcceleration() : 8.0f;
+            },
+            "setAcceleration", [go](float a) {
+                auto* agent = go->GetComponent<NavMeshAgentComponent>();
+                if (agent) agent->SetAcceleration(a);
+            },
+            // Transform自動更新
+            "setUpdateTransform", [go](bool enabled) {
+                auto* agent = go->GetComponent<NavMeshAgentComponent>();
+                if (agent) agent->SetUpdateTransform(enabled);
+            },
+            "getUpdateTransform", [go]() -> bool {
+                auto* agent = go->GetComponent<NavMeshAgentComponent>();
+                return agent ? agent->GetUpdateTransform() : false;
+            },
+            // 現在の回転
+            "getCurrentRotationY", [go]() -> float {
+                auto* agent = go->GetComponent<NavMeshAgentComponent>();
+                return agent ? agent->GetCurrentRotationY() : 0.0f;
+            },
+            // NavMeshに吸着
+            "snapToNavMesh", [go]() -> bool {
+                auto* agent = go->GetComponent<NavMeshAgentComponent>();
+                if (!agent) {
+                    Logger::Warning("[Lua] NavMeshAgent.snapToNavMesh: No NavMeshAgentComponent found");
+                    return false;
+                }
+                return agent->SnapToNavMesh();
+            },
+            // NavMesh上のランダムな点を取得
+            "findRandomPoint", []() -> std::tuple<bool, float, float, float> {
+                auto& navSystem = NavMeshSystem::GetInstance();
+                auto result = navSystem.FindRandomPoint();
+                if (result) {
+                    return {true, result->x, result->y, result->z};
+                }
+                return {false, 0.0f, 0.0f, 0.0f};
+            },
+            // 指定範囲内のNavMesh上のランダムな点を取得
+            "findRandomPointInRadius", [](float cx, float cy, float cz, float radius) -> std::tuple<bool, float, float, float> {
+                auto& navSystem = NavMeshSystem::GetInstance();
+                auto result = navSystem.FindRandomPointInRadius(DirectX::XMFLOAT3(cx, cy, cz), radius);
+                if (result) {
+                    return {true, result->x, result->y, result->z};
+                }
+                return {false, 0.0f, 0.0f, 0.0f};
+            },
+            // コンポーネントが存在するか確認
+            "exists", [go]() -> bool {
+                return go->GetComponent<NavMeshAgentComponent>() != nullptr;
+            }
+        );
+    }
 
     Logger::Debug("[LuaScriptComponent] Engine API bound to Lua");
 }

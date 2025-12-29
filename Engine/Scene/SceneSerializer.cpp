@@ -8,6 +8,7 @@
 #include "../Core/CameraComponent.h"
 #include "../Core/CollisionComponent.h"
 #include "../Scripting/LuaScriptComponent.h"
+#include "../AI/NavMesh/NavMeshAgentComponent.h"
 #include "../PostProcess/PostProcessType.h"
 #include <fstream>
 #include <iostream>
@@ -349,6 +350,20 @@ json SceneSerializer::SerializeComponent(const Component& component) {
         return comp;
     }
 
+    // NavMeshAgentComponent
+    if (auto* agent = dynamic_cast<const NavMeshAgentComponent*>(&component)) {
+        comp["type"] = "NavMeshAgentComponent";
+        comp["enabled"] = agent->IsEnabled();
+        comp["speed"] = agent->GetSpeed();
+        comp["angularSpeed"] = agent->GetAngularSpeed();
+        comp["acceleration"] = agent->GetAcceleration();
+        comp["stoppingDistance"] = agent->GetStoppingDistance();
+        comp["radius"] = agent->GetRadius();
+        comp["height"] = agent->GetHeight();
+        comp["autoRepath"] = agent->GetAutoRepath();
+        return comp;
+    }
+
     return json();
 }
 
@@ -607,7 +622,6 @@ void SceneSerializer::DeserializeComponent(const json& json, GameObject& gameObj
                 luaScript->SetScriptPath(scriptPath);
             }
         }
-        // プロパティを復元
         if (json.contains("properties") && json["properties"].is_array()) {
             for (const auto& propJson : json["properties"]) {
                 if (!propJson.contains("name") || !propJson.contains("type") || !propJson.contains("value")) {
@@ -626,6 +640,33 @@ void SceneSerializer::DeserializeComponent(const json& json, GameObject& gameObj
                     luaScript->SetProperty(name, propJson["value"].get<std::string>());
                 }
             }
+        }
+    }
+    else if (type == "NavMeshAgentComponent") {
+        auto* agent = gameObject.AddComponent<NavMeshAgentComponent>();
+        if (json.contains("enabled")) {
+            agent->SetEnabled(json["enabled"].get<bool>());
+        }
+        if (json.contains("speed")) {
+            agent->SetSpeed(json["speed"].get<float>());
+        }
+        if (json.contains("angularSpeed")) {
+            agent->SetAngularSpeed(json["angularSpeed"].get<float>());
+        }
+        if (json.contains("acceleration")) {
+            agent->SetAcceleration(json["acceleration"].get<float>());
+        }
+        if (json.contains("stoppingDistance")) {
+            agent->SetStoppingDistance(json["stoppingDistance"].get<float>());
+        }
+        if (json.contains("radius")) {
+            agent->SetRadius(json["radius"].get<float>());
+        }
+        if (json.contains("height")) {
+            agent->SetHeight(json["height"].get<float>());
+        }
+        if (json.contains("autoRepath")) {
+            agent->SetAutoRepath(json["autoRepath"].get<bool>());
         }
     }
 }

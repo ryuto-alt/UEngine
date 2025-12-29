@@ -4,6 +4,8 @@
 #include <queue>
 #include <unordered_set>
 #include <cmath>
+#include <cstdlib>
+#include <random>
 
 namespace UnoEngine
 {
@@ -160,29 +162,73 @@ std::optional<uint32_t> NavMeshQuery::FindNearestPolygon(const DirectX::XMFLOAT3
     uint32_t nearest = NavMeshPolygon::INVALID_ID;
     float minDist = maxDistance * maxDistance;
     
-    for (size_t i = 0; i < m_navMesh->polygons.size(); ++i)
+    // 空間分割グリッドを使用して高速検索
+    const auto& grid = m_navMesh->polygonGrid;
+    if (grid.IsValid())
     {
-        const auto& poly = m_navMesh->polygons[i];
+        // 検索対象のセル範囲を計算
+        int searchRadius = static_cast<int>(std::ceil(maxDistance / grid.cellSize)) + 1;
+        int centerCellX = static_cast<int>((point.x - grid.origin.x) / grid.cellSize);
+        int centerCellZ = static_cast<int>((point.z - grid.origin.z) / grid.cellSize);
         
-        // ポリゴン中心との距離（XZ平面）
-        float dx = point.x - poly.center.x;
-        float dz = point.z - poly.center.z;
-        float dist2D = dx * dx + dz * dz;
+        int cx0 = std::max(0, centerCellX - searchRadius);
+        int cx1 = std::min(grid.width - 1, centerCellX + searchRadius);
+        int cz0 = std::max(0, centerCellZ - searchRadius);
+        int cz1 = std::min(grid.height - 1, centerCellZ + searchRadius);
         
-        // 高さ差も考慮
-        float dy = point.y - poly.center.y;
-        float dist3D = dist2D + dy * dy;
-        
-        if (dist3D < minDist)
+        // 近いセルから順に検索
+        for (int cz = cz0; cz <= cz1; ++cz)
         {
-            // より正確な判定：ポリゴン内か近くにあるか
-            if (IsPointInPolygon(point, static_cast<uint32_t>(i)))
+            for (int cx = cx0; cx <= cx1; ++cx)
             {
-                return static_cast<uint32_t>(i);
+                int cellIdx = cz * grid.width + cx;
+                for (uint32_t polyIdx : grid.cells[cellIdx])
+                {
+                    const auto& poly = m_navMesh->polygons[polyIdx];
+                    
+                    // ポリゴン中心との距離
+                    float dx = point.x - poly.center.x;
+                    float dz = point.z - poly.center.z;
+                    float dy = point.y - poly.center.y;
+                    float dist3D = dx * dx + dy * dy + dz * dz;
+                    
+                    if (dist3D < minDist)
+                    {
+                        // ポリゴン内なら即座に返す
+                        if (IsPointInPolygon(point, polyIdx))
+                        {
+                            return polyIdx;
+                        }
+                        
+                        minDist = dist3D;
+                        nearest = polyIdx;
+                    }
+                }
             }
+        }
+    }
+    else
+    {
+        // フォールバック：線形検索
+        for (size_t i = 0; i < m_navMesh->polygons.size(); ++i)
+        {
+            const auto& poly = m_navMesh->polygons[i];
             
-            minDist = dist3D;
-            nearest = static_cast<uint32_t>(i);
+            float dx = point.x - poly.center.x;
+            float dz = point.z - poly.center.z;
+            float dy = point.y - poly.center.y;
+            float dist3D = dx * dx + dy * dy + dz * dz;
+            
+            if (dist3D < minDist)
+            {
+                if (IsPointInPolygon(point, static_cast<uint32_t>(i)))
+                {
+                    return static_cast<uint32_t>(i);
+                }
+                
+                minDist = dist3D;
+                nearest = static_cast<uint32_t>(i);
+            }
         }
     }
     
@@ -325,6 +371,39 @@ DirectX::XMFLOAT3 NavMeshQuery::GetPortalMidpoint(uint32_t fromPoly, uint32_t to
     };
 }
 
+bool NavMeshQuery::GetPortalEdge(uint32_t fromPoly, uint32_t toPoly,
+                                  DirectX::XMFLOAT3& outLeft, DirectX::XMFLOAT3& outRight) const
+{
+    if (!m_navMesh || fromPoly >= m_navMesh->polygons.size() || toPoly >= m_navMesh->polygons.size())
+        return false;
+    
+    const auto& polyFrom = m_navMesh->polygons[fromPoly];
+    
+    // 共有エッジを見つける
+    for (size_t i = 0; i < polyFrom.neighbors.size(); ++i)
+    {
+        if (polyFrom.neighbors[i] == toPoly)
+        {
+            uint32_t v0 = polyFrom.vertexIndices[i];
+            uint32_t v1 = polyFrom.vertexIndices[(i + 1) % polyFrom.vertexIndices.size()];
+            
+            // SSFではファンネルの左右を一貫して管理するため、頂点の順序が重要
+            // ポリゴンは時計回りなので、進行方向に対して左がv0、右がv1
+            outLeft = m_navMesh->vertices[v0];
+            outRight = m_navMesh->vertices[v1];
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+float NavMeshQuery::Cross2D(const DirectX::XMFLOAT3& o, const DirectX::XMFLOAT3& a, const DirectX::XMFLOAT3& b)
+{
+    // 2D cross product: (a-o) x (b-o) のZ成分
+    return (a.x - o.x) * (b.z - o.z) - (a.z - o.z) * (b.x - o.x);
+}
+
 DirectX::XMFLOAT3 NavMeshQuery::ClosestPointOnPolygon(const DirectX::XMFLOAT3& point, uint32_t polygonId) const
 {
     if (!m_navMesh || polygonId >= m_navMesh->polygons.size())
@@ -381,37 +460,228 @@ DirectX::XMFLOAT3 NavMeshQuery::ClosestPointOnPolygon(const DirectX::XMFLOAT3& p
 
 void NavMeshQuery::StringPull(NavMeshPath& path, const DirectX::XMFLOAT3& start, const DirectX::XMFLOAT3& goal) const
 {
-    // 簡易的なString pulling（Funnel algorithm）
-    // 現在の実装では詳細なファンネルアルゴリズムは省略
-    // ポリゴン中心を通る経路を使用
+    // Simple Stupid Funnel Algorithm
+    // Reference: http://digestingduck.blogspot.com/2010/03/simple-stupid-funnel-algorithm.html
     
-    if (path.waypoints.size() <= 2)
-        return;
-    
-    // 直接見通しがきく点を削除
-    std::vector<DirectX::XMFLOAT3> optimized;
-    optimized.push_back(path.waypoints[0]);
-    
-    size_t current = 0;
-    while (current < path.waypoints.size() - 1)
+    if (path.polygonPath.size() < 2)
     {
-        size_t furthest = current + 1;
-        
-        // 現在位置から直接到達できる最も遠い点を探す
-        for (size_t i = current + 2; i < path.waypoints.size(); ++i)
+        path.waypoints.clear();
+        path.waypoints.push_back(start);
+        path.waypoints.push_back(goal);
+        return;
+    }
+    
+    // ポータル（隣接ポリゴン間の共有エッジ）を収集
+    struct Portal { DirectX::XMFLOAT3 left, right; };
+    std::vector<Portal> portals;
+    
+    // 開始点をポータルとして追加（左右同じ点）
+    portals.push_back({start, start});
+    
+    // 各ポリゴン遷移のポータルを収集
+    for (size_t i = 0; i + 1 < path.polygonPath.size(); ++i)
+    {
+        DirectX::XMFLOAT3 left, right;
+        if (GetPortalEdge(path.polygonPath[i], path.polygonPath[i + 1], left, right))
         {
-            DirectX::XMFLOAT3 hit;
-            if (Raycast(path.waypoints[current], path.waypoints[i], hit))
+            portals.push_back({left, right});
+        }
+    }
+    
+    // 終点をポータルとして追加
+    portals.push_back({goal, goal});
+    
+    if (portals.size() < 2)
+    {
+        path.waypoints.clear();
+        path.waypoints.push_back(start);
+        path.waypoints.push_back(goal);
+        return;
+    }
+    
+    // SSFアルゴリズム本体
+    std::vector<DirectX::XMFLOAT3> result;
+    
+    DirectX::XMFLOAT3 apex = portals[0].left;  // 頂点（ファンネルの先端）
+    DirectX::XMFLOAT3 funnelLeft = portals[0].left;
+    DirectX::XMFLOAT3 funnelRight = portals[0].right;
+    size_t apexIndex = 0;
+    size_t leftIndex = 0;
+    size_t rightIndex = 0;
+    
+    result.push_back(apex);
+    
+    for (size_t i = 1; i < portals.size(); ++i)
+    {
+        const auto& portal = portals[i];
+        
+        // 右側を更新
+        if (Cross2D(apex, funnelRight, portal.right) <= 0.0f)
+        {
+            if (apex.x == funnelRight.x && apex.z == funnelRight.z ||
+                Cross2D(apex, funnelLeft, portal.right) > 0.0f)
             {
-                furthest = i;
+                // ファンネルを狭める
+                funnelRight = portal.right;
+                rightIndex = i;
+            }
+            else
+            {
+                // 左側を通過 → コーナーを追加
+                result.push_back(funnelLeft);
+                apex = funnelLeft;
+                apexIndex = leftIndex;
+                
+                // ファンネルをリセット
+                funnelLeft = apex;
+                funnelRight = apex;
+                leftIndex = apexIndex;
+                rightIndex = apexIndex;
+                
+                // このポータルから再開
+                i = apexIndex;
+                continue;
             }
         }
         
-        current = furthest;
-        optimized.push_back(path.waypoints[current]);
+        // 左側を更新
+        if (Cross2D(apex, funnelLeft, portal.left) >= 0.0f)
+        {
+            if (apex.x == funnelLeft.x && apex.z == funnelLeft.z ||
+                Cross2D(apex, funnelRight, portal.left) < 0.0f)
+            {
+                // ファンネルを狭める
+                funnelLeft = portal.left;
+                leftIndex = i;
+            }
+            else
+            {
+                // 右側を通過 → コーナーを追加
+                result.push_back(funnelRight);
+                apex = funnelRight;
+                apexIndex = rightIndex;
+                
+                // ファンネルをリセット
+                funnelLeft = apex;
+                funnelRight = apex;
+                leftIndex = apexIndex;
+                rightIndex = apexIndex;
+                
+                // このポータルから再開
+                i = apexIndex;
+                continue;
+            }
+        }
     }
     
-    path.waypoints = std::move(optimized);
+    // 終点を追加（まだ追加されていなければ）
+    if (result.empty() || 
+        result.back().x != goal.x || result.back().z != goal.z)
+    {
+        result.push_back(goal);
+    }
+    
+    path.waypoints = std::move(result);
+}
+
+std::optional<DirectX::XMFLOAT3> NavMeshQuery::FindRandomPoint() const
+{
+    if (!m_navMesh || m_navMesh->polygons.empty())
+        return std::nullopt;
+    
+    // ランダムなポリゴンを選択
+    size_t polyIndex = static_cast<size_t>(std::rand()) % m_navMesh->polygons.size();
+    const auto& poly = m_navMesh->polygons[polyIndex];
+    
+    if (poly.vertexIndices.size() < 3)
+        return std::nullopt;
+    
+    // ポリゴン内のランダムな点を生成（重心座標系）
+    // 三角形の場合: P = (1-sqrt(r1))*A + sqrt(r1)*(1-r2)*B + sqrt(r1)*r2*C
+    // 凸多角形の場合は中心からの補間を使用
+    float r1 = static_cast<float>(std::rand()) / RAND_MAX;
+    float r2 = static_cast<float>(std::rand()) / RAND_MAX;
+    
+    // ポリゴン中心と辺上のランダムな点の間を補間
+    const auto& center = poly.center;
+    size_t edgeIdx = static_cast<size_t>(std::rand()) % poly.vertexIndices.size();
+    size_t nextIdx = (edgeIdx + 1) % poly.vertexIndices.size();
+    
+    const auto& v0 = m_navMesh->vertices[poly.vertexIndices[edgeIdx]];
+    const auto& v1 = m_navMesh->vertices[poly.vertexIndices[nextIdx]];
+    
+    // 辺上のランダムな点
+    DirectX::XMFLOAT3 edgePoint = {
+        v0.x + r1 * (v1.x - v0.x),
+        v0.y + r1 * (v1.y - v0.y),
+        v0.z + r1 * (v1.z - v0.z)
+    };
+    
+    // 中心と辺上の点の間を補間（中心寄りにする）
+    float t = r2 * 0.8f;  // 80%までで、辺から少し離す
+    return DirectX::XMFLOAT3{
+        center.x + t * (edgePoint.x - center.x),
+        center.y + t * (edgePoint.y - center.y),
+        center.z + t * (edgePoint.z - center.z)
+    };
+}
+
+std::optional<DirectX::XMFLOAT3> NavMeshQuery::FindRandomPointInRadius(const DirectX::XMFLOAT3& center, float radius) const
+{
+    if (!m_navMesh || m_navMesh->polygons.empty())
+        return std::nullopt;
+    
+    // 中心から指定半径内のポリゴンを収集
+    std::vector<uint32_t> candidatePolygons;
+    float radiusSq = radius * radius;
+    
+    for (size_t i = 0; i < m_navMesh->polygons.size(); ++i)
+    {
+        const auto& poly = m_navMesh->polygons[i];
+        float dx = poly.center.x - center.x;
+        float dz = poly.center.z - center.z;
+        float distSq = dx * dx + dz * dz;
+        
+        if (distSq <= radiusSq)
+        {
+            candidatePolygons.push_back(static_cast<uint32_t>(i));
+        }
+    }
+    
+    if (candidatePolygons.empty())
+        return std::nullopt;
+    
+    // ランダムなポリゴンを選択
+    size_t randIdx = static_cast<size_t>(std::rand()) % candidatePolygons.size();
+    uint32_t polyIndex = candidatePolygons[randIdx];
+    const auto& poly = m_navMesh->polygons[polyIndex];
+    
+    if (poly.vertexIndices.size() < 3)
+        return std::nullopt;
+    
+    // ポリゴン内のランダムな点を生成
+    float r1 = static_cast<float>(std::rand()) / RAND_MAX;
+    float r2 = static_cast<float>(std::rand()) / RAND_MAX;
+    
+    const auto& polyCenter = poly.center;
+    size_t edgeIdx = static_cast<size_t>(std::rand()) % poly.vertexIndices.size();
+    size_t nextIdx = (edgeIdx + 1) % poly.vertexIndices.size();
+    
+    const auto& v0 = m_navMesh->vertices[poly.vertexIndices[edgeIdx]];
+    const auto& v1 = m_navMesh->vertices[poly.vertexIndices[nextIdx]];
+    
+    DirectX::XMFLOAT3 edgePoint = {
+        v0.x + r1 * (v1.x - v0.x),
+        v0.y + r1 * (v1.y - v0.y),
+        v0.z + r1 * (v1.z - v0.z)
+    };
+    
+    float t = r2 * 0.8f;
+    return DirectX::XMFLOAT3{
+        polyCenter.x + t * (edgePoint.x - polyCenter.x),
+        polyCenter.y + t * (edgePoint.y - polyCenter.y),
+        polyCenter.z + t * (edgePoint.z - polyCenter.z)
+    };
 }
 
 } // namespace UnoEngine

@@ -46,9 +46,17 @@ public:
     bool IsPointOnNavMesh(const DirectX::XMFLOAT3& point) const;
     std::optional<DirectX::XMFLOAT3> SnapToNavMesh(const DirectX::XMFLOAT3& point, float maxDistance = 10.0f) const;
     
+    // ランダムな点の取得
+    std::optional<DirectX::XMFLOAT3> FindRandomPoint() const;
+    std::optional<DirectX::XMFLOAT3> FindRandomPointInRadius(const DirectX::XMFLOAT3& center, float radius) const;
+    
     // ファイル操作
     bool SaveNavMesh(const std::filesystem::path& filePath);
     bool LoadNavMesh(const std::filesystem::path& filePath);
+    
+    // 設定の保存/読み込み
+    void SaveSettings(const std::filesystem::path& filePath = "navmesh_settings.json");
+    void LoadSettings(const std::filesystem::path& filePath = "navmesh_settings.json");
     
     // 設定
     NavMeshConfig& GetConfig() { return m_config; }

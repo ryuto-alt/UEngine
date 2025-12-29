@@ -13,34 +13,27 @@ public:
     NavMeshAgentComponent() = default;
     ~NavMeshAgentComponent() override = default;
 
-    // Lifecycle
     void Awake() override;
     void OnUpdate(float deltaTime) override;
 
-    // === 目的地設定 ===
     bool SetDestination(const DirectX::XMFLOAT3& target);
     void Stop();
     void ResetPath();
 
-    // === 状態取得 ===
     bool HasPath() const { return m_hasPath; }
     bool IsMoving() const { return m_isMoving; }
     bool HasReachedDestination() const;
     float GetRemainingDistance() const;
 
-    // === 出力取得（移動コンポーネント用） ===
     const DirectX::XMFLOAT3& GetDesiredVelocity() const { return m_desiredVelocity; }
     const DirectX::XMFLOAT3& GetSteeringDirection() const { return m_steeringDirection; }
     float GetCurrentSpeed() const { return m_currentSpeed; }
+    float GetCurrentRotationY() const { return m_currentRotationY; }
+    float GetTargetRotationY() const { return m_targetRotationY; }
 
-    // === フィードバックループ ===
-    // 物理移動後の実際の位置を同期（毎フレーム呼び出し推奨）
     void SyncPosition(const DirectX::XMFLOAT3& worldPosition);
-
-    // NavMesh上に位置を補正
     bool SnapToNavMesh();
 
-    // === エージェント設定 ===
     void SetAgentTypeId(uint32_t id) { m_agentTypeId = id; }
     uint32_t GetAgentTypeId() const { return m_agentTypeId; }
 
@@ -50,7 +43,6 @@ public:
     void SetHeight(float height) { m_height = height; }
     float GetHeight() const { return m_height; }
 
-    // === 移動パラメータ ===
     void SetMaxSpeed(float speed) { m_maxSpeed = speed; }
     float GetMaxSpeed() const { return m_maxSpeed; }
 
@@ -65,12 +57,19 @@ public:
 
     void SetAutoBraking(bool enabled) { m_autoBraking = enabled; }
     bool GetAutoBraking() const { return m_autoBraking; }
+    
+    void SetUpdateTransform(bool enabled) { m_updateTransform = enabled; }
+    bool GetUpdateTransform() const { return m_updateTransform; }
 
-    // === デバッグ ===
+    void SetAutoRepath(bool enabled) { m_autoRepath = enabled; }
+    bool GetAutoRepath() const { return m_autoRepath; }
+
+    void SetSpeed(float speed) { m_maxSpeed = speed; }
+    float GetSpeed() const { return m_maxSpeed; }
+
     const NavMeshPath& GetCurrentPath() const { return m_currentPath; }
     int GetCurrentWaypointIndex() const { return m_currentWaypointIndex; }
 
-    // デバッグ描画（半径・高さの可視化）
     void DrawDebug(class DebugRenderer* debugRenderer) const;
     void SetDebugDrawEnabled(bool enabled) { m_debugDrawEnabled = enabled; }
     bool IsDebugDrawEnabled() const { return m_debugDrawEnabled; }
@@ -78,21 +77,28 @@ public:
 private:
     void UpdatePathFollowing(float deltaTime);
     void CalculateDesiredVelocity(float deltaTime);
+    void UpdateRotation(float deltaTime);
     DirectX::XMFLOAT3 GetNextWaypoint() const;
+    
+    float CalculateCornerAngle(int waypointIndex) const;
+    float GetCornerSpeedFactor(float angleRadians) const;
+    DirectX::XMFLOAT3 GetSteeringTarget() const;
+    
+    static float NormalizeAngle(float angle);
+    static float AngleDifference(float from, float to);
 
-    // === エージェント設定 ===
     uint32_t m_agentTypeId = 0;
     float m_radius = 0.5f;
     float m_height = 2.0f;
 
-    // === 移動パラメータ ===
     float m_maxSpeed = 3.5f;
     float m_acceleration = 8.0f;
-    float m_angularSpeed = 120.0f;  // degrees/sec
+    float m_angularSpeed = 120.0f;
     float m_stoppingDistance = 0.1f;
     bool m_autoBraking = true;
+    bool m_updateTransform = true;  // Transform自動更新（デフォルトON）
+    bool m_autoRepath = true;
 
-    // === 内部状態 ===
     NavMeshPath m_currentPath;
     DirectX::XMFLOAT3 m_currentPosition = {0, 0, 0};
     DirectX::XMFLOAT3 m_destination = {0, 0, 0};
@@ -101,12 +107,12 @@ private:
     bool m_isMoving = false;
     bool m_positionSynced = false;
 
-    // === 出力 ===
     DirectX::XMFLOAT3 m_desiredVelocity = {0, 0, 0};
     DirectX::XMFLOAT3 m_steeringDirection = {0, 0, 1};
     float m_currentSpeed = 0.0f;
+    float m_currentRotationY = 0.0f;
+    float m_targetRotationY = 0.0f;
 
-    // === デバッグ ===
     bool m_debugDrawEnabled = false;
 };
 

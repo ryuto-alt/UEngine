@@ -52,6 +52,53 @@
                     "type": "CollisionComponent"
                 },
                 {
+                    "acceleration": 8.0,
+                    "angularSpeed": 120.0,
+                    "autoRepath": true,
+                    "enabled": true,
+                    "height": 2.0,
+                    "radius": 1.0360000133514404,
+                    "speed": 3.0,
+                    "stoppingDistance": 0.10000000149011612,
+                    "type": "NavMeshAgentComponent"
+                },
+                {
+                    "properties": [
+                        {
+                            "name": "chaseSpeed",
+                            "type": "int",
+                            "value": 6
+                        },
+                        {
+                            "name": "loseTargetRange",
+                            "type": "int",
+                            "value": 15
+                        },
+                        {
+                            "name": "detectionRange",
+                            "type": "int",
+                            "value": 10
+                        },
+                        {
+                            "name": "patrolSpeed",
+                            "type": "int",
+                            "value": 3
+                        },
+                        {
+                            "name": "patrolWaitTime",
+                            "type": "int",
+                            "value": 2
+                        },
+                        {
+                            "name": "patrolRadius",
+                            "type": "int",
+                            "value": 8
+                        }
+                    ],
+                    "scriptPath": "assets/scripts/EnemyScripts.lua",
+                    "type": "LuaScriptComponent"
+                },
+                {
                     "type": "AnimatorComponent"
                 }
             ],
@@ -122,14 +169,14 @@
                 {
                     "properties": [
                         {
-                            "name": "mouseSensitivity",
-                            "type": "float",
-                            "value": 1.399999976158142
-                        },
-                        {
                             "name": "moveSpeed",
                             "type": "int",
                             "value": 5
+                        },
+                        {
+                            "name": "mouseSensitivity",
+                            "type": "float",
+                            "value": 1.399999976158142
                         }
                     ],
                     "scriptPath": "assets/scripts/CameraController.lua",
@@ -140,14 +187,14 @@
             "name": "Camera",
             "transform": {
                 "position": [
-                    0.0,
+                    1.401298464324817e-45,
                     1.7999999523162842,
                     -2.0
                 ],
                 "rotation": [
-                    0.0,
-                    0.0,
-                    0.0,
+                    1.401298464324817e-45,
+                    1.401298464324817e-45,
+                    -1.401298464324817e-45,
                     1.0
                 ],
                 "scale": [

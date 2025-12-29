@@ -49,21 +49,6 @@ void NavMeshInputGeometry::AddAABB(const AABB& aabb)
     AddTriangle(topCorners[0], topCorners[2], topCorners[3]);
 }
 
-// HeightField実装
-void HeightField::Clear()
-{
-    for (auto span : spans)
-    {
-        while (span)
-        {
-            auto next = span->next;
-            delete span;
-            span = next;
-        }
-    }
-    spans.clear();
-}
-
 // NavMeshBuilder実装
 std::unique_ptr<NavMeshData> NavMeshBuilder::Build(Scene* scene, const NavMeshConfig& config)
 {
@@ -104,39 +89,29 @@ std::unique_ptr<NavMeshData> NavMeshBuilder::Build(const NavMeshInputGeometry& g
     }
     
     // スパン数をカウント
-    int totalSpans = 0;
+    int totalSpans = static_cast<int>(heightField.spanStorage.size());
     int walkableSpans = 0;
-    for (auto* span : heightField.spans)
+    for (const auto& span : heightField.spanStorage)
     {
-        while (span)
-        {
-            ++totalSpans;
-            if (span->area > 0) ++walkableSpans;
-            span = span->next;
-        }
+        if (span.area > 0) ++walkableSpans;
     }
     
     snprintf(debugBuf, sizeof(debugBuf), "Voxelized: %dx%d grid, %d spans, %d walkable",
              heightField.width, heightField.height, totalSpans, walkableSpans);
     ReportProgress(0.15f, debugBuf);
     
-    // 2. 歩行可能領域のフィルタリング（デバッグ用に一時無効化）
+    // 2. 歩行可能領域のフィルタリング
     ReportProgress(0.2f, "Filtering walkable areas...");
     int walkableHeight = static_cast<int>(std::ceil(config.agentHeight / config.cellHeight));
     int walkableClimb = static_cast<int>(std::floor(config.stepHeight / config.cellHeight));
-    // デバッグ：フィルタリングを一時的にスキップ
-    // FilterWalkableLowHeightSpans(heightField, static_cast<float>(walkableHeight));
-    // FilterLedgeSpans(heightField, static_cast<float>(walkableClimb));
+    FilterWalkableLowHeightSpans(heightField, static_cast<float>(walkableHeight));
+    FilterLedgeSpans(heightField, static_cast<float>(walkableClimb));
     
     // フィルタリング後のスパン数
     walkableSpans = 0;
-    for (auto* span : heightField.spans)
+    for (const auto& span : heightField.spanStorage)
     {
-        while (span)
-        {
-            if (span->area > 0) ++walkableSpans;
-            span = span->next;
-        }
+        if (span.area > 0) ++walkableSpans;
     }
     snprintf(debugBuf, sizeof(debugBuf), "After filter: %d walkable spans (minRegionArea=%.1f)",
              walkableSpans, config.minRegionArea);
@@ -182,19 +157,20 @@ std::unique_ptr<NavMeshData> NavMeshBuilder::Build(const NavMeshInputGeometry& g
             for (int x = 0; x < grid.width; ++x)
             {
                 int idx = z * grid.width + x;
-                HeightSpan* span = heightField.spans[idx];
+                int32_t spanIdx = heightField.spans[idx];
                 
                 // 最も上のスパンが歩行可能かチェック
                 bool walkable = false;
-                while (span)
+                while (spanIdx >= 0)
                 {
-                    if (span->area > 0)
+                    const auto& span = heightField.spanStorage[spanIdx];
+                    if (span.area > 0)
                     {
                         walkable = true;
-                        heightSum += heightField.origin.y + span->maxY * heightField.cellHeight;
+                        heightSum += heightField.origin.y + span.maxY * heightField.cellHeight;
                         ++walkableCount;
                     }
-                    span = span->next;
+                    spanIdx = span.nextIndex;
                 }
                 grid.cells[idx] = walkable ? 1 : 0;
             }
@@ -249,10 +225,11 @@ std::unique_ptr<NavMeshData> NavMeshBuilder::Build(const NavMeshInputGeometry& g
     BuildNeighborConnections(*navMesh);
     
     // バウンディングボックス計算
+    DirectX::XMFLOAT3 minPt{}, maxPt{};
     if (!navMesh->vertices.empty())
     {
-        DirectX::XMFLOAT3 minPt = navMesh->vertices[0];
-        DirectX::XMFLOAT3 maxPt = navMesh->vertices[0];
+        minPt = navMesh->vertices[0];
+        maxPt = navMesh->vertices[0];
         for (const auto& v : navMesh->vertices)
         {
             minPt.x = std::min(minPt.x, v.x);
@@ -272,6 +249,55 @@ std::unique_ptr<NavMeshData> NavMeshBuilder::Build(const NavMeshInputGeometry& g
             (maxPt.y - minPt.y) * 0.5f,
             (maxPt.z - minPt.z) * 0.5f
         );
+    }
+    
+    // 7. 空間分割グリッド構築（高速ポリゴン検索用）
+    ReportProgress(0.95f, "Building polygon grid...");
+    {
+        auto& grid = navMesh->polygonGrid;
+        grid.cellSize = 5.0f;  // 5mセル
+        grid.origin = minPt;
+        grid.width = std::max(1, static_cast<int>(std::ceil((maxPt.x - minPt.x) / grid.cellSize)));
+        grid.height = std::max(1, static_cast<int>(std::ceil((maxPt.z - minPt.z) / grid.cellSize)));
+        grid.cells.resize(grid.width * grid.height);
+        
+        // 各ポリゴンを該当するセルに登録
+        for (uint32_t polyIdx = 0; polyIdx < static_cast<uint32_t>(navMesh->polygons.size()); ++polyIdx)
+        {
+            const auto& poly = navMesh->polygons[polyIdx];
+            
+            // ポリゴンのAABBを計算
+            float polyMinX = FLT_MAX, polyMaxX = -FLT_MAX;
+            float polyMinZ = FLT_MAX, polyMaxZ = -FLT_MAX;
+            for (uint32_t vi : poly.vertexIndices)
+            {
+                const auto& v = navMesh->vertices[vi];
+                polyMinX = std::min(polyMinX, v.x);
+                polyMaxX = std::max(polyMaxX, v.x);
+                polyMinZ = std::min(polyMinZ, v.z);
+                polyMaxZ = std::max(polyMaxZ, v.z);
+            }
+            
+            // ポリゴンが重なるセルに登録
+            int cx0 = std::max(0, static_cast<int>((polyMinX - minPt.x) / grid.cellSize));
+            int cx1 = std::min(grid.width - 1, static_cast<int>((polyMaxX - minPt.x) / grid.cellSize));
+            int cz0 = std::max(0, static_cast<int>((polyMinZ - minPt.z) / grid.cellSize));
+            int cz1 = std::min(grid.height - 1, static_cast<int>((polyMaxZ - minPt.z) / grid.cellSize));
+            
+            for (int cz = cz0; cz <= cz1; ++cz)
+            {
+                for (int cx = cx0; cx <= cx1; ++cx)
+                {
+                    int cellIdx = cz * grid.width + cx;
+                    grid.cells[cellIdx].push_back(polyIdx);
+                }
+            }
+        }
+        
+        snprintf(debugBuf, sizeof(debugBuf), "PolygonGrid: %dx%d cells, avg %.1f polys/cell",
+                 grid.width, grid.height,
+                 static_cast<float>(navMesh->polygons.size()) / (grid.width * grid.height));
+        ReportProgress(0.98f, debugBuf);
     }
     
     ReportProgress(1.0f, "NavMesh build complete!");
@@ -430,7 +456,7 @@ bool NavMeshBuilder::Voxelize(const NavMeshInputGeometry& geometry, const NavMes
     if (outHeightField.width <= 0 || outHeightField.height <= 0)
         return false;
     
-    outHeightField.spans.resize(outHeightField.width * outHeightField.height, nullptr);
+    outHeightField.spans.resize(outHeightField.width * outHeightField.height, -1);
     
     // 最大傾斜角をラジアンに変換
     float maxSlopeRad = config.maxSlope * 3.14159265f / 180.0f;
@@ -482,13 +508,8 @@ bool NavMeshBuilder::Voxelize(const NavMeshInputGeometry& geometry, const NavMes
             for (int x = x0; x <= x1; ++x)
             {
                 int idx = z * outHeightField.width + x;
-                
-                auto* span = new HeightSpan();
-                span->minY = minYCell;
-                span->maxY = maxYCell;
-                span->area = 1; // 歩行可能
-                span->next = outHeightField.spans[idx];
-                outHeightField.spans[idx] = span;
+                int32_t spanIndex = outHeightField.AddSpan(minYCell, maxYCell, 1);
+                outHeightField.LinkSpanToCell(idx, spanIndex);
             }
         }
     }
@@ -505,23 +526,25 @@ void NavMeshBuilder::FilterWalkableLowHeightSpans(HeightField& heightField, floa
         for (int x = 0; x < heightField.width; ++x)
         {
             int idx = z * heightField.width + x;
-            HeightSpan* span = heightField.spans[idx];
+            int32_t spanIdx = heightField.spans[idx];
             
-            while (span)
+            while (spanIdx >= 0)
             {
-                HeightSpan* next = span->next;
+                auto& span = heightField.spanStorage[spanIdx];
+                int32_t nextIdx = span.nextIndex;
                 
                 // 次のスパンとの間隔が十分あるか確認
-                if (next)
+                if (nextIdx >= 0)
                 {
-                    int gap = next->minY - span->maxY;
+                    const auto& next = heightField.spanStorage[nextIdx];
+                    int gap = next.minY - span.maxY;
                     if (gap < walkableHeightCells)
                     {
-                        span->area = 0; // 歩行不可
+                        span.area = 0; // 歩行不可
                     }
                 }
                 
-                span = next;
+                spanIdx = nextIdx;
             }
         }
     }
@@ -538,13 +561,15 @@ void NavMeshBuilder::FilterLedgeSpans(HeightField& heightField, float walkableCl
         for (int x = 0; x < heightField.width; ++x)
         {
             int idx = z * heightField.width + x;
-            HeightSpan* span = heightField.spans[idx];
+            int32_t spanIdx = heightField.spans[idx];
             
-            while (span)
+            while (spanIdx >= 0)
             {
-                if (span->area == 0)
+                auto& span = heightField.spanStorage[spanIdx];
+                
+                if (span.area == 0)
                 {
-                    span = span->next;
+                    spanIdx = span.nextIndex;
                     continue;
                 }
                 
@@ -560,22 +585,23 @@ void NavMeshBuilder::FilterLedgeSpans(HeightField& heightField, float walkableCl
                         continue;
                     
                     int nidx = nz * heightField.width + nx;
-                    HeightSpan* neighborSpan = heightField.spans[nidx];
+                    int32_t neighborIdx = heightField.spans[nidx];
                     
                     // 隣接スパンで最も近い高さを探す
                     bool hasValidNeighbor = false;
-                    while (neighborSpan)
+                    while (neighborIdx >= 0)
                     {
-                        if (neighborSpan->area != 0)
+                        const auto& neighborSpan = heightField.spanStorage[neighborIdx];
+                        if (neighborSpan.area != 0)
                         {
-                            int heightDiff = std::abs(span->maxY - neighborSpan->maxY);
+                            int heightDiff = std::abs(span.maxY - neighborSpan.maxY);
                             if (heightDiff <= maxClimbCells)
                             {
                                 hasValidNeighbor = true;
                                 break;
                             }
                         }
-                        neighborSpan = neighborSpan->next;
+                        neighborIdx = neighborSpan.nextIndex;
                     }
                     
                     if (!hasValidNeighbor)
@@ -588,10 +614,10 @@ void NavMeshBuilder::FilterLedgeSpans(HeightField& heightField, float walkableCl
                 // （孤立したセルは歩行不可）
                 if (invalidNeighbors >= 4)
                 {
-                    span->area = 0;
+                    span.area = 0;
                 }
                 
-                span = span->next;
+                spanIdx = span.nextIndex;
             }
         }
     }
@@ -646,17 +672,18 @@ void NavMeshBuilder::CarveObstacles(const NavMeshInputGeometry& geometry, const 
             for (int x = x0; x <= x1; ++x)
             {
                 int idx = z * heightField.width + x;
-                HeightSpan* span = heightField.spans[idx];
+                int32_t spanIdx = heightField.spans[idx];
                 
-                while (span)
+                while (spanIdx >= 0)
                 {
-                    if (span->area > 0)
+                    auto& span = heightField.spanStorage[spanIdx];
+                    if (span.area > 0)
                     {
-                        span->area = 0; // 歩行不可
+                        span.area = 0; // 歩行不可
                         ++carvedCells;
                         ++cellsThisObstacle;
                     }
-                    span = span->next;
+                    spanIdx = span.nextIndex;
                 }
             }
         }
@@ -686,8 +713,8 @@ bool NavMeshBuilder::BuildRegions(HeightField& heightField, const NavMeshConfig&
     int walkableCellCount = 0;
     for (int i = 0; i < heightField.width * heightField.height; ++i)
     {
-        HeightSpan* span = heightField.spans[i];
-        if (span && span->area > 0)
+        int32_t spanIdx = heightField.spans[i];
+        if (spanIdx >= 0 && heightField.spanStorage[spanIdx].area > 0)
             ++walkableCellCount;
     }
     char debugBuf[256];
@@ -704,9 +731,9 @@ bool NavMeshBuilder::BuildRegions(HeightField& heightField, const NavMeshConfig&
         for (int x = 0; x < heightField.width; ++x)
         {
             int idx = z * heightField.width + x;
-            HeightSpan* span = heightField.spans[idx];
+            int32_t spanIdx = heightField.spans[idx];
             
-            if (!span || span->area == 0 || regionIds[idx] != 0)
+            if (spanIdx < 0 || heightField.spanStorage[spanIdx].area == 0 || regionIds[idx] != 0)
                 continue;
             
             // フラッドフィルで領域を作成
@@ -730,7 +757,8 @@ bool NavMeshBuilder::BuildRegions(HeightField& heightField, const NavMeshConfig&
                 queue.pop();
                 
                 int cidx = cz * heightField.width + cx;
-                HeightSpan* currentSpan = heightField.spans[cidx];
+                int32_t currentSpanIdx = heightField.spans[cidx];
+                const auto& currentSpan = heightField.spanStorage[currentSpanIdx];
                 
                 region.cells.push_back({cx, cz});
                 region.minX = std::min(region.minX, cx);
@@ -738,7 +766,7 @@ bool NavMeshBuilder::BuildRegions(HeightField& heightField, const NavMeshConfig&
                 region.minZ = std::min(region.minZ, cz);
                 region.maxZ = std::max(region.maxZ, cz);
                 
-                float cellY = heightField.origin.y + currentSpan->maxY * heightField.cellHeight;
+                float cellY = heightField.origin.y + currentSpan.maxY * heightField.cellHeight;
                 heightSum += cellY;
                 cellCount++;
                 
@@ -755,12 +783,14 @@ bool NavMeshBuilder::BuildRegions(HeightField& heightField, const NavMeshConfig&
                     if (regionIds[nidx] != 0)
                         continue;
                     
-                    HeightSpan* neighborSpan = heightField.spans[nidx];
-                    if (!neighborSpan || neighborSpan->area == 0)
+                    int32_t neighborSpanIdx = heightField.spans[nidx];
+                    if (neighborSpanIdx < 0 || heightField.spanStorage[neighborSpanIdx].area == 0)
                         continue;
                     
+                    const auto& neighborSpan = heightField.spanStorage[neighborSpanIdx];
+                    
                     // 高さが近いスパンのみ同じ領域に含める
-                    int heightDiff = std::abs(currentSpan->maxY - neighborSpan->maxY);
+                    int heightDiff = std::abs(currentSpan.maxY - neighborSpan.maxY);
                     int maxClimbCells = static_cast<int>(config.stepHeight / config.cellHeight);
                     if (heightDiff <= maxClimbCells)
                     {

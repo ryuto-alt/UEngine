@@ -1,6 +1,9 @@
 #include "pch.h"
+#include "pch.h"
 #include "NavMeshSystem.h"
 #include "../../Core/Scene.h"
+#include <fstream>
+#include <nlohmann/json.hpp>
 #include "../../Core/GameObject.h"
 #include "../../Core/Transform.h"
 #include "../../Core/CollisionComponent.h"
@@ -247,6 +250,16 @@ std::optional<DirectX::XMFLOAT3> NavMeshSystem::SnapToNavMesh(const DirectX::XMF
     return m_query.SnapToNavMesh(point, maxDistance);
 }
 
+std::optional<DirectX::XMFLOAT3> NavMeshSystem::FindRandomPoint() const
+{
+    return m_query.FindRandomPoint();
+}
+
+std::optional<DirectX::XMFLOAT3> NavMeshSystem::FindRandomPointInRadius(const DirectX::XMFLOAT3& center, float radius) const
+{
+    return m_query.FindRandomPointInRadius(center, radius);
+}
+
 bool NavMeshSystem::SaveNavMesh(const std::filesystem::path& filePath)
 {
     if (!m_navMesh || !m_navMesh->IsValid())
@@ -347,6 +360,81 @@ void NavMeshSystem::DrawPath(DebugRenderer* debugRenderer, const NavMeshPath& pa
     {
         Vector3 p(wp.x, wp.y + 0.15f, wp.z);
         debugRenderer->AddSphere(p, 0.1f, waypointColor);
+    }
+}
+
+void NavMeshSystem::SaveSettings(const std::filesystem::path& filePath)
+{
+    nlohmann::json settings;
+    
+    // ベイク設定
+    settings["config"]["agentRadius"] = m_config.agentRadius;
+    settings["config"]["agentHeight"] = m_config.agentHeight;
+    settings["config"]["maxSlope"] = m_config.maxSlope;
+    settings["config"]["stepHeight"] = m_config.stepHeight;
+    settings["config"]["cellSize"] = m_config.cellSize;
+    settings["config"]["cellHeight"] = m_config.cellHeight;
+    settings["config"]["minRegionArea"] = m_config.minRegionArea;
+    settings["config"]["mergeRegionArea"] = m_config.mergeRegionArea;
+    settings["config"]["maxEdgeLength"] = m_config.maxEdgeLength;
+    settings["config"]["maxEdgeError"] = m_config.maxEdgeError;
+    settings["config"]["vertsPerPoly"] = m_config.vertsPerPoly;
+    
+    // デバッグ表示設定
+    settings["debug"]["enabled"] = m_debugDrawEnabled;
+    settings["debug"]["color"] = { m_debugDrawColor.x, m_debugDrawColor.y, m_debugDrawColor.z, m_debugDrawColor.w };
+    
+    std::ofstream file(filePath);
+    if (file.is_open())
+    {
+        file << settings.dump(4);
+    }
+}
+
+void NavMeshSystem::LoadSettings(const std::filesystem::path& filePath)
+{
+    std::ifstream file(filePath);
+    if (!file.is_open()) return;
+    
+    try
+    {
+        nlohmann::json settings;
+        file >> settings;
+        
+        // ベイク設定
+        if (settings.contains("config"))
+        {
+            auto& cfg = settings["config"];
+            if (cfg.contains("agentRadius")) m_config.agentRadius = cfg["agentRadius"].get<float>();
+            if (cfg.contains("agentHeight")) m_config.agentHeight = cfg["agentHeight"].get<float>();
+            if (cfg.contains("maxSlope")) m_config.maxSlope = cfg["maxSlope"].get<float>();
+            if (cfg.contains("stepHeight")) m_config.stepHeight = cfg["stepHeight"].get<float>();
+            if (cfg.contains("cellSize")) m_config.cellSize = cfg["cellSize"].get<float>();
+            if (cfg.contains("cellHeight")) m_config.cellHeight = cfg["cellHeight"].get<float>();
+            if (cfg.contains("minRegionArea")) m_config.minRegionArea = cfg["minRegionArea"].get<float>();
+            if (cfg.contains("mergeRegionArea")) m_config.mergeRegionArea = cfg["mergeRegionArea"].get<float>();
+            if (cfg.contains("maxEdgeLength")) m_config.maxEdgeLength = cfg["maxEdgeLength"].get<int>();
+            if (cfg.contains("maxEdgeError")) m_config.maxEdgeError = cfg["maxEdgeError"].get<float>();
+            if (cfg.contains("vertsPerPoly")) m_config.vertsPerPoly = cfg["vertsPerPoly"].get<int>();
+        }
+        
+        // デバッグ表示設定
+        if (settings.contains("debug"))
+        {
+            auto& dbg = settings["debug"];
+            if (dbg.contains("enabled")) m_debugDrawEnabled = dbg["enabled"].get<bool>();
+            if (dbg.contains("color") && dbg["color"].is_array() && dbg["color"].size() == 4)
+            {
+                m_debugDrawColor.x = dbg["color"][0].get<float>();
+                m_debugDrawColor.y = dbg["color"][1].get<float>();
+                m_debugDrawColor.z = dbg["color"][2].get<float>();
+                m_debugDrawColor.w = dbg["color"][3].get<float>();
+            }
+        }
+    }
+    catch (...)
+    {
+        // JSONパースエラー時は無視
     }
 }
 

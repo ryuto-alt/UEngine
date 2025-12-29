@@ -1,12 +1,12 @@
 -- CameraController.lua
 -- FPS/TPSカメラコントローラー
--- Play開始時に自動で視点操作、TABで解除、クリックで再開
+-- F1キーでマウスロック、TABまたはESCで解除
 
 -- public変数（Inspectorに表示される）
 moveSpeed = 5.0
 mouseSensitivity = 1.4
 
-local initialized = false
+local wasLocked = false
 
 function Awake()
     Debug.log("CameraController initialized")
@@ -14,31 +14,24 @@ end
 
 function Start()
     Debug.log("Camera script attached to: " .. gameObject.name)
-    Debug.log("Press TAB to release cursor, click to re-enable mouse look")
-    initialized = true
+    Debug.log("Press F1 to enable mouse look, TAB/ESC to release")
+    -- 自動ロックしない
 end
 
 function Update(deltaTime)
-    -- 初期化後の最初のフレームでカーソルロック
-    if initialized and not Cursor.isLocked() then
-        Cursor.lock()
-        Debug.log("Cursor locked - mouse look enabled")
-        initialized = false
-    end
-
-    -- TABキーでカーソルをアンロック
-    if Input.isKeyPressed("Tab") then
-        if Cursor.isLocked() then
-            Cursor.unlock()
-            Debug.log("Cursor unlocked (TAB)")
+    -- F1キーでカーソルをロック
+    if Input.isKeyPressed("F") then
+        if not Cursor.isLocked() then
+            Cursor.lock()
+            Debug.log("Cursor locked - mouse look enabled (Press TAB to unlock)")
         end
     end
 
-    -- 左クリックでカーソルを再ロック
-    if Input.isMouseButtonPressed(0) then
-        if not Cursor.isLocked() then
-            Cursor.lock()
-            Debug.log("Cursor locked - mouse look enabled")
+    -- TABキーまたはESCキーでカーソルをアンロック
+    if Input.isKeyPressed("Tab") or Input.isKeyPressed("Escape") then
+        if Cursor.isLocked() then
+            Cursor.unlock()
+            Debug.log("Cursor unlocked")
         end
     end
 

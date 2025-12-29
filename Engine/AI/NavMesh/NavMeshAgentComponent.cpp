@@ -3,6 +3,7 @@
 #include "NavMeshSystem.h"
 #include "../../Core/GameObject.h"
 #include "../../Core/Transform.h"
+#include "../../Core/Logger.h"
 #include "../../Rendering/DebugRenderer.h"
 #include "../../Math/MathCommon.h"
 #include <cmath>
@@ -53,24 +54,55 @@ void NavMeshAgentComponent::OnUpdate(float deltaTime) {
             auto& transform = go->GetTransform();
             auto pos = transform.GetPosition();
             m_currentPosition = {pos.GetX(), pos.GetY(), pos.GetZ()};
+            
+            // 現在の回転を同期（QuaternionからY軸回転角を抽出）
+            auto rot = transform.GetLocalRotation();
+            // Quaternionからオイラー角のYaw成分を抽出
+            float x = rot.GetX(), y = rot.GetY(), z = rot.GetZ(), w = rot.GetW();
+            m_currentRotationY = std::atan2(2.0f * (w * y + x * z), 1.0f - 2.0f * (y * y + z * z));
         }
     }
 
     UpdatePathFollowing(deltaTime);
+    
+    // Transform自動更新モード
+    if (m_updateTransform && m_isMoving) {
+        if (auto* go = GetGameObject()) {
+            auto& transform = go->GetTransform();
+            
+            // 位置更新
+            auto pos = transform.GetPosition();
+            pos.SetX(pos.GetX() + m_desiredVelocity.x * deltaTime);
+            pos.SetZ(pos.GetZ() + m_desiredVelocity.z * deltaTime);
+            transform.SetPosition(pos);
+            
+            // 回転更新（Y軸回転のQuaternionを作成）
+            auto yawQuat = Quaternion::RotationAxis(Vector3::UnitY(), m_currentRotationY);
+            transform.SetLocalRotation(yawQuat);
+            
+            // 内部状態も更新
+            m_currentPosition = {pos.GetX(), pos.GetY(), pos.GetZ()};
+        }
+    }
+    
     m_positionSynced = false;  // 次フレームで再同期が必要
 }
 
 bool NavMeshAgentComponent::SetDestination(const XMFLOAT3& target) {
     auto& navSystem = NavMeshSystem::GetInstance();
     
-    if (!navSystem.HasNavMesh())
+    if (!navSystem.HasNavMesh()) {
+        Logger::Warning("[NavMeshAgent] SetDestination failed: No NavMesh");
         return false;
+    }
 
     // パス検索
     m_currentPath = navSystem.FindPath(m_currentPosition, target);
     
-    if (!m_currentPath.IsValid())
+    if (!m_currentPath.IsValid()) {
+        Logger::Warning("[NavMeshAgent] SetDestination failed: Path not found");
         return false;
+    }
 
     m_destination = target;
     m_currentWaypointIndex = 0;
@@ -142,30 +174,31 @@ void NavMeshAgentComponent::UpdatePathFollowing(float deltaTime) {
         m_currentSpeed = 0.0f;
         return;
     }
+    
+    auto& navSystem = NavMeshSystem::GetInstance();
+    if (m_autoRepath && navSystem.HasNavMesh() && !navSystem.IsPointOnNavMesh(m_currentPosition)) {
+        if (SnapToNavMesh()) {
+            SetDestination(m_destination);
+            return;
+        }
+    }
 
-    // 目的地到達チェック
     if (HasReachedDestination()) {
         Stop();
         return;
     }
 
-    // 現在のウェイポイントへの距離チェック
     XMFLOAT3 targetWaypoint = GetNextWaypoint();
     float distToWaypoint = DistanceXZ(m_currentPosition, targetWaypoint);
 
-    // ウェイポイント到達判定（半径ベース）
     const float waypointThreshold = m_radius * 0.5f;
     if (distToWaypoint <= waypointThreshold) {
         m_currentWaypointIndex++;
         
-        // 最終ウェイポイント到達
         if (m_currentWaypointIndex >= static_cast<int>(m_currentPath.waypoints.size())) {
-            if (HasReachedDestination()) {
-                Stop();
-                return;
-            }
-            // パスは終わったが目的地に未到達 → 再検索
-            SetDestination(m_destination);
+            // パスの全ウェイポイントを通過したら到達とみなす
+            Stop();
+            m_hasPath = false;
             return;
         }
         
@@ -176,40 +209,78 @@ void NavMeshAgentComponent::UpdatePathFollowing(float deltaTime) {
 }
 
 void NavMeshAgentComponent::CalculateDesiredVelocity(float deltaTime) {
-    XMFLOAT3 targetWaypoint = GetNextWaypoint();
+    XMFLOAT3 steeringTarget = GetSteeringTarget();
     
-    // 移動方向を計算（XZ平面）
     XMFLOAT3 direction;
-    direction.x = targetWaypoint.x - m_currentPosition.x;
-    direction.y = 0;  // 水平移動のみ
-    direction.z = targetWaypoint.z - m_currentPosition.z;
+    direction.x = steeringTarget.x - m_currentPosition.x;
+    direction.y = 0;
+    direction.z = steeringTarget.z - m_currentPosition.z;
     
     direction = Normalize(direction);
     m_steeringDirection = direction;
+    
+    if (Length(direction) > 0.001f) {
+        m_targetRotationY = std::atan2(direction.x, direction.z);
+    }
 
-    // 速度計算
     float remainingDist = GetRemainingDistance();
     float targetSpeed = m_maxSpeed;
 
-    // 自動ブレーキ
+    float cornerAngle = CalculateCornerAngle(m_currentWaypointIndex);
+    float cornerFactor = GetCornerSpeedFactor(cornerAngle);
+    targetSpeed *= cornerFactor;
+
     if (m_autoBraking && remainingDist < m_stoppingDistance * 3.0f) {
         float brakeFactor = remainingDist / (m_stoppingDistance * 3.0f);
-        targetSpeed = m_maxSpeed * std::max(0.1f, brakeFactor);
+        targetSpeed = std::min(targetSpeed, m_maxSpeed * std::max(0.1f, brakeFactor));
     }
 
-    // 加速/減速
     if (m_currentSpeed < targetSpeed) {
         m_currentSpeed += m_acceleration * deltaTime;
         m_currentSpeed = std::min(m_currentSpeed, targetSpeed);
     } else if (m_currentSpeed > targetSpeed) {
-        m_currentSpeed -= m_acceleration * deltaTime;
+        m_currentSpeed -= m_acceleration * 2.0f * deltaTime;
         m_currentSpeed = std::max(m_currentSpeed, targetSpeed);
     }
 
-    // 希望速度ベクトル
     m_desiredVelocity.x = direction.x * m_currentSpeed;
     m_desiredVelocity.y = 0;
     m_desiredVelocity.z = direction.z * m_currentSpeed;
+    
+    UpdateRotation(deltaTime);
+}
+
+void NavMeshAgentComponent::UpdateRotation(float deltaTime) {
+    // 角速度（ラジアン/秒）に変換
+    float angularSpeedRad = m_angularSpeed * (Math::PI / 180.0f);
+    
+    // 現在の回転から目標回転への差分
+    float diff = AngleDifference(m_currentRotationY, m_targetRotationY);
+    
+    // 最大回転量
+    float maxRotation = angularSpeedRad * deltaTime;
+    
+    // 回転量を制限
+    if (std::abs(diff) <= maxRotation) {
+        m_currentRotationY = m_targetRotationY;
+    } else {
+        float sign = (diff > 0.0f) ? 1.0f : -1.0f;
+        m_currentRotationY += sign * maxRotation;
+        m_currentRotationY = NormalizeAngle(m_currentRotationY);
+    }
+}
+
+float NavMeshAgentComponent::NormalizeAngle(float angle) {
+    // -π ～ π に正規化
+    while (angle > Math::PI) angle -= Math::TWO_PI;
+    while (angle < -Math::PI) angle += Math::TWO_PI;
+    return angle;
+}
+
+float NavMeshAgentComponent::AngleDifference(float from, float to) {
+    // 最短回転方向で角度差を計算
+    float diff = NormalizeAngle(to - from);
+    return diff;
 }
 
 XMFLOAT3 NavMeshAgentComponent::GetNextWaypoint() const {
@@ -220,6 +291,69 @@ XMFLOAT3 NavMeshAgentComponent::GetNextWaypoint() const {
         return m_destination;
 
     return m_currentPath.waypoints[m_currentWaypointIndex];
+}
+
+
+float NavMeshAgentComponent::CalculateCornerAngle(int waypointIndex) const {
+    if (m_currentPath.waypoints.size() < 2) return 0.0f;
+    if (waypointIndex < 0 || waypointIndex >= static_cast<int>(m_currentPath.waypoints.size()) - 1) return 0.0f;
+    
+    XMFLOAT3 current = (waypointIndex == 0) ? m_currentPosition : m_currentPath.waypoints[waypointIndex - 1];
+    XMFLOAT3 corner = m_currentPath.waypoints[waypointIndex];
+    XMFLOAT3 next = m_currentPath.waypoints[waypointIndex + 1];
+    
+    XMFLOAT3 dir1 = {corner.x - current.x, 0, corner.z - current.z};
+    XMFLOAT3 dir2 = {next.x - corner.x, 0, next.z - corner.z};
+    
+    dir1 = Normalize(dir1);
+    dir2 = Normalize(dir2);
+    
+    float dot = dir1.x * dir2.x + dir1.z * dir2.z;
+    dot = std::max(-1.0f, std::min(1.0f, dot));
+    
+    return std::acos(dot);
+}
+
+float NavMeshAgentComponent::GetCornerSpeedFactor(float angleRadians) const {
+    constexpr float sharpTurnThreshold = Math::PI * 0.25f;
+    constexpr float rightAngleThreshold = Math::PI * 0.5f;
+    
+    if (angleRadians < sharpTurnThreshold) return 1.0f;
+    
+    if (angleRadians >= rightAngleThreshold) return 0.3f;
+    
+    float t = (angleRadians - sharpTurnThreshold) / (rightAngleThreshold - sharpTurnThreshold);
+    return 1.0f - t * 0.7f;
+}
+
+XMFLOAT3 NavMeshAgentComponent::GetSteeringTarget() const {
+    if (m_currentPath.waypoints.empty()) return m_destination;
+    
+    constexpr float lookAheadDistance = 2.0f;
+    float accumulated = 0.0f;
+    
+    int idx = m_currentWaypointIndex;
+    XMFLOAT3 prevPoint = m_currentPosition;
+    
+    while (idx < static_cast<int>(m_currentPath.waypoints.size())) {
+        const auto& wp = m_currentPath.waypoints[idx];
+        float segmentDist = DistanceXZ(prevPoint, wp);
+        
+        if (accumulated + segmentDist >= lookAheadDistance) {
+            float t = (lookAheadDistance - accumulated) / segmentDist;
+            return {
+                prevPoint.x + t * (wp.x - prevPoint.x),
+                prevPoint.y + t * (wp.y - prevPoint.y),
+                prevPoint.z + t * (wp.z - prevPoint.z)
+            };
+        }
+        
+        accumulated += segmentDist;
+        prevPoint = wp;
+        idx++;
+    }
+    
+    return m_destination;
 }
 
 void NavMeshAgentComponent::DrawDebug(DebugRenderer* debugRenderer) const {

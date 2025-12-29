@@ -179,6 +179,7 @@ private:
     void RenderInspector(const EditorContext& context);
     void RenderHierarchy(const EditorContext& context);
     void RenderStats(const EditorContext& context);
+    void RenderNavMeshSettings();
     void RenderConsole();
     void RenderProject(const EditorContext& context);
     void RenderProfiler();
@@ -238,6 +239,9 @@ private:
     bool showConsole_ = true;
     bool showProject_ = true;
     bool showProfiler_ = false;
+    bool showNavMeshSettings_ = false;
+    bool showAgentVisualization_ = false;
+    GameObject* selectedNavMeshAgent_ = nullptr;
 
     // Docking layout
     bool dockingLayoutInitialized_ = false;
@@ -360,7 +364,6 @@ private:
     bool showGrid_ = true;
     bool showNavMesh_ = false;
 	bool showCollision_ = false;
-    bool showNavMeshSettings_ = false;
     
     // NavMeshベイク進捗
     float navMeshBakeProgress_ = 0.0f;

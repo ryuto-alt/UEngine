@@ -3725,6 +3725,65 @@ namespace UnoEngine {
 				recastNavMesh.DebugDraw(debugRenderer);
 			}
 		}
+
+		// NavAgent可視化（エージェント半径・高さを円柱で表示）
+		auto& navMeshManager = Navigation::NavMeshManager::Get();
+		auto navSettings = navMeshManager.GetSettings();
+		float agentRadius = navSettings.agentRadius;
+		float agentHeight = navSettings.agentHeight;
+
+		for (const auto& obj : *gameObjects_) {
+			auto* navAgent = obj->GetComponent<NavAgentComponent>();
+			if (!navAgent) continue;
+
+			const auto& transform = obj->GetTransform();
+			Vector3 basePos = transform.GetPosition();
+
+			// 色設定（選択中は黄色、通常はシアン）
+			Vector4 agentColor = (selectedObject_ == obj.get())
+				? Vector4(1.0f, 1.0f, 0.0f, 1.0f)  // 黄色（選択中）
+				: Vector4(0.0f, 0.8f, 1.0f, 1.0f); // シアン（通常）
+
+			// 円を描画（底面と上面）
+			constexpr int segments = 24;
+			constexpr float pi2 = 6.28318530718f;
+
+			for (int i = 0; i < segments; ++i) {
+				float angle1 = (static_cast<float>(i) / segments) * pi2;
+				float angle2 = (static_cast<float>(i + 1) / segments) * pi2;
+
+				float x1 = std::cos(angle1) * agentRadius;
+				float z1 = std::sin(angle1) * agentRadius;
+				float x2 = std::cos(angle2) * agentRadius;
+				float z2 = std::sin(angle2) * agentRadius;
+
+				// 底面の円
+				Vector3 p1Bottom(basePos.GetX() + x1, basePos.GetY(), basePos.GetZ() + z1);
+				Vector3 p2Bottom(basePos.GetX() + x2, basePos.GetY(), basePos.GetZ() + z2);
+				debugRenderer->AddLine(p1Bottom, p2Bottom, agentColor);
+
+				// 上面の円
+				Vector3 p1Top(basePos.GetX() + x1, basePos.GetY() + agentHeight, basePos.GetZ() + z1);
+				Vector3 p2Top(basePos.GetX() + x2, basePos.GetY() + agentHeight, basePos.GetZ() + z2);
+				debugRenderer->AddLine(p1Top, p2Top, agentColor);
+
+				// 縦線（4本）
+				if (i % (segments / 4) == 0) {
+					debugRenderer->AddLine(p1Bottom, p1Top, agentColor);
+				}
+			}
+
+			// パス表示（移動中の場合）
+			if (navAgent->HasPath() && navAgent->IsPathVisualized()) {
+				const auto& path = navAgent->GetCurrentPath();
+				Vector4 pathColor(0.0f, 1.0f, 0.5f, 1.0f); // 緑
+				for (size_t i = 0; i + 1 < path.size(); ++i) {
+					Vector3 from(path[i].x, path[i].y + 0.1f, path[i].z);
+					Vector3 to(path[i + 1].x, path[i + 1].y + 0.1f, path[i + 1].z);
+					debugRenderer->AddLine(from, to, pathColor);
+				}
+			}
+		}
 	}
 
 	// スクリーン座標からレイを飛ばしてオブジェクトを選択

@@ -6,6 +6,7 @@
 #include "../Core/CameraComponent.h"
 #include "../Input/InputManager.h"
 #include "../Animation/AnimatorComponent.h"
+#include "../Navigation/NavAgentComponent.h"
 
 namespace UnoEngine {
 
@@ -349,6 +350,123 @@ void LuaScriptComponent::BindEngineAPI() {
                 },
                 "isPlaying", [animator]() -> bool {
                     return animator->IsPlaying();
+                }
+            );
+        }
+    }
+
+    // ===== NavAgent API =====
+    if (gameObject) {
+        auto* navAgent = gameObject->GetComponent<NavAgentComponent>();
+        if (navAgent) {
+            lua["NavAgent"] = lua.create_table_with(
+                // 目的地設定
+                "setDestination", [navAgent](float x, float y, float z) -> bool {
+                    return navAgent->SetDestination({x, y, z});
+                },
+                
+                // 停止
+                "stop", [navAgent]() {
+                    navAgent->Stop();
+                },
+                
+                // 到達確認
+                "hasReachedDestination", [navAgent]() -> bool {
+                    return navAgent->HasReachedDestination();
+                },
+                
+                // 状態取得
+                "getState", [navAgent]() -> std::string {
+                    switch (navAgent->GetState()) {
+                        case NavAgentComponent::AgentState::Idle: return "idle";
+                        case NavAgentComponent::AgentState::Moving: return "moving";
+                        case NavAgentComponent::AgentState::Arrived: return "arrived";
+                        case NavAgentComponent::AgentState::Wandering: return "wandering";
+                        case NavAgentComponent::AgentState::Patrolling: return "patrolling";
+                        case NavAgentComponent::AgentState::Chasing: return "chasing";
+                        default: return "unknown";
+                    }
+                },
+                
+                // 速度取得
+                "getVelocity", [navAgent]() -> std::tuple<float, float, float> {
+                    auto vel = navAgent->GetVelocity();
+                    return {vel.x, vel.y, vel.z};
+                },
+                
+                // 残り距離
+                "getRemainingDistance", [navAgent]() -> float {
+                    return navAgent->GetRemainingDistance();
+                },
+                
+                // ===== 徘徊 (Wander) =====
+                "startWander", [navAgent](float radius) {
+                    navAgent->StartWander(NavAgentComponent::WanderMode::AroundSpawn, radius);
+                },
+                "startWanderRandom", [navAgent]() {
+                    navAgent->StartWander(NavAgentComponent::WanderMode::Random);
+                },
+                "startWanderAroundCurrent", [navAgent](float radius) {
+                    navAgent->StartWander(NavAgentComponent::WanderMode::AroundCurrent, radius);
+                },
+                "stopWander", [navAgent]() {
+                    navAgent->StopWander();
+                },
+                "isWandering", [navAgent]() -> bool {
+                    return navAgent->IsWandering();
+                },
+                
+                // ===== パトロール (Patrol) =====
+                "addPatrolPoint", [navAgent](float x, float y, float z) {
+                    navAgent->AddPatrolPoint({x, y, z});
+                },
+                "clearPatrolPoints", [navAgent]() {
+                    navAgent->ClearPatrolPoints();
+                },
+                "startPatrol", [navAgent](bool loop) {
+                    // 既に追加されたポイントでパトロール開始
+                    const auto& path = navAgent->GetCurrentPath();
+                    navAgent->StartPatrol({}, loop);
+                },
+                "stopPatrol", [navAgent]() {
+                    navAgent->StopPatrol();
+                },
+                "isPatrolling", [navAgent]() -> bool {
+                    return navAgent->IsPatrolling();
+                },
+                
+                // ===== 追跡 (Chase) =====
+                "stopChase", [navAgent]() {
+                    navAgent->StopChase();
+                },
+                "isChasing", [navAgent]() -> bool {
+                    return navAgent->IsChasing();
+                },
+                
+                // ===== プロパティ =====
+                "getSpeed", [navAgent]() -> float {
+                    return navAgent->GetSpeed();
+                },
+                "setSpeed", [navAgent](float speed) {
+                    navAgent->SetSpeed(speed);
+                },
+                "getAngularSpeed", [navAgent]() -> float {
+                    return navAgent->GetAngularSpeed();
+                },
+                "setAngularSpeed", [navAgent](float speed) {
+                    navAgent->SetAngularSpeed(speed);
+                },
+                "getStoppingDistance", [navAgent]() -> float {
+                    return navAgent->GetStoppingDistance();
+                },
+                "setStoppingDistance", [navAgent](float dist) {
+                    navAgent->SetStoppingDistance(dist);
+                },
+                "getWaitTime", [navAgent]() -> float {
+                    return navAgent->GetWaitTime();
+                },
+                "setWaitTime", [navAgent](float time) {
+                    navAgent->SetWaitTime(time);
                 }
             );
         }

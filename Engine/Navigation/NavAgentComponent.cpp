@@ -3,6 +3,7 @@
 #include "NavMeshManager.h"
 #include "../Core/GameObject.h"
 #include "../Core/Transform.h"
+#include "../Core/Logger.h"
 #include <cmath>
 
 namespace UnoEngine {
@@ -11,32 +12,133 @@ void NavAgentComponent::Awake() {
     state_ = AgentState::Idle;
     currentPath_.clear();
     velocity_ = {0.0f, 0.0f, 0.0f};
+    
+    if (gameObject_) {
+        auto pos = gameObject_->GetTransform().GetPosition();
+        spawnPosition_ = {pos.GetX(), pos.GetY(), pos.GetZ()};
+    }
 }
 
 void NavAgentComponent::Start() {
+    InitializeCrowdAgent();
 }
 
 void NavAgentComponent::OnUpdate(float deltaTime) {
-    if (!enabled_ || state_ == AgentState::Idle) {
+    if (!enabled_) {
         return;
     }
 
-    if (currentPath_.empty()) {
-        state_ = AgentState::Idle;
+    auto& navMesh = Navigation::NavMeshManager::Get();
+    
+    // NavMeshビルド中は何もしない（スレッドセーフティ）
+    if (navMesh.IsBuilding()) {
         return;
     }
+    
+    // Crowdが破棄された場合（NavMesh再ベイク等）、エージェントをリセット
+    if (crowdAgentIndex_ >= 0 && !navMesh.IsCrowdInitialized()) {
+        Logger::Info("[NavAgent] Crowd was reset, re-initializing agent...");
+        crowdAgentIndex_ = -1;
+        hasInitialDestination_ = false;
+    }
 
-    UpdateMovement(deltaTime);
+    // エージェントがまだ初期化されていなければ初期化を試みる
+    if (crowdAgentIndex_ < 0 && useCrowd_) {
+        InitializeCrowdAgent();
+    }
+
+    // 状態別更新
+    switch (state_) {
+        case AgentState::Idle:
+            break;
+            
+        case AgentState::Moving:
+            UpdateCrowdAgent();
+            break;
+            
+        case AgentState::Wandering:
+            UpdateWander(deltaTime);
+            break;
+            
+        case AgentState::Patrolling:
+            UpdatePatrol(deltaTime);
+            break;
+            
+        case AgentState::Chasing:
+            UpdateChase(deltaTime);
+            break;
+            
+        case AgentState::Arrived:
+            break;
+    }
+
+    // 位置を同期
+    if (crowdAgentIndex_ >= 0) {
+        SyncTransformFromCrowd();
+    }
+    
     UpdateRotation(deltaTime);
 }
 
 void NavAgentComponent::OnDestroy() {
+    auto& navMesh = Navigation::NavMeshManager::Get();
+    if (crowdAgentIndex_ >= 0) {
+        navMesh.RemoveCrowdAgent(crowdAgentIndex_);
+        crowdAgentIndex_ = -1;
+    }
     ClearPath();
+}
+
+void NavAgentComponent::InitializeCrowdAgent() {
+    if (!useCrowd_ || !gameObject_) {
+        return;
+    }
+
+    auto& navMesh = Navigation::NavMeshManager::Get();
+    
+    if (!navMesh.IsBuilt()) {
+        Logger::Debug("[NavAgent] NavMesh not built yet, waiting...");
+        return;
+    }
+    
+    // Crowdがまだ初期化されていなければ初期化
+    if (!navMesh.IsCrowdInitialized()) {
+        Logger::Info("[NavAgent] Initializing crowd system...");
+        if (!navMesh.InitializeCrowd(128, agentRadius_)) {
+            Logger::Warning("[NavAgent] Failed to initialize crowd system");
+            return;
+        }
+        Logger::Info("[NavAgent] Crowd system initialized successfully");
+    }
+    
+    auto pos = gameObject_->GetTransform().GetPosition();
+    DirectX::XMFLOAT3 position = {pos.GetX(), pos.GetY(), pos.GetZ()};
+    
+    crowdAgentIndex_ = navMesh.AddCrowdAgent(position, agentRadius_, agentHeight_, speed_, acceleration_);
+    
+    if (crowdAgentIndex_ >= 0) {
+        Logger::Info("[NavAgent] Agent {} added at ({:.2f}, {:.2f}, {:.2f})", 
+            crowdAgentIndex_, position.x, position.y, position.z);
+    } else {
+        Logger::Warning("[NavAgent] Failed to add crowd agent");
+    }
 }
 
 bool NavAgentComponent::SetDestination(const DirectX::XMFLOAT3& destination) {
     destination_ = destination;
     
+    auto& navMesh = Navigation::NavMeshManager::Get();
+    
+    if (crowdAgentIndex_ >= 0 && navMesh.IsCrowdInitialized()) {
+        if (navMesh.SetAgentTarget(crowdAgentIndex_, destination)) {
+            state_ = AgentState::Moving;
+            isWaiting_ = false;
+            return true;
+        }
+        return false;
+    }
+    
+    // フォールバック: 従来のパス計算
     if (!CalculatePath()) {
         state_ = AgentState::Idle;
         return false;
@@ -48,9 +150,16 @@ bool NavAgentComponent::SetDestination(const DirectX::XMFLOAT3& destination) {
 }
 
 void NavAgentComponent::Stop() {
+    auto& navMesh = Navigation::NavMeshManager::Get();
+    
+    if (crowdAgentIndex_ >= 0) {
+        navMesh.StopAgent(crowdAgentIndex_);
+    }
+    
     state_ = AgentState::Idle;
     velocity_ = {0.0f, 0.0f, 0.0f};
     currentSpeed_ = 0.0f;
+    chaseTarget_ = nullptr;
 }
 
 void NavAgentComponent::ClearPath() {
@@ -61,146 +170,355 @@ void NavAgentComponent::ClearPath() {
 }
 
 bool NavAgentComponent::HasReachedDestination() const {
+    if (crowdAgentIndex_ >= 0) {
+        auto& navMesh = Navigation::NavMeshManager::Get();
+        return navMesh.HasAgentReachedTarget(crowdAgentIndex_, stoppingDistance_);
+    }
     return state_ == AgentState::Arrived;
 }
 
-void NavAgentComponent::UpdateMovement(float deltaTime) {
-    if (!gameObject_ || currentPath_.empty()) {
+// ========== Wander ==========
+void NavAgentComponent::StartWander(WanderMode mode, float radius) {
+    Logger::Info("[NavAgent] StartWander called - mode: {}, radius: {:.1f}", 
+        static_cast<int>(mode), radius);
+    
+    wanderMode_ = mode;
+    wanderRadius_ = radius;
+    
+    if (mode == WanderMode::AroundSpawn && gameObject_) {
+        auto pos = gameObject_->GetTransform().GetPosition();
+        spawnPosition_ = {pos.GetX(), pos.GetY(), pos.GetZ()};
+    }
+    
+    state_ = AgentState::Wandering;
+    isWaiting_ = false;
+    currentWaitTime_ = 0.0f;
+    hasInitialDestination_ = false;  // Reset for new wander session
+    
+    // エージェントが初期化されるまで待機（UpdateWanderで処理）
+    if (crowdAgentIndex_ < 0) {
+        Logger::Info("[NavAgent] Agent not initialized yet, will pick destination when ready");
         return;
     }
+    
+    // エージェントが既に初期化されている場合は即座に目的地を設定
+    hasInitialDestination_ = true;
+    PickRandomDestination();
+}
 
-    auto& transform = gameObject_->GetTransform();
-    auto pos = transform.GetPosition();
-    DirectX::XMFLOAT3 currentPos = {pos.GetX(), pos.GetY(), pos.GetZ()};
+void NavAgentComponent::StopWander() {
+    if (state_ == AgentState::Wandering) {
+        Stop();
+    }
+}
 
-    // 現在のウェイポイントを取得
-    if (currentWaypointIndex_ >= currentPath_.size()) {
+bool NavAgentComponent::PickRandomDestination() {
+    auto& navMesh = Navigation::NavMeshManager::Get();
+    
+    if (crowdAgentIndex_ < 0) {
+        Logger::Warning("[NavAgent] Cannot pick destination - agent not initialized");
+        return false;
+    }
+    
+    DirectX::XMFLOAT3 newDest;
+    bool found = false;
+    
+    switch (wanderMode_) {
+        case WanderMode::Random:
+            found = navMesh.GetRandomPointOnNavMesh(newDest);
+            break;
+            
+        case WanderMode::AroundSpawn:
+            found = navMesh.GetRandomPointAroundCircle(spawnPosition_, wanderRadius_, newDest);
+            break;
+            
+        case WanderMode::AroundCurrent:
+            if (gameObject_) {
+                auto pos = gameObject_->GetTransform().GetPosition();
+                DirectX::XMFLOAT3 current = {pos.GetX(), pos.GetY(), pos.GetZ()};
+                found = navMesh.GetRandomPointAroundCircle(current, wanderRadius_, newDest);
+            }
+            break;
+    }
+    
+    if (found) {
+        Logger::Info("[NavAgent] Picked random destination: ({:.2f}, {:.2f}, {:.2f})", 
+            newDest.x, newDest.y, newDest.z);
+        destination_ = newDest;
+        
+        if (navMesh.SetAgentTarget(crowdAgentIndex_, newDest)) {
+            return true;
+        }
+        Logger::Warning("[NavAgent] Failed to set agent target");
+        return false;
+    }
+    
+    Logger::Warning("[NavAgent] Failed to find random point on NavMesh");
+    return false;
+}
+
+// ========== Patrol ==========
+void NavAgentComponent::StartPatrol(const std::vector<DirectX::XMFLOAT3>& points, bool loop) {
+    patrolPoints_ = points;
+    patrolLoop_ = loop;
+    patrolReverse_ = false;
+    currentPatrolIndex_ = 0;
+    
+    if (patrolPoints_.empty()) {
+        state_ = AgentState::Idle;
+        return;
+    }
+    
+    state_ = AgentState::Patrolling;
+    isWaiting_ = false;
+    currentWaitTime_ = 0.0f;
+    
+    SetDestination(patrolPoints_[0]);
+}
+
+void NavAgentComponent::StopPatrol() {
+    if (state_ == AgentState::Patrolling) {
+        Stop();
+    }
+}
+
+void NavAgentComponent::AddPatrolPoint(const DirectX::XMFLOAT3& point) {
+    patrolPoints_.push_back(point);
+}
+
+void NavAgentComponent::ClearPatrolPoints() {
+    patrolPoints_.clear();
+    currentPatrolIndex_ = 0;
+}
+
+// ========== Chase ==========
+void NavAgentComponent::StartChase(GameObject* target, float updateInterval) {
+    if (!target) {
+        return;
+    }
+    
+    chaseTarget_ = target;
+    chaseUpdateInterval_ = updateInterval;
+    chaseUpdateTimer_ = 0.0f;
+    state_ = AgentState::Chasing;
+    
+    // 初回ターゲット設定
+    auto targetPos = target->GetTransform().GetPosition();
+    SetDestination({targetPos.GetX(), targetPos.GetY(), targetPos.GetZ()});
+}
+
+void NavAgentComponent::StopChase() {
+    chaseTarget_ = nullptr;
+    if (state_ == AgentState::Chasing) {
+        Stop();
+    }
+}
+
+// ========== Properties ==========
+void NavAgentComponent::SetSpeed(float speed) {
+    speed_ = speed;
+    // Crowdエージェントのパラメータも更新（次回エージェント追加時に反映）
+}
+
+void NavAgentComponent::SetAcceleration(float acceleration) {
+    acceleration_ = acceleration;
+}
+
+DirectX::XMFLOAT3 NavAgentComponent::GetVelocity() const {
+    if (crowdAgentIndex_ >= 0) {
+        auto& navMesh = Navigation::NavMeshManager::Get();
+        return navMesh.GetAgentVelocity(crowdAgentIndex_);
+    }
+    return velocity_;
+}
+
+float NavAgentComponent::GetRemainingDistance() const {
+    if (crowdAgentIndex_ >= 0 && gameObject_) {
+        auto pos = gameObject_->GetTransform().GetPosition();
+        float dx = destination_.x - pos.GetX();
+        float dy = destination_.y - pos.GetY();
+        float dz = destination_.z - pos.GetZ();
+        return std::sqrt(dx * dx + dy * dy + dz * dz);
+    }
+    return remainingDistance_;
+}
+
+// ========== Private Update Methods ==========
+void NavAgentComponent::UpdateCrowdAgent() {
+    if (crowdAgentIndex_ < 0) {
+        return;
+    }
+    
+    auto& navMesh = Navigation::NavMeshManager::Get();
+    
+    if (navMesh.HasAgentReachedTarget(crowdAgentIndex_, stoppingDistance_)) {
         state_ = AgentState::Arrived;
-        velocity_ = {0.0f, 0.0f, 0.0f};
-        currentSpeed_ = 0.0f;
+        
+        if (onDestinationReached_) {
+            onDestinationReached_();
+        }
+    }
+}
+
+void NavAgentComponent::UpdateWander(float deltaTime) {
+    // エージェントがまだ初期化されていない場合は待機
+    if (crowdAgentIndex_ < 0) {
         return;
     }
-
-    const auto& targetWaypoint = currentPath_[currentWaypointIndex_];
-
-    // ウェイポイントへのベクトル
-    float dx = targetWaypoint.x - currentPos.x;
-    float dy = targetWaypoint.y - currentPos.y;
-    float dz = targetWaypoint.z - currentPos.z;
-    float distToWaypoint = std::sqrt(dx * dx + dy * dy + dz * dz);
-
-    // 残り距離を計算
-    remainingDistance_ = distToWaypoint;
-    for (size_t i = currentWaypointIndex_ + 1; i < currentPath_.size(); ++i) {
-        const auto& wp1 = currentPath_[i - 1];
-        const auto& wp2 = currentPath_[i];
-        float segDx = wp2.x - wp1.x;
-        float segDy = wp2.y - wp1.y;
-        float segDz = wp2.z - wp1.z;
-        remainingDistance_ += std::sqrt(segDx * segDx + segDy * segDy + segDz * segDz);
+    
+    auto& navMesh = Navigation::NavMeshManager::Get();
+    
+    // 目的地がまだ設定されていない場合（初期化直後）
+    if (!hasInitialDestination_) {
+        hasInitialDestination_ = true;
+        PickRandomDestination();
+        return;
     }
-
-    // ウェイポイントに到達したか
-    constexpr float waypointThreshold = 0.2f;
-    if (distToWaypoint < waypointThreshold) {
-        ++currentWaypointIndex_;
-        if (currentWaypointIndex_ >= currentPath_.size()) {
-            state_ = AgentState::Arrived;
-            velocity_ = {0.0f, 0.0f, 0.0f};
-            currentSpeed_ = 0.0f;
-            return;
+    
+    if (isWaiting_) {
+        currentWaitTime_ += deltaTime;
+        if (currentWaitTime_ >= waitTime_) {
+            isWaiting_ = false;
+            currentWaitTime_ = 0.0f;
+            PickRandomDestination();
         }
         return;
     }
-
-    // 加速・減速
-    float targetSpeed = speed_;
-    if (autoBrake_ && remainingDistance_ < stoppingDistance_ * 3.0f) {
-        targetSpeed = speed_ * (remainingDistance_ / (stoppingDistance_ * 3.0f));
-        targetSpeed = std::max(targetSpeed, 0.5f);
+    
+    if (navMesh.HasAgentReachedTarget(crowdAgentIndex_, stoppingDistance_)) {
+        isWaiting_ = true;
+        currentWaitTime_ = 0.0f;
     }
+}
 
-    if (currentSpeed_ < targetSpeed) {
-        currentSpeed_ += acceleration_ * deltaTime;
-        currentSpeed_ = std::min(currentSpeed_, targetSpeed);
-    } else if (currentSpeed_ > targetSpeed) {
-        currentSpeed_ -= acceleration_ * deltaTime;
-        currentSpeed_ = std::max(currentSpeed_, targetSpeed);
-    }
-
-    // 停止距離チェック
-    if (remainingDistance_ <= stoppingDistance_) {
-        state_ = AgentState::Arrived;
-        velocity_ = {0.0f, 0.0f, 0.0f};
-        currentSpeed_ = 0.0f;
+void NavAgentComponent::UpdatePatrol(float deltaTime) {
+    if (patrolPoints_.empty()) {
+        state_ = AgentState::Idle;
         return;
     }
+    
+    if (isWaiting_) {
+        currentWaitTime_ += deltaTime;
+        if (currentWaitTime_ >= waitTime_) {
+            isWaiting_ = false;
+            currentWaitTime_ = 0.0f;
+            
+            // 次のパトロールポイントへ
+            if (patrolLoop_) {
+                currentPatrolIndex_ = (currentPatrolIndex_ + 1) % patrolPoints_.size();
+            } else {
+                if (patrolReverse_) {
+                    if (currentPatrolIndex_ == 0) {
+                        patrolReverse_ = false;
+                        currentPatrolIndex_ = 1;
+                    } else {
+                        --currentPatrolIndex_;
+                    }
+                } else {
+                    if (currentPatrolIndex_ >= patrolPoints_.size() - 1) {
+                        patrolReverse_ = true;
+                        currentPatrolIndex_ = patrolPoints_.size() - 2;
+                    } else {
+                        ++currentPatrolIndex_;
+                    }
+                }
+            }
+            
+            if (currentPatrolIndex_ < patrolPoints_.size()) {
+                SetDestination(patrolPoints_[currentPatrolIndex_]);
+            }
+        }
+        return;
+    }
+    
+    auto& navMesh = Navigation::NavMeshManager::Get();
+    
+    if (crowdAgentIndex_ >= 0) {
+        if (navMesh.HasAgentReachedTarget(crowdAgentIndex_, stoppingDistance_)) {
+            isWaiting_ = true;
+            currentWaitTime_ = 0.0f;
+        }
+    }
+}
 
-    // 移動方向を正規化
-    float invDist = 1.0f / distToWaypoint;
-    float dirX = dx * invDist;
-    float dirY = dy * invDist;
-    float dirZ = dz * invDist;
-
-    // 速度を設定
-    velocity_.x = dirX * currentSpeed_;
-    velocity_.y = dirY * currentSpeed_;
-    velocity_.z = dirZ * currentSpeed_;
-
-    // 位置を更新
-    float newX = currentPos.x + velocity_.x * deltaTime;
-    float newY = currentPos.y + velocity_.y * deltaTime + baseOffset_;
-    float newZ = currentPos.z + velocity_.z * deltaTime;
-
-    transform.SetPosition(Vector3(newX, newY, newZ));
+void NavAgentComponent::UpdateChase(float deltaTime) {
+    if (!chaseTarget_) {
+        Stop();
+        return;
+    }
+    
+    chaseUpdateTimer_ += deltaTime;
+    
+    if (chaseUpdateTimer_ >= chaseUpdateInterval_) {
+        chaseUpdateTimer_ = 0.0f;
+        
+        auto targetPos = chaseTarget_->GetTransform().GetPosition();
+        DirectX::XMFLOAT3 newDest = {targetPos.GetX(), targetPos.GetY(), targetPos.GetZ()};
+        
+        // 目的地が大きく変わった場合のみ更新
+        float dx = newDest.x - destination_.x;
+        float dz = newDest.z - destination_.z;
+        float distSq = dx * dx + dz * dz;
+        
+        if (distSq > 1.0f) { // 1m以上移動した場合
+            auto& navMesh = Navigation::NavMeshManager::Get();
+            if (crowdAgentIndex_ >= 0) {
+                navMesh.SetAgentTarget(crowdAgentIndex_, newDest);
+            }
+            destination_ = newDest;
+        }
+    }
 }
 
 void NavAgentComponent::UpdateRotation(float deltaTime) {
-    if (!gameObject_ || currentPath_.empty() || state_ != AgentState::Moving) {
+    if (!gameObject_) {
         return;
     }
-
-    // 速度が十分にあるときのみ回転
-    float speedSq = velocity_.x * velocity_.x + velocity_.z * velocity_.z;
+    
+    auto vel = GetVelocity();
+    float speedSq = vel.x * vel.x + vel.z * vel.z;
     if (speedSq < 0.01f) {
         return;
     }
 
     auto& transform = gameObject_->GetTransform();
-
-    // 目標方向角度（Y軸回転のみ）
-    float targetYaw = std::atan2(velocity_.x, velocity_.z);
-
-    // 現在の回転を取得
-    auto currentRot = transform.GetRotation();
     
-    // 簡易的なYaw角度取得（クォータニオンからの抽出）
+    float targetYaw = std::atan2(vel.x, vel.z);
+    
+    auto currentRot = transform.GetRotation();
     float sinY = 2.0f * (currentRot.GetW() * currentRot.GetY() - currentRot.GetZ() * currentRot.GetX());
     float cosY = 1.0f - 2.0f * (currentRot.GetX() * currentRot.GetX() + currentRot.GetY() * currentRot.GetY());
     float currentYaw = std::atan2(sinY, cosY);
 
-    // 角度差
     float angleDiff = targetYaw - currentYaw;
 
-    // -PI〜PIに正規化
     constexpr float PI = 3.14159265f;
     while (angleDiff > PI) angleDiff -= 2.0f * PI;
     while (angleDiff < -PI) angleDiff += 2.0f * PI;
 
-    // 回転速度（ラジアン/秒）
     float maxRotation = angularSpeed_ * 0.0174533f * deltaTime;
 
-    // 回転を適用
     if (std::abs(angleDiff) > maxRotation) {
         angleDiff = (angleDiff > 0.0f) ? maxRotation : -maxRotation;
     }
 
     float newYaw = currentYaw + angleDiff;
 
-    // 新しいクォータニオンを作成（Y軸回転のみ）
     float halfAngle = newYaw * 0.5f;
     Quaternion newRot(0.0f, std::sin(halfAngle), 0.0f, std::cos(halfAngle));
     transform.SetRotation(newRot);
+}
+
+void NavAgentComponent::SyncTransformFromCrowd() {
+    if (!gameObject_ || crowdAgentIndex_ < 0) {
+        return;
+    }
+    
+    auto& navMesh = Navigation::NavMeshManager::Get();
+    auto agentPos = navMesh.GetAgentPosition(crowdAgentIndex_);
+    
+    auto& transform = gameObject_->GetTransform();
+    transform.SetPosition(Vector3(agentPos.x, agentPos.y + baseOffset_, agentPos.z));
 }
 
 bool NavAgentComponent::CalculatePath() {

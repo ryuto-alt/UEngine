@@ -4638,7 +4638,12 @@ namespace UnoEngine {
 			navMeshBakeStage_ = U8("初期化中...");
 		}
 
-		auto settings = recastNavMeshSettings_;
+		// UIで編集した設定を使用
+		auto& navMeshManager = Navigation::NavMeshManager::Get();
+		auto settings = navMeshManager.GetSettings();
+		
+		// ビルド開始フラグを設定（Crowd更新を防ぐ）
+		navMeshManager.SetBuilding(true);
 
 		navMeshBakeFuture_ = std::async(std::launch::async, [this, geometryList = std::move(geometryList), settings]() {
 			auto& navMeshManager = Navigation::NavMeshManager::Get();
@@ -4651,6 +4656,9 @@ namespace UnoEngine {
 			});
 
 			bool result = navMeshManager.BuildNavMesh(geometryList, settings);
+			
+			// ビルド完了フラグをリセット
+			navMeshManager.SetBuilding(false);
 			navMeshBaking_.store(false);
 			return result;
 		});

@@ -17,6 +17,7 @@
 #include "../Resource/ResourceManager.h"
 #include "../Resource/StaticModelImporter.h"
 #include "../Scripting/LuaScriptComponent.h"
+#include "../Navigation/NavMeshManager.h"
 #include "../../Game/GameApplication.h"
 #include <algorithm>
 #include <fstream>
@@ -196,6 +197,19 @@ void Scene::OnUpdate(float deltaTime) {
 
     // Process pending Start() calls before Update
     ProcessPendingStarts();
+
+    // Update NavMesh Crowd system (must be called once per frame before agent components)
+#ifdef _DEBUG
+    if (editorUI_.IsPlaying()) {
+#endif
+        auto& navMesh = Navigation::NavMeshManager::Get();
+        // ビルド中はCrowd更新をスキップ（スレッドセーフティ）
+        if (navMesh.IsCrowdInitialized() && !navMesh.IsBuilding()) {
+            navMesh.UpdateCrowd(deltaTime);
+        }
+#ifdef _DEBUG
+    }
+#endif
 
     // Update all game objects
 #ifdef _DEBUG

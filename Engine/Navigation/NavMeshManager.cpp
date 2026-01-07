@@ -7,6 +7,7 @@
 #include <DetourNavMesh.h>
 #include <DetourNavMeshBuilder.h>
 #include <DetourNavMeshQuery.h>
+#include <DetourCrowd.h>
 
 #include <chrono>
 #include <cstring>
@@ -56,6 +57,12 @@ void NavMeshManager::Initialize()
 void NavMeshManager::Shutdown()
 {
     CleanupBuildData();
+    
+    if (m_crowd)
+    {
+        dtFreeCrowd(m_crowd);
+        m_crowd = nullptr;
+    }
     
     if (m_navMeshQuery)
     {
@@ -125,8 +132,13 @@ bool NavMeshManager::BuildNavMesh(const std::vector<StaticGeometry>& geometry,
     
     m_settings = settings;
     
-    // 既存データをクリア
+    // 既存データをクリア（Crowdも含む - NavMeshに依存するため）
     CleanupBuildData();
+    if (m_crowd)
+    {
+        dtFreeCrowd(m_crowd);
+        m_crowd = nullptr;
+    }
     if (m_navMeshQuery)
     {
         dtFreeNavMeshQuery(m_navMeshQuery);
@@ -1012,6 +1024,299 @@ void NavMeshManager::ReportProgress(float progress, const char* stage)
     {
         m_progressCallback(progress, stage);
     }
+}
+
+// ========== Crowd (Agent Management) ==========
+bool NavMeshManager::InitializeCrowd(int maxAgents, float maxAgentRadius)
+{
+    if (!m_navMesh)
+    {
+        return false;
+    }
+    
+    if (m_crowd)
+    {
+        dtFreeCrowd(m_crowd);
+        m_crowd = nullptr;
+    }
+    
+    m_crowd = dtAllocCrowd();
+    if (!m_crowd)
+    {
+        return false;
+    }
+    
+    if (!m_crowd->init(maxAgents, maxAgentRadius, m_navMesh))
+    {
+        dtFreeCrowd(m_crowd);
+        m_crowd = nullptr;
+        return false;
+    }
+    
+    // 障害物回避パラメータの設定（狭い通路向けに最適化）
+    dtObstacleAvoidanceParams params;
+    std::memset(&params, 0, sizeof(params));
+    
+    // 高精度設定（狭い迷路向け）
+    params.velBias = 0.4f;
+    params.weightDesVel = 2.0f;
+    params.weightCurVel = 0.75f;
+    params.weightSide = 0.75f;
+    params.weightToi = 2.5f;
+    params.horizTime = 2.5f;
+    params.gridSize = 33;
+    params.adaptiveDivs = 7;
+    params.adaptiveRings = 2;
+    params.adaptiveDepth = 5;
+    
+    m_crowd->setObstacleAvoidanceParams(0, &params);
+    
+    // さらに高精度なプリセット（インデックス1）
+    params.adaptiveDivs = 8;
+    params.adaptiveRings = 3;
+    params.adaptiveDepth = 6;
+    m_crowd->setObstacleAvoidanceParams(1, &params);
+    
+    return true;
+}
+
+int NavMeshManager::AddCrowdAgent(const DirectX::XMFLOAT3& position, float radius, float height,
+                                   float maxSpeed, float maxAcceleration)
+{
+    if (!m_crowd)
+    {
+        return -1;
+    }
+    
+    dtCrowdAgentParams ap;
+    std::memset(&ap, 0, sizeof(ap));
+    
+    ap.radius = radius;
+    ap.height = height;
+    ap.maxAcceleration = maxAcceleration;
+    ap.maxSpeed = maxSpeed;
+    ap.collisionQueryRange = radius * 12.0f;
+    ap.pathOptimizationRange = radius * 30.0f;
+    ap.separationWeight = 2.0f;
+    
+    // 更新フラグ: ターン予測、障害物回避、分離、パス最適化
+    ap.updateFlags = DT_CROWD_ANTICIPATE_TURNS | 
+                     DT_CROWD_OBSTACLE_AVOIDANCE |
+                     DT_CROWD_SEPARATION |
+                     DT_CROWD_OPTIMIZE_VIS |
+                     DT_CROWD_OPTIMIZE_TOPO;
+    
+    ap.obstacleAvoidanceType = 1; // 高精度プリセット
+    ap.queryFilterType = 0;
+    ap.userData = nullptr;
+    
+    float pos[3] = { position.x, position.y, position.z };
+    return m_crowd->addAgent(pos, &ap);
+}
+
+void NavMeshManager::RemoveCrowdAgent(int agentIndex)
+{
+    if (m_crowd && agentIndex >= 0)
+    {
+        m_crowd->removeAgent(agentIndex);
+    }
+}
+
+bool NavMeshManager::SetAgentTarget(int agentIndex, const DirectX::XMFLOAT3& target)
+{
+    if (!m_crowd || !m_navMeshQuery || agentIndex < 0)
+    {
+        return false;
+    }
+    
+    const dtCrowdAgent* agent = m_crowd->getAgent(agentIndex);
+    if (!agent || !agent->active)
+    {
+        return false;
+    }
+    
+    const float polyPickExt[3] = { 2.0f, 4.0f, 2.0f };
+    dtQueryFilter filter;
+    filter.setIncludeFlags(0xFFFF);
+    filter.setExcludeFlags(0);
+    
+    dtPolyRef targetRef = 0;
+    float targetPos[3];
+    float pos[3] = { target.x, target.y, target.z };
+    
+    dtStatus status = m_navMeshQuery->findNearestPoly(pos, polyPickExt, &filter, &targetRef, targetPos);
+    if (dtStatusFailed(status) || targetRef == 0)
+    {
+        return false;
+    }
+    
+    return m_crowd->requestMoveTarget(agentIndex, targetRef, targetPos);
+}
+
+void NavMeshManager::StopAgent(int agentIndex)
+{
+    if (m_crowd && agentIndex >= 0)
+    {
+        m_crowd->resetMoveTarget(agentIndex);
+    }
+}
+
+void NavMeshManager::UpdateCrowd(float deltaTime)
+{
+    if (m_crowd)
+    {
+        m_crowd->update(deltaTime, nullptr);
+    }
+}
+
+DirectX::XMFLOAT3 NavMeshManager::GetAgentPosition(int agentIndex) const
+{
+    if (!m_crowd || agentIndex < 0)
+    {
+        return { 0.0f, 0.0f, 0.0f };
+    }
+    
+    const dtCrowdAgent* agent = m_crowd->getAgent(agentIndex);
+    if (!agent || !agent->active)
+    {
+        return { 0.0f, 0.0f, 0.0f };
+    }
+    
+    return { agent->npos[0], agent->npos[1], agent->npos[2] };
+}
+
+DirectX::XMFLOAT3 NavMeshManager::GetAgentVelocity(int agentIndex) const
+{
+    if (!m_crowd || agentIndex < 0)
+    {
+        return { 0.0f, 0.0f, 0.0f };
+    }
+    
+    const dtCrowdAgent* agent = m_crowd->getAgent(agentIndex);
+    if (!agent || !agent->active)
+    {
+        return { 0.0f, 0.0f, 0.0f };
+    }
+    
+    return { agent->vel[0], agent->vel[1], agent->vel[2] };
+}
+
+bool NavMeshManager::IsAgentActive(int agentIndex) const
+{
+    if (!m_crowd || agentIndex < 0)
+    {
+        return false;
+    }
+    
+    const dtCrowdAgent* agent = m_crowd->getAgent(agentIndex);
+    return agent && agent->active;
+}
+
+bool NavMeshManager::HasAgentReachedTarget(int agentIndex, float tolerance) const
+{
+    if (!m_crowd || agentIndex < 0)
+    {
+        return false;
+    }
+    
+    const dtCrowdAgent* agent = m_crowd->getAgent(agentIndex);
+    if (!agent || !agent->active)
+    {
+        return false;
+    }
+    
+    // ターゲットがない場合は到達とみなす
+    if (agent->targetState == DT_CROWDAGENT_TARGET_NONE ||
+        agent->targetState == DT_CROWDAGENT_TARGET_FAILED)
+    {
+        return true;
+    }
+    
+    // 目的地との距離を計算
+    float dx = agent->targetPos[0] - agent->npos[0];
+    float dy = agent->targetPos[1] - agent->npos[1];
+    float dz = agent->targetPos[2] - agent->npos[2];
+    float distSq = dx * dx + dy * dy + dz * dz;
+    
+    return distSq < tolerance * tolerance;
+}
+
+bool NavMeshManager::GetRandomPointOnNavMesh(DirectX::XMFLOAT3& outPoint) const
+{
+    if (!m_navMeshQuery)
+    {
+        return false;
+    }
+    
+    dtQueryFilter filter;
+    filter.setIncludeFlags(0xFFFF);
+    filter.setExcludeFlags(0);
+    
+    dtPolyRef randomRef = 0;
+    float randomPt[3];
+    
+    // ランダムシードを生成
+    auto seed = static_cast<unsigned int>(std::chrono::steady_clock::now().time_since_epoch().count());
+    srand(seed);
+    
+    auto frand = []() -> float {
+        return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+    };
+    
+    dtStatus status = m_navMeshQuery->findRandomPoint(&filter, frand, &randomRef, randomPt);
+    if (dtStatusFailed(status))
+    {
+        return false;
+    }
+    
+    outPoint = { randomPt[0], randomPt[1], randomPt[2] };
+    return true;
+}
+
+bool NavMeshManager::GetRandomPointAroundCircle(const DirectX::XMFLOAT3& center, 
+                                                 float radius,
+                                                 DirectX::XMFLOAT3& outPoint) const
+{
+    if (!m_navMeshQuery)
+    {
+        return false;
+    }
+    
+    const float polyPickExt[3] = { 2.0f, 4.0f, 2.0f };
+    dtQueryFilter filter;
+    filter.setIncludeFlags(0xFFFF);
+    filter.setExcludeFlags(0);
+    
+    // 中心点に最も近いポリゴンを検索
+    dtPolyRef centerRef = 0;
+    float centerPos[3];
+    float pos[3] = { center.x, center.y, center.z };
+    
+    dtStatus status = m_navMeshQuery->findNearestPoly(pos, polyPickExt, &filter, &centerRef, centerPos);
+    if (dtStatusFailed(status) || centerRef == 0)
+    {
+        return false;
+    }
+    
+    // ランダムシードを生成
+    auto seed = static_cast<unsigned int>(std::chrono::steady_clock::now().time_since_epoch().count());
+    srand(seed);
+    
+    auto frand = []() -> float {
+        return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+    };
+    
+    dtPolyRef randomRef = 0;
+    float randomPt[3];
+    
+    status = m_navMeshQuery->findRandomPointAroundCircle(centerRef, centerPos, radius, &filter, frand, &randomRef, randomPt);
+    if (dtStatusFailed(status))
+    {
+        return false;
+    }
+    
+    outPoint = { randomPt[0], randomPt[1], randomPt[2] };
+    return true;
 }
 
 } // namespace UnoEngine::Navigation

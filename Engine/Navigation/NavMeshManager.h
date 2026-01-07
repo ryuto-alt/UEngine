@@ -19,6 +19,8 @@ struct rcPolyMesh;
 struct rcPolyMeshDetail;
 class dtNavMesh;
 class dtNavMeshQuery;
+class dtCrowd;
+struct dtCrowdAgentParams;
 
 // Forward declarations - UnoEngine
 namespace UnoEngine { class DebugRenderer; }
@@ -74,6 +76,49 @@ public:
     // ========== I/O ==========
     bool SaveNavMesh(const std::string& filename) const;
     bool LoadNavMesh(const std::string& filename);
+    
+    // ========== Crowd (Agent Management) ==========
+    /// Crowdシステムを初期化（NavMeshビルド後に呼び出し）
+    bool InitializeCrowd(int maxAgents = 128, float maxAgentRadius = 0.6f);
+    
+    /// エージェントを追加し、インデックスを返す（-1は失敗）
+    int AddCrowdAgent(const DirectX::XMFLOAT3& position, float radius, float height,
+                      float maxSpeed = 3.5f, float maxAcceleration = 8.0f);
+    
+    /// エージェントを削除
+    void RemoveCrowdAgent(int agentIndex);
+    
+    /// エージェントの目的地を設定
+    bool SetAgentTarget(int agentIndex, const DirectX::XMFLOAT3& target);
+    
+    /// エージェントの移動を停止
+    void StopAgent(int agentIndex);
+    
+    /// Crowdを更新（毎フレーム呼び出し）
+    void UpdateCrowd(float deltaTime);
+    
+    /// エージェント情報取得
+    [[nodiscard]] DirectX::XMFLOAT3 GetAgentPosition(int agentIndex) const;
+    [[nodiscard]] DirectX::XMFLOAT3 GetAgentVelocity(int agentIndex) const;
+    [[nodiscard]] bool IsAgentActive(int agentIndex) const;
+    [[nodiscard]] bool HasAgentReachedTarget(int agentIndex, float tolerance = 0.5f) const;
+    
+    /// ランダムなNavMesh上の点を取得（徘徊用）
+    [[nodiscard]] bool GetRandomPointOnNavMesh(DirectX::XMFLOAT3& outPoint) const;
+    
+    /// 指定点の周囲のランダムなNavMesh上の点を取得
+    [[nodiscard]] bool GetRandomPointAroundCircle(const DirectX::XMFLOAT3& center, 
+                                                   float radius,
+                                                   DirectX::XMFLOAT3& outPoint) const;
+    
+    /// Crowdが初期化済みかどうか
+    [[nodiscard]] bool IsCrowdInitialized() const { return m_crowd != nullptr; }
+    
+    // ========== Build State ==========
+    /// ビルド中かどうかを設定（非同期ビルド用）
+    void SetBuilding(bool building) { m_isBuilding = building; }
+    /// ビルド中かどうかを取得
+    [[nodiscard]] bool IsBuilding() const { return m_isBuilding; }
     
     // ========== Settings ==========
     void SetSettings(const NavMeshBuildSettings& settings);
@@ -137,6 +182,7 @@ private:
     // Runtime data
     dtNavMesh* m_navMesh = nullptr;
     dtNavMeshQuery* m_navMeshQuery = nullptr;
+    dtCrowd* m_crowd = nullptr;
     
     // Settings & Stats
     NavMeshBuildSettings m_settings;
@@ -152,6 +198,9 @@ private:
     // Debug drawing
     bool m_debugDrawEnabled = false;
     DirectX::XMFLOAT4 m_debugDrawColor = {0.0f, 0.8f, 0.4f, 0.8f}; // 緑色
+    
+    // Build state
+    bool m_isBuilding = false;
 };
 
 

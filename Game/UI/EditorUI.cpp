@@ -86,6 +86,25 @@ namespace UnoEngine {
 		// ImGuizmoフレーム開始
 		ImGuizmo::BeginFrame();
 
+		// NavMesh非同期ベイク完了チェック
+		if (navMeshBakeFuture_.valid() && 
+			navMeshBakeFuture_.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+			bool result = navMeshBakeFuture_.get();
+			if (result) {
+				auto& navMeshManager = Navigation::NavMeshManager::Get();
+				auto stats = navMeshManager.GetStats();
+				AddConsoleMessage(std::format(
+					"[NavMesh] Bake complete: polys={}, verts={}, time={:.2f}s",
+					stats.polyCount, stats.vertexCount, stats.buildTimeSeconds
+				));
+				showRecastNavMesh_ = true;
+				navMeshManager.SetDebugDrawEnabled(true);
+				inspectorTabIndex_ = 1;
+			} else {
+				AddConsoleMessage("[NavMesh] Bake failed");
+			}
+		}
+
 		// スクリプトファイル監視（ホットリロード）
 		UpdateScriptFileWatcher();
 
@@ -169,6 +188,40 @@ namespace UnoEngine {
 
 		// ビルドダイアログ描画
 		RenderBuildDialog();
+
+		// NavMeshベイク中モーダル
+		if (navMeshBaking_.load()) {
+			ImGui::OpenPopup(U8("NavMesh ベイク中"));
+		}
+
+		ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+		ImGui::SetNextWindowPos(center, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+		ImGui::SetNextWindowSize(ImVec2(400, 0), ImGuiCond_Always);
+
+		if (ImGui::BeginPopupModal(U8("NavMesh ベイク中"), nullptr, 
+			ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize)) {
+			
+			float progress = navMeshBakeProgress_.load();
+			std::string stage;
+			{
+				std::lock_guard<std::mutex> lock(navMeshBakeMutex_);
+				stage = navMeshBakeStage_;
+			}
+
+			ImGui::Text(U8("NavMeshを生成しています..."));
+			ImGui::Spacing();
+
+			ImGui::ProgressBar(progress, ImVec2(-1, 24), std::format("{:.0f}%%", progress * 100.0f).c_str());
+
+			ImGui::Spacing();
+			ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "%s", stage.c_str());
+
+			if (!navMeshBaking_.load()) {
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::EndPopup();
+		}
 
 		// エディタカメラの更新
 		float deltaTime = ImGui::GetIO().DeltaTime;
@@ -4263,9 +4316,12 @@ namespace UnoEngine {
 		auto& navMesh = Navigation::NavMeshManager::Get();
 		auto settings = navMesh.GetSettings();
 		bool settingsChanged = false;
+		bool isBaking = navMeshBaking_.load();
 
 		// ステータス表示
-		if (navMesh.IsBuilt()) {
+		if (isBaking) {
+			ImGui::TextColored(ImVec4(0.3f, 0.7f, 1.0f, 1.0f), U8("◎ ベイク中..."));
+		} else if (navMesh.IsBuilt()) {
 			auto stats = navMesh.GetStats();
 			ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), U8("● ビルド済み"));
 			ImGui::Text(U8("  ポリゴン: %d / 頂点: %d"), stats.polyCount, stats.vertexCount);
@@ -4329,10 +4385,13 @@ namespace UnoEngine {
 		ImGui::Separator();
 
 		// アクションボタン
-		if (ImGui::Button(U8("ベイク"), ImVec2(-1, 0))) {
+		ImGui::BeginDisabled(isBaking);
+		if (ImGui::Button(isBaking ? U8("ベイク中...") : U8("ベイク"), ImVec2(-1, 0))) {
 			BakeNavMesh();
 		}
+		ImGui::EndDisabled();
 
+		ImGui::BeginDisabled(isBaking);
 		if (navMesh.IsBuilt()) {
 			if (ImGui::Button(U8("クリア"), ImVec2(-1, 0))) {
 				navMesh.Shutdown();
@@ -4386,6 +4445,7 @@ namespace UnoEngine {
 				}
 			}
 		}
+		ImGui::EndDisabled();
 	}
 
 	void EditorUI::BakeNavMesh() {
@@ -4394,10 +4454,12 @@ namespace UnoEngine {
 			return;
 		}
 
-		auto& navMeshManager = Navigation::NavMeshManager::Get();
-		navMeshManager.Initialize();
+		if (navMeshBaking_.load()) {
+			AddConsoleMessage(U8("[NavMesh] 既にベイク中です"));
+			return;
+		}
 
-		// シーンからジオメトリを収集
+		// シーンからジオメトリを収集（メインスレッドで実行）
 		std::vector<Navigation::StaticGeometry> geometryList;
 
 		for (const auto& obj : scene_->GetGameObjects()) {
@@ -4411,7 +4473,6 @@ namespace UnoEngine {
 				transform.GetPosition().GetZ()
 			);
 
-			// 複数メッシュ対応（StaticModelData）
 			if (meshRenderer->HasModel()) {
 				const auto& meshes = meshRenderer->GetMeshes();
 				for (const auto& mesh : meshes) {
@@ -4436,7 +4497,6 @@ namespace UnoEngine {
 					geometryList.push_back(std::move(geom));
 				}
 			} else if (auto* singleMesh = meshRenderer->GetMesh()) {
-				// 単一メッシュ
 				if (!singleMesh->HasCPUData()) continue;
 
 				Navigation::StaticGeometry geom;
@@ -4466,28 +4526,30 @@ namespace UnoEngine {
 
 		AddConsoleMessage("[NavMesh] Collected " + std::to_string(geometryList.size()) + " meshes");
 
-		// プログレスコールバック設定
-		navMeshManager.SetProgressCallback([this](float progress, const char* stage) {
-			AddConsoleMessage(std::format("[NavMesh] {:.0f}% - {}", progress * 100.0f, stage));
-		});
-
-		// ビルド実行
-		if (navMeshManager.BuildNavMesh(geometryList, recastNavMeshSettings_)) {
-			auto stats = navMeshManager.GetStats();
-			AddConsoleMessage(std::format(
-				"[NavMesh] Bake complete: polys={}, verts={}, time={:.2f}s",
-				stats.polyCount, stats.vertexCount, stats.buildTimeSeconds
-			));
-
-			// 自動的にデバッグ描画を有効化
-			showRecastNavMesh_ = true;
-			navMeshManager.SetDebugDrawEnabled(true);
-
-			// インスペクターのNavMeshタブを自動選択
-			inspectorTabIndex_ = 1;
-		} else {
-			AddConsoleMessage("[NavMesh] Bake failed");
+		// 非同期ベイク開始
+		navMeshBaking_.store(true);
+		navMeshBakeProgress_.store(0.0f);
+		{
+			std::lock_guard<std::mutex> lock(navMeshBakeMutex_);
+			navMeshBakeStage_ = U8("初期化中...");
 		}
+
+		auto settings = recastNavMeshSettings_;
+
+		navMeshBakeFuture_ = std::async(std::launch::async, [this, geometryList = std::move(geometryList), settings]() {
+			auto& navMeshManager = Navigation::NavMeshManager::Get();
+			navMeshManager.Initialize();
+
+			navMeshManager.SetProgressCallback([this](float progress, const char* stage) {
+				navMeshBakeProgress_.store(progress);
+				std::lock_guard<std::mutex> lock(navMeshBakeMutex_);
+				navMeshBakeStage_ = stage;
+			});
+
+			bool result = navMeshManager.BuildNavMesh(geometryList, settings);
+			navMeshBaking_.store(false);
+			return result;
+		});
 	}
 
 } // namespace UnoEngine

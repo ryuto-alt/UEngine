@@ -19,6 +19,9 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <memory>
+#include <future>
+#include <atomic>
+#include <mutex>
 
 namespace UnoEngine {
 
@@ -372,9 +375,12 @@ private:
     // NavMesh設定
     Navigation::NavMeshBuildSettings recastNavMeshSettings_;
 
-    // NavMeshベイク進捗
-    float navMeshBakeProgress_ = 0.0f;
+    // NavMeshベイク進捗（非同期処理用）
+    std::atomic<float> navMeshBakeProgress_{0.0f};
     std::string navMeshBakeStage_;
+    std::mutex navMeshBakeMutex_;
+    std::future<bool> navMeshBakeFuture_;
+    std::atomic<bool> navMeshBaking_{false};
 
     // ポストプロセスマネージャー
     std::unique_ptr<PostProcessManager> postProcessManager_;

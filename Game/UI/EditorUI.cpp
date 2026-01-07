@@ -4446,6 +4446,51 @@ namespace UnoEngine {
 			}
 		}
 		ImGui::EndDisabled();
+
+		// NavAgent追加セクション
+		ImGui::Separator();
+		if (ImGui::CollapsingHeader(U8("NavAgent"), ImGuiTreeNodeFlags_DefaultOpen)) {
+			if (selectedObject_) {
+				auto* navAgent = selectedObject_->GetComponent<NavAgentComponent>();
+				
+				ImGui::Text(U8("選択: %s"), selectedObject_->GetName().c_str());
+				
+				if (navAgent) {
+					ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), U8("● NavAgent あり"));
+					
+					// NavAgent設定
+					float speed = navAgent->GetSpeed();
+					if (ImGui::DragFloat(U8("移動速度"), &speed, 0.1f, 0.1f, 20.0f, "%.1f m/s")) {
+						navAgent->SetSpeed(speed);
+					}
+					
+					float angularSpeed = navAgent->GetAngularSpeed();
+					if (ImGui::DragFloat(U8("回転速度"), &angularSpeed, 1.0f, 10.0f, 720.0f, "%.0f deg/s")) {
+						navAgent->SetAngularSpeed(angularSpeed);
+					}
+					
+					float stoppingDist = navAgent->GetStoppingDistance();
+					if (ImGui::DragFloat(U8("停止距離"), &stoppingDist, 0.01f, 0.0f, 5.0f, "%.2f m")) {
+						navAgent->SetStoppingDistance(stoppingDist);
+					}
+					
+					ImGui::Spacing();
+					if (ImGui::Button(U8("NavAgentを削除"), ImVec2(-1, 0))) {
+						selectedObject_->RemoveComponent<NavAgentComponent>();
+						isDirty_ = true;
+					}
+				} else {
+					ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), U8("○ NavAgent なし"));
+					
+					if (ImGui::Button(U8("NavAgentを追加"), ImVec2(-1, 0))) {
+						selectedObject_->AddComponent<NavAgentComponent>();
+						isDirty_ = true;
+					}
+				}
+			} else {
+				ImGui::TextDisabled(U8("オブジェクトを選択してください"));
+			}
+		}
 	}
 
 	void EditorUI::BakeNavMesh() {

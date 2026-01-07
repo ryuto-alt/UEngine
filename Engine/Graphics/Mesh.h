@@ -46,6 +46,11 @@ public:
     Vector3 GetBoundsMin() const { return boundsMin_; }
     Vector3 GetBoundsMax() const { return boundsMax_; }
 
+    // CPU-side geometry data for NavMesh generation
+    const std::vector<Vertex>& GetVertices() const { return cpuVertices_; }
+    const std::vector<uint32>& GetIndices() const { return cpuIndices_; }
+    bool HasCPUData() const { return !cpuVertices_.empty(); }
+
 private:
     void CalculateBounds(const std::vector<Vertex>& vertices);
 
@@ -55,6 +60,10 @@ private:
     Vector3 boundsMin_;
     Vector3 boundsMax_;
     std::unique_ptr<Material> material_;
+    
+    // CPU-side copies for NavMesh generation
+    std::vector<Vertex> cpuVertices_;
+    std::vector<uint32> cpuIndices_;
 };
 
 } // namespace UnoEngine

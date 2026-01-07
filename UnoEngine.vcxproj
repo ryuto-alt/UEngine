@@ -78,7 +78,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)external\imgui;$(ProjectDir)external\imgui\backends;$(ProjectDir)external\assimp\include;$(ProjectDir)external\lua\src;$(ProjectDir)external;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)external\imgui;$(ProjectDir)external\imgui\backends;$(ProjectDir)external\assimp\include;$(ProjectDir)external\lua\src;$(ProjectDir)external;$(ProjectDir)external\recast\Recast\Include;$(ProjectDir)external\recast\Detour\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -105,7 +105,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Debug\*.dll" "$(OutDir)" /Y /D</Command>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)external\imgui;$(ProjectDir)external\imgui\backends;$(ProjectDir)external\assimp\include;$(ProjectDir)external\lua\src;$(ProjectDir)external;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)external\imgui;$(ProjectDir)external\imgui\backends;$(ProjectDir)external\assimp\include;$(ProjectDir)external\lua\src;$(ProjectDir)external;$(ProjectDir)external\recast\Recast\Include;$(ProjectDir)external\recast\Detour\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -130,7 +130,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)external\imgui;$(ProjectDir)external\imgui\backends;$(ProjectDir)external\assimp\include;$(ProjectDir)external\lua\src;$(ProjectDir)external;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)external\imgui;$(ProjectDir)external\imgui\backends;$(ProjectDir)external\assimp\include;$(ProjectDir)external\lua\src;$(ProjectDir)external;$(ProjectDir)external\recast\Recast\Include;$(ProjectDir)external\recast\Detour\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -157,7 +157,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Debug\*.dll" "$(OutDir)" /Y /D</Command>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)external\imgui;$(ProjectDir)external\imgui\backends;$(ProjectDir)external\assimp\include;$(ProjectDir)external\lua\src;$(ProjectDir)external;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)external\imgui;$(ProjectDir)external\imgui\backends;$(ProjectDir)external\assimp\include;$(ProjectDir)external\lua\src;$(ProjectDir)external;$(ProjectDir)external\recast\Recast\Include;$(ProjectDir)external\recast\Detour\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -231,6 +231,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClCompile Include="Engine\Graphics\SkinnedMesh.cpp" />
     <ClCompile Include="Engine\Graphics\SkinnedPipeline.cpp" />
     <ClCompile Include="Engine\Graphics\DebugLinePipeline.cpp" />
+    <ClCompile Include="Engine\Graphics\DebugTrianglePipeline.cpp" />
     <ClCompile Include="Engine\Graphics\InfiniteGridPipeline.cpp" />
     <ClCompile Include="Engine\Rendering\DebugRenderer.cpp" />
     <ClCompile Include="Engine\Resource\SkinnedModelImporter.cpp" />
@@ -383,6 +384,64 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClCompile Include="external\imgui\backends\imgui_impl_dx12.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
+    <!-- Recast Navigation Library -->
+    <ClCompile Include="external\recast\Recast\Source\Recast.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\recast\Recast\Source\RecastAlloc.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\recast\Recast\Source\RecastArea.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\recast\Recast\Source\RecastAssert.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\recast\Recast\Source\RecastContour.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\recast\Recast\Source\RecastFilter.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\recast\Recast\Source\RecastLayers.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\recast\Recast\Source\RecastMesh.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\recast\Recast\Source\RecastMeshDetail.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\recast\Recast\Source\RecastRasterization.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\recast\Recast\Source\RecastRegion.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <!-- Detour Navigation Library -->
+    <ClCompile Include="external\recast\Detour\Source\DetourAlloc.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\recast\Detour\Source\DetourAssert.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\recast\Detour\Source\DetourCommon.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\recast\Detour\Source\DetourNavMesh.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\recast\Detour\Source\DetourNavMeshBuilder.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\recast\Detour\Source\DetourNavMeshQuery.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="external\recast\Detour\Source\DetourNode.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <!-- Engine Navigation -->
+    <ClCompile Include="Engine\Navigation\NavMeshManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -454,6 +513,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClInclude Include="Engine\Graphics\SkinnedMesh.h" />
     <ClInclude Include="Engine\Graphics\SkinnedPipeline.h" />
     <ClInclude Include="Engine\Graphics\DebugLinePipeline.h" />
+    <ClInclude Include="Engine\Graphics\DebugTrianglePipeline.h" />
     <ClInclude Include="Engine\Graphics\InfiniteGridPipeline.h" />
     <ClInclude Include="Engine\Rendering\DebugRenderer.h" />
     <ClInclude Include="Engine\Graphics\SkinnedVertex.h" />
@@ -496,6 +556,22 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClInclude Include="Engine\PostProcess\FisheyePostProcess.h" />
     <ClInclude Include="Engine\PostProcess\PS1PostProcess.h" />
     <ClInclude Include="Game\Build\GameExporter.h" />
+    <!-- Engine Navigation -->
+    <ClInclude Include="Engine\Navigation\NavMeshBuildSettings.h" />
+    <ClInclude Include="Engine\Navigation\NavMeshManager.h" />
+    <!-- Recast Headers -->
+    <ClInclude Include="external\recast\Recast\Include\Recast.h" />
+    <ClInclude Include="external\recast\Recast\Include\RecastAlloc.h" />
+    <ClInclude Include="external\recast\Recast\Include\RecastAssert.h" />
+    <ClInclude Include="external\recast\Detour\Include\DetourAlloc.h" />
+    <ClInclude Include="external\recast\Detour\Include\DetourAssert.h" />
+    <ClInclude Include="external\recast\Detour\Include\DetourCommon.h" />
+    <ClInclude Include="external\recast\Detour\Include\DetourMath.h" />
+    <ClInclude Include="external\recast\Detour\Include\DetourNavMesh.h" />
+    <ClInclude Include="external\recast\Detour\Include\DetourNavMeshBuilder.h" />
+    <ClInclude Include="external\recast\Detour\Include\DetourNavMeshQuery.h" />
+    <ClInclude Include="external\recast\Detour\Include\DetourNode.h" />
+    <ClInclude Include="external\recast\Detour\Include\DetourStatus.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

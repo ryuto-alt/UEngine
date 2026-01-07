@@ -13,6 +13,10 @@ void Mesh::Create(ID3D12Device* device, ID3D12GraphicsCommandList* commandList,
     assert(!vertices.empty() && !indices.empty());
 
     name_ = name;
+    
+    // Store CPU-side copies for NavMesh generation
+    cpuVertices_ = vertices;
+    cpuIndices_ = indices;
 
     vertexBuffer_.Create(device, commandList, vertices.data(),
                         static_cast<uint32>(vertices.size() * sizeof(Vertex)),

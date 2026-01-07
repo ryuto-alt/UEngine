@@ -17,9 +17,13 @@ void DebugRenderer::Initialize(GraphicsDevice* graphics) {
     vertexShader.CompileFromFile(L"Shaders/Debug/DebugLineVS.hlsl", ShaderStage::Vertex);
     pixelShader.CompileFromFile(L"Shaders/Debug/DebugLinePS.hlsl", ShaderStage::Pixel);
 
-    // パイプライン作成
+    // ラインパイプライン作成
     pipeline_ = MakeUnique<DebugLinePipeline>();
     pipeline_->Initialize(device, vertexShader, pixelShader);
+
+    // 三角形パイプライン作成（同じシェーダーを使用）
+    trianglePipeline_ = MakeUnique<DebugTrianglePipeline>();
+    trianglePipeline_->Initialize(device, vertexShader, pixelShader);
 
     // 定数バッファ作成
     transformBuffer_.Create(device);
@@ -40,19 +44,20 @@ void DebugRenderer::Initialize(GraphicsDevice* graphics) {
 }
 
 void DebugRenderer::CreateDynamicVertexBuffer(ID3D12Device* device) {
-    const uint32 bufferSize = MAX_VERTICES * sizeof(DebugLineVertex);
-
     D3D12_HEAP_PROPERTIES heapProps = {};
     heapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
 
     D3D12_RESOURCE_DESC resDesc = {};
     resDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-    resDesc.Width = bufferSize;
     resDesc.Height = 1;
     resDesc.DepthOrArraySize = 1;
     resDesc.MipLevels = 1;
     resDesc.SampleDesc.Count = 1;
     resDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+    // ライン用頂点バッファ
+    const uint32 lineBufferSize = MAX_VERTICES * sizeof(DebugLineVertex);
+    resDesc.Width = lineBufferSize;
 
     ThrowIfFailed(
         device->CreateCommittedResource(
@@ -63,22 +68,47 @@ void DebugRenderer::CreateDynamicVertexBuffer(ID3D12Device* device) {
             nullptr,
             IID_PPV_ARGS(&vertexBuffer_)
         ),
-        "Failed to create debug vertex buffer"
+        "Failed to create debug line vertex buffer"
     );
 
-    // 常時マップ
     ThrowIfFailed(
         vertexBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&mappedVertices_)),
-        "Failed to map debug vertex buffer"
+        "Failed to map debug line vertex buffer"
     );
 
     vertexBufferView_.BufferLocation = vertexBuffer_->GetGPUVirtualAddress();
-    vertexBufferView_.SizeInBytes = bufferSize;
+    vertexBufferView_.SizeInBytes = lineBufferSize;
     vertexBufferView_.StrideInBytes = sizeof(DebugLineVertex);
+
+    // 三角形用頂点バッファ
+    const uint32 triangleBufferSize = MAX_TRIANGLE_VERTICES * sizeof(DebugLineVertex);
+    resDesc.Width = triangleBufferSize;
+
+    ThrowIfFailed(
+        device->CreateCommittedResource(
+            &heapProps,
+            D3D12_HEAP_FLAG_NONE,
+            &resDesc,
+            D3D12_RESOURCE_STATE_GENERIC_READ,
+            nullptr,
+            IID_PPV_ARGS(&triangleVertexBuffer_)
+        ),
+        "Failed to create debug triangle vertex buffer"
+    );
+
+    ThrowIfFailed(
+        triangleVertexBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&mappedTriangleVertices_)),
+        "Failed to map debug triangle vertex buffer"
+    );
+
+    triangleVertexBufferView_.BufferLocation = triangleVertexBuffer_->GetGPUVirtualAddress();
+    triangleVertexBufferView_.SizeInBytes = triangleBufferSize;
+    triangleVertexBufferView_.StrideInBytes = sizeof(DebugLineVertex);
 }
 
 void DebugRenderer::BeginFrame() {
     vertices_.clear();
+    triangleVertices_.clear();
 }
 
 void DebugRenderer::AddLine(const Vector3& start, const Vector3& end, const Vector4& color) {
@@ -105,6 +135,26 @@ void DebugRenderer::AddLine(const Vector3& start, const Vector3& end, const Vect
 
     vertices_.push_back(v1);
     vertices_.push_back(v2);
+}
+
+void DebugRenderer::AddTriangle(const Vector3& v0, const Vector3& v1, const Vector3& v2, const Vector4& color) {
+    if (triangleVertices_.size() + 3 > MAX_TRIANGLE_VERTICES) {
+        return;
+    }
+
+    DebugLineVertex vtx[3];
+    const Vector3* positions[3] = { &v0, &v1, &v2 };
+
+    for (int i = 0; i < 3; ++i) {
+        vtx[i].position[0] = positions[i]->GetX();
+        vtx[i].position[1] = positions[i]->GetY();
+        vtx[i].position[2] = positions[i]->GetZ();
+        vtx[i].color[0] = color.GetX();
+        vtx[i].color[1] = color.GetY();
+        vtx[i].color[2] = color.GetZ();
+        vtx[i].color[3] = color.GetW();
+        triangleVertices_.push_back(vtx[i]);
+    }
 }
 
 void DebugRenderer::DrawBones(
@@ -225,32 +275,36 @@ void DebugRenderer::Render(
     const Matrix4x4& viewMatrix,
     const Matrix4x4& projectionMatrix
 ) {
-    if (vertices_.empty()) {
-        return;
-    }
-
-    // 頂点バッファ更新
-    UpdateVertexBuffer();
-
     // 定数バッファ更新（HLSLはcolumn-majorなのでTranspose必要）
     DebugTransformCB cb;
     Matrix4x4 vp = viewMatrix * projectionMatrix;
     cb.viewProjection = vp.Transpose();
     transformBuffer_.Update(cb);
 
-    // パイプライン設定
-    cmdList->SetPipelineState(pipeline_->GetPipelineState());
-    cmdList->SetGraphicsRootSignature(pipeline_->GetRootSignature());
+    // 三角形描画（先に描画して後ろに配置）
+    if (!triangleVertices_.empty() && mappedTriangleVertices_) {
+        const uint32 copySize = static_cast<uint32>(triangleVertices_.size()) * sizeof(DebugLineVertex);
+        memcpy(mappedTriangleVertices_, triangleVertices_.data(), copySize);
 
-    // 定数バッファ設定
-    cmdList->SetGraphicsRootConstantBufferView(0, transformBuffer_.GetGPUAddress());
+        cmdList->SetPipelineState(trianglePipeline_->GetPipelineState());
+        cmdList->SetGraphicsRootSignature(trianglePipeline_->GetRootSignature());
+        cmdList->SetGraphicsRootConstantBufferView(0, transformBuffer_.GetGPUAddress());
+        cmdList->IASetVertexBuffers(0, 1, &triangleVertexBufferView_);
+        cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        cmdList->DrawInstanced(static_cast<uint32>(triangleVertices_.size()), 1, 0, 0);
+    }
 
-    // 頂点バッファ設定
-    cmdList->IASetVertexBuffers(0, 1, &vertexBufferView_);
-    cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
+    // ライン描画
+    if (!vertices_.empty() && mappedVertices_) {
+        UpdateVertexBuffer();
 
-    // 描画
-    cmdList->DrawInstanced(static_cast<uint32>(vertices_.size()), 1, 0, 0);
+        cmdList->SetPipelineState(pipeline_->GetPipelineState());
+        cmdList->SetGraphicsRootSignature(pipeline_->GetRootSignature());
+        cmdList->SetGraphicsRootConstantBufferView(0, transformBuffer_.GetGPUAddress());
+        cmdList->IASetVertexBuffers(0, 1, &vertexBufferView_);
+        cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
+        cmdList->DrawInstanced(static_cast<uint32>(vertices_.size()), 1, 0, 0);
+    }
 }
 
 void DebugRenderer::RenderGrid(

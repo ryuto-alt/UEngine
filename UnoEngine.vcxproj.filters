@@ -136,6 +136,15 @@
     <Filter Include="Shaders\Sprite">
       <UniqueIdentifier>{d9e0f1a2-b3c4-5d6e-7f8a-9b0c1d2e3f4a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Navigation">
+      <UniqueIdentifier>{e0f1a2b3-c4d5-6e7f-8a9b-0c1d2e3f4a5b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\Recast">
+      <UniqueIdentifier>{f1a2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\Detour">
+      <UniqueIdentifier>{a2b3c4d5-e6f7-8a9b-0c1d-2e3f4a5b6c7d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <!-- Main -->
@@ -195,6 +204,9 @@
       <Filter>Engine\Graphics\Pipeline</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Graphics\DebugLinePipeline.cpp">
+      <Filter>Engine\Graphics\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\DebugTrianglePipeline.cpp">
       <Filter>Engine\Graphics\Pipeline</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Graphics\InfiniteGridPipeline.cpp">
@@ -527,6 +539,66 @@
     <ClCompile Include="external\imgui\backends\imgui_impl_dx12.cpp">
       <Filter>External\ImGui</Filter>
     </ClCompile>
+    <!-- Recast Navigation Library -->
+    <ClCompile Include="external\recast\Recast\Source\Recast.cpp">
+      <Filter>External\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="external\recast\Recast\Source\RecastAlloc.cpp">
+      <Filter>External\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="external\recast\Recast\Source\RecastArea.cpp">
+      <Filter>External\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="external\recast\Recast\Source\RecastAssert.cpp">
+      <Filter>External\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="external\recast\Recast\Source\RecastContour.cpp">
+      <Filter>External\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="external\recast\Recast\Source\RecastFilter.cpp">
+      <Filter>External\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="external\recast\Recast\Source\RecastLayers.cpp">
+      <Filter>External\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="external\recast\Recast\Source\RecastMesh.cpp">
+      <Filter>External\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="external\recast\Recast\Source\RecastMeshDetail.cpp">
+      <Filter>External\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="external\recast\Recast\Source\RecastRasterization.cpp">
+      <Filter>External\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="external\recast\Recast\Source\RecastRegion.cpp">
+      <Filter>External\Recast</Filter>
+    </ClCompile>
+    <!-- Detour Navigation Library -->
+    <ClCompile Include="external\recast\Detour\Source\DetourAlloc.cpp">
+      <Filter>External\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="external\recast\Detour\Source\DetourAssert.cpp">
+      <Filter>External\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="external\recast\Detour\Source\DetourCommon.cpp">
+      <Filter>External\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="external\recast\Detour\Source\DetourNavMesh.cpp">
+      <Filter>External\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="external\recast\Detour\Source\DetourNavMeshBuilder.cpp">
+      <Filter>External\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="external\recast\Detour\Source\DetourNavMeshQuery.cpp">
+      <Filter>External\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="external\recast\Detour\Source\DetourNode.cpp">
+      <Filter>External\Detour</Filter>
+    </ClCompile>
+    <!-- Engine Navigation -->
+    <ClCompile Include="Engine\Navigation\NavMeshManager.cpp">
+      <Filter>Engine\Navigation</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <!-- Engine\Core -->
@@ -600,6 +672,9 @@
       <Filter>Engine\Graphics\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\DebugLinePipeline.h">
+      <Filter>Engine\Graphics\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\DebugTrianglePipeline.h">
       <Filter>Engine\Graphics\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\InfiniteGridPipeline.h">
@@ -870,6 +945,51 @@
     </ClInclude>
     <ClInclude Include="external\sol\forward.hpp">
       <Filter>External\Sol</Filter>
+    </ClInclude>
+    <!-- Engine\Navigation -->
+    <ClInclude Include="Engine\Navigation\NavMeshBuildSettings.h">
+      <Filter>Engine\Navigation</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Navigation\NavMeshManager.h">
+      <Filter>Engine\Navigation</Filter>
+    </ClInclude>
+    <!-- External\Recast -->
+    <ClInclude Include="external\recast\Recast\Include\Recast.h">
+      <Filter>External\Recast</Filter>
+    </ClInclude>
+    <ClInclude Include="external\recast\Recast\Include\RecastAlloc.h">
+      <Filter>External\Recast</Filter>
+    </ClInclude>
+    <ClInclude Include="external\recast\Recast\Include\RecastAssert.h">
+      <Filter>External\Recast</Filter>
+    </ClInclude>
+    <!-- External\Detour -->
+    <ClInclude Include="external\recast\Detour\Include\DetourAlloc.h">
+      <Filter>External\Detour</Filter>
+    </ClInclude>
+    <ClInclude Include="external\recast\Detour\Include\DetourAssert.h">
+      <Filter>External\Detour</Filter>
+    </ClInclude>
+    <ClInclude Include="external\recast\Detour\Include\DetourCommon.h">
+      <Filter>External\Detour</Filter>
+    </ClInclude>
+    <ClInclude Include="external\recast\Detour\Include\DetourMath.h">
+      <Filter>External\Detour</Filter>
+    </ClInclude>
+    <ClInclude Include="external\recast\Detour\Include\DetourNavMesh.h">
+      <Filter>External\Detour</Filter>
+    </ClInclude>
+    <ClInclude Include="external\recast\Detour\Include\DetourNavMeshBuilder.h">
+      <Filter>External\Detour</Filter>
+    </ClInclude>
+    <ClInclude Include="external\recast\Detour\Include\DetourNavMeshQuery.h">
+      <Filter>External\Detour</Filter>
+    </ClInclude>
+    <ClInclude Include="external\recast\Detour\Include\DetourNode.h">
+      <Filter>External\Detour</Filter>
+    </ClInclude>
+    <ClInclude Include="external\recast\Detour\Include\DetourStatus.h">
+      <Filter>External\Detour</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

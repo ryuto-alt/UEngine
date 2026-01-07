@@ -3,6 +3,7 @@
 #include "../Core/Types.h"
 #include "../Graphics/D3D12Common.h"
 #include "../Graphics/DebugLinePipeline.h"
+#include "../Graphics/DebugTrianglePipeline.h"
 #include "../Graphics/InfiniteGridPipeline.h"
 #include "../Graphics/ConstantBuffer.h"
 #include "../Math/Matrix.h"
@@ -73,6 +74,9 @@ public:
     // AABB描画（ワイヤーフレームボックス）
     void AddBox(const Vector3& min, const Vector3& max, const Vector4& color);
 
+    // 三角形追加（塗りつぶし）
+    void AddTriangle(const Vector3& v0, const Vector3& v1, const Vector3& v2, const Vector4& color);
+
     // フレーム開始時にクリア
     void BeginFrame();
 
@@ -97,20 +101,28 @@ private:
 
     GraphicsDevice* graphics_ = nullptr;
     UniquePtr<DebugLinePipeline> pipeline_;
+    UniquePtr<DebugTrianglePipeline> trianglePipeline_;
     ConstantBuffer<DebugTransformCB> transformBuffer_;
 
     // グリッド用
     UniquePtr<InfiniteGridPipeline> gridPipeline_;
     ConstantBuffer<GridConstantsCB> gridConstantsBuffer_;
 
-    // 動的頂点バッファ
+    // ライン用動的頂点バッファ
     ComPtr<ID3D12Resource> vertexBuffer_;
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView_ = {};
     DebugLineVertex* mappedVertices_ = nullptr;
     static constexpr uint32 MAX_VERTICES = 65536;
 
+    // 三角形用動的頂点バッファ
+    ComPtr<ID3D12Resource> triangleVertexBuffer_;
+    D3D12_VERTEX_BUFFER_VIEW triangleVertexBufferView_ = {};
+    DebugLineVertex* mappedTriangleVertices_ = nullptr;
+    static constexpr uint32 MAX_TRIANGLE_VERTICES = 65536;
+
     // フレーム内の頂点データ
     std::vector<DebugLineVertex> vertices_;
+    std::vector<DebugLineVertex> triangleVertices_;
 
     // 設定
 #ifdef NDEBUG

@@ -20,7 +20,7 @@
 #include "../../Engine/Core/CameraComponent.h"
 #include "../../Engine/Core/CollisionComponent.h"
 #include "../../Engine/Editor/ParticleEditor.h"
-#include "../../Engine/AI/NavMesh/NavMeshSystem.h"
+#include "../../Engine/Navigation/NavMeshManager.h"
 #include <imgui.h>
 #include <imgui_internal.h>
 #include "../../Engine/UI/imgui_toggle.h"
@@ -170,57 +170,68 @@ namespace UnoEngine {
 		RenderBuildDialog();
 
 		// NavMesh設定ウィンドウ描画
-		if (showNavMeshSettings_) {
-			ImGui::SetNextWindowSize(ImVec2(350, 400), ImGuiCond_FirstUseEver);
-			if (ImGui::Begin(U8("NavMesh設定"), &showNavMeshSettings_)) {
-				auto& navMeshSystem = NavMeshSystem::GetInstance();
-				auto& config = navMeshSystem.GetConfig();
-				
-				ImGui::SeparatorText(U8("エージェント設定"));
-				ImGui::DragFloat(U8("半径"), &config.agentRadius, 0.01f, 0.1f, 5.0f);
-				ImGui::DragFloat(U8("高さ"), &config.agentHeight, 0.1f, 0.5f, 10.0f);
-				ImGui::DragFloat(U8("最大傾斜角"), &config.maxSlope, 1.0f, 0.0f, 90.0f);
-				ImGui::DragFloat(U8("段差許容"), &config.stepHeight, 0.01f, 0.0f, 2.0f);
-				
+		if (showRecastNavMeshSettings_) {
+			ImGui::SetNextWindowSize(ImVec2(380, 500), ImGuiCond_FirstUseEver);
+			if (ImGui::Begin(U8("NavMesh設定"), &showRecastNavMeshSettings_)) {
+				auto& recastNavMesh = Navigation::NavMeshManager::Get();
+				auto settings = recastNavMesh.GetSettings();
+				bool settingsChanged = false;
+
 				ImGui::SeparatorText(U8("ボクセル設定"));
-				ImGui::DragFloat(U8("セルサイズ"), &config.cellSize, 0.01f, 0.1f, 2.0f);
-				ImGui::DragFloat(U8("セル高さ"), &config.cellHeight, 0.01f, 0.05f, 1.0f);
-				
-				ImGui::SeparatorText(U8("領域設定"));
-				ImGui::DragFloat(U8("最小領域面積"), &config.minRegionArea, 1.0f, 1.0f, 100.0f);
-				ImGui::DragFloat(U8("マージ領域面積"), &config.mergeRegionArea, 1.0f, 1.0f, 200.0f);
-				
-				ImGui::SeparatorText(U8("表示設定"));
-				auto debugColor = navMeshSystem.GetDebugDrawColor();
-				float color[4] = {debugColor.x, debugColor.y, debugColor.z, debugColor.w};
-				if (ImGui::ColorEdit4(U8("NavMesh色"), color)) {
-					navMeshSystem.SetDebugDrawColor({color[0], color[1], color[2], color[3]});
+				settingsChanged |= ImGui::DragFloat(U8("セルサイズ"), &settings.cellSize, 0.01f, 0.05f, 1.0f, "%.2f m");
+				if (ImGui::IsItemHovered()) ImGui::SetTooltip(U8("小さいほど精度が上がるが処理が重くなる"));
+				settingsChanged |= ImGui::DragFloat(U8("セル高さ"), &settings.cellHeight, 0.01f, 0.05f, 1.0f, "%.2f m");
+
+				ImGui::SeparatorText(U8("エージェント設定"));
+				settingsChanged |= ImGui::DragFloat(U8("半径"), &settings.agentRadius, 0.01f, 0.1f, 5.0f, "%.2f m");
+				settingsChanged |= ImGui::DragFloat(U8("高さ"), &settings.agentHeight, 0.1f, 0.5f, 10.0f, "%.1f m");
+				settingsChanged |= ImGui::DragFloat(U8("段差許容"), &settings.agentMaxClimb, 0.01f, 0.0f, 2.0f, "%.2f m");
+				settingsChanged |= ImGui::DragFloat(U8("最大傾斜角"), &settings.agentMaxSlope, 1.0f, 0.0f, 90.0f, "%.0f deg");
+
+				ImGui::SeparatorText(U8("メッシュ生成"));
+				settingsChanged |= ImGui::DragFloat(U8("単純化誤差"), &settings.maxSimplificationError, 0.1f, 0.0f, 5.0f, "%.1f");
+				settingsChanged |= ImGui::DragFloat(U8("詳細サンプル距離"), &settings.detailSampleDist, 0.5f, 0.0f, 20.0f, "%.1f");
+				settingsChanged |= ImGui::DragFloat(U8("詳細サンプル誤差"), &settings.detailSampleMaxError, 0.1f, 0.0f, 5.0f, "%.1f");
+
+				ImGui::SeparatorText(U8("タイリング"));
+				settingsChanged |= ImGui::DragInt(U8("最大タイル数"), &settings.maxTiles, 1, 1, 256);
+				settingsChanged |= ImGui::DragInt(U8("タイルサイズ"), &settings.tileSize, 1, 16, 128);
+
+				ImGui::SeparatorText(U8("フィルタリング"));
+				settingsChanged |= ImGui::Checkbox(U8("Monotone分割"), &settings.useMonotone);
+				settingsChanged |= ImGui::Checkbox(U8("低い障害物を除外"), &settings.filterLowHangingObstacles);
+				settingsChanged |= ImGui::Checkbox(U8("崖スパンを除外"), &settings.filterLedgeSpans);
+				settingsChanged |= ImGui::Checkbox(U8("低い天井を除外"), &settings.filterWalkableLowHeightSpans);
+
+				if (settingsChanged) {
+					recastNavMesh.SetSettings(settings);
 				}
-				
+
+				ImGui::SeparatorText(U8("表示設定"));
+				auto color = recastNavMesh.GetDebugDrawColor();
+				float colorArr[4] = {color.x, color.y, color.z, color.w};
+				if (ImGui::ColorEdit4(U8("表示色"), colorArr)) {
+					recastNavMesh.SetDebugDrawColor({colorArr[0], colorArr[1], colorArr[2], colorArr[3]});
+				}
+
 				ImGui::Separator();
-				
-				if (navMeshSystem.HasNavMesh()) {
-					ImGui::Text(U8("現在のNavMesh:"));
-					ImGui::Text(U8("  ポリゴン数: %d"), navMeshSystem.GetPolygonCount());
-					ImGui::Text(U8("  頂点数: %d"), navMeshSystem.GetVertexCount());
+
+				if (recastNavMesh.IsBuilt()) {
+					auto stats = recastNavMesh.GetStats();
+					ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), U8("ビルド済み"));
+					ImGui::Text(U8("  ポリゴン数: %d"), stats.polyCount);
+					ImGui::Text(U8("  頂点数: %d"), stats.vertexCount);
+					ImGui::Text(U8("  タイル数: %d"), stats.tileCount);
+					ImGui::Text(U8("  メモリ: %.2f KB"), stats.memoryUsage / 1024.0f);
+					ImGui::Text(U8("  ビルド時間: %.2f秒"), stats.buildTimeSeconds);
 				} else {
 					ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), U8("NavMeshが生成されていません"));
 				}
-				
+
 				ImGui::Separator();
-				
-				if (ImGui::Button(U8("NavMeshをベイク"), ImVec2(-1, 0))) {
-					if (scene_) {
-						navMeshSystem.SetProgressCallback([this](float progress, const char* stage) {
-							navMeshBakeProgress_ = progress;
-							navMeshBakeStage_ = stage;
-						});
-						if (navMeshSystem.BakeNavMesh(scene_)) {
-							AddConsoleMessage(U8("[NavMesh] ベイク完了"));
-						} else {
-							AddConsoleMessage(U8("[NavMesh] ベイク失敗"));
-						}
-					}
+
+				if (ImGui::Button(U8("ベイク"), ImVec2(-1, 0))) {
+					BakeNavMesh();
 				}
 			}
 			ImGui::End();
@@ -419,89 +430,82 @@ namespace UnoEngine {
 			}
 
 			if (ImGui::BeginMenu(U8("ナビゲーション"))) {
-				auto& navMeshSystem = NavMeshSystem::GetInstance();
-				
-				if (ImGui::MenuItem(U8("NavMeshをベイク"), nullptr, false, scene_ != nullptr)) {
-					std::string lastStage;
-					navMeshSystem.SetProgressCallback([this, &lastStage](float progress, const char* stage) {
-						navMeshBakeProgress_ = progress;
-						navMeshBakeStage_ = stage;
-						lastStage = stage;
-					});
-					if (navMeshSystem.BakeNavMesh(scene_)) {
-						AddConsoleMessage(U8("[NavMesh] ベイク完了: ") + 
-							std::to_string(navMeshSystem.GetPolygonCount()) + U8(" ポリゴン, ") +
-							std::to_string(navMeshSystem.GetVertexCount()) + U8(" 頂点"));
-					} else {
-						AddConsoleMessage(U8("[NavMesh] ベイク失敗: ") + lastStage);
-					}
+				auto& recastNavMesh = Navigation::NavMeshManager::Get();
+
+				if (ImGui::MenuItem(U8("ベイク"), "Ctrl+B", false, scene_ != nullptr)) {
+					BakeNavMesh();
 				}
-				
-				if (ImGui::MenuItem(U8("NavMeshをクリア"), nullptr, false, navMeshSystem.HasNavMesh())) {
-					navMeshSystem.ClearNavMesh();
+
+				if (ImGui::MenuItem(U8("クリア"), nullptr, false, recastNavMesh.IsBuilt())) {
+					recastNavMesh.Shutdown();
+					recastNavMesh.Initialize();
+					showRecastNavMesh_ = false;
 					AddConsoleMessage(U8("[NavMesh] クリアしました"));
 				}
-				
+
 				ImGui::Separator();
-				
-				ImGui::MenuItem(U8("NavMeshを表示"), nullptr, &showNavMesh_);
-				navMeshSystem.SetDebugDrawEnabled(showNavMesh_);
-				
-				ImGui::MenuItem(U8("NavMesh設定"), nullptr, &showNavMeshSettings_);
-				
+
+				if (ImGui::MenuItem(U8("表示"), nullptr, &showRecastNavMesh_, recastNavMesh.IsBuilt())) {
+					recastNavMesh.SetDebugDrawEnabled(showRecastNavMesh_);
+				}
+
+				ImGui::MenuItem(U8("設定..."), nullptr, &showRecastNavMeshSettings_);
+
 				ImGui::Separator();
-				
-				if (ImGui::MenuItem(U8("NavMeshを保存..."), nullptr, false, navMeshSystem.HasNavMesh())) {
+
+				if (ImGui::MenuItem(U8("保存..."), nullptr, false, recastNavMesh.IsBuilt())) {
 					OPENFILENAMEA ofn = {};
 					char filename[MAX_PATH] = "";
 					ofn.lStructSize = sizeof(ofn);
 					ofn.hwndOwner = nullptr;
-					ofn.lpstrFilter = "NavMesh Files (*.navmesh)\0*.navmesh\0All Files (*.*)\0*.*\0";
+					ofn.lpstrFilter = "NavMesh (*.navmesh)\0*.navmesh\0All Files (*.*)\0*.*\0";
 					ofn.lpstrFile = filename;
 					ofn.nMaxFile = MAX_PATH;
 					ofn.lpstrDefExt = "navmesh";
 					ofn.Flags = OFN_OVERWRITEPROMPT;
-					
+
 					if (GetSaveFileNameA(&ofn)) {
-						if (navMeshSystem.SaveNavMesh(filename)) {
-							AddConsoleMessage(U8("[NavMesh] 保存しました: ") + std::string(filename));
+						if (recastNavMesh.SaveNavMesh(filename)) {
+							AddConsoleMessage(U8("[NavMesh] 保存: ") + std::string(filename));
 						} else {
 							AddConsoleMessage(U8("[NavMesh] 保存失敗"));
 						}
 					}
 				}
-				
-				if (ImGui::MenuItem(U8("NavMeshを読み込み..."))) {
+
+				if (ImGui::MenuItem(U8("読み込み..."))) {
 					OPENFILENAMEA ofn = {};
 					char filename[MAX_PATH] = "";
 					ofn.lStructSize = sizeof(ofn);
 					ofn.hwndOwner = nullptr;
-					ofn.lpstrFilter = "NavMesh Files (*.navmesh)\0*.navmesh\0All Files (*.*)\0*.*\0";
+					ofn.lpstrFilter = "NavMesh (*.navmesh)\0*.navmesh\0All Files (*.*)\0*.*\0";
 					ofn.lpstrFile = filename;
 					ofn.nMaxFile = MAX_PATH;
 					ofn.Flags = OFN_FILEMUSTEXIST;
-					
+
 					if (GetOpenFileNameA(&ofn)) {
-						if (navMeshSystem.LoadNavMesh(filename)) {
-							AddConsoleMessage(U8("[NavMesh] 読み込みました: ") + std::string(filename) +
-								U8(" (") + std::to_string(navMeshSystem.GetPolygonCount()) + U8(" ポリゴン)"));
+						if (recastNavMesh.LoadNavMesh(filename)) {
+							AddConsoleMessage(U8("[NavMesh] 読み込み: ") + std::string(filename));
+							showRecastNavMesh_ = true;
+							recastNavMesh.SetDebugDrawEnabled(true);
 						} else {
 							AddConsoleMessage(U8("[NavMesh] 読み込み失敗"));
 						}
 					}
 				}
-				
+
 				ImGui::Separator();
-				
-				// 現在のNavMesh情報
-				if (navMeshSystem.HasNavMesh()) {
-					ImGui::TextDisabled(U8("ポリゴン: %d, 頂点: %d"), 
-						navMeshSystem.GetPolygonCount(), 
-						navMeshSystem.GetVertexCount());
+
+				// ステータス
+				if (recastNavMesh.IsBuilt()) {
+					auto stats = recastNavMesh.GetStats();
+					ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), U8("● ビルド済み"));
+					ImGui::TextDisabled(U8("  %d ポリゴン / %.2f秒"),
+						stats.polyCount, stats.buildTimeSeconds);
 				} else {
-					ImGui::TextDisabled(U8("NavMeshなし"));
+					ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), U8("○ 未ビルド"));
 				}
-				
+
 				ImGui::EndMenu();
 			}
 
@@ -3931,9 +3935,11 @@ namespace UnoEngine {
 		}
 
 		// NavMeshデバッグ描画
-		if (showNavMesh_) {
-			auto& navMeshSystem = NavMeshSystem::GetInstance();
-			navMeshSystem.DrawDebug(debugRenderer);
+		if (showRecastNavMesh_) {
+			auto& recastNavMesh = Navigation::NavMeshManager::Get();
+			if (recastNavMesh.IsBuilt()) {
+				recastNavMesh.DebugDraw(debugRenderer);
+			}
 		}
 	}
 
@@ -4218,6 +4224,105 @@ namespace UnoEngine {
 			}
 		}
 		ImGui::End();
+	}
+
+	void EditorUI::BakeNavMesh() {
+		if (!scene_) {
+			AddConsoleMessage(U8("[NavMesh] シーンがありません"));
+			return;
+		}
+
+		auto& navMeshManager = Navigation::NavMeshManager::Get();
+		navMeshManager.Initialize();
+
+		// シーンからジオメトリを収集
+		std::vector<Navigation::StaticGeometry> geometryList;
+
+		for (const auto& obj : scene_->GetGameObjects()) {
+			auto* meshRenderer = obj->GetComponent<MeshRenderer>();
+			if (!meshRenderer) continue;
+
+			const auto& transform = obj->GetTransform();
+			DirectX::XMFLOAT3 position(
+				transform.GetPosition().GetX(),
+				transform.GetPosition().GetY(),
+				transform.GetPosition().GetZ()
+			);
+
+			// 複数メッシュ対応（StaticModelData）
+			if (meshRenderer->HasModel()) {
+				const auto& meshes = meshRenderer->GetMeshes();
+				for (const auto& mesh : meshes) {
+					if (!mesh.HasCPUData()) continue;
+
+					Navigation::StaticGeometry geom;
+					geom.position = position;
+
+					const auto& vertices = mesh.GetVertices();
+					const auto& indices = mesh.GetIndices();
+
+					geom.vertices.reserve(vertices.size());
+					for (const auto& v : vertices) {
+						geom.vertices.emplace_back(v.px, v.py, v.pz);
+					}
+
+					geom.indices.reserve(indices.size());
+					for (const auto& idx : indices) {
+						geom.indices.push_back(idx);
+					}
+
+					geometryList.push_back(std::move(geom));
+				}
+			} else if (auto* singleMesh = meshRenderer->GetMesh()) {
+				// 単一メッシュ
+				if (!singleMesh->HasCPUData()) continue;
+
+				Navigation::StaticGeometry geom;
+				geom.position = position;
+
+				const auto& vertices = singleMesh->GetVertices();
+				const auto& indices = singleMesh->GetIndices();
+
+				geom.vertices.reserve(vertices.size());
+				for (const auto& v : vertices) {
+					geom.vertices.emplace_back(v.px, v.py, v.pz);
+				}
+
+				geom.indices.reserve(indices.size());
+				for (const auto& idx : indices) {
+					geom.indices.push_back(idx);
+				}
+
+				geometryList.push_back(std::move(geom));
+			}
+		}
+
+		if (geometryList.empty()) {
+			AddConsoleMessage("[NavMesh] No valid meshes in scene");
+			return;
+		}
+
+		AddConsoleMessage("[NavMesh] Collected " + std::to_string(geometryList.size()) + " meshes");
+
+		// プログレスコールバック設定
+		navMeshManager.SetProgressCallback([this](float progress, const char* stage) {
+			AddConsoleMessage(std::format("[NavMesh] {:.0f}% - {}", progress * 100.0f, stage));
+		});
+
+		// ビルド実行
+		if (navMeshManager.BuildNavMesh(geometryList, recastNavMeshSettings_)) {
+			auto stats = navMeshManager.GetStats();
+			AddConsoleMessage(std::format(
+				"[NavMesh] Bake complete: polys={}, verts={}, time={:.2f}s",
+				stats.polyCount, stats.vertexCount, stats.buildTimeSeconds
+			));
+
+			// 自動的にデバッグ描画を有効化
+			showRecastNavMesh_ = true;
+			navMeshManager.SetDebugDrawEnabled(true);
+		} else {
+			AddConsoleMessage("[NavMesh] Bake failed");
+		}
 	}
 
 } // namespace UnoEngine

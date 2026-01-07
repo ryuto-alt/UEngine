@@ -9,6 +9,7 @@
 #include "../../Engine/Math/Quaternion.h"
 #include "../../Engine/Audio/AudioListener.h"
 #include "../../Engine/Scripting/LuaScriptComponent.h"
+#include "../../Engine/Navigation/NavMeshBuildSettings.h"
 #include "EditorCamera.h"
 #include "GizmoSystem.h"
 #include "../Build/GameExporter.h"
@@ -194,6 +195,9 @@ private:
     // ビルドダイアログ
     void RenderBuildDialog();
 
+    // NavMesh
+    void BakeNavMesh();
+
 private:
     // RenderTexture
     RenderTexture gameViewTexture_;
@@ -355,9 +359,12 @@ private:
     // 表示フラグ
     bool showCameraFrustum_ = false;
     bool showGrid_ = true;
-    bool showNavMesh_ = false;
-    bool showNavMeshSettings_ = false;
-    
+    bool showRecastNavMesh_ = false;
+    bool showRecastNavMeshSettings_ = false;
+
+    // NavMesh設定
+    Navigation::NavMeshBuildSettings recastNavMeshSettings_;
+
     // NavMeshベイク進捗
     float navMeshBakeProgress_ = 0.0f;
     std::string navMeshBakeStage_;

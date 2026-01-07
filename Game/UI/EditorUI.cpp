@@ -3157,6 +3157,15 @@ namespace UnoEngine {
 			// EditorCameraの設定も保存
 			editorCamera_.SaveSettings();
 			consoleMessages_.push_back(U8("[エディタ] カメラ設定を保存しました"));
+			
+			// NavMesh情報を表示
+			auto& navMesh = Navigation::NavMeshManager::Get();
+			if (navMesh.IsBuilt()) {
+				consoleMessages_.push_back(U8("[エディタ] NavMesh設定とデータを保存しました"));
+			} else {
+				consoleMessages_.push_back(U8("[エディタ] NavMesh設定を保存しました（ベイクデータなし）"));
+			}
+			
 			isDirty_ = false;
 		}
 		else {
@@ -3179,6 +3188,13 @@ namespace UnoEngine {
 			}
 			// CameraComponentのPostProcessパラメータをPostProcessManagerに同期
 			SyncPostProcessParamsFromCamera();
+			
+			// NavMesh読み込み状態を表示
+			auto& navMesh = Navigation::NavMeshManager::Get();
+			if (navMesh.IsBuilt()) {
+				consoleMessages_.push_back(U8("[エディタ] NavMeshを読み込みました"));
+				showRecastNavMesh_ = true;  // 自動的にNavMesh表示をON
+			}
 		}
 		else {
 			consoleMessages_.push_back(U8("[エディタ] シーン読み込みに失敗: ") + filepath);

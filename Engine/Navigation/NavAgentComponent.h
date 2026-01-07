@@ -113,6 +113,10 @@ public:
     float GetAgentHeight() const { return agentHeight_; }
     void SetAgentHeight(float height) { agentHeight_ = height; }
     
+    /// Crowdシステムを使用するかどうか
+    bool IsUsingCrowd() const { return useCrowd_; }
+    void SetUseCrowd(bool use) { useCrowd_ = use; }
+    
     /// 待機時間（徘徊/パトロール時の目的地到達後の待機秒数）
     float GetWaitTime() const { return waitTime_; }
     void SetWaitTime(float time) { waitTime_ = time; }

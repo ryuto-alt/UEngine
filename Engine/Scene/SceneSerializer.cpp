@@ -8,9 +8,12 @@
 #include "../Core/CameraComponent.h"
 #include "../Core/CollisionComponent.h"
 #include "../Scripting/LuaScriptComponent.h"
+#include "../Navigation/NavAgentComponent.h"
+#include "../Navigation/NavMeshManager.h"
 #include "../PostProcess/PostProcessType.h"
 #include <fstream>
 #include <iostream>
+#include <filesystem>
 
 using json = nlohmann::json;
 
@@ -20,7 +23,7 @@ bool SceneSerializer::SaveScene(const std::vector<std::unique_ptr<GameObject>>& 
     try {
         json sceneJson;
         sceneJson["scene_name"] = "Scene";
-        sceneJson["version"] = "1.0";
+        sceneJson["version"] = "1.1";
 
         json objectsArray = json::array();
         for (const auto& obj : gameObjects) {
@@ -29,6 +32,47 @@ bool SceneSerializer::SaveScene(const std::vector<std::unique_ptr<GameObject>>& 
             }
         }
         sceneJson["objects"] = objectsArray;
+
+        // NavMesh設定を保存
+        auto& navMesh = Navigation::NavMeshManager::Get();
+        const auto& settings = navMesh.GetSettings();
+        
+        json navMeshJson;
+        navMeshJson["cellSize"] = settings.cellSize;
+        navMeshJson["cellHeight"] = settings.cellHeight;
+        navMeshJson["agentRadius"] = settings.agentRadius;
+        navMeshJson["agentHeight"] = settings.agentHeight;
+        navMeshJson["agentMaxClimb"] = settings.agentMaxClimb;
+        navMeshJson["agentMaxSlope"] = settings.agentMaxSlope;
+        navMeshJson["maxSimplificationError"] = settings.maxSimplificationError;
+        navMeshJson["detailSampleDist"] = settings.detailSampleDist;
+        navMeshJson["detailSampleMaxError"] = settings.detailSampleMaxError;
+        navMeshJson["minRegionArea"] = settings.minRegionArea;
+        navMeshJson["mergeRegionArea"] = settings.mergeRegionArea;
+        navMeshJson["maxEdgeLength"] = settings.maxEdgeLength;
+        navMeshJson["maxVertsPerPoly"] = settings.maxVertsPerPoly;
+        navMeshJson["maxTiles"] = settings.maxTiles;
+        navMeshJson["tileSize"] = settings.tileSize;
+        navMeshJson["useMonotone"] = settings.useMonotone;
+        navMeshJson["filterLowHangingObstacles"] = settings.filterLowHangingObstacles;
+        navMeshJson["filterLedgeSpans"] = settings.filterLedgeSpans;
+        navMeshJson["filterWalkableLowHeightSpans"] = settings.filterWalkableLowHeightSpans;
+        
+        // NavMeshがビルド済みの場合、バイナリファイルパスを設定
+        if (navMesh.IsBuilt()) {
+            // シーンファイルと同じディレクトリに.navmeshファイルを保存
+            std::filesystem::path scenePath(filepath);
+            std::string navMeshPath = scenePath.parent_path().string() + "/" + 
+                                      scenePath.stem().string() + ".navmesh";
+            navMeshJson["dataPath"] = navMeshPath;
+            
+            // NavMeshバイナリを保存
+            if (navMesh.SaveNavMesh(navMeshPath)) {
+                std::cout << "NavMesh saved: " << navMeshPath << std::endl;
+            }
+        }
+        
+        sceneJson["navmesh"] = navMeshJson;
 
         std::ofstream file(filepath);
         if (!file.is_open()) {
@@ -69,6 +113,43 @@ bool SceneSerializer::LoadScene(const std::string& filepath, std::vector<std::un
                 auto gameObject = DeserializeGameObject(objJson);
                 if (gameObject) {
                     outGameObjects.push_back(std::move(gameObject));
+                }
+            }
+        }
+
+        // NavMesh設定を読み込み
+        if (sceneJson.contains("navmesh")) {
+            auto& navMesh = Navigation::NavMeshManager::Get();
+            const auto& navMeshJson = sceneJson["navmesh"];
+            
+            Navigation::NavMeshBuildSettings settings;
+            if (navMeshJson.contains("cellSize")) settings.cellSize = navMeshJson["cellSize"].get<float>();
+            if (navMeshJson.contains("cellHeight")) settings.cellHeight = navMeshJson["cellHeight"].get<float>();
+            if (navMeshJson.contains("agentRadius")) settings.agentRadius = navMeshJson["agentRadius"].get<float>();
+            if (navMeshJson.contains("agentHeight")) settings.agentHeight = navMeshJson["agentHeight"].get<float>();
+            if (navMeshJson.contains("agentMaxClimb")) settings.agentMaxClimb = navMeshJson["agentMaxClimb"].get<float>();
+            if (navMeshJson.contains("agentMaxSlope")) settings.agentMaxSlope = navMeshJson["agentMaxSlope"].get<float>();
+            if (navMeshJson.contains("maxSimplificationError")) settings.maxSimplificationError = navMeshJson["maxSimplificationError"].get<float>();
+            if (navMeshJson.contains("detailSampleDist")) settings.detailSampleDist = navMeshJson["detailSampleDist"].get<float>();
+            if (navMeshJson.contains("detailSampleMaxError")) settings.detailSampleMaxError = navMeshJson["detailSampleMaxError"].get<float>();
+            if (navMeshJson.contains("minRegionArea")) settings.minRegionArea = navMeshJson["minRegionArea"].get<int>();
+            if (navMeshJson.contains("mergeRegionArea")) settings.mergeRegionArea = navMeshJson["mergeRegionArea"].get<int>();
+            if (navMeshJson.contains("maxEdgeLength")) settings.maxEdgeLength = navMeshJson["maxEdgeLength"].get<int>();
+            if (navMeshJson.contains("maxVertsPerPoly")) settings.maxVertsPerPoly = navMeshJson["maxVertsPerPoly"].get<int>();
+            if (navMeshJson.contains("maxTiles")) settings.maxTiles = navMeshJson["maxTiles"].get<int>();
+            if (navMeshJson.contains("tileSize")) settings.tileSize = navMeshJson["tileSize"].get<int>();
+            if (navMeshJson.contains("useMonotone")) settings.useMonotone = navMeshJson["useMonotone"].get<bool>();
+            if (navMeshJson.contains("filterLowHangingObstacles")) settings.filterLowHangingObstacles = navMeshJson["filterLowHangingObstacles"].get<bool>();
+            if (navMeshJson.contains("filterLedgeSpans")) settings.filterLedgeSpans = navMeshJson["filterLedgeSpans"].get<bool>();
+            if (navMeshJson.contains("filterWalkableLowHeightSpans")) settings.filterWalkableLowHeightSpans = navMeshJson["filterWalkableLowHeightSpans"].get<bool>();
+            
+            navMesh.SetSettings(settings);
+            
+            // NavMeshバイナリを読み込み
+            if (navMeshJson.contains("dataPath")) {
+                std::string navMeshPath = navMeshJson["dataPath"].get<std::string>();
+                if (navMesh.LoadNavMesh(navMeshPath)) {
+                    std::cout << "NavMesh loaded: " << navMeshPath << std::endl;
                 }
             }
         }
@@ -349,6 +430,20 @@ json SceneSerializer::SerializeComponent(const Component& component) {
         return comp;
     }
 
+    // NavAgentComponent
+    if (auto* navAgent = dynamic_cast<const NavAgentComponent*>(&component)) {
+        comp["type"] = "NavAgentComponent";
+        comp["speed"] = navAgent->GetSpeed();
+        comp["angularSpeed"] = navAgent->GetAngularSpeed();
+        comp["acceleration"] = navAgent->GetAcceleration();
+        comp["stoppingDistance"] = navAgent->GetStoppingDistance();
+        comp["agentRadius"] = navAgent->GetAgentRadius();
+        comp["agentHeight"] = navAgent->GetAgentHeight();
+        comp["useCrowd"] = navAgent->IsUsingCrowd();
+        comp["waitTime"] = navAgent->GetWaitTime();
+        return comp;
+    }
+
     return json();
 }
 
@@ -626,6 +721,33 @@ void SceneSerializer::DeserializeComponent(const json& json, GameObject& gameObj
                     luaScript->SetProperty(name, propJson["value"].get<std::string>());
                 }
             }
+        }
+    }
+    else if (type == "NavAgentComponent") {
+        auto* navAgent = gameObject.AddComponent<NavAgentComponent>();
+        if (json.contains("speed")) {
+            navAgent->SetSpeed(json["speed"].get<float>());
+        }
+        if (json.contains("angularSpeed")) {
+            navAgent->SetAngularSpeed(json["angularSpeed"].get<float>());
+        }
+        if (json.contains("acceleration")) {
+            navAgent->SetAcceleration(json["acceleration"].get<float>());
+        }
+        if (json.contains("stoppingDistance")) {
+            navAgent->SetStoppingDistance(json["stoppingDistance"].get<float>());
+        }
+        if (json.contains("agentRadius")) {
+            navAgent->SetAgentRadius(json["agentRadius"].get<float>());
+        }
+        if (json.contains("agentHeight")) {
+            navAgent->SetAgentHeight(json["agentHeight"].get<float>());
+        }
+        if (json.contains("useCrowd")) {
+            navAgent->SetUseCrowd(json["useCrowd"].get<bool>());
+        }
+        if (json.contains("waitTime")) {
+            navAgent->SetWaitTime(json["waitTime"].get<float>());
         }
     }
 }

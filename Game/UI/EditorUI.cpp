@@ -21,6 +21,7 @@
 #include "../../Engine/Core/CollisionComponent.h"
 #include "../../Engine/Editor/ParticleEditor.h"
 #include "../../Engine/Navigation/NavMeshManager.h"
+#include "../../Engine/Navigation/NavAgentComponent.h"
 #include <imgui.h>
 #include <imgui_internal.h>
 #include "../../Engine/UI/imgui_toggle.h"
@@ -168,74 +169,6 @@ namespace UnoEngine {
 
 		// ビルドダイアログ描画
 		RenderBuildDialog();
-
-		// NavMesh設定ウィンドウ描画
-		if (showRecastNavMeshSettings_) {
-			ImGui::SetNextWindowSize(ImVec2(380, 500), ImGuiCond_FirstUseEver);
-			if (ImGui::Begin(U8("NavMesh設定"), &showRecastNavMeshSettings_)) {
-				auto& recastNavMesh = Navigation::NavMeshManager::Get();
-				auto settings = recastNavMesh.GetSettings();
-				bool settingsChanged = false;
-
-				ImGui::SeparatorText(U8("ボクセル設定"));
-				settingsChanged |= ImGui::DragFloat(U8("セルサイズ"), &settings.cellSize, 0.01f, 0.05f, 1.0f, "%.2f m");
-				if (ImGui::IsItemHovered()) ImGui::SetTooltip(U8("小さいほど精度が上がるが処理が重くなる"));
-				settingsChanged |= ImGui::DragFloat(U8("セル高さ"), &settings.cellHeight, 0.01f, 0.05f, 1.0f, "%.2f m");
-
-				ImGui::SeparatorText(U8("エージェント設定"));
-				settingsChanged |= ImGui::DragFloat(U8("半径"), &settings.agentRadius, 0.01f, 0.1f, 5.0f, "%.2f m");
-				settingsChanged |= ImGui::DragFloat(U8("高さ"), &settings.agentHeight, 0.1f, 0.5f, 10.0f, "%.1f m");
-				settingsChanged |= ImGui::DragFloat(U8("段差許容"), &settings.agentMaxClimb, 0.01f, 0.0f, 2.0f, "%.2f m");
-				settingsChanged |= ImGui::DragFloat(U8("最大傾斜角"), &settings.agentMaxSlope, 1.0f, 0.0f, 90.0f, "%.0f deg");
-
-				ImGui::SeparatorText(U8("メッシュ生成"));
-				settingsChanged |= ImGui::DragFloat(U8("単純化誤差"), &settings.maxSimplificationError, 0.1f, 0.0f, 5.0f, "%.1f");
-				settingsChanged |= ImGui::DragFloat(U8("詳細サンプル距離"), &settings.detailSampleDist, 0.5f, 0.0f, 20.0f, "%.1f");
-				settingsChanged |= ImGui::DragFloat(U8("詳細サンプル誤差"), &settings.detailSampleMaxError, 0.1f, 0.0f, 5.0f, "%.1f");
-
-				ImGui::SeparatorText(U8("タイリング"));
-				settingsChanged |= ImGui::DragInt(U8("最大タイル数"), &settings.maxTiles, 1, 1, 256);
-				settingsChanged |= ImGui::DragInt(U8("タイルサイズ"), &settings.tileSize, 1, 16, 128);
-
-				ImGui::SeparatorText(U8("フィルタリング"));
-				settingsChanged |= ImGui::Checkbox(U8("Monotone分割"), &settings.useMonotone);
-				settingsChanged |= ImGui::Checkbox(U8("低い障害物を除外"), &settings.filterLowHangingObstacles);
-				settingsChanged |= ImGui::Checkbox(U8("崖スパンを除外"), &settings.filterLedgeSpans);
-				settingsChanged |= ImGui::Checkbox(U8("低い天井を除外"), &settings.filterWalkableLowHeightSpans);
-
-				if (settingsChanged) {
-					recastNavMesh.SetSettings(settings);
-				}
-
-				ImGui::SeparatorText(U8("表示設定"));
-				auto color = recastNavMesh.GetDebugDrawColor();
-				float colorArr[4] = {color.x, color.y, color.z, color.w};
-				if (ImGui::ColorEdit4(U8("表示色"), colorArr)) {
-					recastNavMesh.SetDebugDrawColor({colorArr[0], colorArr[1], colorArr[2], colorArr[3]});
-				}
-
-				ImGui::Separator();
-
-				if (recastNavMesh.IsBuilt()) {
-					auto stats = recastNavMesh.GetStats();
-					ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), U8("ビルド済み"));
-					ImGui::Text(U8("  ポリゴン数: %d"), stats.polyCount);
-					ImGui::Text(U8("  頂点数: %d"), stats.vertexCount);
-					ImGui::Text(U8("  タイル数: %d"), stats.tileCount);
-					ImGui::Text(U8("  メモリ: %.2f KB"), stats.memoryUsage / 1024.0f);
-					ImGui::Text(U8("  ビルド時間: %.2f秒"), stats.buildTimeSeconds);
-				} else {
-					ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), U8("NavMeshが生成されていません"));
-				}
-
-				ImGui::Separator();
-
-				if (ImGui::Button(U8("ベイク"), ImVec2(-1, 0))) {
-					BakeNavMesh();
-				}
-			}
-			ImGui::End();
-		}
 
 		// エディタカメラの更新
 		float deltaTime = ImGui::GetIO().DeltaTime;
@@ -449,7 +382,10 @@ namespace UnoEngine {
 					recastNavMesh.SetDebugDrawEnabled(showRecastNavMesh_);
 				}
 
-				ImGui::MenuItem(U8("設定..."), nullptr, &showRecastNavMeshSettings_);
+				if (ImGui::MenuItem(U8("設定..."))) {
+					showRecastNavMeshSettings_ = true;
+					inspectorTabIndex_ = 1;
+				}
 
 				ImGui::Separator();
 
@@ -969,235 +905,30 @@ namespace UnoEngine {
 
 		ImGui::Begin(U8("インスペクター"), &showInspector_);
 
-		// 選択されたオブジェクトの情報を表示
-		GameObject* selected = selectedObject_ ? selectedObject_ : context.player;
+		// タブバー
+		if (ImGui::BeginTabBar("InspectorTabs")) {
+			// オブジェクトタブ
+			if (ImGui::BeginTabItem(U8("オブジェクト"))) {
+				inspectorTabIndex_ = 0;
+				RenderObjectInspectorTab(context);
+				ImGui::EndTabItem();
+			}
 
-		if (selected) {
-			ImGui::Text("Selected: %s", selected->GetName().c_str());
-			ImGui::Separator();
-
-			auto& transform = selected->GetTransform();
-			auto pos = transform.GetLocalPosition();
-			auto rot = transform.GetLocalRotation();
-			auto scale = transform.GetLocalScale();
-
-			ImGui::Text("Transform");
-			ImGui::Text("Position: (%.2f, %.2f, %.2f)", pos.GetX(), pos.GetY(), pos.GetZ());
-			ImGui::Text("Rotation: (%.2f, %.2f, %.2f, %.2f)",
-				rot.GetX(), rot.GetY(), rot.GetZ(), rot.GetW());
-			ImGui::Text("Scale: (%.2f, %.2f, %.2f)", scale.GetX(), scale.GetY(), scale.GetZ());
-
-			// LuaScriptComponentの表示
-			auto* luaScript = selected->GetComponent<LuaScriptComponent>();
-			if (luaScript) {
-				ImGui::Separator();
-				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.8f, 1.0f, 1.0f));
-				ImGui::Text("Lua Script");
-				ImGui::PopStyleColor();
-
-				// スクリプト選択コンボボックス
-				if (cachedScriptPaths_.empty()) {
-					RefreshScriptPaths();
+			// NavMeshタブ（ビルド済みまたは設定表示中のみ表示）
+			auto& navMesh = Navigation::NavMeshManager::Get();
+			if (navMesh.IsBuilt() || showRecastNavMeshSettings_) {
+				ImGuiTabItemFlags flags = ImGuiTabItemFlags_None;
+				if (inspectorTabIndex_ == 1) {
+					flags |= ImGuiTabItemFlags_SetSelected;
 				}
-
-				std::string currentScript = luaScript->GetScriptPath();
-				int currentIndex = -1;
-				for (size_t i = 0; i < cachedScriptPaths_.size(); ++i) {
-					if (cachedScriptPaths_[i] == currentScript) {
-						currentIndex = static_cast<int>(i);
-						break;
-					}
-				}
-
-				// 現在のスクリプト名を表示（パスからファイル名のみ抽出）
-				std::string displayName = currentScript.empty() ? "(None)" :
-					currentScript.substr(currentScript.find_last_of("/\\") + 1);
-
-				if (ImGui::BeginCombo("Script", displayName.c_str())) {
-					// Noneオプション
-					if (ImGui::Selectable("(None)", currentScript.empty())) {
-						luaScript->SetScriptPath("");
-						isDirty_ = true;
-					}
-
-					for (size_t i = 0; i < cachedScriptPaths_.size(); ++i) {
-						// ファイル名のみ表示
-						std::string scriptName = cachedScriptPaths_[i].substr(
-							cachedScriptPaths_[i].find_last_of("/\\") + 1);
-						bool isSelected = (currentIndex == static_cast<int>(i));
-
-						if (ImGui::Selectable(scriptName.c_str(), isSelected)) {
-							luaScript->SetScriptPath(cachedScriptPaths_[i]);
-							(void)luaScript->ReloadScript();
-							isDirty_ = true;
-						}
-
-						// ツールチップでフルパス表示
-						if (ImGui::IsItemHovered()) {
-							ImGui::SetTooltip("%s", cachedScriptPaths_[i].c_str());
-						}
-
-						if (isSelected) {
-							ImGui::SetItemDefaultFocus();
-						}
-					}
-					ImGui::EndCombo();
-				}
-
-				// リフレッシュボタン
-				ImGui::SameLine();
-				if (ImGui::Button("R##RefreshScripts")) {
-					RefreshScriptPaths();
-				}
-				if (ImGui::IsItemHovered()) {
-					ImGui::SetTooltip("Refresh script list");
-				}
-
-				// エラー表示
-				if (luaScript->HasError()) {
-					auto& error = luaScript->GetLastError();
-					if (error) {
-						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
-						ImGui::TextWrapped("Error: %s", error->message.c_str());
-						if (error->line >= 0) {
-							ImGui::Text("Line: %d", error->line);
-						}
-						ImGui::PopStyleColor();
-					}
-				}
-
-				// プロパティ表示
-				auto properties = luaScript->GetProperties();
-				if (!properties.empty()) {
-					ImGui::Spacing();
-					ImGui::Text("Properties:");
-					ImGui::Indent();
-
-					for (auto& prop : properties) {
-						ImGui::PushID(prop.name.c_str());
-
-						std::visit([&](auto&& val) {
-							using T = std::decay_t<decltype(val)>;
-							if constexpr (std::is_same_v<T, bool>) {
-								bool v = val;
-								if (ImGui::Checkbox(prop.name.c_str(), &v)) {
-									luaScript->SetProperty(prop.name, v);
-								isDirty_ = true;
-							}
-						} else if constexpr (std::is_same_v<T, int32>) {
-								int v = val;
-								if (ImGui::DragInt(prop.name.c_str(), &v)) {
-									luaScript->SetProperty(prop.name, static_cast<int32>(v));
-								isDirty_ = true;
-							}
-						} else if constexpr (std::is_same_v<T, float>) {
-								float v = val;
-								if (ImGui::DragFloat(prop.name.c_str(), &v, 0.1f)) {
-									luaScript->SetProperty(prop.name, v);
-								isDirty_ = true;
-							}
-						} else if constexpr (std::is_same_v<T, std::string>) {
-								char buffer[256];
-								strncpy_s(buffer, val.c_str(), sizeof(buffer) - 1);
-								if (ImGui::InputText(prop.name.c_str(), buffer, sizeof(buffer))) {
-									luaScript->SetProperty(prop.name, std::string(buffer));
-								isDirty_ = true;
-							}
-						}
-					}, prop.value);
-
-						ImGui::PopID();
-					}
-
-					ImGui::Unindent();
-				}
-
-				// リロードボタン
-				ImGui::Spacing();
-				if (ImGui::Button("Reload Script")) {
-					(void)luaScript->ReloadScript();
-							isDirty_ = true;
-				}
-
-				// コンポーネント削除ボタン
-				ImGui::SameLine();
-				if (ImGui::Button("Remove Script")) {
-					selected->RemoveComponent<LuaScriptComponent>();
+				if (ImGui::BeginTabItem("NavMesh", nullptr, flags)) {
+					inspectorTabIndex_ = 1;
+					RenderNavMeshInspectorTab();
+					ImGui::EndTabItem();
 				}
 			}
 
-			// スクリプト追加ボタン
-			if (!luaScript) {
-				ImGui::Separator();
-				if (ImGui::Button("Add Lua Script")) {
-					selected->AddComponent<LuaScriptComponent>();
-					RefreshScriptPaths();
-				}
-			}
-		}
-		else {
-			ImGui::Text("No object selected");
-		}
-
-		ImGui::Separator();
-		ImGui::Text("Debug Settings");
-		ImGui::Spacing();
-
-		ImGuiToggleConfig config = ImGuiTogglePresets::MaterialStyle(1.0f);
-
-		// Animation Toggle
-		if (context.animationSystem) {
-			bool isPlaying = context.animationSystem->IsPlaying();
-			ImGui::Text("Animation");
-			ImGui::SameLine(100.0f);
-			if (ImGui::Toggle("##AnimToggle", &isPlaying, config)) {
-				context.animationSystem->SetPlaying(isPlaying);
-			}
-		}
-
-		// Debug Bones Toggle
-		if (context.debugRenderer) {
-			bool showBones = context.debugRenderer->GetShowBones();
-			ImGui::Text("Debug Bones");
-			ImGui::SameLine(100.0f);
-			if (ImGui::Toggle("##BonesToggle", &showBones, config)) {
-				context.debugRenderer->SetShowBones(showBones);
-			}
-		}
-
-		ImGui::Separator();
-		ImGui::Text("Camera Settings");
-		ImGui::Spacing();
-
-		bool settingsChanged = false;
-
-		// マウス感度（回転速度）
-		float rotateSpeed = editorCamera_.GetRotateSpeed();
-		ImGui::Text("Mouse Sensitivity");
-		if (ImGui::SliderFloat("##MouseSensitivity", &rotateSpeed, 0.1f, 5.0f, "%.2f")) {
-			editorCamera_.SetRotateSpeed(rotateSpeed);
-			settingsChanged = true;
-		}
-
-		// 移動速度
-		float moveSpeed = editorCamera_.GetMoveSpeed();
-		ImGui::Text("Move Speed");
-		if (ImGui::SliderFloat("##MoveSpeed", &moveSpeed, 1.0f, 100.0f, "%.1f")) {
-			editorCamera_.SetMoveSpeed(moveSpeed);
-			settingsChanged = true;
-		}
-
-		// スクロール速度
-		float scrollSpeed = editorCamera_.GetScrollSpeed();
-		ImGui::Text("Scroll Speed");
-		if (ImGui::SliderFloat("##ScrollSpeed", &scrollSpeed, 0.1f, 5.0f, "%.2f")) {
-			editorCamera_.SetScrollSpeed(scrollSpeed);
-			settingsChanged = true;
-		}
-
-		// 設定が変更されたら保存
-		if (settingsChanged) {
-			editorCamera_.SaveSettings();
+			ImGui::EndTabBar();
 		}
 
 		ImGui::End();
@@ -4226,6 +3957,437 @@ namespace UnoEngine {
 		ImGui::End();
 	}
 
+	void EditorUI::RenderObjectInspectorTab(const EditorContext& context) {
+		// 選択されたオブジェクトの情報を表示
+		GameObject* selected = selectedObject_ ? selectedObject_ : context.player;
+
+		if (selected) {
+			ImGui::Text("Selected: %s", selected->GetName().c_str());
+			ImGui::Separator();
+
+			auto& transform = selected->GetTransform();
+			auto pos = transform.GetLocalPosition();
+			auto rot = transform.GetLocalRotation();
+			auto scale = transform.GetLocalScale();
+
+			ImGui::Text("Transform");
+			ImGui::Text("Position: (%.2f, %.2f, %.2f)", pos.GetX(), pos.GetY(), pos.GetZ());
+			ImGui::Text("Rotation: (%.2f, %.2f, %.2f, %.2f)",
+				rot.GetX(), rot.GetY(), rot.GetZ(), rot.GetW());
+			ImGui::Text("Scale: (%.2f, %.2f, %.2f)", scale.GetX(), scale.GetY(), scale.GetZ());
+
+			// NavAgentコンポーネントの表示
+			auto* navAgent = selected->GetComponent<NavAgentComponent>();
+			if (navAgent) {
+				ImGui::Separator();
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 1.0f, 0.6f, 1.0f));
+				ImGui::Text("NavAgent");
+				ImGui::PopStyleColor();
+
+				float speed = navAgent->GetSpeed();
+				if (ImGui::DragFloat(U8("移動速度"), &speed, 0.1f, 0.1f, 20.0f, "%.1f m/s")) {
+					navAgent->SetSpeed(speed);
+					isDirty_ = true;
+				}
+
+				float angularSpeed = navAgent->GetAngularSpeed();
+				if (ImGui::DragFloat(U8("回転速度"), &angularSpeed, 1.0f, 1.0f, 720.0f, "%.0f deg/s")) {
+					navAgent->SetAngularSpeed(angularSpeed);
+					isDirty_ = true;
+				}
+
+				float acceleration = navAgent->GetAcceleration();
+				if (ImGui::DragFloat(U8("加速度"), &acceleration, 0.1f, 0.1f, 50.0f, "%.1f m/s²")) {
+					navAgent->SetAcceleration(acceleration);
+					isDirty_ = true;
+				}
+
+				float stoppingDist = navAgent->GetStoppingDistance();
+				if (ImGui::DragFloat(U8("停止距離"), &stoppingDist, 0.01f, 0.0f, 5.0f, "%.2f m")) {
+					navAgent->SetStoppingDistance(stoppingDist);
+					isDirty_ = true;
+				}
+
+				bool autoBrake = navAgent->IsAutobrake();
+				if (ImGui::Checkbox(U8("自動減速"), &autoBrake)) {
+					navAgent->SetAutobrake(autoBrake);
+					isDirty_ = true;
+				}
+
+				// 状態表示
+				ImGui::Spacing();
+				const char* stateStr = "Idle";
+				ImVec4 stateColor = ImVec4(0.6f, 0.6f, 0.6f, 1.0f);
+				switch (navAgent->GetState()) {
+					case NavAgentComponent::AgentState::Moving:
+						stateStr = "Moving";
+						stateColor = ImVec4(0.4f, 1.0f, 0.4f, 1.0f);
+						break;
+					case NavAgentComponent::AgentState::Arrived:
+						stateStr = "Arrived";
+						stateColor = ImVec4(0.4f, 0.8f, 1.0f, 1.0f);
+						break;
+					default:
+						break;
+				}
+				ImGui::TextColored(stateColor, U8("状態: %s"), stateStr);
+
+				if (navAgent->HasPath()) {
+					ImGui::Text(U8("残り距離: %.2f m"), navAgent->GetRemainingDistance());
+				}
+
+				// パス可視化トグル
+				bool visualize = navAgent->IsPathVisualized();
+				if (ImGui::Checkbox(U8("パス表示"), &visualize)) {
+					navAgent->SetPathVisualized(visualize);
+				}
+
+				ImGui::Spacing();
+				if (ImGui::Button(U8("コンポーネント削除"))) {
+					selected->RemoveComponent<NavAgentComponent>();
+				}
+			}
+
+			// LuaScriptComponentの表示
+			auto* luaScript = selected->GetComponent<LuaScriptComponent>();
+			if (luaScript) {
+				ImGui::Separator();
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.8f, 1.0f, 1.0f));
+				ImGui::Text("Lua Script");
+				ImGui::PopStyleColor();
+
+				// スクリプト選択コンボボックス
+				if (cachedScriptPaths_.empty()) {
+					RefreshScriptPaths();
+				}
+
+				std::string currentScript = luaScript->GetScriptPath();
+				int currentIndex = -1;
+				for (size_t i = 0; i < cachedScriptPaths_.size(); ++i) {
+					if (cachedScriptPaths_[i] == currentScript) {
+						currentIndex = static_cast<int>(i);
+						break;
+					}
+				}
+
+				std::string displayName = currentScript.empty() ? "(None)" :
+					currentScript.substr(currentScript.find_last_of("/\\") + 1);
+
+				if (ImGui::BeginCombo("Script", displayName.c_str())) {
+					if (ImGui::Selectable("(None)", currentScript.empty())) {
+						luaScript->SetScriptPath("");
+						isDirty_ = true;
+					}
+
+					for (size_t i = 0; i < cachedScriptPaths_.size(); ++i) {
+						std::string scriptName = cachedScriptPaths_[i].substr(
+							cachedScriptPaths_[i].find_last_of("/\\") + 1);
+						bool isSelected = (currentIndex == static_cast<int>(i));
+
+						if (ImGui::Selectable(scriptName.c_str(), isSelected)) {
+							luaScript->SetScriptPath(cachedScriptPaths_[i]);
+							(void)luaScript->ReloadScript();
+							isDirty_ = true;
+						}
+
+						if (ImGui::IsItemHovered()) {
+							ImGui::SetTooltip("%s", cachedScriptPaths_[i].c_str());
+						}
+
+						if (isSelected) {
+							ImGui::SetItemDefaultFocus();
+						}
+					}
+					ImGui::EndCombo();
+				}
+
+				ImGui::SameLine();
+				if (ImGui::Button("R##RefreshScripts")) {
+					RefreshScriptPaths();
+				}
+				if (ImGui::IsItemHovered()) {
+					ImGui::SetTooltip("Refresh script list");
+				}
+
+				if (luaScript->HasError()) {
+					auto& error = luaScript->GetLastError();
+					if (error) {
+						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
+						ImGui::TextWrapped("Error: %s", error->message.c_str());
+						if (error->line >= 0) {
+							ImGui::Text("Line: %d", error->line);
+						}
+						ImGui::PopStyleColor();
+					}
+				}
+
+				auto properties = luaScript->GetProperties();
+				if (!properties.empty()) {
+					ImGui::Spacing();
+					ImGui::Text("Properties:");
+					ImGui::Indent();
+
+					for (auto& prop : properties) {
+						ImGui::PushID(prop.name.c_str());
+
+						std::visit([&](auto&& val) {
+							using T = std::decay_t<decltype(val)>;
+							if constexpr (std::is_same_v<T, bool>) {
+								bool v = val;
+								if (ImGui::Checkbox(prop.name.c_str(), &v)) {
+									luaScript->SetProperty(prop.name, v);
+								isDirty_ = true;
+							}
+						} else if constexpr (std::is_same_v<T, int32>) {
+								int v = val;
+								if (ImGui::DragInt(prop.name.c_str(), &v)) {
+									luaScript->SetProperty(prop.name, static_cast<int32>(v));
+								isDirty_ = true;
+							}
+						} else if constexpr (std::is_same_v<T, float>) {
+								float v = val;
+								if (ImGui::DragFloat(prop.name.c_str(), &v, 0.1f)) {
+									luaScript->SetProperty(prop.name, v);
+								isDirty_ = true;
+							}
+						} else if constexpr (std::is_same_v<T, std::string>) {
+								char buffer[256];
+								strncpy_s(buffer, val.c_str(), sizeof(buffer) - 1);
+								if (ImGui::InputText(prop.name.c_str(), buffer, sizeof(buffer))) {
+									luaScript->SetProperty(prop.name, std::string(buffer));
+								isDirty_ = true;
+							}
+						}
+					}, prop.value);
+
+						ImGui::PopID();
+					}
+
+					ImGui::Unindent();
+				}
+
+				ImGui::Spacing();
+				if (ImGui::Button("Reload Script")) {
+					(void)luaScript->ReloadScript();
+							isDirty_ = true;
+				}
+
+				ImGui::SameLine();
+				if (ImGui::Button("Remove Script")) {
+					selected->RemoveComponent<LuaScriptComponent>();
+				}
+			}
+
+			// コンポーネント追加セクション
+			ImGui::Separator();
+			ImGui::Text(U8("コンポーネント追加"));
+			
+			if (!luaScript) {
+				if (ImGui::Button("Add Lua Script")) {
+					selected->AddComponent<LuaScriptComponent>();
+					RefreshScriptPaths();
+				}
+			}
+			
+			if (!navAgent) {
+				ImGui::SameLine();
+				if (ImGui::Button("Add NavAgent")) {
+					selected->AddComponent<NavAgentComponent>();
+					isDirty_ = true;
+				}
+			}
+		}
+		else {
+			ImGui::Text("No object selected");
+		}
+
+		ImGui::Separator();
+		ImGui::Text("Debug Settings");
+		ImGui::Spacing();
+
+		ImGuiToggleConfig config = ImGuiTogglePresets::MaterialStyle(1.0f);
+
+		// Animation Toggle
+		if (context.animationSystem) {
+			bool isPlaying = context.animationSystem->IsPlaying();
+			ImGui::Text("Animation");
+			ImGui::SameLine(100.0f);
+			if (ImGui::Toggle("##AnimToggle", &isPlaying, config)) {
+				context.animationSystem->SetPlaying(isPlaying);
+			}
+		}
+
+		// Debug Bones Toggle
+		if (context.debugRenderer) {
+			bool showBones = context.debugRenderer->GetShowBones();
+			ImGui::Text("Debug Bones");
+			ImGui::SameLine(100.0f);
+			if (ImGui::Toggle("##BonesToggle", &showBones, config)) {
+				context.debugRenderer->SetShowBones(showBones);
+			}
+		}
+
+		ImGui::Separator();
+		ImGui::Text("Camera Settings");
+		ImGui::Spacing();
+
+		bool settingsChanged = false;
+
+		float rotateSpeed = editorCamera_.GetRotateSpeed();
+		ImGui::Text("Mouse Sensitivity");
+		if (ImGui::SliderFloat("##MouseSensitivity", &rotateSpeed, 0.1f, 5.0f, "%.2f")) {
+			editorCamera_.SetRotateSpeed(rotateSpeed);
+			settingsChanged = true;
+		}
+
+		float moveSpeed = editorCamera_.GetMoveSpeed();
+		ImGui::Text("Move Speed");
+		if (ImGui::SliderFloat("##MoveSpeed", &moveSpeed, 1.0f, 100.0f, "%.1f")) {
+			editorCamera_.SetMoveSpeed(moveSpeed);
+			settingsChanged = true;
+		}
+
+		float scrollSpeed = editorCamera_.GetScrollSpeed();
+		ImGui::Text("Scroll Speed");
+		if (ImGui::SliderFloat("##ScrollSpeed", &scrollSpeed, 0.1f, 5.0f, "%.2f")) {
+			editorCamera_.SetScrollSpeed(scrollSpeed);
+			settingsChanged = true;
+		}
+
+		if (settingsChanged) {
+			editorCamera_.SaveSettings();
+		}
+	}
+
+	void EditorUI::RenderNavMeshInspectorTab() {
+		auto& navMesh = Navigation::NavMeshManager::Get();
+		auto settings = navMesh.GetSettings();
+		bool settingsChanged = false;
+
+		// ステータス表示
+		if (navMesh.IsBuilt()) {
+			auto stats = navMesh.GetStats();
+			ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), U8("● ビルド済み"));
+			ImGui::Text(U8("  ポリゴン: %d / 頂点: %d"), stats.polyCount, stats.vertexCount);
+			ImGui::Text(U8("  タイル: %d / %.2f KB"), stats.tileCount, stats.memoryUsage / 1024.0f);
+			ImGui::Text(U8("  ビルド時間: %.2f秒"), stats.buildTimeSeconds);
+		} else {
+			ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), U8("○ 未ビルド"));
+		}
+
+		ImGui::Separator();
+
+		// 表示設定
+		if (ImGui::Checkbox(U8("NavMesh表示"), &showRecastNavMesh_)) {
+			navMesh.SetDebugDrawEnabled(showRecastNavMesh_);
+		}
+
+		auto color = navMesh.GetDebugDrawColor();
+		float colorArr[4] = {color.x, color.y, color.z, color.w};
+		if (ImGui::ColorEdit4(U8("表示色"), colorArr)) {
+			navMesh.SetDebugDrawColor({colorArr[0], colorArr[1], colorArr[2], colorArr[3]});
+		}
+
+		ImGui::Separator();
+
+		// ビルド設定
+		if (ImGui::CollapsingHeader(U8("ボクセル設定"), ImGuiTreeNodeFlags_DefaultOpen)) {
+			settingsChanged |= ImGui::DragFloat(U8("セルサイズ"), &settings.cellSize, 0.01f, 0.05f, 1.0f, "%.2f m");
+			if (ImGui::IsItemHovered()) ImGui::SetTooltip(U8("小さいほど精度が上がるが処理が重くなる"));
+			settingsChanged |= ImGui::DragFloat(U8("セル高さ"), &settings.cellHeight, 0.01f, 0.05f, 1.0f, "%.2f m");
+		}
+
+		if (ImGui::CollapsingHeader(U8("エージェント設定"), ImGuiTreeNodeFlags_DefaultOpen)) {
+			settingsChanged |= ImGui::DragFloat(U8("半径"), &settings.agentRadius, 0.01f, 0.1f, 5.0f, "%.2f m");
+			settingsChanged |= ImGui::DragFloat(U8("高さ"), &settings.agentHeight, 0.1f, 0.5f, 10.0f, "%.1f m");
+			settingsChanged |= ImGui::DragFloat(U8("段差許容"), &settings.agentMaxClimb, 0.01f, 0.0f, 2.0f, "%.2f m");
+			settingsChanged |= ImGui::DragFloat(U8("最大傾斜角"), &settings.agentMaxSlope, 1.0f, 0.0f, 90.0f, "%.0f deg");
+		}
+
+		if (ImGui::CollapsingHeader(U8("メッシュ生成"))) {
+			settingsChanged |= ImGui::DragFloat(U8("単純化誤差"), &settings.maxSimplificationError, 0.1f, 0.0f, 5.0f, "%.1f");
+			settingsChanged |= ImGui::DragFloat(U8("詳細サンプル距離"), &settings.detailSampleDist, 0.5f, 0.0f, 20.0f, "%.1f");
+			settingsChanged |= ImGui::DragFloat(U8("詳細サンプル誤差"), &settings.detailSampleMaxError, 0.1f, 0.0f, 5.0f, "%.1f");
+		}
+
+		if (ImGui::CollapsingHeader(U8("タイリング"))) {
+			settingsChanged |= ImGui::DragInt(U8("最大タイル数"), &settings.maxTiles, 1, 1, 256);
+			settingsChanged |= ImGui::DragInt(U8("タイルサイズ"), &settings.tileSize, 1, 16, 128);
+		}
+
+		if (ImGui::CollapsingHeader(U8("フィルタリング"))) {
+			settingsChanged |= ImGui::Checkbox(U8("Monotone分割"), &settings.useMonotone);
+			settingsChanged |= ImGui::Checkbox(U8("低い障害物を除外"), &settings.filterLowHangingObstacles);
+			settingsChanged |= ImGui::Checkbox(U8("崖スパンを除外"), &settings.filterLedgeSpans);
+			settingsChanged |= ImGui::Checkbox(U8("低い天井を除外"), &settings.filterWalkableLowHeightSpans);
+		}
+
+		if (settingsChanged) {
+			navMesh.SetSettings(settings);
+		}
+
+		ImGui::Separator();
+
+		// アクションボタン
+		if (ImGui::Button(U8("ベイク"), ImVec2(-1, 0))) {
+			BakeNavMesh();
+		}
+
+		if (navMesh.IsBuilt()) {
+			if (ImGui::Button(U8("クリア"), ImVec2(-1, 0))) {
+				navMesh.Shutdown();
+				navMesh.Initialize();
+				showRecastNavMesh_ = false;
+				AddConsoleMessage(U8("[NavMesh] クリアしました"));
+			}
+
+			ImGui::Spacing();
+
+			if (ImGui::Button(U8("保存..."), ImVec2(ImGui::GetContentRegionAvail().x * 0.5f - 4, 0))) {
+				OPENFILENAMEA ofn = {};
+				char filename[MAX_PATH] = "";
+				ofn.lStructSize = sizeof(ofn);
+				ofn.hwndOwner = nullptr;
+				ofn.lpstrFilter = "NavMesh (*.navmesh)\0*.navmesh\0All Files (*.*)\0*.*\0";
+				ofn.lpstrFile = filename;
+				ofn.nMaxFile = MAX_PATH;
+				ofn.lpstrDefExt = "navmesh";
+				ofn.Flags = OFN_OVERWRITEPROMPT;
+
+				if (GetSaveFileNameA(&ofn)) {
+					if (navMesh.SaveNavMesh(filename)) {
+						AddConsoleMessage(U8("[NavMesh] 保存: ") + std::string(filename));
+					} else {
+						AddConsoleMessage(U8("[NavMesh] 保存失敗"));
+					}
+				}
+			}
+
+			ImGui::SameLine();
+
+			if (ImGui::Button(U8("読み込み..."), ImVec2(-1, 0))) {
+				OPENFILENAMEA ofn = {};
+				char filename[MAX_PATH] = "";
+				ofn.lStructSize = sizeof(ofn);
+				ofn.hwndOwner = nullptr;
+				ofn.lpstrFilter = "NavMesh (*.navmesh)\0*.navmesh\0All Files (*.*)\0*.*\0";
+				ofn.lpstrFile = filename;
+				ofn.nMaxFile = MAX_PATH;
+				ofn.Flags = OFN_FILEMUSTEXIST;
+
+				if (GetOpenFileNameA(&ofn)) {
+					if (navMesh.LoadNavMesh(filename)) {
+						AddConsoleMessage(U8("[NavMesh] 読み込み: ") + std::string(filename));
+						showRecastNavMesh_ = true;
+						navMesh.SetDebugDrawEnabled(true);
+					} else {
+						AddConsoleMessage(U8("[NavMesh] 読み込み失敗"));
+					}
+				}
+			}
+		}
+	}
+
 	void EditorUI::BakeNavMesh() {
 		if (!scene_) {
 			AddConsoleMessage(U8("[NavMesh] シーンがありません"));
@@ -4320,6 +4482,9 @@ namespace UnoEngine {
 			// 自動的にデバッグ描画を有効化
 			showRecastNavMesh_ = true;
 			navMeshManager.SetDebugDrawEnabled(true);
+
+			// インスペクターのNavMeshタブを自動選択
+			inspectorTabIndex_ = 1;
 		} else {
 			AddConsoleMessage("[NavMesh] Bake failed");
 		}

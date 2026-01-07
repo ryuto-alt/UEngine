@@ -442,6 +442,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     </ClCompile>
     <!-- Engine Navigation -->
     <ClCompile Include="Engine\Navigation\NavMeshManager.cpp" />
+    <ClCompile Include="Engine\Navigation\NavAgentComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -559,6 +560,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <!-- Engine Navigation -->
     <ClInclude Include="Engine\Navigation\NavMeshBuildSettings.h" />
     <ClInclude Include="Engine\Navigation\NavMeshManager.h" />
+    <ClInclude Include="Engine\Navigation\NavAgentComponent.h" />
     <!-- Recast Headers -->
     <ClInclude Include="external\recast\Recast\Include\Recast.h" />
     <ClInclude Include="external\recast\Recast\Include\RecastAlloc.h" />

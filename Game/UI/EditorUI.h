@@ -198,6 +198,10 @@ private:
     // NavMesh
     void BakeNavMesh();
 
+    // インスペクタータブ
+    void RenderObjectInspectorTab(const EditorContext& context);
+    void RenderNavMeshInspectorTab();
+
 private:
     // RenderTexture
     RenderTexture gameViewTexture_;
@@ -361,6 +365,9 @@ private:
     bool showGrid_ = true;
     bool showRecastNavMesh_ = false;
     bool showRecastNavMeshSettings_ = false;
+
+    // インスペクタータブ（0: オブジェクト, 1: NavMesh）
+    int inspectorTabIndex_ = 0;
 
     // NavMesh設定
     Navigation::NavMeshBuildSettings recastNavMeshSettings_;

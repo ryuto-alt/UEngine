@@ -88,6 +88,9 @@ public:
     /// エージェントを削除
     void RemoveCrowdAgent(int agentIndex);
     
+    /// エージェントのパラメータを更新（速度・加速度）
+    void UpdateAgentParameters(int agentIndex, float maxSpeed, float maxAcceleration);
+    
     /// エージェントの目的地を設定
     bool SetAgentTarget(int agentIndex, const DirectX::XMFLOAT3& target);
     

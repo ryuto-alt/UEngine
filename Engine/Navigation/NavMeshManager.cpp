@@ -1173,6 +1173,25 @@ void NavMeshManager::RemoveCrowdAgent(int agentIndex)
     }
 }
 
+void NavMeshManager::UpdateAgentParameters(int agentIndex, float maxSpeed, float maxAcceleration)
+{
+    if (!m_crowd || agentIndex < 0)
+    {
+        return;
+    }
+    
+    const dtCrowdAgent* agent = m_crowd->getAgent(agentIndex);
+    if (!agent || !agent->active)
+    {
+        return;
+    }
+    
+    dtCrowdAgentParams params = agent->params;
+    params.maxSpeed = maxSpeed;
+    params.maxAcceleration = maxAcceleration;
+    m_crowd->updateAgentParameters(agentIndex, &params);
+}
+
 bool NavMeshManager::SetAgentTarget(int agentIndex, const DirectX::XMFLOAT3& target)
 {
     if (!m_crowd || !m_navMeshQuery || agentIndex < 0)

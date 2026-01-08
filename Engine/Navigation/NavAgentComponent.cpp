@@ -323,11 +323,18 @@ void NavAgentComponent::StopChase() {
 // ========== Properties ==========
 void NavAgentComponent::SetSpeed(float speed) {
     speed_ = speed;
-    // Crowdエージェントのパラメータも更新（次回エージェント追加時に反映）
+    if (crowdAgentIndex_ >= 0) {
+        auto& navMesh = Navigation::NavMeshManager::Get();
+        navMesh.UpdateAgentParameters(crowdAgentIndex_, speed_, acceleration_);
+    }
 }
 
 void NavAgentComponent::SetAcceleration(float acceleration) {
     acceleration_ = acceleration;
+    if (crowdAgentIndex_ >= 0) {
+        auto& navMesh = Navigation::NavMeshManager::Get();
+        navMesh.UpdateAgentParameters(crowdAgentIndex_, speed_, acceleration_);
+    }
 }
 
 DirectX::XMFLOAT3 NavAgentComponent::GetVelocity() const {

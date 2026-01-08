@@ -108,12 +108,24 @@ public:
     
     /// ランダムなNavMesh上の点を取得（徘徊用）
     [[nodiscard]] bool GetRandomPointOnNavMesh(DirectX::XMFLOAT3& outPoint) const;
-    
+
     /// 指定点の周囲のランダムなNavMesh上の点を取得
-    [[nodiscard]] bool GetRandomPointAroundCircle(const DirectX::XMFLOAT3& center, 
+    [[nodiscard]] bool GetRandomPointAroundCircle(const DirectX::XMFLOAT3& center,
                                                    float radius,
                                                    DirectX::XMFLOAT3& outPoint) const;
-    
+
+    /// Funnel法で次のコーナー（曲がり角）を取得
+    [[nodiscard]] bool GetNextCorner(int agentIndex, DirectX::XMFLOAT3& outCorner, float& outDistToCorner) const;
+
+    /// エージェントの速度を強制的に上書き
+    void OverrideAgentVelocity(int agentIndex, const DirectX::XMFLOAT3& velocity);
+
+    /// NavMeshの中心点を取得
+    [[nodiscard]] bool GetNavMeshCenter(DirectX::XMFLOAT3& outCenter) const;
+
+    /// NavMeshのバウンディングボックスを取得
+    [[nodiscard]] bool GetNavMeshBounds(DirectX::XMFLOAT3& outMin, DirectX::XMFLOAT3& outMax) const;
+
     /// Crowdが初期化済みかどうか
     [[nodiscard]] bool IsCrowdInitialized() const { return m_crowd != nullptr; }
     

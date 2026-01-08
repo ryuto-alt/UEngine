@@ -12,7 +12,9 @@ void NavAgentComponent::Awake() {
     state_ = AgentState::Idle;
     currentPath_.clear();
     velocity_ = {0.0f, 0.0f, 0.0f};
-    
+    yawInitialized_ = false;
+    smoothedYaw_ = 0.0f;
+
     if (gameObject_) {
         auto pos = gameObject_->GetTransform().GetPosition();
         spawnPosition_ = {pos.GetX(), pos.GetY(), pos.GetZ()};
@@ -20,7 +22,8 @@ void NavAgentComponent::Awake() {
 }
 
 void NavAgentComponent::Start() {
-    InitializeCrowdAgent();
+    // 初期化はOnUpdateで遅延実行（Luaスクリプトが設定を行う時間を確保）
+    // InitializeCrowdAgent() は OnUpdate で呼ばれる
 }
 
 void NavAgentComponent::OnUpdate(float deltaTime) {
@@ -116,14 +119,17 @@ void NavAgentComponent::InitializeCrowdAgent() {
         }
         Logger::Info("[NavAgent] Crowd system initialized successfully");
     }
-    
+
     auto pos = gameObject_->GetTransform().GetPosition();
     DirectX::XMFLOAT3 position = {pos.GetX(), pos.GetY(), pos.GetZ()};
-    
+
+    // スポーン位置を記録
+    spawnPosition_ = position;
+
     crowdAgentIndex_ = navMesh.AddCrowdAgent(position, agentRadius_, agentHeight_, speed_, acceleration_);
-    
+
     if (crowdAgentIndex_ >= 0) {
-        Logger::Info("[NavAgent] Agent {} added at ({:.2f}, {:.2f}, {:.2f})", 
+        Logger::Info("[NavAgent] Agent {} added at ({:.2f}, {:.2f}, {:.2f})",
             crowdAgentIndex_, position.x, position.y, position.z);
     } else {
         Logger::Warning("[NavAgent] Failed to add crowd agent");
@@ -361,33 +367,73 @@ void NavAgentComponent::UpdateCrowdAgent() {
     if (crowdAgentIndex_ < 0) {
         return;
     }
-    
+
     auto& navMesh = Navigation::NavMeshManager::Get();
-    
+
+    // 直進モードで速度をオーバーライド
+    if (directMoveEnabled_) {
+        UpdateDirectMove();
+    }
+
     if (navMesh.HasAgentReachedTarget(crowdAgentIndex_, stoppingDistance_)) {
         state_ = AgentState::Arrived;
-        
+
         if (onDestinationReached_) {
             onDestinationReached_();
         }
     }
 }
 
-void NavAgentComponent::UpdateWander(float deltaTime) {
-    // エージェントがまだ初期化されていない場合は待機
+void NavAgentComponent::UpdateDirectMove() {
     if (crowdAgentIndex_ < 0) {
         return;
     }
-    
+
     auto& navMesh = Navigation::NavMeshManager::Get();
-    
+
+    DirectX::XMFLOAT3 nextCorner;
+    float distToCorner = 0.0f;
+
+    if (!navMesh.GetNextCorner(crowdAgentIndex_, nextCorner, distToCorner)) {
+        return;
+    }
+
+    // 次のコーナーへの方向ベクトルを算出
+    auto agentPos = navMesh.GetAgentPosition(crowdAgentIndex_);
+    float dx = nextCorner.x - agentPos.x;
+    float dz = nextCorner.z - agentPos.z;
+    float length = std::sqrt(dx * dx + dz * dz);
+
+    if (length < 0.001f) {
+        return;
+    }
+
+    // 正規化して速度に変換
+    float invLen = 1.0f / length;
+    DirectX::XMFLOAT3 desiredVel = {
+        dx * invLen * speed_,
+        0.0f,
+        dz * invLen * speed_
+    };
+
+    // 速度をオーバーライド（純粋なパス追従）
+    navMesh.OverrideAgentVelocity(crowdAgentIndex_, desiredVel);
+}
+
+void NavAgentComponent::UpdateWander(float deltaTime) {
+    if (crowdAgentIndex_ < 0) {
+        return;
+    }
+
+    auto& navMesh = Navigation::NavMeshManager::Get();
+
     // 目的地がまだ設定されていない場合（初期化直後）
     if (!hasInitialDestination_) {
         hasInitialDestination_ = true;
         PickRandomDestination();
         return;
     }
-    
+
     if (isWaiting_) {
         currentWaitTime_ += deltaTime;
         if (currentWaitTime_ >= waitTime_) {
@@ -397,7 +443,12 @@ void NavAgentComponent::UpdateWander(float deltaTime) {
         }
         return;
     }
-    
+
+    // 直進モードで速度オーバーライド
+    if (directMoveEnabled_) {
+        UpdateDirectMove();
+    }
+
     if (navMesh.HasAgentReachedTarget(crowdAgentIndex_, stoppingDistance_)) {
         isWaiting_ = true;
         currentWaitTime_ = 0.0f;
@@ -409,13 +460,13 @@ void NavAgentComponent::UpdatePatrol(float deltaTime) {
         state_ = AgentState::Idle;
         return;
     }
-    
+
     if (isWaiting_) {
         currentWaitTime_ += deltaTime;
         if (currentWaitTime_ >= waitTime_) {
             isWaiting_ = false;
             currentWaitTime_ = 0.0f;
-            
+
             // 次のパトロールポイントへ
             if (patrolLoop_) {
                 currentPatrolIndex_ = (currentPatrolIndex_ + 1) % patrolPoints_.size();
@@ -436,16 +487,21 @@ void NavAgentComponent::UpdatePatrol(float deltaTime) {
                     }
                 }
             }
-            
+
             if (currentPatrolIndex_ < patrolPoints_.size()) {
                 SetDestination(patrolPoints_[currentPatrolIndex_]);
             }
         }
         return;
     }
-    
+
+    // 直進モードで速度オーバーライド
+    if (directMoveEnabled_ && crowdAgentIndex_ >= 0) {
+        UpdateDirectMove();
+    }
+
     auto& navMesh = Navigation::NavMeshManager::Get();
-    
+
     if (crowdAgentIndex_ >= 0) {
         if (navMesh.HasAgentReachedTarget(crowdAgentIndex_, stoppingDistance_)) {
             isWaiting_ = true;
@@ -459,21 +515,21 @@ void NavAgentComponent::UpdateChase(float deltaTime) {
         Stop();
         return;
     }
-    
+
     chaseUpdateTimer_ += deltaTime;
-    
+
     if (chaseUpdateTimer_ >= chaseUpdateInterval_) {
         chaseUpdateTimer_ = 0.0f;
-        
+
         auto targetPos = chaseTarget_->GetTransform().GetPosition();
         DirectX::XMFLOAT3 newDest = {targetPos.GetX(), targetPos.GetY(), targetPos.GetZ()};
-        
+
         // 目的地が大きく変わった場合のみ更新
         float dx = newDest.x - destination_.x;
         float dz = newDest.z - destination_.z;
         float distSq = dx * dx + dz * dz;
-        
-        if (distSq > 1.0f) { // 1m以上移動した場合
+
+        if (distSq > 1.0f) {
             auto& navMesh = Navigation::NavMeshManager::Get();
             if (crowdAgentIndex_ >= 0) {
                 navMesh.SetAgentTarget(crowdAgentIndex_, newDest);
@@ -481,43 +537,79 @@ void NavAgentComponent::UpdateChase(float deltaTime) {
             destination_ = newDest;
         }
     }
+
+    // 直進モードで速度オーバーライド
+    if (directMoveEnabled_ && crowdAgentIndex_ >= 0) {
+        UpdateDirectMove();
+    }
 }
 
 void NavAgentComponent::UpdateRotation(float deltaTime) {
-    if (!gameObject_) {
-        return;
-    }
-    
-    auto vel = GetVelocity();
-    float speedSq = vel.x * vel.x + vel.z * vel.z;
-    if (speedSq < 0.01f) {
+    if (!gameObject_ || crowdAgentIndex_ < 0) {
         return;
     }
 
+    auto& navMesh = Navigation::NavMeshManager::Get();
     auto& transform = gameObject_->GetTransform();
-    
-    float targetYaw = std::atan2(vel.x, vel.z);
-    
-    auto currentRot = transform.GetRotation();
-    float sinY = 2.0f * (currentRot.GetW() * currentRot.GetY() - currentRot.GetZ() * currentRot.GetX());
-    float cosY = 1.0f - 2.0f * (currentRot.GetX() * currentRot.GetX() + currentRot.GetY() * currentRot.GetY());
-    float currentYaw = std::atan2(sinY, cosY);
-
-    float angleDiff = targetYaw - currentYaw;
 
     constexpr float PI = 3.14159265f;
+
+    // 次のコーナーへの方向を取得（速度よりも安定）
+    DirectX::XMFLOAT3 nextCorner;
+    float distToCorner = 0.0f;
+
+    if (!navMesh.GetNextCorner(crowdAgentIndex_, nextCorner, distToCorner)) {
+        return;
+    }
+
+    // 距離が短すぎる場合は回転しない
+    if (distToCorner < 0.1f) {
+        return;
+    }
+
+    // 現在位置からコーナーへの方向ベクトル
+    auto agentPos = navMesh.GetAgentPosition(crowdAgentIndex_);
+    float dx = nextCorner.x - agentPos.x;
+    float dz = nextCorner.z - agentPos.z;
+
+    // 目標Yaw角をコーナー方向から算出
+    float targetYaw = std::atan2(dx, dz);
+
+    // 初期化されていない場合は初期向きまたは現在の回転から初期化
+    if (!yawInitialized_) {
+        if (std::abs(initialYaw_) > 0.001f) {
+            smoothedYaw_ = initialYaw_;
+        } else {
+            auto currentRot = transform.GetRotation();
+            float sinY = 2.0f * (currentRot.GetW() * currentRot.GetY() - currentRot.GetZ() * currentRot.GetX());
+            float cosY = 1.0f - 2.0f * (currentRot.GetX() * currentRot.GetX() + currentRot.GetY() * currentRot.GetY());
+            smoothedYaw_ = std::atan2(sinY, cosY);
+        }
+        yawInitialized_ = true;
+    }
+
+    // 角度差分を-PI〜PIに正規化
+    float angleDiff = targetYaw - smoothedYaw_;
     while (angleDiff > PI) angleDiff -= 2.0f * PI;
     while (angleDiff < -PI) angleDiff += 2.0f * PI;
 
+    // 角速度制限（deg/sをrad/sに変換）
     float maxRotation = angularSpeed_ * 0.0174533f * deltaTime;
 
+    // 角度差分を制限してスムーズに回転
     if (std::abs(angleDiff) > maxRotation) {
-        angleDiff = (angleDiff > 0.0f) ? maxRotation : -maxRotation;
+        float sign = (angleDiff > 0.0f) ? 1.0f : -1.0f;
+        smoothedYaw_ += sign * maxRotation;
+    } else {
+        smoothedYaw_ = targetYaw;
     }
 
-    float newYaw = currentYaw + angleDiff;
+    // Yaw角度を-PI〜PIに正規化
+    while (smoothedYaw_ > PI) smoothedYaw_ -= 2.0f * PI;
+    while (smoothedYaw_ < -PI) smoothedYaw_ += 2.0f * PI;
 
-    float halfAngle = newYaw * 0.5f;
+    // クォータニオンに変換して適用
+    float halfAngle = smoothedYaw_ * 0.5f;
     Quaternion newRot(0.0f, std::sin(halfAngle), 0.0f, std::cos(halfAngle));
     transform.SetRotation(newRot);
 }

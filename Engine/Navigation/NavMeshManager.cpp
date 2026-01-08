@@ -1138,29 +1138,27 @@ int NavMeshManager::AddCrowdAgent(const DirectX::XMFLOAT3& position, float radiu
     {
         return -1;
     }
-    
+
     dtCrowdAgentParams ap;
     std::memset(&ap, 0, sizeof(ap));
-    
+
     ap.radius = radius;
     ap.height = height;
-    ap.maxAcceleration = maxAcceleration;
+    ap.maxAcceleration = maxAcceleration * 10.0f; // 即座に最高速へ到達
     ap.maxSpeed = maxSpeed;
-    ap.collisionQueryRange = radius * 12.0f;
-    ap.pathOptimizationRange = radius * 30.0f;
-    ap.separationWeight = 2.0f;
-    
-    // 更新フラグ: ターン予測、障害物回避、分離、パス最適化
-    ap.updateFlags = DT_CROWD_ANTICIPATE_TURNS | 
-                     DT_CROWD_OBSTACLE_AVOIDANCE |
-                     DT_CROWD_SEPARATION |
-                     DT_CROWD_OPTIMIZE_VIS |
-                     DT_CROWD_OPTIMIZE_TOPO;
-    
-    ap.obstacleAvoidanceType = 1; // 高精度プリセット
+
+    // 回避行動を無効化：壁に沿って直線的に移動
+    ap.collisionQueryRange = 0.0f;
+    ap.pathOptimizationRange = 0.0f;
+    ap.separationWeight = 0.0f;
+
+    // 最小限のフラグ：パス追従のみ（回避・分離・最適化を無効化）
+    ap.updateFlags = DT_CROWD_ANTICIPATE_TURNS;
+
+    ap.obstacleAvoidanceType = 0;
     ap.queryFilterType = 0;
     ap.userData = nullptr;
-    
+
     float pos[3] = { position.x, position.y, position.z };
     return m_crowd->addAgent(pos, &ap);
 }
@@ -1345,7 +1343,7 @@ bool NavMeshManager::GetRandomPointOnNavMesh(DirectX::XMFLOAT3& outPoint) const
     return true;
 }
 
-bool NavMeshManager::GetRandomPointAroundCircle(const DirectX::XMFLOAT3& center, 
+bool NavMeshManager::GetRandomPointAroundCircle(const DirectX::XMFLOAT3& center,
                                                  float radius,
                                                  DirectX::XMFLOAT3& outPoint) const
 {
@@ -1353,17 +1351,16 @@ bool NavMeshManager::GetRandomPointAroundCircle(const DirectX::XMFLOAT3& center,
     {
         return false;
     }
-    
+
     const float polyPickExt[3] = { 2.0f, 4.0f, 2.0f };
     dtQueryFilter filter;
     filter.setIncludeFlags(0xFFFF);
     filter.setExcludeFlags(0);
-    
-    // 中心点に最も近いポリゴンを検索
+
     dtPolyRef centerRef = 0;
     float centerPos[3];
     float pos[3] = { center.x, center.y, center.z };
-    
+
     dtStatus status = m_navMeshQuery->findNearestPoly(pos, polyPickExt, &filter, &centerRef, centerPos);
     if (dtStatusFailed(status) || centerRef == 0)
     {
@@ -1371,25 +1368,145 @@ bool NavMeshManager::GetRandomPointAroundCircle(const DirectX::XMFLOAT3& center,
             pos[0], pos[1], pos[2], status, centerRef);
         return false;
     }
-    
-    // ランダムシードを生成
+
     auto seed = static_cast<unsigned int>(std::chrono::steady_clock::now().time_since_epoch().count());
     srand(seed);
-    
+
     auto frand = []() -> float {
         return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
     };
-    
+
     dtPolyRef randomRef = 0;
     float randomPt[3];
-    
+
     status = m_navMeshQuery->findRandomPointAroundCircle(centerRef, centerPos, radius, &filter, frand, &randomRef, randomPt);
     if (dtStatusFailed(status))
     {
         return false;
     }
-    
+
     outPoint = { randomPt[0], randomPt[1], randomPt[2] };
+    return true;
+}
+
+bool NavMeshManager::GetNextCorner(int agentIndex, DirectX::XMFLOAT3& outCorner, float& outDistToCorner) const
+{
+    if (!m_crowd || agentIndex < 0)
+    {
+        return false;
+    }
+
+    const dtCrowdAgent* agent = m_crowd->getAgent(agentIndex);
+    if (!agent || !agent->active)
+    {
+        return false;
+    }
+
+    constexpr float MIN_LOOKAHEAD_DIST = 0.3f;
+
+    // コーナーリストから十分遠いものを探す
+    for (int i = 0; i < agent->ncorners; ++i)
+    {
+        float cx = agent->cornerVerts[i * 3 + 0];
+        float cy = agent->cornerVerts[i * 3 + 1];
+        float cz = agent->cornerVerts[i * 3 + 2];
+
+        float dx = cx - agent->npos[0];
+        float dy = cy - agent->npos[1];
+        float dz = cz - agent->npos[2];
+        float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
+
+        if (dist >= MIN_LOOKAHEAD_DIST)
+        {
+            outCorner.x = cx;
+            outCorner.y = cy;
+            outCorner.z = cz;
+            outDistToCorner = dist;
+            return true;
+        }
+    }
+
+    // 十分遠いコーナーがない場合は目標位置を使用
+    if (agent->targetState == DT_CROWDAGENT_TARGET_VALID ||
+        agent->targetState == DT_CROWDAGENT_TARGET_VELOCITY)
+    {
+        outCorner.x = agent->targetPos[0];
+        outCorner.y = agent->targetPos[1];
+        outCorner.z = agent->targetPos[2];
+
+        float dx = outCorner.x - agent->npos[0];
+        float dy = outCorner.y - agent->npos[1];
+        float dz = outCorner.z - agent->npos[2];
+        outDistToCorner = std::sqrt(dx * dx + dy * dy + dz * dz);
+        return true;
+    }
+
+    return false;
+}
+
+void NavMeshManager::OverrideAgentVelocity(int agentIndex, const DirectX::XMFLOAT3& velocity)
+{
+    if (!m_crowd || agentIndex < 0)
+    {
+        return;
+    }
+
+    const dtCrowdAgent* agent = m_crowd->getAgent(agentIndex);
+    if (!agent || !agent->active)
+    {
+        return;
+    }
+
+    float vel[3] = { velocity.x, velocity.y, velocity.z };
+    m_crowd->requestMoveVelocity(agentIndex, vel);
+}
+
+bool NavMeshManager::GetNavMeshCenter(DirectX::XMFLOAT3& outCenter) const
+{
+    if (!m_navMesh)
+    {
+        return false;
+    }
+
+    // バウンディングボックスの中心を計算
+    outCenter.x = (m_boundsMin.x + m_boundsMax.x) * 0.5f;
+    outCenter.y = (m_boundsMin.y + m_boundsMax.y) * 0.5f;
+    outCenter.z = (m_boundsMin.z + m_boundsMax.z) * 0.5f;
+
+    // 中心点がNavMesh上にあるか確認し、なければ最近接点を探す
+    const float polyPickExt[3] = { 10.0f, 10.0f, 10.0f };
+    dtQueryFilter filter;
+    filter.setIncludeFlags(0xFFFF);
+    filter.setExcludeFlags(0);
+
+    dtPolyRef nearestRef = 0;
+    float nearestPt[3];
+    float pos[3] = { outCenter.x, outCenter.y, outCenter.z };
+
+    if (m_navMeshQuery)
+    {
+        dtStatus status = m_navMeshQuery->findNearestPoly(pos, polyPickExt, &filter, &nearestRef, nearestPt);
+        if (dtStatusSucceed(status) && nearestRef != 0)
+        {
+            outCenter.x = nearestPt[0];
+            outCenter.y = nearestPt[1];
+            outCenter.z = nearestPt[2];
+            return true;
+        }
+    }
+
+    return true;
+}
+
+bool NavMeshManager::GetNavMeshBounds(DirectX::XMFLOAT3& outMin, DirectX::XMFLOAT3& outMax) const
+{
+    if (!m_navMesh)
+    {
+        return false;
+    }
+
+    outMin = m_boundsMin;
+    outMax = m_boundsMax;
     return true;
 }
 

@@ -116,10 +116,18 @@ public:
     /// Crowdシステムを使用するかどうか
     bool IsUsingCrowd() const { return useCrowd_; }
     void SetUseCrowd(bool use) { useCrowd_ = use; }
-    
+
     /// 待機時間（徘徊/パトロール時の目的地到達後の待機秒数）
     float GetWaitTime() const { return waitTime_; }
     void SetWaitTime(float time) { waitTime_ = time; }
+
+    /// 直進モード（Crowdの回避ロジックをバイパス）
+    bool IsDirectMoveEnabled() const { return directMoveEnabled_; }
+    void SetDirectMoveEnabled(bool enabled) { directMoveEnabled_ = enabled; }
+
+    /// 初期向きを設定（ラジアン、Y軸回転）
+    void SetInitialYaw(float yaw) { initialYaw_ = yaw; }
+    float GetInitialYaw() const { return initialYaw_; }
 
     // ========== State ==========
     AgentState GetState() const { return state_; }
@@ -143,6 +151,7 @@ public:
 private:
     void InitializeCrowdAgent();
     void UpdateCrowdAgent();
+    void UpdateDirectMove();  // 直進モードの速度制御
     void UpdateWander(float deltaTime);
     void UpdatePatrol(float deltaTime);
     void UpdateChase(float deltaTime);
@@ -175,6 +184,8 @@ private:
     // Crowd integration
     int crowdAgentIndex_ = -1;        // DetourCrowdのエージェントインデックス
     bool useCrowd_ = true;            // Crowdシステムを使用するか
+    bool directMoveEnabled_ = false;  // 直進モード（デフォルトOFF、Crowd本来の動作を使用）
+    float initialYaw_ = 0.0f;         // 初期向き（ラジアン）
     
     // Wander state
     WanderMode wanderMode_ = WanderMode::AroundSpawn;
@@ -198,7 +209,11 @@ private:
 
     // Debug
     bool visualizePath_ = false;
-    
+
+    // Smoothing state
+    float smoothedYaw_ = 0.0f;        // スムーズ化されたYaw角度
+    bool yawInitialized_ = false;     // 初期Yaw設定済みフラグ
+
     // Events
     DestinationReachedCallback onDestinationReached_;
 };

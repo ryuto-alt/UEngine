@@ -467,6 +467,21 @@ void LuaScriptComponent::BindEngineAPI() {
                 },
                 "setWaitTime", [navAgent](float time) {
                     navAgent->SetWaitTime(time);
+                },
+
+                // ===== 直進モード =====
+                "isDirectMoveEnabled", [navAgent]() -> bool {
+                    return navAgent->IsDirectMoveEnabled();
+                },
+                "setDirectMoveEnabled", [navAgent](bool enabled) {
+                    navAgent->SetDirectMoveEnabled(enabled);
+                },
+
+                "setInitialYaw", [navAgent](float yaw) {
+                    navAgent->SetInitialYaw(yaw);
+                },
+                "getInitialYaw", [navAgent]() -> float {
+                    return navAgent->GetInitialYaw();
                 }
             );
         }

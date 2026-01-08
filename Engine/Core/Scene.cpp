@@ -18,6 +18,7 @@
 #include "../Resource/StaticModelImporter.h"
 #include "../Scripting/LuaScriptComponent.h"
 #include "../Navigation/NavMeshManager.h"
+#include "../Navigation/NavAgentComponent.h"
 #include "../../Game/GameApplication.h"
 #include <algorithm>
 #include <fstream>
@@ -231,6 +232,12 @@ void Scene::OnUpdate(float deltaTime) {
             if (luaScript) {
                 if (!isPlayMode) continue;
                 luaScript->SetEditorCameraControlling(editorCameraControlling);
+            }
+
+            // Skip NavAgentComponent in edit mode (allow gizmo manipulation)
+            auto* navAgent = dynamic_cast<NavAgentComponent*>(comp.get());
+            if (navAgent && !isPlayMode) {
+                continue;
             }
 
             comp->OnUpdate(deltaTime);

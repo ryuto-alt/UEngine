@@ -2,6 +2,7 @@
 #include "NavMeshManager.h"
 #include "Engine/Rendering/DebugRenderer.h"
 #include "Engine/Math/Vector.h"
+#include "Engine/Core/Logger.h"
 
 #include <Recast.h>
 #include <DetourNavMesh.h>
@@ -871,23 +872,8 @@ bool NavMeshManager::LoadNavMesh(const std::string& filename)
         return false;
     }
     
-    dtNavMeshParams params;
-    std::memset(&params, 0, sizeof(params));
-    params.tileWidth = m_settings.tileSize * m_settings.cellSize;
-    params.tileHeight = m_settings.tileSize * m_settings.cellSize;
-    params.maxTiles = m_settings.maxTiles;
-    params.maxPolys = 1 << 14;
-    
-    dtStatus status = m_navMesh->init(&params);
-    if (dtStatusFailed(status))
-    {
-        dtFreeNavMesh(m_navMesh);
-        m_navMesh = nullptr;
-        return false;
-    }
-    
-    // タイルを読み込み
-    for (int i = 0; i < numTiles; ++i)
+    // シングルタイルNavMeshの場合は直接init(data, size, flags)を使用
+    if (numTiles == 1)
     {
         dtTileRef tileRef = 0;
         int dataSize = 0;
@@ -898,12 +884,74 @@ bool NavMeshManager::LoadNavMesh(const std::string& filename)
         unsigned char* data = static_cast<unsigned char*>(dtAlloc(dataSize, DT_ALLOC_PERM));
         if (!data)
         {
-            continue;
+            dtFreeNavMesh(m_navMesh);
+            m_navMesh = nullptr;
+            return false;
         }
         
         file.read(reinterpret_cast<char*>(data), dataSize);
         
-        m_navMesh->addTile(data, dataSize, DT_TILE_FREE_DATA, 0, nullptr);
+        dtStatus status = m_navMesh->init(data, dataSize, DT_TILE_FREE_DATA);
+        if (dtStatusFailed(status))
+        {
+            dtFree(data);
+            dtFreeNavMesh(m_navMesh);
+            m_navMesh = nullptr;
+            return false;
+        }
+    }
+    else
+    {
+        // マルチタイルNavMeshの場合
+        dtNavMeshParams params;
+        std::memset(&params, 0, sizeof(params));
+        params.tileWidth = m_settings.tileSize * m_settings.cellSize;
+        params.tileHeight = m_settings.tileSize * m_settings.cellSize;
+        params.maxTiles = m_settings.maxTiles;
+        params.maxPolys = 1 << 14;
+        
+        // 最初のタイルからorigを取得するため、先読みする
+        std::streampos tilesStart = file.tellg();
+        dtTileRef firstTileRef = 0;
+        int firstDataSize = 0;
+        file.read(reinterpret_cast<char*>(&firstTileRef), sizeof(firstTileRef));
+        file.read(reinterpret_cast<char*>(&firstDataSize), sizeof(firstDataSize));
+        
+        if (firstDataSize >= static_cast<int>(sizeof(dtMeshHeader)))
+        {
+            dtMeshHeader header;
+            file.read(reinterpret_cast<char*>(&header), sizeof(header));
+            rcVcopy(params.orig, header.bmin);
+            file.seekg(tilesStart);
+        }
+        
+        dtStatus status = m_navMesh->init(&params);
+        if (dtStatusFailed(status))
+        {
+            dtFreeNavMesh(m_navMesh);
+            m_navMesh = nullptr;
+            return false;
+        }
+        
+        // タイルを読み込み
+        for (int i = 0; i < numTiles; ++i)
+        {
+            dtTileRef tileRef = 0;
+            int dataSize = 0;
+            
+            file.read(reinterpret_cast<char*>(&tileRef), sizeof(tileRef));
+            file.read(reinterpret_cast<char*>(&dataSize), sizeof(dataSize));
+            
+            unsigned char* data = static_cast<unsigned char*>(dtAlloc(dataSize, DT_ALLOC_PERM));
+            if (!data)
+            {
+                continue;
+            }
+            
+            file.read(reinterpret_cast<char*>(data), dataSize);
+            
+            m_navMesh->addTile(data, dataSize, DT_TILE_FREE_DATA, 0, nullptr);
+        }
     }
     
     // NavMeshQuery作成
@@ -913,14 +961,17 @@ bool NavMeshManager::LoadNavMesh(const std::string& filename)
         return false;
     }
     
-    status = m_navMeshQuery->init(m_navMesh, 2048);
-    if (dtStatusFailed(status))
+    dtStatus queryStatus = m_navMeshQuery->init(m_navMesh, 2048);
+    if (dtStatusFailed(queryStatus))
     {
         dtFreeNavMeshQuery(m_navMeshQuery);
         m_navMeshQuery = nullptr;
         return false;
     }
-    
+
+    // NavMeshロード後にCrowdも初期化（エージェントが動作するために必要）
+    InitializeCrowd(128, m_settings.agentRadius);
+
     return true;
 }
 
@@ -1245,6 +1296,7 @@ bool NavMeshManager::GetRandomPointOnNavMesh(DirectX::XMFLOAT3& outPoint) const
 {
     if (!m_navMeshQuery)
     {
+        Logger::Warning("[NavMesh] GetRandomPointOnNavMesh failed: m_navMeshQuery is null");
         return false;
     }
     
@@ -1266,6 +1318,7 @@ bool NavMeshManager::GetRandomPointOnNavMesh(DirectX::XMFLOAT3& outPoint) const
     dtStatus status = m_navMeshQuery->findRandomPoint(&filter, frand, &randomRef, randomPt);
     if (dtStatusFailed(status))
     {
+        Logger::Warning("[NavMesh] findRandomPoint failed with status: 0x{:X}", status);
         return false;
     }
     
@@ -1295,6 +1348,8 @@ bool NavMeshManager::GetRandomPointAroundCircle(const DirectX::XMFLOAT3& center,
     dtStatus status = m_navMeshQuery->findNearestPoly(pos, polyPickExt, &filter, &centerRef, centerPos);
     if (dtStatusFailed(status) || centerRef == 0)
     {
+        Logger::Warning("[NavMesh] findNearestPoly failed at ({:.2f}, {:.2f}, {:.2f}) status=0x{:X} ref={}",
+            pos[0], pos[1], pos[2], status, centerRef);
         return false;
     }
     

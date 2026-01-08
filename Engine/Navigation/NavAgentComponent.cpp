@@ -90,17 +90,23 @@ void NavAgentComponent::OnDestroy() {
 }
 
 void NavAgentComponent::InitializeCrowdAgent() {
+    Logger::Info("[NavAgent] InitializeCrowdAgent called - useCrowd={}, gameObject={}",
+        useCrowd_, gameObject_ != nullptr);
+
     if (!useCrowd_ || !gameObject_) {
         return;
     }
 
     auto& navMesh = Navigation::NavMeshManager::Get();
-    
+
+    Logger::Info("[NavAgent] NavMesh state: IsBuilt={}, IsCrowdInitialized={}",
+        navMesh.IsBuilt(), navMesh.IsCrowdInitialized());
+
     if (!navMesh.IsBuilt()) {
         Logger::Debug("[NavAgent] NavMesh not built yet, waiting...");
         return;
     }
-    
+
     // Crowdがまだ初期化されていなければ初期化
     if (!navMesh.IsCrowdInitialized()) {
         Logger::Info("[NavAgent] Initializing crowd system...");

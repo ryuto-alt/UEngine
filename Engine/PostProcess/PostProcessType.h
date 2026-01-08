@@ -10,6 +10,7 @@ enum class PostProcessType {
     Vignette,
     Fisheye,
     PS1,
+    ChromaticAberration,
     Count
 };
 
@@ -20,6 +21,7 @@ inline const char* PostProcessTypeToString(PostProcessType type) {
         case PostProcessType::Vignette: return "Vignette";
         case PostProcessType::Fisheye: return "Fisheye";
         case PostProcessType::PS1: return "PS1";
+        case PostProcessType::ChromaticAberration: return "ChromaticAberration";
         default: return "Unknown";
     }
 }
@@ -46,6 +48,13 @@ struct PS1Params {
     float resolutionScale = 4.0f;   // 解像度低下倍率 (1=等倍, 4=1/4解像度)
     bool ditherEnabled = true;      // ディザリング有効
     float ditherStrength = 1.0f;    // ディザリング強度 (0-2)
+};
+
+struct ChromaticAberrationParams {
+    float intensity = 1.0f;         // 全体の強度 (0-1)
+    float redOffset = 0.01f;        // 赤チャネルのオフセット
+    float greenOffset = 0.0f;       // 緑チャネルのオフセット（通常0）
+    float blueOffset = -0.01f;      // 青チャネルのオフセット
 };
 
 } // namespace UnoEngine

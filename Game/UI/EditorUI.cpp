@@ -1721,6 +1721,26 @@ namespace UnoEngine {
 										}
 									}
 								}
+								else if (effectType == PostProcessType::ChromaticAberration) {
+									if (auto* chromatic = postProcessManager_->GetChromaticAberration()) {
+										auto& params = chromatic->GetParams();
+										ImGui::SetNextItemWidth(-1);
+										if (ImGui::SliderFloat("##CAIntensity", &params.intensity, 0.0f, 1.0f, U8("強度: %.2f"))) {
+											camComp->SetChromaticAberrationParams(params);
+											isDirty_ = true;
+										}
+										ImGui::SetNextItemWidth(-1);
+										if (ImGui::SliderFloat("##CARedOffset", &params.redOffset, -0.05f, 0.05f, U8("赤オフセット: %.3f"))) {
+											camComp->SetChromaticAberrationParams(params);
+											isDirty_ = true;
+										}
+										ImGui::SetNextItemWidth(-1);
+										if (ImGui::SliderFloat("##CABlueOffset", &params.blueOffset, -0.05f, 0.05f, U8("青オフセット: %.3f"))) {
+											camComp->SetChromaticAberrationParams(params);
+											isDirty_ = true;
+										}
+									}
+								}
 								ImGui::Unindent(20.0f);
 							}
 						}
@@ -3226,6 +3246,10 @@ namespace UnoEngine {
 			if (auto* ps1 = postProcessManager_->GetPS1()) {
 				camComp->SetPS1Params(ps1->GetParams());
 			}
+			// ChromaticAberrationパラメータを同期
+			if (auto* chromatic = postProcessManager_->GetChromaticAberration()) {
+				camComp->SetChromaticAberrationParams(chromatic->GetParams());
+			}
 			break;
 		}
 	}
@@ -3254,6 +3278,10 @@ namespace UnoEngine {
 			// PS1パラメータを同期
 			if (auto* ps1 = postProcessManager_->GetPS1()) {
 				ps1->SetParams(camComp->GetPS1Params());
+			}
+			// ChromaticAberrationパラメータを同期
+			if (auto* chromatic = postProcessManager_->GetChromaticAberration()) {
+				chromatic->SetParams(camComp->GetChromaticAberrationParams());
 			}
 			// 最初のCameraComponentを見つけたら終了
 			break;

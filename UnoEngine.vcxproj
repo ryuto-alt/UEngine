@@ -266,6 +266,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClCompile Include="Engine\PostProcess\VignettePostProcess.cpp" />
     <ClCompile Include="Engine\PostProcess\FisheyePostProcess.cpp" />
     <ClCompile Include="Engine\PostProcess\PS1PostProcess.cpp" />
+    <ClCompile Include="Engine\PostProcess\ChromaticAberrationPostProcess.cpp" />
     <ClCompile Include="Game\Build\GameExporter.cpp" />
     <ClCompile Include="external\lua\src\lapi.c">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -575,6 +576,7 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClInclude Include="Engine\PostProcess\VignettePostProcess.h" />
     <ClInclude Include="Engine\PostProcess\FisheyePostProcess.h" />
     <ClInclude Include="Engine\PostProcess\PS1PostProcess.h" />
+    <ClInclude Include="Engine\PostProcess\ChromaticAberrationPostProcess.h" />
     <ClInclude Include="Game\Build\GameExporter.h" />
     <!-- Engine Navigation -->
     <ClInclude Include="Engine\Navigation\NavMeshBuildSettings.h" />

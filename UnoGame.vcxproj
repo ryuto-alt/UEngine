@@ -195,6 +195,8 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClCompile Include="Engine\PostProcess\GrayscalePostProcess.cpp" />
     <ClCompile Include="Engine\PostProcess\VignettePostProcess.cpp" />
     <ClCompile Include="Engine\PostProcess\FisheyePostProcess.cpp" />
+    <ClCompile Include="Engine\PostProcess\PS1PostProcess.cpp" />
+    <ClCompile Include="Engine\PostProcess\ChromaticAberrationPostProcess.cpp" />
     <!-- UI (ImGui - ゲームでも使う可能性あり) -->
     <ClCompile Include="Engine\UI\ImGuiManager.cpp" />
     <ClCompile Include="Engine\UI\imgui_toggle.cpp" />

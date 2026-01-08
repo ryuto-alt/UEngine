@@ -348,6 +348,13 @@ json SceneSerializer::SerializeComponent(const Component& component) {
         comp["ps1DitherEnabled"] = ps1Params.ditherEnabled;
         comp["ps1DitherStrength"] = ps1Params.ditherStrength;
 
+        // ChromaticAberration params
+        const auto& caParams = camera->GetChromaticAberrationParams();
+        comp["caIntensity"] = caParams.intensity;
+        comp["caRedOffset"] = caParams.redOffset;
+        comp["caGreenOffset"] = caParams.greenOffset;
+        comp["caBlueOffset"] = caParams.blueOffset;
+
         // カメラ追従設定
         comp["viewMode"] = static_cast<int>(camera->GetViewMode());
         comp["followTargetName"] = camera->GetFollowTargetName();
@@ -600,6 +607,22 @@ void SceneSerializer::DeserializeComponent(const json& json, GameObject& gameObj
             ps1Params.ditherStrength = json["ps1DitherStrength"].get<float>();
         }
         camera->SetPS1Params(ps1Params);
+
+        // ChromaticAberration params
+        ChromaticAberrationParams caParams;
+        if (json.contains("caIntensity")) {
+            caParams.intensity = json["caIntensity"].get<float>();
+        }
+        if (json.contains("caRedOffset")) {
+            caParams.redOffset = json["caRedOffset"].get<float>();
+        }
+        if (json.contains("caGreenOffset")) {
+            caParams.greenOffset = json["caGreenOffset"].get<float>();
+        }
+        if (json.contains("caBlueOffset")) {
+            caParams.blueOffset = json["caBlueOffset"].get<float>();
+        }
+        camera->SetChromaticAberrationParams(caParams);
 
         // カメラ追従設定
         if (json.contains("viewMode")) {

@@ -7,6 +7,7 @@
 #include "VignettePostProcess.h"
 #include "FisheyePostProcess.h"
 #include "PS1PostProcess.h"
+#include "ChromaticAberrationPostProcess.h"
 #include "../Graphics/RenderTexture.h"
 #include <memory>
 #include <vector>
@@ -50,6 +51,7 @@ public:
     VignettePostProcess* GetVignette() { return m_vignette.get(); }
     FisheyePostProcess* GetFisheye() { return m_fisheye.get(); }
     PS1PostProcess* GetPS1() { return m_ps1.get(); }
+    ChromaticAberrationPostProcess* GetChromaticAberration() { return m_chromaticAberration.get(); }
 
 private:
     PostProcess* GetEffectByType(PostProcessType type);
@@ -60,6 +62,7 @@ private:
     std::unique_ptr<VignettePostProcess> m_vignette;
     std::unique_ptr<FisheyePostProcess> m_fisheye;
     std::unique_ptr<PS1PostProcess> m_ps1;
+    std::unique_ptr<ChromaticAberrationPostProcess> m_chromaticAberration;
 
     // Ping-Pong バッファ（チェーン処理用）
     std::unique_ptr<RenderTexture> m_intermediateA;

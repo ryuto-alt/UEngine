@@ -100,6 +100,9 @@ public:
     const PS1Params& GetPS1Params() const { return ps1Params_; }
     void SetPS1Params(const PS1Params& params) { ps1Params_ = params; }
 
+    const ChromaticAberrationParams& GetChromaticAberrationParams() const { return chromaticAberrationParams_; }
+    void SetChromaticAberrationParams(const ChromaticAberrationParams& params) { chromaticAberrationParams_ = params; }
+
     // カメラ追従設定
     CameraViewMode GetViewMode() const { return viewMode_; }
     void SetViewMode(CameraViewMode mode) { viewMode_ = mode; }
@@ -190,6 +193,7 @@ private:
     FisheyeParams fisheyeParams_;
     GrayscaleParams grayscaleParams_;
     PS1Params ps1Params_;
+    ChromaticAberrationParams chromaticAberrationParams_;
 
     // カメラ追従設定
     CameraViewMode viewMode_ = CameraViewMode::Free;

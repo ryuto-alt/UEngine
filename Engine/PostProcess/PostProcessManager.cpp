@@ -22,6 +22,9 @@ void PostProcessManager::Initialize(GraphicsDevice* graphics, uint32 width, uint
     m_ps1 = std::make_unique<PS1PostProcess>();
     m_ps1->Initialize(graphics);
 
+    m_chromaticAberration = std::make_unique<ChromaticAberrationPostProcess>();
+    m_chromaticAberration->Initialize(graphics);
+
     m_width = width;
     m_height = height;
 }
@@ -105,6 +108,7 @@ PostProcess* PostProcessManager::GetEffectByType(PostProcessType type) {
         case PostProcessType::Vignette: return m_vignette.get();
         case PostProcessType::Fisheye: return m_fisheye.get();
         case PostProcessType::PS1: return m_ps1.get();
+        case PostProcessType::ChromaticAberration: return m_chromaticAberration.get();
         default: return nullptr;
     }
 }

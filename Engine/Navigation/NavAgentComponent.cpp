@@ -457,6 +457,17 @@ void NavAgentComponent::UpdateWander(float deltaTime) {
         UpdateDirectMove();
     }
 
+    // 連続移動モード（waitTime <= 0）: 到着前に次の目的地を先読み設定
+    // これによりパス計算の遅延による一時停止を回避
+    if (waitTime_ <= 0.0f) {
+        float remainingDist = GetRemainingDistance();
+        // 残り1.5m以下で次の目的地を先読み設定
+        if (remainingDist < 1.5f && remainingDist > 0.1f) {
+            PickRandomDestination();
+            return;
+        }
+    }
+
     // 到着判定
     if (navMesh.HasAgentReachedTarget(crowdAgentIndex_, stoppingDistance_)) {
         // waitTime <= 0 なら待機せず即座に次の目的地へ

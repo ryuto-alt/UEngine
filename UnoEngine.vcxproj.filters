@@ -145,6 +145,15 @@
     <Filter Include="External\Detour">
       <UniqueIdentifier>{a2b3c4d5-e6f7-8a9b-0c1d-2e3f4a5b6c7d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\AI">
+      <UniqueIdentifier>{b3c4d5e6-f7a8-9b0c-1d2e-3f4a5b6c7d8e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\AI\NavMesh">
+      <UniqueIdentifier>{c4d5e6f7-a8b9-0c1d-2e3f-4a5b6c7d8e9f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game\Build">
+      <UniqueIdentifier>{d5e6f7a8-b9c0-1d2e-3f4a-5b6c7d8e9f0a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <!-- Main -->
@@ -177,6 +186,9 @@
       <Filter>Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Core\Logger.cpp">
+      <Filter>Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Core\CollisionComponent.cpp">
       <Filter>Engine\Core</Filter>
     </ClCompile>
     <!-- Engine\Graphics\Core -->
@@ -314,6 +326,9 @@
     </ClCompile>
     <!-- Engine\Systems -->
     <ClCompile Include="Engine\Systems\SystemManager.cpp">
+      <Filter>Engine\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Systems\CollisionSystem.cpp">
       <Filter>Engine\Systems</Filter>
     </ClCompile>
     <!-- Engine\Animation -->
@@ -602,6 +617,45 @@
     <ClCompile Include="Engine\Navigation\NavMeshManager.cpp">
       <Filter>Engine\Navigation</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Navigation\NavAgentComponent.cpp">
+      <Filter>Engine\Navigation</Filter>
+    </ClCompile>
+    <!-- Engine\AI\NavMesh -->
+    <ClCompile Include="Engine\AI\NavMesh\NavMeshBuilder.cpp">
+      <Filter>Engine\AI\NavMesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\AI\NavMesh\NavMeshQuery.cpp">
+      <Filter>Engine\AI\NavMesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\AI\NavMesh\NavMeshSerializer.cpp">
+      <Filter>Engine\AI\NavMesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\AI\NavMesh\NavMeshSystem.cpp">
+      <Filter>Engine\AI\NavMesh</Filter>
+    </ClCompile>
+    <!-- Game\Build -->
+    <ClCompile Include="Game\Build\GameExporter.cpp">
+      <Filter>Game\Build</Filter>
+    </ClCompile>
+    <!-- External\Detour -->
+    <ClCompile Include="external\recast\DetourCrowd\Source\DetourCrowd.cpp">
+      <Filter>External\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="external\recast\DetourCrowd\Source\DetourLocalBoundary.cpp">
+      <Filter>External\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="external\recast\DetourCrowd\Source\DetourObstacleAvoidance.cpp">
+      <Filter>External\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="external\recast\DetourCrowd\Source\DetourPathCorridor.cpp">
+      <Filter>External\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="external\recast\DetourCrowd\Source\DetourPathQueue.cpp">
+      <Filter>External\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="external\recast\DetourCrowd\Source\DetourProximityGrid.cpp">
+      <Filter>External\Detour</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <!-- Engine\Core -->
@@ -636,6 +690,12 @@
       <Filter>Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Core\Types.h">
+      <Filter>Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\CollisionComponent.h">
+      <Filter>Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\CameraComponent.h">
       <Filter>Engine\Core</Filter>
     </ClInclude>
     <!-- Engine\Graphics\Core -->
@@ -807,11 +867,17 @@
     <ClInclude Include="Engine\Resource\ModelImporter.h">
       <Filter>Engine\Resource</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Resource\StaticModelImporter.h">
+      <Filter>Engine\Resource</Filter>
+    </ClInclude>
     <!-- Engine\Systems -->
     <ClInclude Include="Engine\Systems\ISystem.h">
       <Filter>Engine\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Systems\SystemManager.h">
+      <Filter>Engine\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Systems\CollisionSystem.h">
       <Filter>Engine\Systems</Filter>
     </ClInclude>
     <!-- Engine\Animation -->
@@ -958,6 +1024,42 @@
     </ClInclude>
     <ClInclude Include="Engine\Navigation\NavMeshManager.h">
       <Filter>Engine\Navigation</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Navigation\NavAgentComponent.h">
+      <Filter>Engine\Navigation</Filter>
+    </ClInclude>
+    <!-- Engine\AI\NavMesh -->
+    <ClInclude Include="Engine\AI\NavMesh\NavMeshTypes.h">
+      <Filter>Engine\AI\NavMesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\AI\NavMesh\NavMeshSerializer.h">
+      <Filter>Engine\AI\NavMesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\AI\NavMesh\NavMeshSystem.h">
+      <Filter>Engine\AI\NavMesh</Filter>
+    </ClInclude>
+    <!-- Game\Build -->
+    <ClInclude Include="Game\Build\GameExporter.h">
+      <Filter>Game\Build</Filter>
+    </ClInclude>
+    <!-- External\Detour (DetourCrowd) -->
+    <ClInclude Include="external\recast\DetourCrowd\Include\DetourCrowd.h">
+      <Filter>External\Detour</Filter>
+    </ClInclude>
+    <ClInclude Include="external\recast\DetourCrowd\Include\DetourLocalBoundary.h">
+      <Filter>External\Detour</Filter>
+    </ClInclude>
+    <ClInclude Include="external\recast\DetourCrowd\Include\DetourObstacleAvoidance.h">
+      <Filter>External\Detour</Filter>
+    </ClInclude>
+    <ClInclude Include="external\recast\DetourCrowd\Include\DetourPathCorridor.h">
+      <Filter>External\Detour</Filter>
+    </ClInclude>
+    <ClInclude Include="external\recast\DetourCrowd\Include\DetourPathQueue.h">
+      <Filter>External\Detour</Filter>
+    </ClInclude>
+    <ClInclude Include="external\recast\DetourCrowd\Include\DetourProximityGrid.h">
+      <Filter>External\Detour</Filter>
     </ClInclude>
     <!-- External\Recast -->
     <ClInclude Include="external\recast\Recast\Include\Recast.h">

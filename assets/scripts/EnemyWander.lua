@@ -5,7 +5,7 @@
 -- public変数（Inspectorに表示される）
 wanderRadius = 15.0      -- 徘徊範囲（メートル）
 moveSpeed = 7.5          -- 移動速度
-waitTime = 1.5           -- 到着後の待機時間（秒）
+waitTime = 0.0           -- 到着後の待機時間（0=連続移動）
 angularSpeed = 720.0     -- 回転速度（度/秒）高速回転
 initialYaw = 0.0         -- 初期向き（ラジアン、0=+Z方向）
 

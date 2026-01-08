@@ -434,7 +434,15 @@ void NavAgentComponent::UpdateWander(float deltaTime) {
         return;
     }
 
+    // 待機モードの処理
     if (isWaiting_) {
+        // waitTime <= 0 なら即座に次へ
+        if (waitTime_ <= 0.0f) {
+            isWaiting_ = false;
+            PickRandomDestination();
+            return;
+        }
+
         currentWaitTime_ += deltaTime;
         if (currentWaitTime_ >= waitTime_) {
             isWaiting_ = false;
@@ -449,9 +457,15 @@ void NavAgentComponent::UpdateWander(float deltaTime) {
         UpdateDirectMove();
     }
 
+    // 到着判定
     if (navMesh.HasAgentReachedTarget(crowdAgentIndex_, stoppingDistance_)) {
-        isWaiting_ = true;
-        currentWaitTime_ = 0.0f;
+        // waitTime <= 0 なら待機せず即座に次の目的地へ
+        if (waitTime_ <= 0.0f) {
+            PickRandomDestination();
+        } else {
+            isWaiting_ = true;
+            currentWaitTime_ = 0.0f;
+        }
     }
 }
 

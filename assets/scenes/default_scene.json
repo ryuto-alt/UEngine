@@ -1,4 +1,26 @@
 {
+    "navmesh": {
+        "agentHeight": 2.0,
+        "agentMaxClimb": 0.30000001192092896,
+        "agentMaxSlope": 45.0,
+        "agentRadius": 0.9900000095367432,
+        "cellHeight": 0.20000000298023224,
+        "cellSize": 0.10000000149011612,
+        "dataPath": "assets/scenes/default_scene.navmesh",
+        "detailSampleDist": 6.0,
+        "detailSampleMaxError": 1.0,
+        "filterLedgeSpans": true,
+        "filterLowHangingObstacles": true,
+        "filterWalkableLowHeightSpans": true,
+        "maxEdgeLength": 12,
+        "maxSimplificationError": 1.2000000476837158,
+        "maxTiles": 32,
+        "maxVertsPerPoly": 6,
+        "mergeRegionArea": 20,
+        "minRegionArea": 8,
+        "tileSize": 32,
+        "useMonotone": true
+    },
     "objects": [
         {
             "active": true,
@@ -52,6 +74,57 @@
                     "type": "CollisionComponent"
                 },
                 {
+                    "acceleration": 8.0,
+                    "agentHeight": 1.7999999523162842,
+                    "agentRadius": 0.4000000059604645,
+                    "angularSpeed": 720.0,
+                    "speed": 7.5,
+                    "stoppingDistance": 0.5,
+                    "type": "NavAgentComponent",
+                    "useCrowd": true,
+                    "waitTime": 0.0
+                },
+                {
+                    "properties": [
+                        {
+                            "name": "angularSpeed",
+                            "type": "int",
+                            "value": 720
+                        },
+                        {
+                            "name": "moveSpeed",
+                            "type": "float",
+                            "value": 7.5
+                        },
+                        {
+                            "name": "wanderRadius",
+                            "type": "int",
+                            "value": 15
+                        },
+                        {
+                            "name": "initialYaw",
+                            "type": "int",
+                            "value": 0
+                        },
+                        {
+                            "name": "waitTime",
+                            "type": "int",
+                            "value": 0
+                        }
+                    ],
+                    "scriptPath": "assets/scripts/EnemyWander.lua",
+                    "type": "LuaScriptComponent"
+                },
+                {
+                    "detectionRange": 8.0,
+                    "fieldOfView": 90.0,
+                    "loseRange": 15.0,
+                    "lostWaitTime": 3.0,
+                    "targetName": "player",
+                    "type": "EnemyDetectionComponent",
+                    "wanderRadius": 10.0
+                },
+                {
                     "type": "AnimatorComponent"
                 }
             ],
@@ -59,15 +132,15 @@
             "name": "Enemy",
             "transform": {
                 "position": [
-                    3.5,
-                    0.0,
-                    3.0
+                    1.249497413635254,
+                    0.20000000298023224,
+                    9.256319999694824
                 ],
                 "rotation": [
                     0.0,
+                    -0.7881511449813843,
                     0.0,
-                    0.0,
-                    1.0
+                    0.6154817342758179
                 ],
                 "scale": [
                     0.05000000074505806,
@@ -81,6 +154,10 @@
             "components": [
                 {
                     "aspect": 1.7777777910232544,
+                    "caBlueOffset": -0.009999999776482582,
+                    "caGreenOffset": 0.0,
+                    "caIntensity": 1.0,
+                    "caRedOffset": 0.009999999776482582,
                     "farClip": 1000.0,
                     "firstPersonMoveSpeed": 12.019000053405762,
                     "firstPersonOffset": [
@@ -123,15 +200,15 @@
             "name": "Camera",
             "transform": {
                 "position": [
-                    22.630529403686523,
+                    3.2025275230407715,
                     1.7999999523162842,
-                    7.95671272277832
+                    4.081090450286865
                 ],
                 "rotation": [
                     0.0,
                     0.0,
                     0.0,
-                    1.0
+                    -1.0
                 ],
                 "scale": [
                     1.0,
@@ -1099,9 +1176,9 @@
             "name": "player",
             "transform": {
                 "position": [
-                    22.630529403686523,
+                    3.2025275230407715,
                     0.0,
-                    7.95671272277832
+                    4.081090450286865
                 ],
                 "rotation": [
                     -0.0,
@@ -1115,8 +1192,37 @@
                     1.0
                 ]
             }
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "modelPath": "assets/model/terebi/terebi.gltf",
+                    "type": "MeshRenderer"
+                }
+            ],
+            "layer": 1,
+            "name": "terebi",
+            "transform": {
+                "position": [
+                    4.054139137268066,
+                    1.1279489994049072,
+                    11.462084770202637
+                ],
+                "rotation": [
+                    -0.0,
+                    1.0,
+                    -0.0,
+                    -4.371138828673793e-08
+                ],
+                "scale": [
+                    0.4000000059604645,
+                    0.4000000059604645,
+                    0.4000000059604645
+                ]
+            }
         }
     ],
     "scene_name": "Scene",
-    "version": "1.0"
+    "version": "1.1"
 }

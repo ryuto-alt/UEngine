@@ -18,6 +18,7 @@
 #include "../Resource/StaticModelImporter.h"
 #include "../Scripting/LuaScriptComponent.h"
 #include "../Navigation/NavMeshManager.h"
+#include "../AI/EnemyDetectionComponent.h"
 #include "../Navigation/NavAgentComponent.h"
 #include "../../Game/GameApplication.h"
 #include <algorithm>
@@ -322,6 +323,10 @@ void Scene::ProcessPendingStarts() {
                 if (auto* luaScript = dynamic_cast<LuaScriptComponent*>(comp.get())) {
                     luaScript->SetInputManager(input_);
                     luaScript->SetScene(this);
+                }
+                // EnemyDetectionComponentにSceneを設定
+                if (auto* enemyDetection = dynamic_cast<EnemyDetectionComponent*>(comp.get())) {
+                    enemyDetection->SetScene(this);
                 }
                 comp->Start();
                 comp->MarkStarted();

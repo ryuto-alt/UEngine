@@ -29,26 +29,26 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -253,6 +253,9 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClCompile Include="Engine\Audio\AudioClip.cpp" />
     <ClCompile Include="Engine\Audio\AudioSource.cpp" />
     <ClCompile Include="Engine\Audio\AudioListener.cpp" />
+    <ClCompile Include="Engine\Video\VideoTexture.cpp" />
+    <ClCompile Include="Engine\Video\VideoDecoder.cpp" />
+    <ClCompile Include="Engine\Video\VideoPlayerComponent.cpp" />
     <ClCompile Include="Engine\Scripting\LuaState.cpp" />
     <ClCompile Include="Engine\Scripting\LuaScriptComponent.cpp" />
     <ClCompile Include="Engine\Particle\ParticleEmitter.cpp" />
@@ -463,6 +466,8 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <!-- Engine Navigation -->
     <ClCompile Include="Engine\Navigation\NavMeshManager.cpp" />
     <ClCompile Include="Engine\Navigation\NavAgentComponent.cpp" />
+    <!-- Engine AI -->
+    <ClCompile Include="Engine\AI\EnemyDetectionComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -471,6 +476,9 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClInclude Include="Engine\Audio\AudioClip.h" />
     <ClInclude Include="Engine\Audio\AudioSource.h" />
     <ClInclude Include="Engine\Audio\AudioListener.h" />
+    <ClInclude Include="Engine\Video\VideoTexture.h" />
+    <ClInclude Include="Engine\Video\VideoDecoder.h" />
+    <ClInclude Include="Engine\Video\VideoPlayerComponent.h" />
     <ClInclude Include="Engine\Core\Camera.h" />
     <ClInclude Include="Engine\Core\CameraComponent.h" />
     <ClInclude Include="Engine\Core\Transform.h" />
@@ -582,6 +590,8 @@ xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D</Comman
     <ClInclude Include="Engine\Navigation\NavMeshBuildSettings.h" />
     <ClInclude Include="Engine\Navigation\NavMeshManager.h" />
     <ClInclude Include="Engine\Navigation\NavAgentComponent.h" />
+    <!-- Engine AI -->
+    <ClInclude Include="Engine\AI\EnemyDetectionComponent.h" />
     <!-- Recast Headers -->
     <ClInclude Include="external\recast\Recast\Include\Recast.h" />
     <ClInclude Include="external\recast\Recast\Include\RecastAlloc.h" />

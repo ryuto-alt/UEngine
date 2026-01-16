@@ -10,6 +10,7 @@
 #include "../Scripting/LuaScriptComponent.h"
 #include "../Navigation/NavAgentComponent.h"
 #include "../Navigation/NavMeshManager.h"
+#include "../AI/EnemyDetectionComponent.h"
 #include "../PostProcess/PostProcessType.h"
 #include <fstream>
 #include <iostream>
@@ -451,6 +452,18 @@ json SceneSerializer::SerializeComponent(const Component& component) {
         return comp;
     }
 
+    // EnemyDetectionComponent
+    if (auto* detection = dynamic_cast<const EnemyDetectionComponent*>(&component)) {
+        comp["type"] = "EnemyDetectionComponent";
+        comp["detectionRange"] = detection->GetDetectionRange();
+        comp["fieldOfView"] = detection->GetFieldOfView();
+        comp["loseRange"] = detection->GetLoseRange();
+        comp["lostWaitTime"] = detection->GetLostWaitTime();
+        comp["wanderRadius"] = detection->GetWanderRadius();
+        comp["targetName"] = detection->GetTargetName();
+        return comp;
+    }
+
     return json();
 }
 
@@ -771,6 +784,27 @@ void SceneSerializer::DeserializeComponent(const json& json, GameObject& gameObj
         }
         if (json.contains("waitTime")) {
             navAgent->SetWaitTime(json["waitTime"].get<float>());
+        }
+    }
+    else if (type == "EnemyDetectionComponent") {
+        auto* detection = gameObject.AddComponent<EnemyDetectionComponent>();
+        if (json.contains("detectionRange")) {
+            detection->SetDetectionRange(json["detectionRange"].get<float>());
+        }
+        if (json.contains("fieldOfView")) {
+            detection->SetFieldOfView(json["fieldOfView"].get<float>());
+        }
+        if (json.contains("loseRange")) {
+            detection->SetLoseRange(json["loseRange"].get<float>());
+        }
+        if (json.contains("lostWaitTime")) {
+            detection->SetLostWaitTime(json["lostWaitTime"].get<float>());
+        }
+        if (json.contains("wanderRadius")) {
+            detection->SetWanderRadius(json["wanderRadius"].get<float>());
+        }
+        if (json.contains("targetName")) {
+            detection->SetTargetName(json["targetName"].get<std::string>());
         }
     }
 }

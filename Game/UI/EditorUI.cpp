@@ -22,6 +22,8 @@
 #include "../../Engine/Editor/ParticleEditor.h"
 #include "../../Engine/Navigation/NavMeshManager.h"
 #include "../../Engine/Navigation/NavAgentComponent.h"
+#include "../../Engine/AI/EnemyDetectionComponent.h"
+#include "../../Engine/Video/VideoPlayerComponent.h"
 #include <imgui.h>
 #include <imgui_internal.h>
 #include "../../Engine/UI/imgui_toggle.h"
@@ -43,6 +45,8 @@
 namespace UnoEngine {
 
 	void EditorUI::Initialize(GraphicsDevice* graphics) {
+		graphics_ = graphics;
+
 		// RenderTexture setup (SRVインデックス 3と4を使用) - 16:9 aspect ratio
 		gameViewTexture_.Create(graphics, 1280, 720, 3);
 		sceneViewTexture_.Create(graphics, 1280, 720, 4);
@@ -1937,6 +1941,11 @@ namespace UnoEngine {
 					selected->AddComponent<LuaScriptComponent>();
 					isDirty_ = true;
 				}
+				if (ImGui::MenuItem(U8("ビデオプレイヤー")) && !selected->GetComponent<VideoPlayerComponent>()) {
+					auto* videoPlayer = selected->AddComponent<VideoPlayerComponent>();
+					videoPlayer->SetGraphicsDevice(graphics_);
+					isDirty_ = true;
+				}
 				ImGui::EndPopup();
 			}
 		} else {
@@ -2607,6 +2616,120 @@ namespace UnoEngine {
 						ImGui::TextDisabled("  (Main listener for 3D audio)");
 					}
 
+					// === VideoPlayerComponent ===
+					if (auto* videoPlayer = obj->GetComponent<VideoPlayerComponent>()) {
+						ImGui::Separator();
+						ImGui::Text("VideoPlayer");
+						ImGui::Indent(10.0f);
+
+						// GraphicsDeviceを設定（未設定の場合）
+						if (graphics_) {
+							videoPlayer->SetGraphicsDevice(graphics_);
+						}
+
+						// ビデオファイル選択
+						std::string currentPath = videoPlayer->GetVideoPath();
+						std::string displayName = currentPath.empty() ? "(None)" :
+							std::filesystem::path(currentPath).filename().string();
+
+						// ドラッグ&ドロップ可能なボタンで表示
+						ImGui::Button(displayName.c_str(), ImVec2(180.0f, 0.0f));
+
+						// ドラッグ&ドロップターゲット（プロジェクトパネルからのビデオファイル）
+						if (ImGui::BeginDragDropTarget()) {
+							if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("VIDEO_PATH")) {
+								std::string droppedPath(static_cast<const char*>(payload->Data));
+								videoPlayer->LoadVideo(droppedPath);
+								isDirty_ = true;
+								consoleMessages_.push_back("[Editor] Video set: " + droppedPath);
+							}
+							ImGui::EndDragDropTarget();
+						}
+
+						ImGui::SameLine();
+						if (ImGui::Button("...##VideoFile")) {
+							char filename[MAX_PATH] = "";
+							OPENFILENAMEA ofn = {};
+							ofn.lStructSize = sizeof(ofn);
+							ofn.hwndOwner = nullptr;
+							ofn.lpstrFilter = "Video Files\0*.mp4;*.avi;*.mkv;*.webm\0All Files\0*.*\0";
+							ofn.lpstrFile = filename;
+							ofn.nMaxFile = MAX_PATH;
+							ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
+							if (GetOpenFileNameA(&ofn)) {
+								videoPlayer->LoadVideo(filename);
+								isDirty_ = true;
+							}
+						}
+						if (ImGui::IsItemHovered()) {
+							ImGui::SetTooltip("Browse for video file");
+						}
+
+						// ターゲットマテリアル名
+						std::string matName = videoPlayer->GetTargetMaterialName();
+						char matNameBuf[256] = {};
+						strncpy_s(matNameBuf, matName.c_str(), sizeof(matNameBuf) - 1);
+						ImGui::SetNextItemWidth(180.0f);
+						if (ImGui::InputText("Material", matNameBuf, sizeof(matNameBuf))) {
+							videoPlayer->SetTargetMaterialByName(matNameBuf);
+							isDirty_ = true;
+						}
+						if (ImGui::IsItemHovered()) {
+							ImGui::SetTooltip("Material name to display video on");
+						}
+
+						// ビデオ情報表示
+						if (!currentPath.empty()) {
+							ImGui::TextDisabled("Size: %dx%d", videoPlayer->GetWidth(), videoPlayer->GetHeight());
+							ImGui::TextDisabled("FPS: %.2f", videoPlayer->GetFrameRate());
+							ImGui::TextDisabled("Duration: %.1fs", videoPlayer->GetDuration());
+						}
+
+						// ループ設定
+						bool looping = videoPlayer->IsLooping();
+						if (ImGui::Checkbox("Loop", &looping)) {
+							videoPlayer->SetLooping(looping);
+							isDirty_ = true;
+						}
+
+						// 再生コントロール
+						if (videoPlayer->IsPlaying() && !videoPlayer->IsPaused()) {
+							ImGui::TextColored(ImVec4(0.3f, 1.0f, 0.3f, 1.0f), "Playing");
+							if (ImGui::Button("Pause##Video")) {
+								videoPlayer->Pause();
+							}
+							ImGui::SameLine();
+							if (ImGui::Button("Stop##Video")) {
+								videoPlayer->Stop();
+							}
+						} else if (videoPlayer->IsPaused()) {
+							ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.3f, 1.0f), "Paused");
+							if (ImGui::Button("Resume##Video")) {
+								videoPlayer->Play();
+							}
+							ImGui::SameLine();
+							if (ImGui::Button("Stop##Video")) {
+								videoPlayer->Stop();
+							}
+						} else {
+							if (ImGui::Button("Play##Video")) {
+								videoPlayer->Play();
+							}
+						}
+
+						// シークバー
+						if (!currentPath.empty()) {
+							float currentTime = static_cast<float>(videoPlayer->GetCurrentTime());
+							float duration = static_cast<float>(videoPlayer->GetDuration());
+							ImGui::SetNextItemWidth(180.0f);
+							if (ImGui::SliderFloat("##Seek", &currentTime, 0.0f, duration, "%.1fs")) {
+								videoPlayer->Seek(static_cast<double>(currentTime));
+							}
+						}
+
+						ImGui::Unindent(10.0f);
+					}
+
 					ImGui::Unindent(20.0f);
 				}
 
@@ -2937,6 +3060,69 @@ namespace UnoEngine {
 
 			if (cachedAudioPaths_.empty()) {
 				ImGui::TextDisabled(U8("(オーディオファイルなし)"));
+			}
+
+			ImGui::TreePop();
+		}
+
+		// ビデオフォルダをスキャン
+		if (ImGui::TreeNode(U8("ビデオ"))) {
+			if (ImGui::SmallButton(U8("更新##Video"))) {
+				RefreshVideoPaths();
+				consoleMessages_.push_back(U8("[エディタ] ビデオリストを更新しました"));
+			}
+			ImGui::Separator();
+
+			if (cachedVideoPaths_.empty()) {
+				RefreshVideoPaths();
+			}
+
+			for (size_t i = 0; i < cachedVideoPaths_.size(); ++i) {
+				const auto& videoPath = cachedVideoPaths_[i];
+				std::filesystem::path p(videoPath);
+				std::string filename = p.filename().string();
+
+				ImGui::PushID(static_cast<int>(i + 30000));
+
+				ImGui::Text("🎬");
+				ImGui::SameLine();
+
+				if (ImGui::Selectable(filename.c_str())) {
+					// シングルクリック: VideoPlayerComponentがある選択中オブジェクトにセット
+					if (selectedObject_) {
+						if (auto* videoPlayer = selectedObject_->GetComponent<VideoPlayerComponent>()) {
+							videoPlayer->LoadVideo(videoPath);
+							consoleMessages_.push_back("[Editor] Video set: " + filename);
+						}
+					}
+				}
+
+				// ダブルクリック: 新規GameObjectを作成してVideoPlayerComponentを追加
+				if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+					if (gameObjects_ && graphics_) {
+						std::string objectName = p.stem().string();
+						auto newObject = std::make_unique<GameObject>(objectName);
+						auto* videoPlayer = newObject->AddComponent<VideoPlayerComponent>();
+						videoPlayer->SetGraphicsDevice(graphics_);
+						videoPlayer->LoadVideo(videoPath);
+						selectedObject_ = newObject.get();
+						gameObjects_->push_back(std::move(newObject));
+						consoleMessages_.push_back("[Editor] Created VideoPlayer object: " + objectName);
+					}
+				}
+
+				// ドラッグ＆ドロップソース
+				if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+					ImGui::SetDragDropPayload("VIDEO_PATH", videoPath.c_str(), videoPath.size() + 1);
+					ImGui::Text("🎬 %s", filename.c_str());
+					ImGui::EndDragDropSource();
+				}
+
+				ImGui::PopID();
+			}
+
+			if (cachedVideoPaths_.empty()) {
+				ImGui::TextDisabled(U8("(ビデオファイルなし)"));
 			}
 
 			ImGui::TreePop();
@@ -3342,6 +3528,26 @@ namespace UnoEngine {
 						std::string relativePath = entry.path().string();
 						std::replace(relativePath.begin(), relativePath.end(), '\\', '/');
 						cachedAudioPaths_.push_back(relativePath);
+					}
+				}
+			}
+		}
+	}
+
+	void EditorUI::RefreshVideoPaths() {
+		cachedVideoPaths_.clear();
+
+		std::string videoPath = "assets/video";
+		if (std::filesystem::exists(videoPath) && std::filesystem::is_directory(videoPath)) {
+			for (const auto& entry : std::filesystem::recursive_directory_iterator(videoPath)) {
+				if (entry.is_regular_file()) {
+					std::string ext = entry.path().extension().string();
+					// 小文字に変換して比較
+					std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+					if (ext == ".mp4" || ext == ".avi" || ext == ".mkv" || ext == ".webm" || ext == ".mov") {
+						std::string relativePath = entry.path().string();
+						std::replace(relativePath.begin(), relativePath.end(), '\\', '/');
+						cachedVideoPaths_.push_back(relativePath);
 					}
 				}
 			}
@@ -4204,6 +4410,99 @@ namespace UnoEngine {
 				}
 			}
 
+			// EnemyDetectionComponentの表示
+			auto* detection = selected->GetComponent<EnemyDetectionComponent>();
+			if (detection) {
+				ImGui::Separator();
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.5f, 0.3f, 1.0f));
+				ImGui::Text("Enemy Detection");
+				ImGui::PopStyleColor();
+
+				float detectionRange = detection->GetDetectionRange();
+				if (ImGui::DragFloat(U8("検知距離"), &detectionRange, 0.1f, 1.0f, 50.0f, "%.1f m")) {
+					detection->SetDetectionRange(detectionRange);
+					isDirty_ = true;
+				}
+
+				float fov = detection->GetFieldOfView();
+				if (ImGui::DragFloat(U8("視野角"), &fov, 1.0f, 10.0f, 360.0f, "%.0f deg")) {
+					detection->SetFieldOfView(fov);
+					isDirty_ = true;
+				}
+
+				float loseRange = detection->GetLoseRange();
+				if (ImGui::DragFloat(U8("見失う距離"), &loseRange, 0.1f, 1.0f, 100.0f, "%.1f m")) {
+					detection->SetLoseRange(loseRange);
+					isDirty_ = true;
+				}
+
+				float lostWaitTime = detection->GetLostWaitTime();
+				if (ImGui::DragFloat(U8("見失い後の待機"), &lostWaitTime, 0.1f, 0.0f, 30.0f, "%.1f s")) {
+					detection->SetLostWaitTime(lostWaitTime);
+					isDirty_ = true;
+				}
+
+				float wanderRadius = detection->GetWanderRadius();
+				if (ImGui::DragFloat(U8("徘徊範囲"), &wanderRadius, 0.5f, 1.0f, 100.0f, "%.1f m")) {
+					detection->SetWanderRadius(wanderRadius);
+					isDirty_ = true;
+				}
+
+				// ターゲット選択（ドロップダウン）
+				std::string currentTarget = detection->GetTargetName();
+				std::string displayName = currentTarget.empty() ? "(None)" : currentTarget;
+
+				if (ImGui::BeginCombo(U8("ターゲット"), displayName.c_str())) {
+					// (None) 選択肢
+					if (ImGui::Selectable("(None)", currentTarget.empty())) {
+						detection->SetTargetName("");
+						isDirty_ = true;
+					}
+
+					// シーン内の全GameObjectをリスト
+					for (const auto& obj : *gameObjects_) {
+						if (obj.get() == selected) continue; // 自分自身は除外
+
+						const std::string& objName = obj->GetName();
+						bool isSelected = (objName == currentTarget);
+
+						if (ImGui::Selectable(objName.c_str(), isSelected)) {
+							detection->SetTargetName(objName);
+							isDirty_ = true;
+						}
+
+						if (isSelected) {
+							ImGui::SetItemDefaultFocus();
+						}
+					}
+					ImGui::EndCombo();
+				}
+
+				// 状態表示
+				ImGui::Spacing();
+				const char* stateStr = "Idle";
+				ImVec4 stateColor = ImVec4(0.6f, 0.6f, 0.6f, 1.0f);
+				switch (detection->GetState()) {
+					case EnemyDetectionComponent::State::Chasing:
+						stateStr = "Chasing";
+						stateColor = ImVec4(1.0f, 0.3f, 0.3f, 1.0f);
+						break;
+					case EnemyDetectionComponent::State::LostTarget:
+						stateStr = "Lost Target";
+						stateColor = ImVec4(1.0f, 0.8f, 0.0f, 1.0f);
+						break;
+					default:
+						break;
+				}
+				ImGui::TextColored(stateColor, U8("状態: %s"), stateStr);
+
+				ImGui::Spacing();
+				if (ImGui::Button(U8("Enemy Detection削除"))) {
+					selected->RemoveComponent<EnemyDetectionComponent>();
+					isDirty_ = true;
+				}
+			}
+
 			// LuaScriptComponentの表示
 			auto* luaScript = selected->GetComponent<LuaScriptComponent>();
 			if (luaScript) {
@@ -4349,6 +4648,14 @@ namespace UnoEngine {
 				ImGui::SameLine();
 				if (ImGui::Button("Add NavAgent")) {
 					selected->AddComponent<NavAgentComponent>();
+					isDirty_ = true;
+				}
+			}
+
+			if (!detection) {
+				ImGui::SameLine();
+				if (ImGui::Button("Add Enemy Detection")) {
+					selected->AddComponent<EnemyDetectionComponent>();
 					isDirty_ = true;
 				}
 			}

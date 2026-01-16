@@ -41,6 +41,7 @@ public:
     const IndexBuffer& GetIndexBuffer() const { return indexBuffer_; }
     const std::string& GetName() const { return name_; }
     const Material* GetMaterial() const { return material_.get(); }
+    Material* GetMaterial() { return material_.get(); }
     bool HasMaterial() const { return material_ != nullptr; }
 
     Vector3 GetBoundsMin() const { return boundsMin_; }

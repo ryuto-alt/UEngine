@@ -35,8 +35,13 @@ void Material::LoadFromData(const MaterialData& data, GraphicsDevice* graphics,
 
 D3D12_GPU_DESCRIPTOR_HANDLE Material::GetAlbedoSRV(ID3D12DescriptorHeap* heap) const {
     auto handle = heap->GetGPUDescriptorHandleForHeapStart();
-    if (diffuseTexture_ && device_) {
-        SIZE_T offset = diffuseTexture_->GetSRVIndex();
+    if (device_) {
+        SIZE_T offset = 0;
+        if (m_useDynamicTexture) {
+            offset = m_dynamicSRVIndex;
+        } else if (diffuseTexture_) {
+            offset = diffuseTexture_->GetSRVIndex();
+        }
         handle.ptr += offset * device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     }
     return handle;

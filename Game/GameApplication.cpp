@@ -7,6 +7,7 @@
 #include "../Engine/Audio/AudioSystem.h"
 #include "../Engine/Systems/CollisionSystem.h"
 #include "../Engine/Core/Logger.h"
+#include "../Engine/Video/VideoPlayerComponent.h"
 
 namespace UnoEngine {
 
@@ -33,9 +34,21 @@ Material* GameApplication::LoadMaterial(const std::string& name) {
 
 void GameApplication::OnRender() {
     graphics_->BeginFrame();
-    renderer_->BeginFrame();  // ダイナミックバッファをリセット
+    renderer_->BeginFrame();
 
     Scene* scene = GetSceneManager()->GetActiveScene();
+    if (scene) {
+        // ビデオフレームをGPUにアップロード（コマンドリストがオープンな状態で実行）
+        auto* cmdList = graphics_->GetCommandList();
+        for (auto& obj : scene->GetGameObjects()) {
+            if (auto* videoPlayer = obj->GetComponent<VideoPlayerComponent>()) {
+                if (videoPlayer->HasPendingFrame()) {
+                    videoPlayer->UploadVideoFrame(cmdList);
+                }
+            }
+        }
+    }
+
     if (scene) {
         RenderView view;
         scene->OnRender(view);

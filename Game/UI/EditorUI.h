@@ -206,6 +206,9 @@ private:
     void RenderNavMeshInspectorTab();
 
 private:
+    // GraphicsDevice参照
+    GraphicsDevice* graphics_ = nullptr;
+
     // RenderTexture
     RenderTexture gameViewTexture_;
     RenderTexture sceneViewTexture_;
@@ -331,6 +334,9 @@ private:
     // オーディオパスキャッシュ
     std::vector<std::string> cachedAudioPaths_;
     void RefreshAudioPaths();
+
+    std::vector<std::string> cachedVideoPaths_;
+    void RefreshVideoPaths();
 
     // スクリプトパスキャッシュ
     std::vector<std::string> cachedScriptPaths_;

@@ -44,10 +44,17 @@ public:
     uint32 GetSRVIndex() const { return diffuseTexture_ ? diffuseTexture_->GetSRVIndex() : 0; }
     D3D12_GPU_DESCRIPTOR_HANDLE GetAlbedoSRV(ID3D12DescriptorHeap* heap) const;
 
+    // 動的テクスチャオーバーライド（ビデオ再生等）
+    void SetDynamicTextureSRVIndex(uint32 srvIndex) { m_dynamicSRVIndex = srvIndex; m_useDynamicTexture = true; }
+    void ClearDynamicTexture() { m_useDynamicTexture = false; }
+    bool HasDynamicTexture() const { return m_useDynamicTexture; }
+
 private:
     MaterialData data_;
     std::unique_ptr<Texture2D> diffuseTexture_;
     ID3D12Device* device_ = nullptr;
+    uint32 m_dynamicSRVIndex = 0;
+    bool m_useDynamicTexture = false;
 };
 
 } // namespace UnoEngine

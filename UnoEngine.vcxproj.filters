@@ -73,6 +73,9 @@
     <Filter Include="Engine\Audio">
       <UniqueIdentifier>{e5f6a7b8-c9d0-1e2f-3a4b-5c6d7e8f9a0b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Video">
+      <UniqueIdentifier>{a1b2c3d4-e5f6-7890-abcd-ef1234567890}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Engine\Scripting">
       <UniqueIdentifier>{f6a7b8c9-d0e1-2f3a-4b5c-6d7e8f9a0b1c}</UniqueIdentifier>
     </Filter>
@@ -367,6 +370,16 @@
     <ClCompile Include="Engine\Audio\AudioListener.cpp">
       <Filter>Engine\Audio</Filter>
     </ClCompile>
+    <!-- Engine\Video -->
+    <ClCompile Include="Engine\Video\VideoTexture.cpp">
+      <Filter>Engine\Video</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Video\VideoDecoder.cpp">
+      <Filter>Engine\Video</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Video\VideoPlayerComponent.cpp">
+      <Filter>Engine\Video</Filter>
+    </ClCompile>
     <!-- Engine\Scripting -->
     <ClCompile Include="Engine\Scripting\LuaState.cpp">
       <Filter>Engine\Scripting</Filter>
@@ -620,6 +633,10 @@
     <ClCompile Include="Engine\Navigation\NavAgentComponent.cpp">
       <Filter>Engine\Navigation</Filter>
     </ClCompile>
+    <!-- Engine\AI -->
+    <ClCompile Include="Engine\AI\EnemyDetectionComponent.cpp">
+      <Filter>Engine\AI</Filter>
+    </ClCompile>
     <!-- Engine\AI\NavMesh -->
     <ClCompile Include="Engine\AI\NavMesh\NavMeshBuilder.cpp">
       <Filter>Engine\AI\NavMesh</Filter>
@@ -655,6 +672,9 @@
     </ClCompile>
     <ClCompile Include="external\recast\DetourCrowd\Source\DetourProximityGrid.cpp">
       <Filter>External\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -700,9 +720,6 @@
     </ClInclude>
     <!-- Engine\Graphics\Core -->
     <ClInclude Include="Engine\Graphics\ConstantBuffer.h">
-      <Filter>Engine\Graphics\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Graphics\DynamicConstantBuffer.h">
       <Filter>Engine\Graphics\Core</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\D3D12Common.h">
@@ -778,9 +795,6 @@
       <Filter>Engine\Graphics\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\MeshRenderer.h">
-      <Filter>Engine\Graphics\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Graphics\SkinnedMeshRenderer.h">
       <Filter>Engine\Graphics\Renderer</Filter>
     </ClInclude>
     <!-- Engine\Window -->
@@ -916,6 +930,16 @@
     <ClInclude Include="Engine\Audio\AudioListener.h">
       <Filter>Engine\Audio</Filter>
     </ClInclude>
+    <!-- Engine\Video -->
+    <ClInclude Include="Engine\Video\VideoTexture.h">
+      <Filter>Engine\Video</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Video\VideoDecoder.h">
+      <Filter>Engine\Video</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Video\VideoPlayerComponent.h">
+      <Filter>Engine\Video</Filter>
+    </ClInclude>
     <!-- Engine\Scripting -->
     <ClInclude Include="Engine\Scripting\LuaState.h">
       <Filter>Engine\Scripting</Filter>
@@ -1009,15 +1033,6 @@
       <Filter>Game\UI</Filter>
     </ClInclude>
     <!-- External\Sol -->
-    <ClInclude Include="external\sol\sol.hpp">
-      <Filter>External\Sol</Filter>
-    </ClInclude>
-    <ClInclude Include="external\sol\config.hpp">
-      <Filter>External\Sol</Filter>
-    </ClInclude>
-    <ClInclude Include="external\sol\forward.hpp">
-      <Filter>External\Sol</Filter>
-    </ClInclude>
     <!-- Engine\Navigation -->
     <ClInclude Include="Engine\Navigation\NavMeshBuildSettings.h">
       <Filter>Engine\Navigation</Filter>
@@ -1027,6 +1042,10 @@
     </ClInclude>
     <ClInclude Include="Engine\Navigation\NavAgentComponent.h">
       <Filter>Engine\Navigation</Filter>
+    </ClInclude>
+    <!-- Engine\AI -->
+    <ClInclude Include="Engine\AI\EnemyDetectionComponent.h">
+      <Filter>Engine\AI</Filter>
     </ClInclude>
     <!-- Engine\AI\NavMesh -->
     <ClInclude Include="Engine\AI\NavMesh\NavMeshTypes.h">
@@ -1099,6 +1118,15 @@
     <ClInclude Include="external\recast\Detour\Include\DetourStatus.h">
       <Filter>External\Detour</Filter>
     </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\AI\NavMesh\NavMeshBuilder.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\AI\NavMesh\NavMeshQuery.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -1170,12 +1198,7 @@
     <FxCompile Include="Shaders\PostProcess\PS1PS.hlsl">
       <Filter>Shaders\PostProcess</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\PostProcess\ChromaticAberrationPS.hlsl">
-      <Filter>Shaders\PostProcess</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\GenerateMips.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
+    <FxCompile Include="Shaders\\GenerateMips.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\Particle\ParticleCommon.hlsli">

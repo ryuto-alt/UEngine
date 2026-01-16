@@ -364,3 +364,14 @@ FodyWeavers.xsd
 # Claude Code
 claude.md
 CLAUDE.md
+.claude/
+.mcp.json
+.serena/
+
+# Local tools and generated files
+vcpkg/
+mcp-cpp/
+compile_commands.json
+editor_camera_settings.json
+imgui.ini
+nul

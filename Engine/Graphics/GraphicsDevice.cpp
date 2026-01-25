@@ -56,8 +56,7 @@ void GraphicsDevice::Initialize(Window* window) {
     // 初期状態はクローズ
     commandList_->Close();
     
-    // Initialize mipmap generator
-    m_mipmapGenerator.Initialize(this);
+    mipmapGenerator_.Initialize(this);
 }
 
 void GraphicsDevice::EnableDebugLayer() {

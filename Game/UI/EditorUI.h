@@ -15,6 +15,8 @@
 #include "../Build/GameExporter.h"
 #include <vector>
 #include <string>
+#include <string_view>
+#include <span>
 #include <stack>
 #include <unordered_set>
 #include <unordered_map>
@@ -204,6 +206,7 @@ private:
     // インスペクタータブ
     void RenderObjectInspectorTab(const EditorContext& context);
     void RenderNavMeshInspectorTab();
+    void AppendNavAgentLogLine(const std::string& line);
 
 private:
     // GraphicsDevice参照
@@ -327,19 +330,19 @@ private:
     // Scene（Start呼び出し用）
     class Scene* scene_ = nullptr;
 
-    // モデルパスキャッシュ（D&D用）
+    // アセットパス共通ヘルパー
+    void RefreshAssetPaths(std::vector<std::string>& cache,
+                           std::string_view directory,
+                           std::span<const std::string_view> extensions);
+
     std::vector<std::string> cachedModelPaths_;
-    void RefreshModelPaths();
-
-    // オーディオパスキャッシュ
     std::vector<std::string> cachedAudioPaths_;
-    void RefreshAudioPaths();
-
     std::vector<std::string> cachedVideoPaths_;
-    void RefreshVideoPaths();
-
-    // スクリプトパスキャッシュ
     std::vector<std::string> cachedScriptPaths_;
+
+    void RefreshModelPaths();
+    void RefreshAudioPaths();
+    void RefreshVideoPaths();
     void RefreshScriptPaths();
     void OpenScriptInVSCode(const std::string& scriptPath);
 
@@ -374,6 +377,11 @@ private:
     bool showGrid_ = true;
     bool showRecastNavMesh_ = false;
     bool showRecastNavMeshSettings_ = false;
+    bool navAgentLogEnabled_ = false;
+    bool navAgentLogHeaderWritten_ = false;
+    bool navAgentLogErrorReported_ = false;
+    float navAgentLogTimer_ = 0.0f;
+    float navAgentLogInterval_ = 0.2f;
 
     // インスペクタータブ（0: オブジェクト, 1: NavMesh）
     int inspectorTabIndex_ = 0;

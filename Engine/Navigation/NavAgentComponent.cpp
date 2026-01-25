@@ -5,8 +5,78 @@
 #include "../Core/Transform.h"
 #include "../Core/Logger.h"
 #include <cmath>
+#include <filesystem>
+#include <fstream>
+#include <iomanip>
+#include <sstream>
 
 namespace UnoEngine {
+namespace {
+    const std::filesystem::path kNavLogDir = R"(C:\Users\Unoryuto\Documents\navlog)";
+    const std::filesystem::path kNavWarnFile = kNavLogDir / "nav_agent_warnings.csv";
+
+    std::string EscapeCsvValue(const std::string& value) {
+        std::string out;
+        out.reserve(value.size() + 2);
+        out.push_back('"');
+        for (char c : value) {
+            if (c == '"') {
+                out.push_back('"');
+            }
+            out.push_back(c);
+        }
+        out.push_back('"');
+        return out;
+    }
+
+    const char* TargetStateToString(unsigned char state) {
+        switch (state) {
+            case 0: return "NONE";
+            case 1: return "FAILED";
+            case 2: return "VALID";
+            case 3: return "REQUESTING";
+            case 4: return "WAITING_QUEUE";
+            case 5: return "WAITING_PATH";
+            case 6: return "VELOCITY";
+            default: return "UNKNOWN";
+        }
+    }
+
+    const char* AgentStateToString(NavAgentComponent::AgentState state) {
+        switch (state) {
+            case NavAgentComponent::AgentState::Idle: return "Idle";
+            case NavAgentComponent::AgentState::Moving: return "Moving";
+            case NavAgentComponent::AgentState::Arrived: return "Arrived";
+            case NavAgentComponent::AgentState::Wandering: return "Wandering";
+            case NavAgentComponent::AgentState::Patrolling: return "Patrolling";
+            case NavAgentComponent::AgentState::Chasing: return "Chasing";
+            default: return "Unknown";
+        }
+    }
+
+    std::string FormatVec3Pipe(float x, float y, float z) {
+        std::ostringstream oss;
+        oss << std::fixed << std::setprecision(3) << x << '|' << y << '|' << z;
+        return oss.str();
+    }
+
+    void AppendCsvValue(std::ostringstream& oss, bool& first, const std::string& value) {
+        if (!first) {
+            oss << ',';
+        }
+        first = false;
+        oss << EscapeCsvValue(value);
+    }
+
+    template <typename T>
+    void AppendCsvValue(std::ostringstream& oss, bool& first, const T& value) {
+        if (!first) {
+            oss << ',';
+        }
+        first = false;
+        oss << value;
+    }
+}
 
 void NavAgentComponent::Awake() {
     state_ = AgentState::Idle;
@@ -81,6 +151,7 @@ void NavAgentComponent::OnUpdate(float deltaTime) {
     }
     
     UpdateRotation(deltaTime);
+    UpdateAutoWarnings(deltaTime);
 }
 
 void NavAgentComponent::OnDestroy() {
@@ -637,6 +708,276 @@ void NavAgentComponent::UpdateRotation(float deltaTime) {
     float halfAngle = smoothedYaw_ * 0.5f;
     Quaternion newRot(0.0f, std::sin(halfAngle), 0.0f, std::cos(halfAngle));
     transform.SetRotation(newRot);
+}
+
+void NavAgentComponent::UpdateAutoWarnings(float deltaTime) {
+    if (!useCrowd_ || crowdAgentIndex_ < 0) {
+        return;
+    }
+
+    auto& navMesh = Navigation::NavMeshManager::Get();
+    if (!navMesh.IsCrowdInitialized()) {
+        return;
+    }
+
+    constexpr float kSampleInterval = 0.1f;
+    constexpr float kMinSpeed = 1.0f;
+    constexpr float kReverseAngleDeg = 150.0f;
+    constexpr float kReverseCooldown = 0.6f;
+    constexpr float kCornerBehindDot = -0.2f;
+    constexpr float kCornerMinDist = 0.6f;
+    constexpr float kCornerCooldown = 0.6f;
+    constexpr float kTargetFailedCooldown = 1.0f;
+    constexpr float kCornerSlowdownDuration = 0.4f;
+    constexpr float kCornerSlowdownAngle = 120.0f;
+
+    navWarnTime_ += deltaTime;
+    navWarnSampleTimer_ += deltaTime;
+
+    if (cornerSlowdownActive_) {
+        cornerSlowdownTimer_ -= deltaTime;
+        if (cornerSlowdownTimer_ <= 0.0f) {
+            cornerSlowdownActive_ = false;
+            navMesh.UpdateAgentParameters(crowdAgentIndex_, speed_, acceleration_);
+        }
+    }
+
+    if (navWarnSampleTimer_ < kSampleInterval) {
+        return;
+    }
+    navWarnSampleTimer_ -= kSampleInterval;
+
+    auto velocity = navMesh.GetAgentVelocity(crowdAgentIndex_);
+    float speed = std::sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
+    if (speed < kMinSpeed) {
+        hasPrevVelDir_ = false;
+        return;
+    }
+
+    float invSpeed = 1.0f / speed;
+    DirectX::XMFLOAT3 velDir = { velocity.x * invSpeed, 0.0f, velocity.z * invSpeed };
+
+    DirectX::XMFLOAT3 agentPos = navMesh.GetAgentPosition(crowdAgentIndex_);
+    bool onNavMesh = navMesh.IsPointOnNavMesh(agentPos);
+
+    DirectX::XMFLOAT3 nextCorner = {0.0f, 0.0f, 0.0f};
+    float distToCorner = -1.0f;
+    bool hasCorner = navMesh.GetNextCorner(crowdAgentIndex_, nextCorner, distToCorner);
+
+    Navigation::CrowdAgentDebugInfo debugInfo;
+    bool hasDebug = navMesh.GetCrowdAgentDebugInfo(crowdAgentIndex_, debugInfo);
+
+    if (hasPrevVelDir_) {
+        float dot = prevVelDir_.x * velDir.x + prevVelDir_.z * velDir.z;
+        dot = std::clamp(dot, -1.0f, 1.0f);
+        float angleDeg = std::acos(dot) * 57.2957795f;
+
+        if (angleDeg >= kReverseAngleDeg && (navWarnTime_ - lastReverseWarnTime_) >= kReverseCooldown) {
+            lastReverseWarnTime_ = navWarnTime_;
+            Logger::Warning("[NavWarn] ReverseVelocity obj={} angle={:.1f} speed={:.2f}",
+                gameObject_ ? gameObject_->GetName() : "Unknown", angleDeg, speed);
+
+            const auto& dest = destination_;
+            std::ostringstream line;
+            line << std::fixed << std::setprecision(3);
+            bool first = true;
+            AppendCsvValue(line, first, navWarnTime_);
+            AppendCsvValue(line, first, std::string(gameObject_ ? gameObject_->GetName() : "Unknown"));
+            AppendCsvValue(line, first, std::string("ReverseVelocity"));
+            AppendCsvValue(line, first, angleDeg);
+            AppendCsvValue(line, first, speed);
+            AppendCsvValue(line, first, agentPos.x);
+            AppendCsvValue(line, first, agentPos.y);
+            AppendCsvValue(line, first, agentPos.z);
+            AppendCsvValue(line, first, velocity.x);
+            AppendCsvValue(line, first, velocity.y);
+            AppendCsvValue(line, first, velocity.z);
+            AppendCsvValue(line, first, nextCorner.x);
+            AppendCsvValue(line, first, nextCorner.y);
+            AppendCsvValue(line, first, nextCorner.z);
+            AppendCsvValue(line, first, distToCorner);
+            AppendCsvValue(line, first, dest.x);
+            AppendCsvValue(line, first, dest.y);
+            AppendCsvValue(line, first, dest.z);
+            AppendCsvValue(line, first, onNavMesh ? 1 : 0);
+            AppendCsvValue(line, first, hasDebug ? static_cast<int>(debugInfo.targetState) : -1);
+            AppendCsvValue(line, first, std::string(hasDebug ? TargetStateToString(debugInfo.targetState) : "N/A"));
+            AppendCsvValue(line, first, hasDebug ? debugInfo.ncorners : -1);
+            AppendCsvValue(line, first, hasDebug ? (debugInfo.partial ? 1 : 0) : 0);
+            AppendCsvValue(line, first, hasDebug ? (debugInfo.targetReplan ? 1 : 0) : 0);
+            AppendCsvValue(line, first, hasDebug ? debugInfo.targetReplanTime : 0.0f);
+            AppendCsvValue(line, first, hasDebug ? debugInfo.desiredSpeed : 0.0f);
+            AppendCsvValue(line, first, hasDebug ? debugInfo.dvel.x : 0.0f);
+            AppendCsvValue(line, first, hasDebug ? debugInfo.dvel.y : 0.0f);
+            AppendCsvValue(line, first, hasDebug ? debugInfo.dvel.z : 0.0f);
+            AppendCsvValue(line, first, hasDebug ? debugInfo.nvel.x : 0.0f);
+            AppendCsvValue(line, first, hasDebug ? debugInfo.nvel.y : 0.0f);
+            AppendCsvValue(line, first, hasDebug ? debugInfo.nvel.z : 0.0f);
+            AppendCsvValue(line, first, std::string(AgentStateToString(state_)));
+            AppendCsvValue(line, first, std::string(hasDebug ? FormatVec3Pipe(debugInfo.targetPos.x, debugInfo.targetPos.y, debugInfo.targetPos.z) : "0|0|0"));
+            AppendNavWarningLine(line.str());
+        }
+    }
+
+    if (hasCorner && distToCorner > kCornerMinDist) {
+        float dx = nextCorner.x - agentPos.x;
+        float dz = nextCorner.z - agentPos.z;
+        float len = std::sqrt(dx * dx + dz * dz);
+        if (len > 0.001f) {
+            float invLen = 1.0f / len;
+            float cornerDirX = dx * invLen;
+            float cornerDirZ = dz * invLen;
+            float dotCorner = cornerDirX * velDir.x + cornerDirZ * velDir.z;
+            dotCorner = std::clamp(dotCorner, -1.0f, 1.0f);
+            float angleDeg = std::acos(dotCorner) * 57.2957795f;
+
+            if (angleDeg >= kCornerSlowdownAngle) {
+                float slowSpeed = std::min(speed_, std::max(1.0f, speed_ * 0.35f));
+                if (!cornerSlowdownActive_) {
+                    cornerSlowdownActive_ = true;
+                    navMesh.UpdateAgentParameters(crowdAgentIndex_, slowSpeed, acceleration_);
+                }
+                cornerSlowdownTimer_ = kCornerSlowdownDuration;
+            }
+
+            if (dotCorner <= kCornerBehindDot && (navWarnTime_ - lastCornerBehindWarnTime_) >= kCornerCooldown) {
+                lastCornerBehindWarnTime_ = navWarnTime_;
+                Logger::Warning("[NavWarn] CornerBehind obj={} angle={:.1f} speed={:.2f}",
+                    gameObject_ ? gameObject_->GetName() : "Unknown", angleDeg, speed);
+
+                const auto& dest = destination_;
+                std::ostringstream line;
+                line << std::fixed << std::setprecision(3);
+                bool first = true;
+                AppendCsvValue(line, first, navWarnTime_);
+                AppendCsvValue(line, first, std::string(gameObject_ ? gameObject_->GetName() : "Unknown"));
+                AppendCsvValue(line, first, std::string("CornerBehind"));
+                AppendCsvValue(line, first, angleDeg);
+                AppendCsvValue(line, first, speed);
+                AppendCsvValue(line, first, agentPos.x);
+                AppendCsvValue(line, first, agentPos.y);
+                AppendCsvValue(line, first, agentPos.z);
+                AppendCsvValue(line, first, velocity.x);
+                AppendCsvValue(line, first, velocity.y);
+                AppendCsvValue(line, first, velocity.z);
+                AppendCsvValue(line, first, nextCorner.x);
+                AppendCsvValue(line, first, nextCorner.y);
+                AppendCsvValue(line, first, nextCorner.z);
+                AppendCsvValue(line, first, distToCorner);
+                AppendCsvValue(line, first, dest.x);
+                AppendCsvValue(line, first, dest.y);
+                AppendCsvValue(line, first, dest.z);
+                AppendCsvValue(line, first, onNavMesh ? 1 : 0);
+                AppendCsvValue(line, first, hasDebug ? static_cast<int>(debugInfo.targetState) : -1);
+                AppendCsvValue(line, first, std::string(hasDebug ? TargetStateToString(debugInfo.targetState) : "N/A"));
+                AppendCsvValue(line, first, hasDebug ? debugInfo.ncorners : -1);
+                AppendCsvValue(line, first, hasDebug ? (debugInfo.partial ? 1 : 0) : 0);
+                AppendCsvValue(line, first, hasDebug ? (debugInfo.targetReplan ? 1 : 0) : 0);
+                AppendCsvValue(line, first, hasDebug ? debugInfo.targetReplanTime : 0.0f);
+                AppendCsvValue(line, first, hasDebug ? debugInfo.desiredSpeed : 0.0f);
+                AppendCsvValue(line, first, hasDebug ? debugInfo.dvel.x : 0.0f);
+                AppendCsvValue(line, first, hasDebug ? debugInfo.dvel.y : 0.0f);
+                AppendCsvValue(line, first, hasDebug ? debugInfo.dvel.z : 0.0f);
+                AppendCsvValue(line, first, hasDebug ? debugInfo.nvel.x : 0.0f);
+                AppendCsvValue(line, first, hasDebug ? debugInfo.nvel.y : 0.0f);
+                AppendCsvValue(line, first, hasDebug ? debugInfo.nvel.z : 0.0f);
+                AppendCsvValue(line, first, std::string(AgentStateToString(state_)));
+                AppendCsvValue(line, first, std::string(hasDebug ? FormatVec3Pipe(debugInfo.targetPos.x, debugInfo.targetPos.y, debugInfo.targetPos.z) : "0|0|0"));
+                AppendNavWarningLine(line.str());
+            }
+        }
+    }
+
+    if (hasDebug && debugInfo.targetState == 1 && (navWarnTime_ - lastTargetFailedWarnTime_) >= kTargetFailedCooldown) {
+        lastTargetFailedWarnTime_ = navWarnTime_;
+        Logger::Warning("[NavWarn] TargetFailed obj={} speed={:.2f}",
+            gameObject_ ? gameObject_->GetName() : "Unknown", speed);
+
+        const auto& dest = destination_;
+        std::ostringstream line;
+        line << std::fixed << std::setprecision(3);
+        bool first = true;
+        AppendCsvValue(line, first, navWarnTime_);
+        AppendCsvValue(line, first, std::string(gameObject_ ? gameObject_->GetName() : "Unknown"));
+        AppendCsvValue(line, first, std::string("TargetFailed"));
+        AppendCsvValue(line, first, -1.0f);
+        AppendCsvValue(line, first, speed);
+        AppendCsvValue(line, first, agentPos.x);
+        AppendCsvValue(line, first, agentPos.y);
+        AppendCsvValue(line, first, agentPos.z);
+        AppendCsvValue(line, first, velocity.x);
+        AppendCsvValue(line, first, velocity.y);
+        AppendCsvValue(line, first, velocity.z);
+        AppendCsvValue(line, first, nextCorner.x);
+        AppendCsvValue(line, first, nextCorner.y);
+        AppendCsvValue(line, first, nextCorner.z);
+        AppendCsvValue(line, first, distToCorner);
+        AppendCsvValue(line, first, dest.x);
+        AppendCsvValue(line, first, dest.y);
+        AppendCsvValue(line, first, dest.z);
+        AppendCsvValue(line, first, onNavMesh ? 1 : 0);
+        AppendCsvValue(line, first, static_cast<int>(debugInfo.targetState));
+        AppendCsvValue(line, first, std::string(TargetStateToString(debugInfo.targetState)));
+        AppendCsvValue(line, first, debugInfo.ncorners);
+        AppendCsvValue(line, first, debugInfo.partial ? 1 : 0);
+        AppendCsvValue(line, first, debugInfo.targetReplan ? 1 : 0);
+        AppendCsvValue(line, first, debugInfo.targetReplanTime);
+        AppendCsvValue(line, first, debugInfo.desiredSpeed);
+        AppendCsvValue(line, first, debugInfo.dvel.x);
+        AppendCsvValue(line, first, debugInfo.dvel.y);
+        AppendCsvValue(line, first, debugInfo.dvel.z);
+        AppendCsvValue(line, first, debugInfo.nvel.x);
+        AppendCsvValue(line, first, debugInfo.nvel.y);
+        AppendCsvValue(line, first, debugInfo.nvel.z);
+        AppendCsvValue(line, first, std::string(AgentStateToString(state_)));
+        AppendCsvValue(line, first, std::string(FormatVec3Pipe(debugInfo.targetPos.x, debugInfo.targetPos.y, debugInfo.targetPos.z)));
+        AppendNavWarningLine(line.str());
+    }
+
+    prevVelDir_ = velDir;
+    hasPrevVelDir_ = true;
+}
+
+void NavAgentComponent::AppendNavWarningLine(const std::string& line) {
+    if (navWarnErrorReported_) {
+        return;
+    }
+
+    std::error_code ec;
+    std::filesystem::create_directories(kNavLogDir, ec);
+    if (ec) {
+        Logger::Warning("[NavWarn] Failed to create directory: {}", kNavLogDir.string());
+        navWarnErrorReported_ = true;
+        return;
+    }
+
+    bool needsHeader = !navWarnHeaderWritten_;
+    if (needsHeader) {
+        std::error_code sizeEc;
+        if (std::filesystem::exists(kNavWarnFile, sizeEc)) {
+            auto size = std::filesystem::file_size(kNavWarnFile, sizeEc);
+            if (!sizeEc && size > 0) {
+                needsHeader = false;
+                navWarnHeaderWritten_ = true;
+            }
+        }
+    }
+
+    std::ofstream file(kNavWarnFile, std::ios::app);
+    if (!file.is_open()) {
+        Logger::Warning("[NavWarn] Failed to open log file: {}", kNavWarnFile.string());
+        navWarnErrorReported_ = true;
+        return;
+    }
+
+    if (needsHeader) {
+        file << "time,object,event,angleDeg,speed,posX,posY,posZ,velX,velY,velZ,nextCornerX,nextCornerY,nextCornerZ,distToCorner,"
+                "destX,destY,destZ,onNavMesh,targetState,targetStateStr,ncorners,partial,targetReplan,targetReplanTime,desiredSpeed,"
+                "dvelX,dvelY,dvelZ,nvelX,nvelY,nvelZ,agentState,targetPos\n";
+        navWarnHeaderWritten_ = true;
+    }
+
+    file << line << '\n';
 }
 
 void NavAgentComponent::SyncTransformFromCrowd() {

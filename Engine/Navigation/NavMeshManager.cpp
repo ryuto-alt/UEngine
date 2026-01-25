@@ -1147,15 +1147,17 @@ int NavMeshManager::AddCrowdAgent(const DirectX::XMFLOAT3& position, float radiu
     ap.maxAcceleration = maxAcceleration * 10.0f; // 即座に最高速へ到達
     ap.maxSpeed = maxSpeed;
 
-    // 回避行動を無効化：壁に沿って直線的に移動
-    ap.collisionQueryRange = 0.0f;
-    ap.pathOptimizationRange = 0.0f;
+    // コーナーでの飛び出しを避けるため、NavMesh境界を考慮して進行させる
+    ap.collisionQueryRange = radius * 12.0f;
+    ap.pathOptimizationRange = radius * 30.0f;
     ap.separationWeight = 0.0f;
 
-    // 最小限のフラグ：パス追従のみ（回避・分離・最適化を無効化）
-    ap.updateFlags = DT_CROWD_ANTICIPATE_TURNS;
+    ap.updateFlags = DT_CROWD_ANTICIPATE_TURNS |
+                     DT_CROWD_OBSTACLE_AVOIDANCE |
+                     DT_CROWD_OPTIMIZE_VIS |
+                     DT_CROWD_OPTIMIZE_TOPO;
 
-    ap.obstacleAvoidanceType = 0;
+    ap.obstacleAvoidanceType = 1;
     ap.queryFilterType = 0;
     ap.userData = nullptr;
 
@@ -1233,7 +1235,14 @@ void NavMeshManager::UpdateCrowd(float deltaTime)
 {
     if (m_crowd)
     {
-        m_crowd->update(deltaTime, nullptr);
+        constexpr float kMaxStep = 1.0f / 30.0f;
+        float remaining = deltaTime;
+        while (remaining > 0.0f)
+        {
+            float step = (remaining > kMaxStep) ? kMaxStep : remaining;
+            m_crowd->update(step, nullptr);
+            remaining -= step;
+        }
     }
 }
 
@@ -1307,6 +1316,34 @@ bool NavMeshManager::HasAgentReachedTarget(int agentIndex, float tolerance) cons
     float distSq = dx * dx + dy * dy + dz * dz;
     
     return distSq < tolerance * tolerance;
+}
+
+bool NavMeshManager::GetCrowdAgentDebugInfo(int agentIndex, CrowdAgentDebugInfo& outInfo) const
+{
+    if (!m_crowd || agentIndex < 0)
+    {
+        return false;
+    }
+
+    const dtCrowdAgent* agent = m_crowd->getAgent(agentIndex);
+    if (!agent || !agent->active)
+    {
+        return false;
+    }
+
+    outInfo.active = agent->active;
+    outInfo.state = agent->state;
+    outInfo.partial = agent->partial;
+    outInfo.ncorners = agent->ncorners;
+    outInfo.targetState = agent->targetState;
+    outInfo.targetReplan = agent->targetReplan;
+    outInfo.targetReplanTime = agent->targetReplanTime;
+    outInfo.desiredSpeed = agent->desiredSpeed;
+    outInfo.dvel = { agent->dvel[0], agent->dvel[1], agent->dvel[2] };
+    outInfo.nvel = { agent->nvel[0], agent->nvel[1], agent->nvel[2] };
+    outInfo.targetPos = { agent->targetPos[0], agent->targetPos[1], agent->targetPos[2] };
+
+    return true;
 }
 
 bool NavMeshManager::GetRandomPointOnNavMesh(DirectX::XMFLOAT3& outPoint) const

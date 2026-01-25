@@ -31,6 +31,7 @@
 #include "ImGuizmo.h"
 #include <algorithm>
 #include <cmath>
+#include <fstream>
 
 // C++20 u8リテラルをconst char*に変換するヘルパー
 #define U8(str) reinterpret_cast<const char*>(u8##str)
@@ -43,6 +44,24 @@
 #include <filesystem>
 
 namespace UnoEngine {
+	namespace {
+		const std::filesystem::path kNavLogDir = R"(C:\Users\Unoryuto\Documents\navlog)";
+		const std::filesystem::path kNavLogFile = kNavLogDir / "nav_agent_log.csv";
+
+		std::string EscapeCsvValue(const std::string& value) {
+			std::string out;
+			out.reserve(value.size() + 2);
+			out.push_back('"');
+			for (char c : value) {
+				if (c == '"') {
+					out.push_back('"');
+				}
+				out.push_back(c);
+			}
+			out.push_back('"');
+			return out;
+		}
+	}
 
 	void EditorUI::Initialize(GraphicsDevice* graphics) {
 		graphics_ = graphics;
@@ -3496,80 +3515,51 @@ namespace UnoEngine {
 		}
 	}
 
-	// モデルパスをリフレッシュ
-	void EditorUI::RefreshModelPaths() {
-		cachedModelPaths_.clear();
+	void EditorUI::RefreshAssetPaths(std::vector<std::string>& cache,
+	                                  std::string_view directory,
+	                                  std::span<const std::string_view> extensions) {
+		cache.clear();
+		std::filesystem::path dirPath(directory);
 
-		std::string modelsPath = "assets/model";
-		if (std::filesystem::exists(modelsPath) && std::filesystem::is_directory(modelsPath)) {
-			for (const auto& entry : std::filesystem::recursive_directory_iterator(modelsPath)) {
-				if (entry.is_regular_file()) {
-					std::string ext = entry.path().extension().string();
-					if (ext == ".gltf" || ext == ".glb" || ext == ".fbx" || ext == ".obj") {
-						std::string relativePath = entry.path().string();
-						std::replace(relativePath.begin(), relativePath.end(), '\\', '/');
-						cachedModelPaths_.push_back(relativePath);
-					}
+		if (!std::filesystem::exists(dirPath) || !std::filesystem::is_directory(dirPath))
+			return;
+
+		for (const auto& entry : std::filesystem::recursive_directory_iterator(dirPath)) {
+			if (!entry.is_regular_file())
+				continue;
+
+			std::string ext = entry.path().extension().string();
+			std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+			for (auto validExt : extensions) {
+				if (ext == validExt) {
+					std::string relativePath = entry.path().string();
+					std::replace(relativePath.begin(), relativePath.end(), '\\', '/');
+					cache.push_back(relativePath);
+					break;
 				}
 			}
 		}
 	}
 
-	// オーディオパスをリフレッシュ
-	void EditorUI::RefreshAudioPaths() {
-		cachedAudioPaths_.clear();
+	void EditorUI::RefreshModelPaths() {
+		constexpr std::string_view exts[] = { ".gltf", ".glb", ".fbx", ".obj" };
+		RefreshAssetPaths(cachedModelPaths_, "assets/model", exts);
+	}
 
-		std::string audioPath = "assets/audio";
-		if (std::filesystem::exists(audioPath) && std::filesystem::is_directory(audioPath)) {
-			for (const auto& entry : std::filesystem::recursive_directory_iterator(audioPath)) {
-				if (entry.is_regular_file()) {
-					std::string ext = entry.path().extension().string();
-					if (ext == ".wav" || ext == ".WAV") {
-						std::string relativePath = entry.path().string();
-						std::replace(relativePath.begin(), relativePath.end(), '\\', '/');
-						cachedAudioPaths_.push_back(relativePath);
-					}
-				}
-			}
-		}
+	void EditorUI::RefreshAudioPaths() {
+		constexpr std::string_view exts[] = { ".wav" };
+		RefreshAssetPaths(cachedAudioPaths_, "assets/audio", exts);
 	}
 
 	void EditorUI::RefreshVideoPaths() {
-		cachedVideoPaths_.clear();
-
-		std::string videoPath = "assets/video";
-		if (std::filesystem::exists(videoPath) && std::filesystem::is_directory(videoPath)) {
-			for (const auto& entry : std::filesystem::recursive_directory_iterator(videoPath)) {
-				if (entry.is_regular_file()) {
-					std::string ext = entry.path().extension().string();
-					// 小文字に変換して比較
-					std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-					if (ext == ".mp4" || ext == ".avi" || ext == ".mkv" || ext == ".webm" || ext == ".mov") {
-						std::string relativePath = entry.path().string();
-						std::replace(relativePath.begin(), relativePath.end(), '\\', '/');
-						cachedVideoPaths_.push_back(relativePath);
-					}
-				}
-			}
-		}
+		constexpr std::string_view exts[] = { ".mp4", ".avi", ".mkv", ".webm", ".mov" };
+		RefreshAssetPaths(cachedVideoPaths_, "assets/video", exts);
 	}
 
 	void EditorUI::RefreshScriptPaths() {
-		cachedScriptPaths_.clear();
-
-		std::string scriptPath = "assets/scripts";
-		if (std::filesystem::exists(scriptPath) && std::filesystem::is_directory(scriptPath)) {
-			for (const auto& entry : std::filesystem::recursive_directory_iterator(scriptPath)) {
-				if (entry.is_regular_file()) {
-					std::string ext = entry.path().extension().string();
-					if (ext == ".lua" || ext == ".LUA") {
-						std::string relativePath = entry.path().string();
-						std::replace(relativePath.begin(), relativePath.end(), '\\', '/');
-						cachedScriptPaths_.push_back(relativePath);
-					}
-				}
-			}
-		}
+		constexpr std::string_view exts[] = { ".lua" };
+		RefreshAssetPaths(cachedScriptPaths_, "assets/scripts", exts);
 	}
 
 	void EditorUI::OpenScriptInVSCode(const std::string& scriptPath) {
@@ -4404,6 +4394,92 @@ namespace UnoEngine {
 					navAgent->SetPathVisualized(visualize);
 				}
 
+				// ライブ情報（リアルタイム監視）
+				ImGui::Spacing();
+				ImGui::Separator();
+				ImGui::Text(U8("NavAgentライブ情報"));
+
+				auto& navMeshManager = Navigation::NavMeshManager::Get();
+				int agentIndex = navAgent->GetCrowdAgentIndex();
+				bool crowdReady = navMeshManager.IsCrowdInitialized() && agentIndex >= 0;
+
+				ImGui::Text(U8("Crowd: %s"), navMeshManager.IsCrowdInitialized() ? "ON" : "OFF");
+				ImGui::Text(U8("Crowd Agent: %d"), agentIndex);
+				ImGui::Text(U8("直進モード: %s"), navAgent->IsDirectMoveEnabled() ? "ON" : "OFF");
+
+				DirectX::XMFLOAT3 agentPos;
+				if (crowdReady) {
+					agentPos = navMeshManager.GetAgentPosition(agentIndex);
+				} else {
+					auto worldPos = selected->GetTransform().GetPosition();
+					agentPos = { worldPos.GetX(), worldPos.GetY(), worldPos.GetZ() };
+				}
+
+				auto velocity = navAgent->GetVelocity();
+				float speedMagnitude = std::sqrt(
+					velocity.x * velocity.x +
+					velocity.y * velocity.y +
+					velocity.z * velocity.z
+				);
+
+				ImGui::Text(U8("位置: (%.2f, %.2f, %.2f)"), agentPos.x, agentPos.y, agentPos.z);
+				ImGui::Text(U8("速度: (%.2f, %.2f, %.2f)"), velocity.x, velocity.y, velocity.z);
+				ImGui::Text(U8("速度m/s: %.2f"), speedMagnitude);
+
+				bool isOnNavMesh = navMeshManager.IsPointOnNavMesh(agentPos);
+				ImGui::Text(U8("NavMesh内: %s"), isOnNavMesh ? U8("はい") : U8("いいえ"));
+
+				DirectX::XMFLOAT3 nextCorner = {0.0f, 0.0f, 0.0f};
+				float distToCorner = -1.0f;
+				bool hasNextCorner = false;
+				if (crowdReady && navMeshManager.GetNextCorner(agentIndex, nextCorner, distToCorner)) {
+					hasNextCorner = true;
+					ImGui::Text(U8("次コーナー: (%.2f, %.2f, %.2f) [%.2f m]"),
+						nextCorner.x, nextCorner.y, nextCorner.z, distToCorner);
+				} else {
+					ImGui::Text(U8("次コーナー: なし"));
+				}
+
+				const auto& dest = navAgent->GetDestination();
+				ImGui::Text(U8("目的地: (%.2f, %.2f, %.2f)"), dest.x, dest.y, dest.z);
+				ImGui::Text(U8("到達: %s"), navAgent->HasReachedDestination() ? U8("はい") : U8("いいえ"));
+				ImGui::Text(U8("経路あり: %s"), navAgent->HasPath() ? U8("はい") : U8("いいえ"));
+
+				ImGui::Spacing();
+				bool logEnabled = navAgentLogEnabled_;
+				if (ImGui::Checkbox(U8("Navログ出力"), &logEnabled)) {
+					navAgentLogEnabled_ = logEnabled;
+					navAgentLogTimer_ = 0.0f;
+					navAgentLogHeaderWritten_ = false;
+					navAgentLogErrorReported_ = false;
+				}
+				ImGui::SameLine();
+				ImGui::TextDisabled("C:\\Users\\Unoryuto\\Documents\\navlog\\nav_agent_log.csv");
+
+				if (navAgentLogEnabled_) {
+					navAgentLogTimer_ += ImGui::GetIO().DeltaTime;
+					while (navAgentLogTimer_ >= navAgentLogInterval_) {
+						navAgentLogTimer_ -= navAgentLogInterval_;
+						std::string line = std::format(
+							"{:.3f},{},{},{},{:.3f},{:.3f},{:.3f},{:.3f},{:.3f},{:.3f},{:.3f},{},{},{:.3f},{:.3f},{:.3f},{:.3f},{:.3f},{:.3f},{:.3f},{}",
+							ImGui::GetTime(),
+							EscapeCsvValue(selected->GetName()),
+							agentIndex,
+							crowdReady ? 1 : 0,
+							agentPos.x, agentPos.y, agentPos.z,
+							velocity.x, velocity.y, velocity.z,
+							speedMagnitude,
+							isOnNavMesh ? 1 : 0,
+							hasNextCorner ? 1 : 0,
+							nextCorner.x, nextCorner.y, nextCorner.z,
+							distToCorner,
+							dest.x, dest.y, dest.z,
+							EscapeCsvValue(stateStr)
+						);
+						AppendNavAgentLogLine(line);
+					}
+				}
+
 				ImGui::Spacing();
 				if (ImGui::Button(U8("コンポーネント削除"))) {
 					selected->RemoveComponent<NavAgentComponent>();
@@ -4901,6 +4977,47 @@ namespace UnoEngine {
 				ImGui::TextDisabled(U8("オブジェクトを選択してください"));
 			}
 		}
+	}
+
+	void EditorUI::AppendNavAgentLogLine(const std::string& line) {
+		if (navAgentLogErrorReported_) {
+			return;
+		}
+
+		std::error_code ec;
+		std::filesystem::create_directories(kNavLogDir, ec);
+		if (ec) {
+			AddConsoleMessage(std::format("[NavLog] Failed to create directory: {}", kNavLogDir.string()));
+			navAgentLogErrorReported_ = true;
+			return;
+		}
+
+		bool needsHeader = !navAgentLogHeaderWritten_;
+		if (needsHeader) {
+			std::error_code sizeEc;
+			if (std::filesystem::exists(kNavLogFile, sizeEc)) {
+				auto size = std::filesystem::file_size(kNavLogFile, sizeEc);
+				if (!sizeEc && size > 0) {
+					needsHeader = false;
+					navAgentLogHeaderWritten_ = true;
+				}
+			}
+		}
+
+		std::ofstream file(kNavLogFile, std::ios::app);
+		if (!file.is_open()) {
+			AddConsoleMessage(std::format("[NavLog] Failed to open log file: {}", kNavLogFile.string()));
+			navAgentLogErrorReported_ = true;
+			return;
+		}
+
+		if (needsHeader) {
+			file << "time,object,agentIndex,crowdReady,posX,posY,posZ,velX,velY,velZ,speed,onNavMesh,hasNextCorner,"
+					"nextCornerX,nextCornerY,nextCornerZ,distToCorner,destX,destY,destZ,state\n";
+			navAgentLogHeaderWritten_ = true;
+		}
+
+		file << line << '\n';
 	}
 
 	void EditorUI::BakeNavMesh() {

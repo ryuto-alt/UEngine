@@ -48,8 +48,7 @@ public:
     uint32 AllocateSRVIndex();
     uint32 GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type) const;
     
-    // Mipmap generation
-    MipmapGenerator* GetMipmapGenerator() { return &m_mipmapGenerator; }
+    MipmapGenerator* GetMipmapGenerator() { return &mipmapGenerator_; }
 
 private:
     void EnableDebugLayer();
@@ -100,8 +99,7 @@ private:
     // 状態
     uint32 currentBackBufferIndex_ = 0;
     
-    // Mipmap generator
-    MipmapGenerator m_mipmapGenerator;
+    MipmapGenerator mipmapGenerator_;
 };
 
 } // namespace UnoEngine

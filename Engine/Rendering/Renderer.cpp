@@ -10,11 +10,19 @@
 
 namespace UnoEngine {
 
-// Matrix4x4をFloat4x4に変換（転置して格納）
-static void StoreTransposedMatrix(Float4x4& dest, const Matrix4x4& src) {
+namespace {
+
+constexpr uint32_t kConstantBufferCount = 512;
+constexpr uint32_t kLightBufferCount = 16;
+constexpr uint32_t kMaterialBufferCount = 512;
+constexpr uint32_t kSkinnedBufferCount = 256;
+
+void StoreTransposedMatrix(Float4x4& dest, const Matrix4x4& src) {
     Matrix4x4 transposed = src.Transpose();
     transposed.ToFloatArray(reinterpret_cast<float*>(&dest));
 }
+
+} // anonymous namespace
 
 void Renderer::Initialize(GraphicsDevice* graphics, Window* window) {
     graphics_ = graphics;
@@ -40,14 +48,13 @@ void Renderer::Initialize(GraphicsDevice* graphics, Window* window) {
 
     skinnedPipeline_.Initialize(device, skinnedVS, skinnedPS, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
 
-    constantBuffer_.Create(device, 512);  // フレーム内で複数ビュー×複数メッシュ分
-    lightBuffer_.Create(device, 16);       // 複数ビュー分
-    materialBuffer_.Create(device, 512);   // フレーム内で複数ビュー×複数メッシュ分
+    constantBuffer_.Create(device, kConstantBufferCount);
+    lightBuffer_.Create(device, kLightBufferCount);
+    materialBuffer_.Create(device, kMaterialBufferCount);
     boneBuffer_.Create(device);
-    
-    // スキンメッシュ用ダイナミックバッファ（フレーム内で複数回更新可能）
-    skinnedTransformBuffer_.Create(device, 256);  // 最大256個のスキンメッシュ/フレーム
-    skinnedMaterialBuffer_.Create(device, 256);
+
+    skinnedTransformBuffer_.Create(device, kSkinnedBufferCount);
+    skinnedMaterialBuffer_.Create(device, kSkinnedBufferCount);
     
     // StructuredBuffer for bone matrices (BoneMatrixPair)
     CreateBoneMatrixPairBuffer(device);

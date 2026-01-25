@@ -43,20 +43,6 @@ void NavMeshInputGeometry::AddAABB(const AABB& aabb)
     AddTriangle(topCorners[0], topCorners[2], topCorners[3]);
 }
 
-// HeightField実装
-void HeightField::Clear()
-{
-    for (auto span : spans)
-    {
-        while (span)
-        {
-            auto next = span->next;
-            delete span;
-            span = next;
-        }
-    }
-    spans.clear();
-}
 
 // NavMeshBuilder実装
 std::unique_ptr<NavMeshData> NavMeshBuilder::Build(Scene* scene, const NavMeshConfig& config)
@@ -92,13 +78,12 @@ std::unique_ptr<NavMeshData> NavMeshBuilder::Build(const NavMeshInputGeometry& g
     // スパン数をカウント
     int totalSpans = 0;
     int walkableSpans = 0;
-    for (auto* span : heightField.spans)
+    for (const auto& spanPtr : heightField.spans)
     {
-        while (span)
+        for (auto* span = spanPtr.get(); span; span = span->next.get())
         {
             ++totalSpans;
             if (span->area > 0) ++walkableSpans;
-            span = span->next;
         }
     }
     
@@ -106,22 +91,20 @@ std::unique_ptr<NavMeshData> NavMeshBuilder::Build(const NavMeshInputGeometry& g
              heightField.width, heightField.height, totalSpans, walkableSpans);
     ReportProgress(0.15f, debugBuf);
     
-    // 2. 歩行可能領域のフィルタリング（デバッグ用に一時無効化）
+    // 2. 歩行可能領域のフィルタリング
     ReportProgress(0.2f, "Filtering walkable areas...");
     int walkableHeight = static_cast<int>(std::ceil(config.agentHeight / config.cellHeight));
     int walkableClimb = static_cast<int>(std::floor(config.stepHeight / config.cellHeight));
-    // デバッグ：フィルタリングを一時的にスキップ
-    // FilterWalkableLowHeightSpans(heightField, static_cast<float>(walkableHeight));
-    // FilterLedgeSpans(heightField, static_cast<float>(walkableClimb));
-    
+    FilterWalkableLowHeightSpans(heightField, static_cast<float>(walkableHeight));
+    FilterLedgeSpans(heightField, static_cast<float>(walkableClimb));
+
     // フィルタリング後のスパン数
     walkableSpans = 0;
-    for (auto* span : heightField.spans)
+    for (const auto& spanPtr : heightField.spans)
     {
-        while (span)
+        for (auto* span = spanPtr.get(); span; span = span->next.get())
         {
             if (span->area > 0) ++walkableSpans;
-            span = span->next;
         }
     }
     snprintf(debugBuf, sizeof(debugBuf), "After filter: %d walkable spans (minRegionArea=%.1f)",
@@ -264,7 +247,7 @@ bool NavMeshBuilder::Voxelize(const NavMeshInputGeometry& geometry, const NavMes
     if (outHeightField.width <= 0 || outHeightField.height <= 0)
         return false;
     
-    outHeightField.spans.resize(outHeightField.width * outHeightField.height, nullptr);
+    outHeightField.spans.resize(outHeightField.width * outHeightField.height);
     
     // 三角形をボクセル化
     for (size_t i = 0; i < geometry.indices.size(); i += 3)
@@ -296,13 +279,13 @@ bool NavMeshBuilder::Voxelize(const NavMeshInputGeometry& geometry, const NavMes
             for (int x = x0; x <= x1; ++x)
             {
                 int idx = z * outHeightField.width + x;
-                
-                auto* span = new HeightSpan();
+
+                auto span = std::make_unique<HeightSpan>();
                 span->minY = minYCell;
                 span->maxY = maxYCell;
-                span->area = 1; // 歩行可能
-                span->next = outHeightField.spans[idx];
-                outHeightField.spans[idx] = span;
+                span->area = 1;
+                span->next = std::move(outHeightField.spans[idx]);
+                outHeightField.spans[idx] = std::move(span);
             }
         }
     }
@@ -313,29 +296,22 @@ bool NavMeshBuilder::Voxelize(const NavMeshInputGeometry& geometry, const NavMes
 void NavMeshBuilder::FilterWalkableLowHeightSpans(HeightField& heightField, float walkableHeight)
 {
     int walkableHeightCells = static_cast<int>(walkableHeight);
-    
+
     for (int z = 0; z < heightField.height; ++z)
     {
         for (int x = 0; x < heightField.width; ++x)
         {
             int idx = z * heightField.width + x;
-            HeightSpan* span = heightField.spans[idx];
-            
-            while (span)
+            for (auto* span = heightField.spans[idx].get(); span; span = span->next.get())
             {
-                HeightSpan* next = span->next;
-                
-                // 次のスパンとの間隔が十分あるか確認
-                if (next)
+                if (span->next)
                 {
-                    int gap = next->minY - span->maxY;
+                    int gap = span->next->minY - span->maxY;
                     if (gap < walkableHeightCells)
                     {
-                        span->area = 0; // 歩行不可
+                        span->area = 0;
                     }
                 }
-                
-                span = next;
             }
         }
     }
@@ -344,41 +320,32 @@ void NavMeshBuilder::FilterWalkableLowHeightSpans(HeightField& heightField, floa
 void NavMeshBuilder::FilterLedgeSpans(HeightField& heightField, float walkableClimb)
 {
     int maxClimbCells = static_cast<int>(walkableClimb);
-    int dx[] = {-1, 0, 1, 0};
-    int dz[] = {0, -1, 0, 1};
-    
+    constexpr int dx[] = {-1, 0, 1, 0};
+    constexpr int dz[] = {0, -1, 0, 1};
+
     for (int z = 0; z < heightField.height; ++z)
     {
         for (int x = 0; x < heightField.width; ++x)
         {
             int idx = z * heightField.width + x;
-            HeightSpan* span = heightField.spans[idx];
-            
-            while (span)
+            for (auto* span = heightField.spans[idx].get(); span; span = span->next.get())
             {
                 if (span->area == 0)
-                {
-                    span = span->next;
                     continue;
-                }
-                
-                // 隣接セルとの高さ差をチェック（エッジは許容）
+
                 int invalidNeighbors = 0;
                 for (int dir = 0; dir < 4; ++dir)
                 {
                     int nx = x + dx[dir];
                     int nz = z + dz[dir];
-                    
-                    // グリッド外は単にスキップ（エッジは歩行可能）
+
                     if (nx < 0 || nx >= heightField.width || nz < 0 || nz >= heightField.height)
                         continue;
-                    
+
                     int nidx = nz * heightField.width + nx;
-                    HeightSpan* neighborSpan = heightField.spans[nidx];
-                    
-                    // 隣接スパンで最も近い高さを探す
+
                     bool hasValidNeighbor = false;
-                    while (neighborSpan)
+                    for (auto* neighborSpan = heightField.spans[nidx].get(); neighborSpan; neighborSpan = neighborSpan->next.get())
                     {
                         if (neighborSpan->area != 0)
                         {
@@ -389,23 +356,14 @@ void NavMeshBuilder::FilterLedgeSpans(HeightField& heightField, float walkableCl
                                 break;
                             }
                         }
-                        neighborSpan = neighborSpan->next;
                     }
-                    
+
                     if (!hasValidNeighbor)
-                    {
                         ++invalidNeighbors;
-                    }
                 }
-                
-                // 全ての有効な隣接セルが段差が大きすぎる場合のみ歩行不可
-                // （孤立したセルは歩行不可）
+
                 if (invalidNeighbors >= 4)
-                {
                     span->area = 0;
-                }
-                
-                span = span->next;
             }
         }
     }
@@ -417,12 +375,10 @@ bool NavMeshBuilder::BuildRegions(HeightField& heightField, const NavMeshConfig&
     std::vector<uint32_t> regionIds(heightField.width * heightField.height, 0);
     uint32_t nextRegionId = 1;
     
-    // デバッグ：歩行可能セル数をカウント
     int walkableCellCount = 0;
     for (int i = 0; i < heightField.width * heightField.height; ++i)
     {
-        HeightSpan* span = heightField.spans[i];
-        if (span && span->area > 0)
+        if (heightField.spans[i] && heightField.spans[i]->area > 0)
             ++walkableCellCount;
     }
     char debugBuf[256];
@@ -431,16 +387,16 @@ bool NavMeshBuilder::BuildRegions(HeightField& heightField, const NavMeshConfig&
     OutputDebugStringA(debugBuf);
     OutputDebugStringA("\n");
     
-    int dx[] = {-1, 0, 1, 0};
-    int dz[] = {0, -1, 0, 1};
-    
+    constexpr int dx[] = {-1, 0, 1, 0};
+    constexpr int dz[] = {0, -1, 0, 1};
+
     for (int z = 0; z < heightField.height; ++z)
     {
         for (int x = 0; x < heightField.width; ++x)
         {
             int idx = z * heightField.width + x;
-            HeightSpan* span = heightField.spans[idx];
-            
+            auto* span = heightField.spans[idx].get();
+
             if (!span || span->area == 0 || regionIds[idx] != 0)
                 continue;
             
@@ -463,9 +419,9 @@ bool NavMeshBuilder::BuildRegions(HeightField& heightField, const NavMeshConfig&
             {
                 auto [cx, cz] = queue.front();
                 queue.pop();
-                
+
                 int cidx = cz * heightField.width + cx;
-                HeightSpan* currentSpan = heightField.spans[cidx];
+                auto* currentSpan = heightField.spans[cidx].get();
                 
                 region.cells.push_back({cx, cz});
                 region.minX = std::min(region.minX, cx);
@@ -489,8 +445,8 @@ bool NavMeshBuilder::BuildRegions(HeightField& heightField, const NavMeshConfig&
                     int nidx = nz * heightField.width + nx;
                     if (regionIds[nidx] != 0)
                         continue;
-                    
-                    HeightSpan* neighborSpan = heightField.spans[nidx];
+
+                    auto* neighborSpan = heightField.spans[nidx].get();
                     if (!neighborSpan || neighborSpan->area == 0)
                         continue;
                     

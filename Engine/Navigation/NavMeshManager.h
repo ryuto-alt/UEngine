@@ -45,6 +45,21 @@ struct NavMeshStats
     float buildTimeSeconds = 0.0f;
 };
 
+struct CrowdAgentDebugInfo
+{
+    bool active = false;
+    unsigned char state = 0;
+    bool partial = false;
+    int ncorners = 0;
+    unsigned char targetState = 0;
+    bool targetReplan = false;
+    float targetReplanTime = 0.0f;
+    float desiredSpeed = 0.0f;
+    DirectX::XMFLOAT3 dvel = {0.0f, 0.0f, 0.0f};
+    DirectX::XMFLOAT3 nvel = {0.0f, 0.0f, 0.0f};
+    DirectX::XMFLOAT3 targetPos = {0.0f, 0.0f, 0.0f};
+};
+
 /// Recast/Detour NavMesh Manager
 /// 責務: NavMesh生成・管理・クエリ
 class NavMeshManager
@@ -105,6 +120,7 @@ public:
     [[nodiscard]] DirectX::XMFLOAT3 GetAgentVelocity(int agentIndex) const;
     [[nodiscard]] bool IsAgentActive(int agentIndex) const;
     [[nodiscard]] bool HasAgentReachedTarget(int agentIndex, float tolerance = 0.5f) const;
+    [[nodiscard]] bool GetCrowdAgentDebugInfo(int agentIndex, CrowdAgentDebugInfo& outInfo) const;
     
     /// ランダムなNavMesh上の点を取得（徘徊用）
     [[nodiscard]] bool GetRandomPointOnNavMesh(DirectX::XMFLOAT3& outPoint) const;

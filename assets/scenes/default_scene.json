@@ -87,16 +87,6 @@
                 {
                     "properties": [
                         {
-                            "name": "angularSpeed",
-                            "type": "int",
-                            "value": 720
-                        },
-                        {
-                            "name": "moveSpeed",
-                            "type": "float",
-                            "value": 7.5
-                        },
-                        {
                             "name": "wanderRadius",
                             "type": "int",
                             "value": 15
@@ -107,9 +97,19 @@
                             "value": 0
                         },
                         {
+                            "name": "angularSpeed",
+                            "type": "int",
+                            "value": 720
+                        },
+                        {
                             "name": "waitTime",
                             "type": "int",
                             "value": 0
+                        },
+                        {
+                            "name": "moveSpeed",
+                            "type": "float",
+                            "value": 7.5
                         }
                     ],
                     "scriptPath": "assets/scripts/EnemyWander.lua",
@@ -132,15 +132,15 @@
             "name": "Enemy",
             "transform": {
                 "position": [
-                    1.249497413635254,
+                    4.8393096923828125,
                     0.20000000298023224,
-                    9.256319999694824
+                    8.58478832244873
                 ],
                 "rotation": [
                     0.0,
-                    -0.7881511449813843,
+                    0.6578496694564819,
                     0.0,
-                    0.6154817342758179
+                    0.7531492710113525
                 ],
                 "scale": [
                     0.05000000074505806,
@@ -200,9 +200,9 @@
             "name": "Camera",
             "transform": {
                 "position": [
-                    3.2025275230407715,
+                    -18.10257339477539,
                     1.7999999523162842,
-                    4.081090450286865
+                    4.163290977478027
                 ],
                 "rotation": [
                     0.0,
@@ -1176,9 +1176,9 @@
             "name": "player",
             "transform": {
                 "position": [
-                    3.2025275230407715,
+                    -18.102575302124023,
                     0.0,
-                    4.081090450286865
+                    4.163290977478027
                 ],
                 "rotation": [
                     -0.0,

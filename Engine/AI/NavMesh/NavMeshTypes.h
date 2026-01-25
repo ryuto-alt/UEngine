@@ -5,6 +5,7 @@
 #include <vector>
 #include <cstdint>
 #include <limits>
+#include <memory>
 
 namespace UnoEngine
 {
@@ -63,23 +64,22 @@ struct NavMeshPath
 // ボクセル化用の中間データ
 struct HeightSpan
 {
-    int minY = 0;       // 最小高さ（セル単位）
-    int maxY = 0;       // 最大高さ（セル単位）
-    uint16_t area = 0;  // 領域ID
-    HeightSpan* next = nullptr; // 同じXZ位置の次のスパン
+    int minY = 0;
+    int maxY = 0;
+    uint16_t area = 0;
+    std::unique_ptr<HeightSpan> next;
 };
 
 struct HeightField
 {
-    int width = 0;                     // X方向のセル数
-    int height = 0;                    // Z方向のセル数
-    DirectX::XMFLOAT3 origin{};        // グリッド原点
-    float cellSize = 0.0f;             // セルサイズ (XZ)
-    float cellHeight = 0.0f;           // セル高さ (Y)
-    std::vector<HeightSpan*> spans;    // 各セルのスパンリスト
-    
-    void Clear();
-    ~HeightField() { Clear(); }
+    int width = 0;
+    int height = 0;
+    DirectX::XMFLOAT3 origin{};
+    float cellSize = 0.0f;
+    float cellHeight = 0.0f;
+    std::vector<std::unique_ptr<HeightSpan>> spans;
+
+    void Clear() { spans.clear(); }
 };
 
 // 領域データ

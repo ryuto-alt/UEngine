@@ -156,9 +156,11 @@ private:
     void UpdatePatrol(float deltaTime);
     void UpdateChase(float deltaTime);
     void UpdateRotation(float deltaTime);
+    void UpdateAutoWarnings(float deltaTime);
     void SyncTransformFromCrowd();
     bool CalculatePath();
     DirectX::XMFLOAT3 GetNextWaypoint() const;
+    void AppendNavWarningLine(const std::string& line);
 
     // Movement parameters
     float speed_ = 3.5f;              // 移動速度 (m/s)
@@ -213,6 +215,19 @@ private:
     // Smoothing state
     float smoothedYaw_ = 0.0f;        // スムーズ化されたYaw角度
     bool yawInitialized_ = false;     // 初期Yaw設定済みフラグ
+
+    // Nav warning diagnostics
+    DirectX::XMFLOAT3 prevVelDir_ = {0.0f, 0.0f, 0.0f};
+    bool hasPrevVelDir_ = false;
+    float navWarnTime_ = 0.0f;
+    float navWarnSampleTimer_ = 0.0f;
+    float lastReverseWarnTime_ = -1000.0f;
+    float lastCornerBehindWarnTime_ = -1000.0f;
+    float lastTargetFailedWarnTime_ = -1000.0f;
+    bool navWarnHeaderWritten_ = false;
+    bool navWarnErrorReported_ = false;
+    bool cornerSlowdownActive_ = false;
+    float cornerSlowdownTimer_ = 0.0f;
 
     // Events
     DestinationReachedCallback onDestinationReached_;

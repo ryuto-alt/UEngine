@@ -5,6 +5,7 @@
 #include "../Graphics/DirectionalLightComponent.h"
 #include "../Graphics/Shader.h"
 #include "../Animation/Animator.h"
+#include "../Video/VideoPlayerComponent.h"
 #include <imgui.h>
 #include <Windows.h>
 
@@ -79,6 +80,17 @@ void Renderer::BeginFrame() {
 
 void Renderer::Draw(const RenderView& view, const std::vector<RenderItem>& items, LightManager* lights, Scene* scene) {
     if (!view.camera) return;
+
+    // VideoPlayerComponentのフレームアップロード
+    if (scene) {
+        auto* cmdList = graphics_->GetCommandList();
+        for (const auto& obj : scene->GetGameObjects()) {
+            auto* videoPlayer = obj->GetComponent<VideoPlayerComponent>();
+            if (videoPlayer && videoPlayer->HasPendingFrame()) {
+                videoPlayer->UploadVideoFrame(cmdList);
+            }
+        }
+    }
 
     SetupViewport();
     UpdateLighting(view, lights);

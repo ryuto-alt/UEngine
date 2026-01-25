@@ -12,6 +12,7 @@
 #include "../Navigation/NavMeshManager.h"
 #include "../AI/EnemyDetectionComponent.h"
 #include "../PostProcess/PostProcessType.h"
+#include "../Video/VideoPlayerComponent.h"
 #include <fstream>
 #include <iostream>
 #include <filesystem>
@@ -452,6 +453,14 @@ json SceneSerializer::SerializeComponent(const Component& component) {
         return comp;
     }
 
+    // VideoPlayerComponent
+    if (auto* videoPlayer = dynamic_cast<const VideoPlayerComponent*>(&component)) {
+        comp["type"] = "VideoPlayerComponent";
+        comp["videoPath"] = videoPlayer->GetVideoPath();
+        comp["targetMaterialName"] = videoPlayer->GetTargetMaterialName();
+        return comp;
+    }
+
     // EnemyDetectionComponent
     if (auto* detection = dynamic_cast<const EnemyDetectionComponent*>(&component)) {
         comp["type"] = "EnemyDetectionComponent";
@@ -784,6 +793,16 @@ void SceneSerializer::DeserializeComponent(const json& json, GameObject& gameObj
         }
         if (json.contains("waitTime")) {
             navAgent->SetWaitTime(json["waitTime"].get<float>());
+        }
+    }
+    else if (type == "VideoPlayerComponent") {
+        auto* videoPlayer = gameObject.AddComponent<VideoPlayerComponent>();
+        if (json.contains("videoPath")) {
+            videoPlayer->SetVideoPath(json["videoPath"].get<std::string>());
+        }
+        if (json.contains("targetMaterialName")) {
+            // マテリアル名は保存するが、実際の設定はStart()で行われる
+            // （MeshRendererのロード後でないとマテリアルが存在しない）
         }
     }
     else if (type == "EnemyDetectionComponent") {

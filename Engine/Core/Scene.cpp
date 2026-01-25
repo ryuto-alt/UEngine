@@ -20,6 +20,7 @@
 #include "../Navigation/NavMeshManager.h"
 #include "../AI/EnemyDetectionComponent.h"
 #include "../Navigation/NavAgentComponent.h"
+#include "../Video/VideoPlayerComponent.h"
 #include "../../Game/GameApplication.h"
 #include <algorithm>
 #include <fstream>
@@ -165,6 +166,13 @@ void Scene::LoadSceneFromFile(const std::string& filepath) {
                     Logger::Warning("[シーン] 静的モデル再ロード失敗: {}", modelPath);
                 }
             }
+        }
+
+        // VideoPlayerComponentにGraphicsDeviceを設定
+        auto* videoPlayer = obj->GetComponent<VideoPlayerComponent>();
+        if (videoPlayer) {
+            videoPlayer->SetGraphicsDevice(app->GetGraphicsDevice());
+            Logger::Info("[シーン] VideoPlayerComponentにGraphicsDeviceを設定");
         }
     }
 

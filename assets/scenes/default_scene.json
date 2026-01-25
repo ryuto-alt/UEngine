@@ -1199,6 +1199,11 @@
                 {
                     "modelPath": "assets/model/terebi/terebi.gltf",
                     "type": "MeshRenderer"
+                },
+                {
+                    "type": "VideoPlayerComponent",
+                    "videoPath": "assets/video/horror.mp4",
+                    "targetMaterialName": "Material.002"
                 }
             ],
             "layer": 1,

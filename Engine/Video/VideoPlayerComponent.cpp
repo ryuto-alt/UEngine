@@ -19,6 +19,8 @@ void VideoPlayerComponent::Start() {
         if (!m_targetMaterialName.empty()) {
             SetTargetMaterialByName(m_targetMaterialName);
         }
+        // 自動再生
+        Play();
     }
 }
 

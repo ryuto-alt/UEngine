@@ -10,9 +10,13 @@
 void TitleScene::Initialize() {
     camera_->SetTranslate({0.0f, 0.0f, -10.0f});
 
-    // ホラーエフェクトの初期化
-    horrorEffect_ = std::make_unique<PostProcess>();
-    horrorEffect_->Initialize(dxCommon_, srvManager_);
+    // ノイズエフェクト（1パス目）
+    noiseEffect_ = std::make_unique<PostProcess>();
+    noiseEffect_->Initialize(dxCommon_, srvManager_, PostProcess::EffectType::TitleNoise);
+
+    // ビネットエフェクト（2パス目）
+    vignetteEffect_ = std::make_unique<PostProcess>();
+    vignetteEffect_->Initialize(dxCommon_, srvManager_, PostProcess::EffectType::Horror);
 
     // タイトルスプライトの初期化（通常の色で）
     titleBgSprite_ = std::make_unique<Sprite>();
@@ -173,15 +177,21 @@ void TitleScene::Update() {
     owaruSprite_->Update();
     noiseSprite_->Update();
 
-    // ホラーエフェクトのパラメータ更新
+    // ノイズエフェクトのパラメータ更新
     time_ += 1.0f / 60.0f;
-    horrorEffect_->SetHorrorParams(
+    noiseEffect_->SetTitleNoiseParams(
         time_,
-        0.4f,  // ノイズ強度
-        0.6f,  // 歪み強度
-        0.3f,  // 血エフェクト強度
-        0.9f   // ビネット強度（ブラウン管風の丸み）
+        0.06f,  // grainIntensity
+        0.08f,  // scanlineIntensity
+        400.0f, // scanlineCount
+        0.8f,   // glitchIntensity
+        0.15f,  // glitchFrequency
+        0.01f,  // chromaticStrength
+        0.7f    // vignetteIntensity
     );
+
+    // ビネットエフェクトのパラメータ更新
+    vignetteEffect_->SetHorrorParams(time_, 0.0f, 0.0f, 0.0f, 0.8f);
 
     // マウスクリックで決定
     DIMOUSESTATE mouseState;
@@ -211,23 +221,20 @@ void TitleScene::Update() {
 }
 
 void TitleScene::Draw() {
-    // ホラーエフェクトのレンダーターゲットに描画開始
-    horrorEffect_->PreDraw();
+    // 1パス目: ノイズエフェクトのRTにシーン描画
+    noiseEffect_->PreDraw();
 
-    // スプライト共通描画設定
     spriteCommon_->CommonDraw();
-
-    // 背景だけエフェクトのレンダーターゲットに描画
     titleBgSprite_->Draw();
     titleBg2Sprite_->Draw();
 
-    // 砂嵐エフェクトを最前面に描画
     if (showInitialNoise_ || showRandomNoise_) {
         noiseSprite_->Draw();
     }
 
-    // ホラーエフェクトを適用してバックバッファに描画
-    horrorEffect_->PostDraw();
+    // チェーン: TitleNoise → Horror(ビネット) → Backbuffer
+    noiseEffect_->PostDrawTo(vignetteEffect_.get());
+    vignetteEffect_->PostDraw();
 
     // エフェクト適用後、タイトル文字をバックバッファに直接描画
     spriteCommon_->CommonDraw();
@@ -271,11 +278,15 @@ void TitleScene::Finalize() {
         noiseSprite_.reset();
     }
 
-    // ホラーエフェクトの明示的な解放
-    if (horrorEffect_) {
-        OutputDebugStringA("  Finalizing horrorEffect_\n");
-        horrorEffect_->Finalize();
-        horrorEffect_.reset();
+    if (noiseEffect_) {
+        OutputDebugStringA("  Finalizing noiseEffect_\n");
+        noiseEffect_->Finalize();
+        noiseEffect_.reset();
+    }
+    if (vignetteEffect_) {
+        OutputDebugStringA("  Finalizing vignetteEffect_\n");
+        vignetteEffect_->Finalize();
+        vignetteEffect_.reset();
     }
 
     OutputDebugStringA("TitleScene::Finalize() completed\n");

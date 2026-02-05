@@ -27,23 +27,28 @@ void SceneConfigurator::ApplySceneData(
     std::unique_ptr<LightManager>& lightManager,
     std::unique_ptr<FPSCamera>& fpsCamera,
     std::unique_ptr<PostProcess>& postProcess,
+    std::unique_ptr<PostProcess>& horrorEffect,
     bool& skyboxEnabled,
     float& fisheyeStrength,
     float& fisheyeRadius) {
 
     UnoEngine* engine = UnoEngine::GetInstance();
 
-    // Core初期化
+    // Pass 1: PSXRetro
     postProcess = std::make_unique<PostProcess>();
-    postProcess->Initialize(dxCommon, srvManager);
+    postProcess->Initialize(dxCommon, srvManager, PostProcess::EffectType::PSXRetro);
+
+    // Pass 2: Horror (fisheye + vignette + aberration)
+    horrorEffect = std::make_unique<PostProcess>();
+    horrorEffect->Initialize(dxCommon, srvManager, PostProcess::EffectType::Horror);
+
     dxCommon->SetClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     lightManager = std::make_unique<LightManager>();
     lightManager->Initialize();
 
-    // 各セクションを適用
     ApplyEnvironment(sceneData, skyboxEnabled);
     ApplyCamera(sceneData, camera, fpsCamera);
-    ApplyPostProcess(sceneData, postProcess, fisheyeStrength, fisheyeRadius);
+    ApplyPostProcess(sceneData, postProcess, horrorEffect, fisheyeStrength, fisheyeRadius);
     ApplyPlayer(sceneData, player, camera, engine);
     ApplyEnemy(sceneData, enemy, player.get(), camera);
     ApplyObjects(sceneData, sceneObjects, engine);
@@ -66,14 +71,18 @@ void SceneConfigurator::ApplyCamera(const SceneData& data, Camera* camera, std::
 }
 
 void SceneConfigurator::ApplyPostProcess(const SceneData& data, std::unique_ptr<PostProcess>& postProcess,
+                                        std::unique_ptr<PostProcess>& horrorEffect,
                                         float& fisheyeStrength, float& fisheyeRadius) {
     fisheyeStrength = data.postProcess.fisheyeStrength;
     fisheyeRadius = data.postProcess.fisheyeRadius;
-    postProcess->SetFisheyeStrength(fisheyeStrength);
-    postProcess->SetFisheyeRadius(fisheyeRadius);
 
-    const auto& hp = data.postProcess.horrorParams;
-    postProcess->SetHorrorParams(hp.vignette, hp.aberration, hp.noise, hp.scanlines, hp.distortion);
+    // Horror effect gets fisheye + vignette params
+    if (horrorEffect) {
+        horrorEffect->SetFisheyeStrength(fisheyeStrength);
+        horrorEffect->SetFisheyeRadius(fisheyeRadius);
+        const auto& hp = data.postProcess.horrorParams;
+        horrorEffect->SetHorrorParams(hp.vignette, hp.aberration, hp.noise, hp.scanlines, hp.distortion);
+    }
 }
 
 void SceneConfigurator::ApplyPlayer(const SceneData& data, std::unique_ptr<Player>& player,

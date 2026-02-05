@@ -19,7 +19,7 @@ void GamePlayScene::Initialize() {
 	configurator.ApplySceneData(
 		sceneData_, dxCommon_, srvManager_, camera_,
 		player_, enemy_, sceneObjects_, skybox_, lightManager_,
-		fpsCamera_, postProcess_, skyboxEnabled_,
+		fpsCamera_, postProcess_, horrorEffect_, skyboxEnabled_,
 		fisheyeStrength_, fisheyeRadius_
 	);
 
@@ -128,9 +128,10 @@ void GamePlayScene::Update() {
 	uint32_t currentWidth = dxCommon_->GetCurrentWindowWidth();
 	uint32_t currentHeight = dxCommon_->GetCurrentWindowHeight();
 
-	if (postProcess_ && (previousWidth != currentWidth || previousHeight != currentHeight)) {
-		if (previousWidth != 0 && previousHeight != 0) {  // 初回は除外
-			postProcess_->ResizeRenderTarget();
+	if (previousWidth != currentWidth || previousHeight != currentHeight) {
+		if (previousWidth != 0 && previousHeight != 0) {
+			if (postProcess_) postProcess_->ResizeRenderTarget();
+			if (horrorEffect_) horrorEffect_->ResizeRenderTarget();
 		}
 		previousWidth = currentWidth;
 		previousHeight = currentHeight;
@@ -267,9 +268,9 @@ void GamePlayScene::Update() {
 #endif
 
 	// 魚眼強度と範囲を適用
-	if (postProcess_) {
-		postProcess_->SetFisheyeStrength(fisheyeStrength_);
-		postProcess_->SetFisheyeRadius(fisheyeRadius_);
+	if (horrorEffect_) {
+		horrorEffect_->SetFisheyeStrength(fisheyeStrength_);
+		horrorEffect_->SetFisheyeRadius(fisheyeRadius_);
 	}
 
 	player_->HandleInput(engine);
@@ -501,67 +502,49 @@ void GamePlayScene::Update() {
 		}
 
 		// 追跡モード時の距離に応じたビネット効果とカメラ振動
-		if (enemy_->IsChasing() && player_ && postProcess_) {
+		if (enemy_->IsChasing() && player_) {
 			Vector3 playerPos = player_->GetPosition();
 			Vector3 enemyPos = enemy_->GetPosition();
 
-			// プレイヤーとEnemyの距離を計算
 			float dx = enemyPos.x - playerPos.x;
 			float dy = enemyPos.y - playerPos.y;
 			float dz = enemyPos.z - playerPos.z;
 			float distance = sqrtf(dx * dx + dy * dy + dz * dz);
 
-			// 距離に応じてビネット強度を計算（近いほど強く）
-			const float MIN_DISTANCE = 3.0f;   // この距離で最大効果
-			const float MAX_DISTANCE = 15.0f;  // この距離で効果なし
+			const float MIN_DISTANCE = 3.0f;
+			const float MAX_DISTANCE = 15.0f;
 
-			float vignetteIntensity = 0.0f;
 			float fearShakeIntensity = 0.0f;
 
 			if (distance < MAX_DISTANCE) {
-				// 距離を0.0～1.0の範囲に正規化（近いほど1.0）
 				float normalizedDistance = 1.0f - ((distance - MIN_DISTANCE) / (MAX_DISTANCE - MIN_DISTANCE));
 				normalizedDistance = (std::max)(0.0f, (std::min)(1.0f, normalizedDistance));
+				fearShakeIntensity = normalizedDistance;
 
-				// 黒いビネット効果を適用
-				vignetteIntensity = normalizedDistance * 0.8f;  // 黒いビネット
-
-				// カメラ振動の強度を設定
-				fearShakeIntensity = normalizedDistance;  // 0.0～1.0
-
-				// ポストエフェクトに設定
-				static float time = 0.0f;
-				time += deltaTime;
-				postProcess_->SetHorrorParams(time, 0.0f, 0.0f, 0.0f, vignetteIntensity);
+				if (horrorEffect_) {
+					static float time = 0.0f;
+					time += deltaTime;
+					horrorEffect_->SetHorrorParams(time, 0.0f, 0.0f, 0.0f, normalizedDistance * 0.8f);
+				}
 			}
 			else {
-				// 距離が遠い時はエフェクトをリセット
-				static float time = 0.0f;
-				time += deltaTime;
-				postProcess_->SetHorrorParams(time, 0.0f, 0.0f, 0.0f, 0.0f);
-				fearShakeIntensity = 0.0f;
+				if (horrorEffect_) {
+					static float time = 0.0f;
+					time += deltaTime;
+					horrorEffect_->SetHorrorParams(time, 0.0f, 0.0f, 0.0f, 0.0f);
+				}
 			}
 
-			// FPSカメラに恐怖シェイクの強度を設定（無効化）
-			// if (fpsCamera_) {
-			//     fpsCamera_->SetFearShakeIntensity(fearShakeIntensity);
-			// }
-
-			// ライトマネージャーに恐怖点滅の強度を設定
 			if (lightManager_) {
 				lightManager_->SetFearFlickerIntensity(fearShakeIntensity);
 			}
 		}
 		else {
-			// 追跡していない時はエフェクトをリセット
-			if (postProcess_) {
+			if (horrorEffect_) {
 				static float time = 0.0f;
 				time += deltaTime;
-				postProcess_->SetHorrorParams(time, 0.0f, 0.0f, 0.0f, 0.0f);
+				horrorEffect_->SetHorrorParams(time, 0.0f, 0.0f, 0.0f, 0.0f);
 			}
-			// if (fpsCamera_) {
-			//     fpsCamera_->SetFearShakeIntensity(0.0f);
-			// }
 			if (lightManager_) {
 				lightManager_->SetFearFlickerIntensity(0.0f);
 			}
@@ -699,8 +682,11 @@ void GamePlayScene::Draw() {
 		}
 	}
 
-	// ポストプロセスを適用して画面に描画
-	if (postProcess_) {
+	// チェーン: PSXRetro → Horror(魚眼+ビネット) → Backbuffer
+	if (postProcess_ && horrorEffect_) {
+		postProcess_->PostDrawTo(horrorEffect_.get());
+		horrorEffect_->PostDraw();
+	} else if (postProcess_) {
 		postProcess_->PostDraw();
 	}
 
@@ -1022,6 +1008,7 @@ void GamePlayScene::Finalize() {
 	lightManager_.reset();
 	fpsCamera_.reset();
 	postProcess_.reset();
+	horrorEffect_.reset();
 	fadeSprite_.reset();
 	minimap_.reset();
 }

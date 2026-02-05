@@ -141,7 +141,7 @@ private:
 
 	// Player tracking
 	Player* player_{nullptr};
-	float moveSpeed_{8.0f};  // 1秒あたり8ユニット（60FPSで約0.133/frame）
+	float moveSpeed_{8.0f};
 	float patrolMoveSpeed_{4.5f};  // 徘徊時の移動速度（EnemyAIConfigから設定）
 	float searchMoveSpeed_{5.5f};  // 捜索時の移動速度（音検知後）
 	bool isChasing_{false};
@@ -154,12 +154,12 @@ private:
 	const float SOUND_REACTION_TIME = 0.5f;  // 音に反応する時間閾値
 
 	// Vision-based detection
-	const float VISION_RANGE = 30.0f;  // 視界範囲30m
-	const float VISION_ANGLE = 90.0f;  // 視野角±90度（合計180度）
-	const float VISION_DETECTION_DISTANCE = 20.0f;  // 視界検知距離20m
-	const float PROXIMITY_DETECTION_DISTANCE = 5.0f; // 近接検知: 方向無関係で即検知
-	const float CHASE_RELEASE_DISTANCE = 25.0f;  // 追跡解除距離25m（より遠くまで追跡）
-	const float LOST_SIGHT_GRACE_PERIOD = 10.0f;  // 視界を失ってから追跡を続ける時間（10秒に延長）
+	const float VISION_RANGE = 27.0f;
+	const float VISION_ANGLE = 90.0f;
+	const float VISION_DETECTION_DISTANCE = 18.0f;
+	const float PROXIMITY_DETECTION_DISTANCE = 5.0f;
+	const float CHASE_RELEASE_DISTANCE = 25.0f;
+	const float LOST_SIGHT_GRACE_PERIOD = 7.0f;
 
 	// Chase persistence
 	Vector3 lastSeenPlayerPosition_{0, 0, 0};  // 最後に見たプレイヤーの位置

@@ -21,7 +21,8 @@ private:
     std::unique_ptr<Sprite> hazimeruSprite_;
     std::unique_ptr<Sprite> owaruSprite_;
     std::unique_ptr<Sprite> noiseSprite_;  // 砂嵐スプライト
-    std::unique_ptr<PostProcess> horrorEffect_;
+    std::unique_ptr<PostProcess> noiseEffect_;
+    std::unique_ptr<PostProcess> vignetteEffect_;
     float time_ = 0.0f;
 
     // メニュー選択

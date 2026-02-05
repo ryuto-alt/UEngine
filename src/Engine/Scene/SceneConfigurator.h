@@ -38,6 +38,7 @@ public:
         std::unique_ptr<LightManager>& lightManager,
         std::unique_ptr<FPSCamera>& fpsCamera,
         std::unique_ptr<PostProcess>& postProcess,
+        std::unique_ptr<PostProcess>& horrorEffect,
         bool& skyboxEnabled,
         float& fisheyeStrength,
         float& fisheyeRadius
@@ -47,6 +48,7 @@ private:
     void ApplyEnvironment(const SceneData& data, bool& skyboxEnabled);
     void ApplyCamera(const SceneData& data, Camera* camera, std::unique_ptr<FPSCamera>& fpsCamera);
     void ApplyPostProcess(const SceneData& data, std::unique_ptr<PostProcess>& postProcess,
+                         std::unique_ptr<PostProcess>& horrorEffect,
                          float& fisheyeStrength, float& fisheyeRadius);
     void ApplyPlayer(const SceneData& data, std::unique_ptr<Player>& player, Camera* camera, UnoEngine* engine);
     void ApplyEnemy(const SceneData& data, std::unique_ptr<Enemy>& enemy, Player* player, Camera* camera);

@@ -1454,14 +1454,42 @@ bool Enemy::IsPlayerInVision() {
 	};
 	float distanceToPlayer = std::sqrt(toPlayer.x * toPlayer.x + toPlayer.z * toPlayer.z);
 
-	// 視界検知距離外なら検知しない（15m以内のみ検知）
+	// 近接検知: 5m以内は方向無関係で即検知（気配・足音で気づく）
+	if (distanceToPlayer <= PROXIMITY_DETECTION_DISTANCE) {
+		if (navMesh_ && navMesh_->IsValid()) {
+			Vector3 enemyEyePos = {position_.x, position_.y + 1.5f, position_.z};
+			Vector3 playerEyePos = {playerPos.x, playerPos.y + 1.5f, playerPos.z};
+
+			// メインRay + 左右にずらした補助Ray（角付近の誤判定対策）
+			if (navMesh_->Raycast(enemyEyePos, playerEyePos)) {
+				return true;
+			}
+			// 横に0.5fずらしてリトライ
+			Vector3 offsetRight = {toPlayer.z, 0.0f, -toPlayer.x};
+			float len = std::sqrt(offsetRight.x * offsetRight.x + offsetRight.z * offsetRight.z);
+			if (len > 0.01f) {
+				float invLen = 0.5f / len;
+				offsetRight.x *= invLen;
+				offsetRight.z *= invLen;
+
+				Vector3 eyeL = {enemyEyePos.x - offsetRight.x, enemyEyePos.y, enemyEyePos.z - offsetRight.z};
+				Vector3 eyeR = {enemyEyePos.x + offsetRight.x, enemyEyePos.y, enemyEyePos.z + offsetRight.z};
+				if (navMesh_->Raycast(eyeL, playerEyePos) || navMesh_->Raycast(eyeR, playerEyePos)) {
+					return true;
+				}
+			}
+			return false;
+		}
+		return true;
+	}
+
+	// 視界検知距離外なら検知しない（20m以内のみ検知）
 	if (distanceToPlayer > VISION_DETECTION_DISTANCE) {
 		return false;
 	}
 
 	// プレイヤーへの方向ベクトルを正規化
 	if (distanceToPlayer < 0.01f) {
-		// 距離が極端に小さい場合は常に視界内とする
 		return true;
 	}
 
@@ -1501,8 +1529,22 @@ bool Enemy::IsPlayerInVision() {
 		Vector3 playerEyePos = {playerPos.x, playerPos.y + 1.5f, playerPos.z};
 
 		if (!navMesh_->Raycast(enemyEyePos, playerEyePos)) {
-			// レイキャストが遮られた = 壁がある
-			return false;
+			// 補助Ray: 左右にずらして角付近の誤判定をリカバリ
+			Vector3 offsetRight = {toPlayer.z, 0.0f, -toPlayer.x};
+			float len = std::sqrt(offsetRight.x * offsetRight.x + offsetRight.z * offsetRight.z);
+			if (len > 0.01f) {
+				float invLen = 0.5f / len;
+				offsetRight.x *= invLen;
+				offsetRight.z *= invLen;
+
+				Vector3 eyeL = {enemyEyePos.x - offsetRight.x, enemyEyePos.y, enemyEyePos.z - offsetRight.z};
+				Vector3 eyeR = {enemyEyePos.x + offsetRight.x, enemyEyePos.y, enemyEyePos.z + offsetRight.z};
+				if (!navMesh_->Raycast(eyeL, playerEyePos) && !navMesh_->Raycast(eyeR, playerEyePos)) {
+					return false;
+				}
+			} else {
+				return false;
+			}
 		}
 	}
 

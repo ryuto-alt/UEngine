@@ -6,6 +6,7 @@
 #include <cmath>
 #include <algorithm>
 #include <filesystem>
+#include "Collision/AABBCollision.h"
 
 void GamePlayScene::Initialize() {
 	if (!dxCommon_ || !srvManager_ || !camera_) {
@@ -320,21 +321,45 @@ void GamePlayScene::Update() {
 		enemy_->SetSpotLight(const_cast<SpotLight*>(&spotLight));
 		enemy_->Update(UnoEngine::GetInstance());
 
-		// プレイヤーとの距離をチェック（ジャンプスケア判定）
+		// プレイヤーとの衝突チェック（ジャンプスケア判定）
 		if (player_ && !isGameOver_ && !enemy_->IsJumpscaring()) {
-			Vector3 playerPos = player_->GetPosition();
-			Vector3 enemyPos = enemy_->GetPosition();
+			bool shouldTriggerJumpscare = false;
 
-			// プレイヤーとEnemyの距離を計算
-			float dx = enemyPos.x - playerPos.x;
-			float dy = enemyPos.y - playerPos.y;
-			float dz = enemyPos.z - playerPos.z;
-			float distance = sqrtf(dx * dx + dy * dy + dz * dz);
+			// Primary: AABB重なり判定（見た目通りの当たり判定）
+			auto* collisionManager = Collision::AABBCollisionManager::GetInstance();
+			if (collisionManager) {
+				auto playerCol = collisionManager->FindCollisionObject(player_->GetObject());
+				auto enemyCol = collisionManager->FindCollisionObject(enemy_->GetObject());
 
-			// 距離が5m未満ならジャンプスケア開始
-			if (distance < GAMEOVER_DISTANCE) {
+				if (playerCol && enemyCol && playerCol->IsEnabled() && enemyCol->IsEnabled()) {
+					playerCol->Update();
+					enemyCol->Update();
+
+					// AABBを各方向0.5f縮小して判定を厳しくする
+					constexpr float shrink = 0.2f;
+					Collision::AABB enemyBox = enemyCol->GetWorldAABB();
+					enemyBox.min.x += shrink; enemyBox.min.z += shrink;
+					enemyBox.max.x -= shrink; enemyBox.max.z -= shrink;
+
+					shouldTriggerJumpscare = Collision::CheckAABBCollision(
+						playerCol->GetWorldAABB(),
+						enemyBox
+					);
+				}
+			}
+
+			// Fallback: XZ平面距離チェック（Y成分を除外してすり抜け防止）
+			if (!shouldTriggerJumpscare) {
+				Vector3 playerPos = player_->GetPosition();
+				Vector3 enemyPos = enemy_->GetPosition();
+				float dx = enemyPos.x - playerPos.x;
+				float dz = enemyPos.z - playerPos.z;
+				float distanceXZ = sqrtf(dx * dx + dz * dz);
+				shouldTriggerJumpscare = distanceXZ < GAMEOVER_DISTANCE;
+			}
+
+			if (shouldTriggerJumpscare) {
 				enemy_->StartJumpscare();
-				// プレイヤーを動けなくする
 				player_->SetJumpscareMode(true);
 				jumpscareStarted_ = true;
 				OutputDebugStringA("Jumpscare started! Player movement disabled.\n");

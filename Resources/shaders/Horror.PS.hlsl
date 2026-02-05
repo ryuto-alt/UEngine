@@ -1,0 +1,163 @@
+// Horror Effect Pixel Shader
+// Combines VHS static noise, chromatic aberration, screen distortion, and blood effect
+
+struct VertexShaderOutput
+{
+    float32_t4 position : SV_POSITION;
+    float32_t2 texcoord : TEXCOORD0;
+};
+
+// Constant Buffer for animation parameters
+cbuffer HorrorParams : register(b0)
+{
+    float32_t time;            // 経過時間
+    float32_t noiseIntensity;  // ノイズの強度 (0.0 - 1.0)
+    float32_t distortionAmount;// 歪みの強度 (0.0 - 1.0)
+    float32_t bloodAmount;     // 血のエフェクトの強度 (0.0 - 1.0)
+    float32_t vignetteIntensity; // ビネットの強度 (0.0 - 1.0)
+    float32_t fisheyeStrength; // 魚眼レンズの強度 (0.0 - 1.0)
+    float32_t fisheyeRadius;   // 魚眼レンズの範囲 (0.0 - 3.0)
+    float32_t padding;         // パディング
+};
+
+// RenderTextureをサンプリングするためのテクスチャとサンプラー
+Texture2D<float32_t4> gTexture : register(t0);
+SamplerState gSampler : register(s0);
+
+struct PixelShaderOutput
+{
+    float32_t4 color : SV_TARGET0;
+};
+
+// 擬似乱数生成
+float rand(float32_t2 co)
+{
+    return frac(sin(dot(co.xy, float32_t2(12.9898, 78.233))) * 43758.5453);
+}
+
+// VHS風の垂直バー歪み
+float verticalBar(float pos, float uvY, float offset)
+{
+    float range = 0.05;
+    float edge0 = (pos - range);
+    float edge1 = (pos + range);
+    
+    float x = smoothstep(edge0, pos, uvY) * offset;
+    x -= smoothstep(pos, edge1, uvY) * offset;
+    return x;
+}
+
+// 色収差効果
+float32_t3 chromaticAberration(float32_t2 uv, float amount)
+{
+    float32_t2 center = float32_t2(0.5, 0.5);
+    float32_t2 direction = uv - center;
+    
+    float32_t r = gTexture.Sample(gSampler, uv + direction * amount * 0.009).r;
+    float32_t g = gTexture.Sample(gSampler, uv + direction * amount * 0.006).g;
+    float32_t b = gTexture.Sample(gSampler, uv - direction * amount * 0.006).b;
+    
+    return float32_t3(r, g, b);
+}
+
+// ビネット効果（画面の四隅を暗くする - ブラウン管風）
+float32_t3 vignetteEffect(float32_t2 uv, float32_t3 color, float intensity)
+{
+    // 画面の中心からの距離を計算
+    float32_t2 center = float32_t2(0.5, 0.5);
+    float dist = distance(uv, center);
+
+    // ビネット効果（ブラウン管のような丸みを帯びた暗さ）
+    float vignette = 1.0 - smoothstep(0.2, 0.85, dist);
+    vignette = pow(vignette, 2.2);
+
+    // ビネットを適用（暗くする）
+    float32_t3 result = color * (1.0 - (1.0 - vignette) * intensity);
+
+    return result;
+}
+
+// 血のエフェクト（画面の端に赤い染み）
+float32_t3 bloodEffect(float32_t2 uv, float32_t3 color, float amount)
+{
+    // 画面の端からの距離を計算
+    float32_t2 center = float32_t2(0.5, 0.5);
+    float dist = distance(uv, center);
+
+    // ビネット効果を強化して血のような赤い染みを作る
+    float vignette = 1.0 - smoothstep(0.2, 0.8, dist);
+    vignette = pow(vignette, 2.0);
+
+    // 血の色（暗い赤）
+    float32_t3 bloodColor = float32_t3(0.3, 0.0, 0.0);
+
+    // 血のテクスチャ風のノイズを追加
+    float bloodNoise = rand(uv * 10.0 + time * 0.1);
+    bloodNoise = smoothstep(0.7, 0.9, bloodNoise);
+
+    // 最終的な血のエフェクトを適用
+    float32_t3 result = lerp(color, bloodColor, vignette * amount * (0.7 + bloodNoise * 0.3));
+
+    return result;
+}
+
+PixelShaderOutput main(VertexShaderOutput input)
+{
+    PixelShaderOutput output;
+    float32_t2 uv = input.texcoord;
+
+    // 魚眼レンズエフェクト（
+    // 魚眼レンズの実装: 半球面への投影
+    if (fisheyeStrength > 0.0)
+    {
+        // UV座標を-1～1の範囲に変換（中心を原点に）
+        float32_t2 xy = (uv - 0.5) * 2.0;
+
+        // 中心からの距離
+        float d = length(xy);
+
+        // 魚眼レンズの開口角（視野角）を計算
+        // fisheyeStrengthが大きいほど広角になる
+        // 強度が1.0を超える場合も対応
+        float aperture = 150.0 + fisheyeStrength * 28.0;  // 150度から始まり、強度に応じて増加
+        aperture = min(aperture, 179.9);  // 最大179.9度に制限
+        float apertureHalf = 0.5 * aperture * (3.14159265 / 180.0);
+        float maxFactor = sin(apertureHalf);
+
+        // 魚眼レンズの有効範囲
+        // 歪みを適用する範囲内かチェック
+        if (d < fisheyeRadius)
+        {
+            // 半球面への投影を計算
+            float scaledD = d * maxFactor / fisheyeRadius;
+            scaledD = min(scaledD, 0.99); // sqrtの範囲エラー防止
+            float z = sqrt(1.0 - scaledD * scaledD);
+            float r = atan2(scaledD, z) / 3.14159265;
+            float phi = atan2(xy.y, xy.x);
+
+            // 極座標から直交座標に戻す
+            uv.x = r * cos(phi) * (fisheyeRadius / maxFactor) + 0.5;
+            uv.y = r * sin(phi) * (fisheyeRadius / maxFactor) + 0.5;
+        }
+       
+    }
+
+    // 色収差効果を適用
+    float aberrationAmount = 1.0 + distortionAmount * 2.0;
+    float32_t3 color = chromaticAberration(uv, aberrationAmount);
+    
+    // 血のエフェクトを適用
+    color = bloodEffect(input.texcoord, color, bloodAmount);
+
+    // ビネット効果を適用（緊張感を高める）
+    color = vignetteEffect(input.texcoord, color, vignetteIntensity);
+
+    // 全体的に暗くして恐怖感を演出
+    color = color * (0.8 - bloodAmount * 0.3);
+    
+    // コントラストを上げる
+    color = saturate((color - 0.5) * (1.0 + distortionAmount * 0.5) + 0.5);
+    
+    output.color = float32_t4(color, 1.0);
+    return output;
+}

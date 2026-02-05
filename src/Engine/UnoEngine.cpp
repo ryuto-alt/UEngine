@@ -1,0 +1,954 @@
+#include "UnoEngine.h"
+#include "AABBCollision.h" // AABBコリジョンシステム
+#include "InstancedRenderer.h"
+#include "GameObject/Enemy.h"
+#include "GameObject/EnemyAIConfig.h"
+#include <cassert>
+#include <algorithm>
+#include <cctype>
+#define _USE_MATH_DEFINES
+#include <cmath>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+// ========================================
+// 静的メンバ変数の実体化
+// ========================================
+UnoEngine* UnoEngine::instance_ = nullptr;
+
+// ========================================
+// 🧩 基本機能
+// ========================================
+
+// シングルトンインスタンスを取得
+UnoEngine* UnoEngine::GetInstance() {
+    if (!instance_) {
+        instance_ = new UnoEngine();
+    }
+    return instance_;
+}
+
+// シングルトンインスタンスを破棄
+void UnoEngine::DestroyInst() {
+    if (instance_) {
+        instance_->Finalize();
+        delete instance_;
+        instance_ = nullptr;
+    }
+}
+
+// 初期化
+void UnoEngine::Initialize() {
+    try {
+        // WinAppの初期化
+        winApp_ = std::make_unique<WinApp>();
+        winApp_->Initialize();
+
+        // DirectXCommonの初期化
+        dxCommon_ = std::make_unique<DirectXCommon>();
+        dxCommon_->Initialize(winApp_.get());
+
+        // SRVマネージャの初期化
+        srvManager_ = std::make_unique<SrvManager>();
+        srvManager_->Initialize(dxCommon_.get());
+
+        // ここで明示的にPreDrawを呼び出し、ディスクリプタヒープを設定
+        // srvManager_->PreDraw();  // 描画時に呼ぶので初期化では不要
+
+        // テクスチャマネージャの初期化
+        TextureManager::GetInstance()->Initialize(dxCommon_.get(), srvManager_.get());
+
+        // デフォルトテクスチャの事前読み込み
+        // TextureManager::GetInstance()->LoadDefaultTexture();
+
+        // ImGuiの初期化
+        InitializeImGui();
+
+        // 入力初期化
+        input_ = std::make_unique<Input>();
+        input_->Initialize(winApp_.get());
+
+        // オーディオマネージャの初期化
+        AudioManager::GetInstance()->Initialize();
+
+        // スプライト共通部分の初期化
+        spriteCommon_ = std::make_unique<SpriteCommon>();
+        spriteCommon_->Initialize(dxCommon_.get());
+
+        // カメラの作成と初期化
+        camera_ = std::make_unique<Camera>();
+        camera_->SetTranslate({ 0.0f, 0.0f, -5.0f });
+        // ウィンドウハンドルを設定（エンジンレベルで自動設定）
+        camera_->SetWindowHandle(winApp_->GetHwnd());
+        // Object3dCommonは存在しないためコメントアウト
+        // Object3dCommon::SetDefaultCamera(camera_.get());
+
+        // パーティクルマネージャの初期化
+        ParticleManager::GetInstance()->Initialize(dxCommon_.get(), srvManager_.get());
+
+        // 基本的なパーティクルグループの作成（必要になったら作成）
+        // ParticleManager::GetInstance()->CreateParticleGroup("smoke", "Resources/particle/smoke.png");
+
+        // 3Dパーティクルマネージャの初期化
+        Particle3DManager::GetInstance()->Initialize(dxCommon_.get(), srvManager_.get(), spriteCommon_.get());
+
+        // 3Dエフェクトマネージャの初期化
+        EffectManager3D::GetInstance()->Initialize();
+
+        // AABBコリジョンマネージャの初期化
+        Collision::AABBCollisionManager::Create();
+
+        // 3D空間オーディオリスナーの初期化
+        audioListener_ = std::make_unique<SpatialAudioListener>();
+        audioListener_->SetPosition(Vector3{0.0f, 0.0f, 0.0f});
+
+        // シーンマネージャーの取得と初期化
+        SceneManager* sceneManager = SceneManager::GetInstance();
+        sceneManager->SetDirectXCommon(dxCommon_.get());
+        sceneManager->SetInput(input_.get());
+        sceneManager->SetSpriteCommon(spriteCommon_.get());
+        sceneManager->SetSrvManager(srvManager_.get());
+        sceneManager->SetCamera(camera_.get());
+        sceneManager->SetWinApp(winApp_.get());
+
+        // ポストプロセスの初期化
+        postProcess_ = std::make_unique<PostProcess>();
+        postProcess_->Initialize(dxCommon_.get(), srvManager_.get());
+
+        // ライトマネージャーの初期化
+        lightManager_ = std::make_unique<LightManager>();
+        lightManager_->Initialize();
+
+        // 初期化時のGPU同期を実行（削除）
+        // dxCommon_->CommandKick();
+
+    }
+    catch (const std::exception&) {
+        // エラーは無視
+    }
+}
+
+// 更新
+void UnoEngine::Update() {
+    try {
+        // Windowsのメッセージ処理
+        if (winApp_->ProcessMessage()) {
+            endRequest_ = true;
+            return;
+        }
+
+        // 終了リクエストがある場合は更新処理をスキップ
+        if (endRequest_) {
+            return;
+        }
+
+        // 入力更新
+        input_->Update();
+
+        // F11キーでフルスクリーン切り替え
+        if (input_->TriggerKey(DIK_F11)) {
+            winApp_->ToggleFullscreen();
+            // ウィンドウサイズが変わったのでバッファをリサイズ
+            uint32_t width = winApp_->GetCurrentWindowWidth();
+            uint32_t height = winApp_->GetCurrentWindowHeight();
+            dxCommon_->ResizeBuffers(width, height);
+            // マウス入力のウィンドウ中心座標も更新
+            input_->UpdateWindowCenter();
+            // カメラのアスペクト比も更新
+            if (camera_ && height > 0) {
+                float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+                camera_->SetAspectRatio(aspectRatio);
+            }
+        }
+
+        // SRVヒープを描画前に明示的に設定
+        if (srvManager_) {
+            srvManager_->PreDraw();
+        }
+
+        // カメラの更新
+        camera_->Update();
+
+        // パーティクルマネージャーの更新
+        ParticleManager::GetInstance()->Update(camera_.get());
+
+        // 3Dパーティクルマネージャの更新
+        Particle3DManager::GetInstance()->Update(camera_.get());
+
+        // 3Dエフェクトマネージャの更新
+        EffectManager3D::GetInstance()->Update();
+
+        // AABBコリジョンマネージャの更新
+        if (Collision::AABBCollisionManager::GetInstance()) {
+            Collision::AABBCollisionManager::GetInstance()->Update();
+        }
+
+        // 3D空間オーディオの更新
+        UpdateSAud();
+
+        // シーンマネージャーの更新
+        SceneManager::GetInstance()->Update();
+
+        // SceneManagerからの終了リクエストをチェック
+        if (SceneManager::GetInstance()->ShouldExit()) {
+            endRequest_ = true;
+            return;
+        }
+    }
+    catch (const std::exception&) {
+        // エラーは無視
+    }
+}
+
+// 描画
+void UnoEngine::Draw() {
+    try {
+        // DirectXの描画準備
+        dxCommon_->Begin();
+
+        // SRVヒープを描画前に明示的に設定
+        if (srvManager_) {
+            srvManager_->PreDraw();
+        }
+
+        // シーンマネージャーの描画
+        SceneManager::GetInstance()->Draw();
+
+        // パーティクルの描画
+        ParticleManager::GetInstance()->Draw();
+
+        // 3Dパーティクルの描画
+        Particle3DManager::GetInstance()->Draw(camera_.get());
+
+        // ImGuiの準備と描画
+        ImGui::Render();
+        ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon_->GetCommandList());
+
+        // 描画終了
+        dxCommon_->End();
+    }
+    catch (const std::exception&) {
+        // エラーは無視
+    }
+}
+
+// 終了処理
+void UnoEngine::Finalize() {
+    // 既に終了処理済みの場合は何もしない
+    if (finalized_) {
+        return;
+    }
+    finalized_ = true;
+    
+    try {
+        // 3D空間オーディオの解放（最初に）
+        spatialAudioSources_.clear();
+        audioListener_.reset();
+
+        // シーンマネージャーの終了処理（オブジェクトやスプライトを解放）
+        SceneManager::GetInstance()->Finalize();
+
+        // エフェクトマネージャの終了処理
+        EffectManager3D::GetInstance()->Finalize();
+
+        // AABBコリジョンマネージャの終了処理
+        Collision::AABBCollisionManager::Destroy();
+
+        // パーティクルマネージャーの終了処理（シーンの直後に強制解放）
+        ParticleManager::Finalize();
+
+        // 3Dパーティクルマネージャの終了処理（シーンの直後に強制解放）
+        Particle3DManager::Finalize();
+
+        // カメラの解放（シーンの後）
+        camera_.reset();
+
+        // ImGuiの解放（DirectX12リソースを使用しているため早めに）
+        ImGui_ImplDX12_Shutdown();
+        ImGui_ImplWin32_Shutdown();
+        ImGui::DestroyContext();
+
+        // テクスチャマネージャの解放（シングルトンを強制破棄）
+        TextureManager::GetInstance()->Finalize();
+
+        // オーディオマネージャの解放（シングルトンを強制破棄）
+        AudioManager::DestroyInstance();
+
+        // 古い衝突判定マネージャの終了処理は削除
+
+        // スプライト共通部分の解放
+        spriteCommon_.reset();
+
+        // SRVマネージャの解放（DirectX12リソースを解放）
+        srvManager_.reset();
+
+        // 入力の解放
+        input_.reset();
+
+        // DirectXCommonの解放（最後にDirectX12デバイスを解放）
+        dxCommon_.reset();
+
+        // ウィンドウアプリの解放
+        winApp_.reset();
+
+    }
+    catch (const std::exception&) {
+        // エラーは無視
+    }
+}
+
+// ゲームループ実行
+void UnoEngine::Run() {
+    // ゲームループ
+    while (!IsEnding()) {
+        // StepTimerを使用してフレーム更新
+        timer_.Tick([&]() {
+            // ImGuiの新しいフレーム
+            ImGui_ImplDX12_NewFrame();
+            ImGui_ImplWin32_NewFrame();
+            ImGui::NewFrame();
+
+            // 更新
+            Update();
+
+            // 描画
+            Draw();
+        });
+    }
+}
+
+// ========================================
+// 🔊 オーディオシステム
+// ========================================
+
+// オーディオファイルを読み込む（WAV/MP3対応）
+bool UnoEngine::LoadAudio(const std::string& name, const std::string& filePath) {
+    auto* audioManager = AudioManager::GetInstance();
+    
+    // ファイル拡張子を確認して適切な読み込み関数を選択
+    std::string extension = filePath.substr(filePath.find_last_of(".") + 1);
+    std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+    
+    if (extension == "wav") {
+        return audioManager->LoadWAV(name, filePath);
+    } else if (extension == "mp3") {
+        return audioManager->LoadMP3(name, filePath);
+    }
+    
+    OutputDebugStringA(("警告: サポートされていないオーディオ形式です: " + filePath + "\n").c_str());
+    return false;
+}
+
+// オーディオを再生
+void UnoEngine::PlayAudio(const std::string& name, bool loop, float volume) {
+    AudioManager::GetInstance()->Play(name, loop);
+    if (volume != 1.0f) {
+        AudioManager::GetInstance()->SetVolume(name, volume);
+    }
+}
+
+// オーディオを停止
+void UnoEngine::StopAudio(const std::string& name) {
+    AudioManager::GetInstance()->Stop(name);
+}
+
+// オーディオの音量を設定
+void UnoEngine::SetAudVol(const std::string& name, float volume) {
+    AudioManager::GetInstance()->SetVolume(name, volume);
+}
+
+// オーディオが再生中かチェック
+bool UnoEngine::IsAudPlay(const std::string& name) {
+    return AudioManager::GetInstance()->IsPlaying(name);
+}
+
+// ========================================
+// 💨 パーティクル・オブジェクト生成
+// ========================================
+
+// パーティクルグループを作成
+bool UnoEngine::CreatePart(const std::string& name, const std::string& texturePath) {
+    ParticleManager::GetInstance()->CreateParticleGroup(name, texturePath);
+    return true; // TODO: エラーハンドリングの改善
+}
+
+// パーティクルを発生（基本版）
+void UnoEngine::PlayPart(const std::string& name, const Vector3& position, int count) {
+    ParticleManager::GetInstance()->Emit(name, position, count);
+}
+
+// パーティクルを発生（詳細版）
+void UnoEngine::PlayPart(const std::string& name, const Vector3& position, int count,
+                            const Vector3& velocity, float lifeTime) {
+    // より詳細なパラメータでパーティクルを発生
+    ParticleManager::GetInstance()->Emit(
+        name, position, count,
+        velocity, velocity, // 速度の最小・最大を同じに
+        Vector3{0.0f, 0.0f, 0.0f}, Vector3{0.0f, 0.0f, 0.0f}, // 加速度なし
+        0.5f, 1.0f, // サイズ
+        0.0f, 0.3f, // 終了サイズ
+        Vector4{1.0f, 1.0f, 1.0f, 1.0f}, Vector4{1.0f, 1.0f, 1.0f, 1.0f}, // 開始色
+        Vector4{1.0f, 1.0f, 1.0f, 0.0f}, Vector4{1.0f, 1.0f, 1.0f, 0.0f}, // 終了色
+        0.0f, 0.0f, // 回転
+        0.0f, 0.0f, // 回転速度
+        lifeTime, lifeTime // 寿命
+    );
+}
+
+// 3Dオブジェクトを作成（空のオブジェクト）
+std::unique_ptr<Object3d> UnoEngine::CreateObj3() {
+    auto object = std::make_unique<Object3d>();
+    object->Initialize(dxCommon_.get(), spriteCommon_.get());
+    object->SetCamera(camera_.get());
+    return object;
+}
+
+// 3Dオブジェクトを作成（モデル読み込み済み）
+std::unique_ptr<Object3d> UnoEngine::CreateObjM(const std::string& modelPath) {
+    auto object = std::make_unique<Object3d>();
+    object->Initialize(dxCommon_.get(), spriteCommon_.get());
+    object->SetCamera(camera_.get());
+    object->LoadModel(modelPath);
+    return object;
+}
+
+// モデルを読み込む
+std::unique_ptr<Model> UnoEngine::LoadModel(const std::string& modelPath) {
+    auto model = std::make_unique<Model>();
+
+    // Modelを初期化（DirectXCommonを渡す）
+    model->Initialize(dxCommon_.get());
+
+    // パスの解析
+    size_t lastSlash = modelPath.find_last_of("/\\");
+    std::string directoryPath = (lastSlash != std::string::npos) ?
+        modelPath.substr(0, lastSlash + 1) : "";
+    std::string filename = (lastSlash != std::string::npos) ?
+        modelPath.substr(lastSlash + 1) : modelPath;
+
+    model->LoadFromObj(directoryPath, filename);
+    return model;
+}
+
+// インスタンスレンダラーを作成
+std::unique_ptr<InstancedRenderer> UnoEngine::CreateInst(size_t maxInstances) {
+    auto renderer = std::make_unique<InstancedRenderer>();
+    renderer->Initialize(dxCommon_.get(), spriteCommon_.get(), maxInstances);
+    return renderer;
+}
+
+// アニメーション付きモデルを作成
+std::unique_ptr<AnimatedModel> UnoEngine::CreateAnim() {
+    auto animatedModel = std::make_unique<AnimatedModel>();
+    animatedModel->Initialize(dxCommon_.get());
+    return animatedModel;
+}
+
+// アニメーションファイルを読み込む
+Animation UnoEngine::LoadAnim(const std::string& directoryPath, const std::string& filename) {
+    return LoadAnimationFile(directoryPath, filename);
+}
+
+// Enemyを作成（デフォルトAI設定）
+std::unique_ptr<Enemy> UnoEngine::CreateEnemy(const Vector3& position) {
+    auto enemy = std::make_unique<Enemy>();
+    enemy->Initialize(camera_.get());
+    enemy->SetPosition(position);
+
+    // NavMeshが存在する場合は自動設定
+    if (navMeshManager_ && navMeshManager_->GetNavMesh()) {
+        enemy->SetNavMesh(navMeshManager_->GetNavMesh());
+    }
+
+    return enemy;
+}
+
+// Enemyを作成（AI設定指定）
+std::unique_ptr<Enemy> UnoEngine::CreateEnemy(const Vector3& position, const EnemyAIConfig& aiConfig) {
+    auto enemy = std::make_unique<Enemy>();
+    enemy->Initialize(camera_.get(), aiConfig);
+    enemy->SetPosition(position);
+
+    // NavMeshが存在する場合は自動設定
+    if (navMeshManager_ && navMeshManager_->GetNavMesh()) {
+        enemy->SetNavMesh(navMeshManager_->GetNavMesh());
+    }
+
+    return enemy;
+}
+
+// 2Dスプライトを作成
+std::unique_ptr<Sprite> UnoEngine::CreateSpr(const std::string& texturePath) {
+    // テクスチャを読み込み
+    LoadTex(texturePath);
+    
+    auto sprite = std::make_unique<Sprite>();
+    sprite->Initialize(spriteCommon_.get(), texturePath);
+    return sprite;
+}
+
+// ========================================
+// ⚙️ ユーティリティ
+// ========================================
+
+// 球同士の衝突判定
+bool UnoEngine::ChkCollide(const Vector3& pos1, float radius1, const Vector3& pos2, float radius2) {
+    // 簡易的な球同士の衝突判定(距離ベース)
+    float dx = pos2.x - pos1.x;
+    float dy = pos2.y - pos1.y;
+    float dz = pos2.z - pos1.z;
+    float distanceSq = dx * dx + dy * dy + dz * dz;
+    float radiusSum = radius1 + radius2;
+    return distanceSq <= (radiusSum * radiusSum);
+}
+
+// シーンを変更
+void UnoEngine::ChgScene(const std::string& sceneName) {
+    SceneManager::GetInstance()->ChangeScene(sceneName);
+}
+
+// デバッグ情報を表示
+void UnoEngine::ShowDebug() {
+#ifdef _DEBUG
+    ImGui::Begin("UnoEngine デバッグ情報");
+
+    // FPS情報
+    ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+
+    // カメラ情報
+    Vector3 cameraPos = camera_->GetTranslate();
+    ImGui::Text("カメラ位置: (%.2f, %.2f, %.2f)", cameraPos.x, cameraPos.y, cameraPos.z);
+
+    // メモリ使用量（概算）
+    // 全パーティクルグループのパーティクル数を合計
+    uint32_t totalParticles = 0;
+    auto* particleManager = ParticleManager::GetInstance();
+    // 基本的なパーティクルグループの数をチェック
+    totalParticles += particleManager->GetParticleCount("explosion");
+    totalParticles += particleManager->GetParticleCount("smoke");
+    ImGui::Text("アクティブパーティクル数: %d", totalParticles);
+
+    // 入力状態
+    if (ImGui::TreeNode("入力状態")) {
+        ImGui::Text("ESC: %s", input_->PushKey(DIK_ESCAPE) ? "押下中" : "未押下");
+        ImGui::Text("SPACE: %s", input_->PushKey(DIK_SPACE) ? "押下中" : "未押下");
+        ImGui::Text("W: %s", input_->PushKey(DIK_W) ? "押下中" : "未押下");
+        ImGui::Text("A: %s", input_->PushKey(DIK_A) ? "押下中" : "未押下");
+        ImGui::Text("S: %s", input_->PushKey(DIK_S) ? "押下中" : "未押下");
+        ImGui::Text("D: %s", input_->PushKey(DIK_D) ? "押下中" : "未押下");
+        ImGui::TreePop();
+    }
+
+    ImGui::End();
+#endif
+}
+
+// ========================================
+// 🔊 3D空間オーディオシステム
+// ========================================
+
+// 3D空間オーディオソースを作成
+std::unique_ptr<SpatialAudioSource> UnoEngine::CreateSAud(const std::string& audioName, const Vector3& position) {
+    auto spatialSource = std::make_unique<SpatialAudioSource>();
+    
+    if (spatialSource->Initialize(audioName, position)) {
+        return spatialSource;
+    }
+    
+    return nullptr;
+}
+
+// リスナーの位置を設定
+void UnoEngine::SetListPos(const Vector3& position) {
+    if (audioListener_) {
+        audioListener_->SetPosition(position);
+    }
+}
+
+// リスナーの向きを設定
+void UnoEngine::SetListOri(const Vector3& forward, const Vector3& up) {
+    if (audioListener_) {
+        audioListener_->SetOrientation(forward, up);
+    }
+}
+
+// 3D空間オーディオを更新
+void UnoEngine::UpdateSAud() {
+    if (!audioListener_) return;
+    
+    // 全ての3D空間オーディオソースを更新
+    for (auto& spatialSource : spatialAudioSources_) {
+        if (spatialSource) {
+            spatialSource->Update(audioListener_->GetPosition(), audioListener_->GetForward());
+        }
+    }
+}
+
+// ========================================
+// ImGui初期化
+// ========================================
+
+// ImGuiの初期化処理
+void UnoEngine::InitializeImGui() {
+    try {
+        // ImGui初期化
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGui::StyleColorsDark();
+
+        // ImGuiのIO設定を取得
+        ImGuiIO& io = ImGui::GetIO();
+
+        // 日本語フォント設定
+        ImFontConfig fontConfig;
+        fontConfig.MergeMode = true;  // 既存のフォントと統合
+
+        // 日本語フォントのパス（例：MS Gothic）
+        // Windows標準フォントを使用
+        const char* fontPath = "C:\\Windows\\Fonts\\msgothic.ttc";
+
+        // 日本語の文字範囲を指定
+        static const ImWchar japaneseFontRanges[] = {
+            0x0020, 0x00FF, // 基本ラテン文字
+            0x3000, 0x30FF, // 日本語（平仮名、カタカナ）
+            0x31F0, 0x31FF, // カタカナ拡張
+            0xFF00, 0xFFEF, // 全角文字
+            0x4E00, 0x9FAF, // CJK統合漢字
+            0,
+        };
+
+        // デフォルトフォント読み込み
+        io.Fonts->AddFontDefault();
+
+        // 日本語フォント読み込み
+        io.Fonts->AddFontFromFileTTF(fontPath, 16.0f, &fontConfig, japaneseFontRanges);
+
+        // ファイルが見つからない場合のフォールバック処理
+        if (!io.Fonts->Fonts.Size || io.Fonts->Fonts.Size <= 1) {
+            // デフォルトフォントのみの場合は警告を出力
+            OutputDebugStringA("WARNING: 日本語フォントが読み込めませんでした。フォールバックフォントを使用します。\n");
+
+            // フォールバックフォントとしてWindows標準のフォントを試行
+            const char* fallbackFonts[] = {
+                "C:\\Windows\\Fonts\\meiryo.ttc",
+                "C:\\Windows\\Fonts\\msgothic.ttc",
+                "C:\\Windows\\Fonts\\YuGothM.ttc"
+            };
+
+            for (const char* fallbackFont : fallbackFonts) {
+                io.Fonts->AddFontFromFileTTF(fallbackFont, 16.0f, &fontConfig, japaneseFontRanges);
+                if (io.Fonts->Fonts.Size > 1) {
+                    OutputDebugStringA(("日本語フォールバックフォントを読み込みました: " + std::string(fallbackFont) + "\n").c_str());
+                    break;
+                }
+            }
+        }
+
+        // フォントテクスチャをビルド
+        io.Fonts->Build();
+
+        ImGui_ImplWin32_Init(winApp_->GetHwnd());
+
+        // SrvManagerのディスクリプタヒープを使用
+        ImGui_ImplDX12_Init(
+            dxCommon_->GetDevice(),
+            2, // SwapChainのバッファ数
+            DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+            srvManager_->GetDescriptorHeap().Get(),
+            srvManager_->GetCPUDescriptorHandle(0), // ImGui用に0番を使用
+            srvManager_->GetGPUDescriptorHandle(0)
+        );
+
+    }
+    catch (const std::exception&) {
+        // エラーは無視
+    }
+}
+
+// ========================================
+// 🔄 スムージングシステム
+// ========================================
+
+// 角度を正規化（-π ~ π に収める）
+float UnoEngine::NormAngle(float angle) {
+    while (angle > (float)M_PI) angle -= 2.0f * (float)M_PI;
+    while (angle < -(float)M_PI) angle += 2.0f * (float)M_PI;
+    return angle;
+}
+
+// 2つの角度の差を計算
+float UnoEngine::AngleDiff(float from, float to) {
+    float diff = to - from;
+    return NormAngle(diff);
+}
+
+// 角度を線形補間
+float UnoEngine::LerpAngle(float from, float to, float t) {
+    t = std::clamp(t, 0.0f, 1.0f);
+    float diff = AngleDiff(from, to);
+    return NormAngle(from + diff * t);
+}
+
+// 値を線形補間
+float UnoEngine::Lerp(float from, float to, float t) {
+    t = std::clamp(t, 0.0f, 1.0f);
+    return from + (to - from) * t;
+}
+
+// Vector3を線形補間
+Vector3 UnoEngine::LerpVector3(const Vector3& from, const Vector3& to, float t) {
+    t = std::clamp(t, 0.0f, 1.0f);
+    return Vector3{
+        Lerp(from.x, to.x, t),
+        Lerp(from.y, to.y, t),
+        Lerp(from.z, to.z, t)
+    };
+}
+
+// 回転を滑らかに補間
+float UnoEngine::SmoothRot(float current, float target, float speed, float deltaTime) {
+    float lerpFactor = std::min(1.0f, speed * deltaTime);
+    return LerpAngle(current, target, lerpFactor);
+}
+
+// ========================================
+// ⏱️ 時間管理
+// ========================================
+
+// 目標FPSを設定（フレームレート制限）
+void UnoEngine::SetTargetFPS(uint32_t fps) {
+    if (fps > 0) {
+        timer_.SetFixedTimeStep(true);
+        timer_.SetTargetElapsedSeconds(1.0 / static_cast<double>(fps));
+    } else {
+        timer_.SetFixedTimeStep(false);
+    }
+}
+
+// ========================================
+// 🖼️ テクスチャ・スカイボックス
+// ========================================
+
+// テクスチャを読み込む
+void UnoEngine::LoadTex(const std::string& path) {
+    TextureManager::GetInstance()->LoadTexture(path);
+}
+
+// スカイボックスを作成
+std::unique_ptr<Skybox> UnoEngine::CreateSky() {
+    auto skybox = std::make_unique<Skybox>();
+    skybox->Initialize(dxCommon_.get(), srvManager_.get(), TextureManager::GetInstance());
+    return skybox;
+}
+
+// スカイボックスにキューブマップを読み込む
+void UnoEngine::LoadSkybox(Skybox* skybox, const std::string& path) {
+    skybox->LoadCubemap(path);
+}
+
+// ========================================
+// 📷 カメラ更新ヘルパー
+// ========================================
+
+// マウス入力でカメラを更新
+void UnoEngine::UpdCamMouse() {
+    float deltaX, deltaY;
+    input_->GetMouseMovement(deltaX, deltaY);
+    camera_->ProcessMouseInput(deltaX, deltaY);
+}
+
+// 右スティック入力でカメラを更新
+void UnoEngine::UpdCamStick() {
+    float stickX = input_->GetXboxRightStickX();
+    float stickY = input_->GetXboxRightStickY();
+
+    // デッドゾーンを適用（スティックが少し動いただけでは反応しない）
+    const float deadZone = 0.1f;
+    if (abs(stickX) < deadZone) stickX = 0.0f;
+    if (abs(stickY) < deadZone) stickY = 0.0f;
+
+    camera_->ProcessRightStickInput(stickX, stickY);
+}
+
+// ========================================
+// 🧭 NavMesh システム
+// ========================================
+
+// NavMeshを初期化
+void UnoEngine::InitNav(const std::string& navMeshPath) {
+    if (!navMeshManager_) {
+        navMeshManager_ = std::make_unique<NavMeshManager>();
+    }
+    navMeshManager_->Initialize(navMeshPath);
+}
+
+// NavMeshを生成して保存
+void UnoEngine::GenNav(const std::vector<std::unique_ptr<Object3d>>& sceneObjects, const std::string& filepath) {
+    if (!navMeshManager_) {
+        navMeshManager_ = std::make_unique<NavMeshManager>();
+    }
+    navMeshManager_->GenerateAndSaveNavMesh(sceneObjects, filepath);
+}
+
+// NavMeshをファイルから読み込む
+bool UnoEngine::LoadNavMesh(const std::string& filepath) {
+    if (!navMeshManager_) {
+        navMeshManager_ = std::make_unique<NavMeshManager>();
+    }
+    return navMeshManager_->LoadNavMesh(filepath);
+}
+
+// NavMeshの設定を取得
+NavMeshBuildSettings& UnoEngine::GetNavSet() {
+    if (!navMeshManager_) {
+        navMeshManager_ = std::make_unique<NavMeshManager>();
+    }
+    return navMeshManager_->GetSettings();
+}
+
+// NavMeshの視覚化を有効/無効にする
+void UnoEngine::SetNavVis(bool enabled) {
+    if (!navMeshManager_) {
+        navMeshManager_ = std::make_unique<NavMeshManager>();
+    }
+    navMeshManager_->SetVisualizationEnabled(enabled);
+}
+
+// NavMeshの視覚化が有効かチェック
+bool UnoEngine::IsNavVis() const {
+    if (!navMeshManager_) {
+        return false;
+    }
+    return navMeshManager_->IsVisualizationEnabled();
+}
+
+// NavMeshの視覚化用オブジェクトを作成
+void UnoEngine::CreateNavVis() {
+    if (!navMeshManager_) {
+        navMeshManager_ = std::make_unique<NavMeshManager>();
+    }
+    navMeshManager_->CreateVisualization(dxCommon_.get(), camera_.get());
+}
+
+// NavMeshの可視化更新をリクエスト
+void UnoEngine::RequestNavVisUpdate() {
+    if (!navMeshManager_) {
+        navMeshManager_ = std::make_unique<NavMeshManager>();
+    }
+    navMeshManager_->RequestVisualizationUpdate();
+}
+
+// NavMeshの視覚化を描画
+void UnoEngine::DrawNavVis() {
+    if (navMeshManager_) {
+        navMeshManager_->DrawVisualization();
+    }
+}
+
+// NavMeshを更新
+void UnoEngine::UpdateNavMesh() {
+    if (navMeshManager_) {
+        navMeshManager_->Update();
+    }
+}
+
+// ========================================
+// 🎨 ポストプロセス
+// ========================================
+
+// ポストプロセス描画開始
+void UnoEngine::BeginPostProcess() {
+    if (postProcess_) {
+        postProcess_->PreDraw();
+    }
+}
+
+// ポストプロセス描画終了
+void UnoEngine::EndPostProcess() {
+    if (postProcess_) {
+        postProcess_->PostDraw();
+    }
+}
+
+// ホラーエフェクトパラメータ設定
+void UnoEngine::SetHorrorParams(float time, float noiseIntensity, float distortionAmount,
+                                 float bloodAmount, float vignetteIntensity) {
+    if (postProcess_) {
+        postProcess_->SetHorrorParams(time, noiseIntensity, distortionAmount, bloodAmount, vignetteIntensity);
+    }
+}
+
+// 魚眼レンズエフェクト設定
+void UnoEngine::SetFisheyeStrength(float strength) {
+    if (postProcess_) {
+        postProcess_->SetFisheyeStrength(strength);
+    }
+}
+
+void UnoEngine::SetFisheyeRadius(float radius) {
+    if (postProcess_) {
+        postProcess_->SetFisheyeRadius(radius);
+    }
+}
+
+// ========================================
+// 💡 ライト管理
+// ========================================
+
+// ライト更新
+void UnoEngine::UpdateLights() {
+    if (lightManager_) {
+        lightManager_->Update(GetDelta());
+    }
+}
+
+// 懐中電灯更新
+void UnoEngine::UpdateFlashlight(const Vector3& position, const Vector3& direction) {
+    if (lightManager_) {
+        lightManager_->UpdateFlashlight(position, direction);
+    }
+}
+
+// ========================================
+// 📦 リソースプリロード
+// ========================================
+
+// アニメーションモデルのプリロード
+void UnoEngine::PreloadAnimModel(const std::string& key, const std::string& directoryPath, const std::string& filename) {
+    ResourcePreloader::GetInstance()->PreloadAnimatedModel(key, directoryPath, filename, dxCommon_.get());
+}
+
+void UnoEngine::PreloadAnimModelLightweight(const std::string& key, const std::string& directoryPath, const std::string& filename) {
+    ResourcePreloader::GetInstance()->PreloadAnimatedModelLightweight(key, directoryPath, filename, dxCommon_.get());
+}
+
+// プリロード済みモデル取得
+std::unique_ptr<AnimatedModel> UnoEngine::GetPreloadedModel(const std::string& key) {
+    return ResourcePreloader::GetInstance()->GetPreloadedModel(key);
+}
+
+bool UnoEngine::HasPreloadedModel(const std::string& key) {
+    return ResourcePreloader::GetInstance()->HasPreloadedModel(key);
+}
+
+// プリロード進捗取得
+float UnoEngine::GetPreloadProgress() {
+    return ResourcePreloader::GetInstance()->GetPreloadProgress();
+}
+
+// プリロード済みリソース全削除
+void UnoEngine::ClearPreloadedResources() {
+    ResourcePreloader::GetInstance()->ClearAll();
+}
+
+// ========================================
+// 🎬 シーン読み込み
+// ========================================
+
+// JSONからシーンデータを読み込む
+SceneData UnoEngine::LoadSceneFromJSON(const std::string& jsonPath) {
+    SceneConfigurator configurator;
+    return configurator.LoadSceneFromJSON(jsonPath);
+}

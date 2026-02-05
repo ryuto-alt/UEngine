@@ -167,9 +167,10 @@ void LightManager::UpdateLightIntensity() {
         directionalLight_.intensity = dirLightIntensityBackup_;
     }
 
-    // アンビエントライトの強度をディレクショナルライトの強度に比例させる
-    // 基本値0.013に、ディレクショナルライトの強度を掛ける
-    directionalLight_.ambientIntensity = 0.013f * directionalLight_.intensity;
+    // アンビエントライトの最低保証（テクスチャ色が見えるように）
+    float ambientFromDir = 0.013f * directionalLight_.intensity;
+    constexpr float MIN_AMBIENT = 0.15f;
+    directionalLight_.ambientIntensity = ambientFromDir < MIN_AMBIENT ? MIN_AMBIENT : ambientFromDir;
 
     // スポットライトの強度管理
     if (!enableSpotLight_) {

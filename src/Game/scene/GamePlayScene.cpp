@@ -87,6 +87,10 @@ void GamePlayScene::Initialize() {
 
 	OutputDebugStringA(("GamePlayScene: Initialized " + std::to_string(orbs_.size()) + " Orbs\n").c_str());
 
+	// ミニマップの初期化
+	minimap_ = std::make_unique<Minimap>();
+	minimap_->Initialize(dxCommon_, srvManager_);
+
 	// Orb取得音の読み込み
 	AudioManager::GetInstance()->LoadMP3("orbGet", "Resources/Audio/get.mp3");
 	AudioManager::GetInstance()->SetVolume("orbGet", 0.5f);
@@ -617,6 +621,11 @@ void GamePlayScene::Update() {
 		}
 	}
 
+	// ミニマップの更新
+	if (minimap_ && player_) {
+		minimap_->Update(player_.get(), orbs_);
+	}
+
 	// NavMesh更新（UnoEngine経由）
 	engine->UpdateNavMesh();
 }
@@ -693,6 +702,11 @@ void GamePlayScene::Draw() {
 	// ポストプロセスを適用して画面に描画
 	if (postProcess_) {
 		postProcess_->PostDraw();
+	}
+
+	// ミニマップを描画（PostProcess後、暗転前）
+	if (minimap_) {
+		minimap_->Draw();
 	}
 
 	// 暗転エフェクトを最前面に描画（リスポーン中）
@@ -1009,6 +1023,7 @@ void GamePlayScene::Finalize() {
 	fpsCamera_.reset();
 	postProcess_.reset();
 	fadeSprite_.reset();
+	minimap_.reset();
 }
 
 void GamePlayScene::AddNavMeshLog(const std::string& message) {

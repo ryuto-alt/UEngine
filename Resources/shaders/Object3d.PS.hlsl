@@ -116,7 +116,7 @@ PixelShaderOutput main(VertexShaderOutput input)
         }
         
         // アンビエントライトを追加（暗すぎる問題を解決）
-        float3 ambient = float3(0.15f, 0.15f, 0.15f); // 環境光を追加
+        float3 ambient = float3(0.15f, 0.15f, 0.15f);
         
         // 環境マップの計算（有効な場合のみ）
         float3 environmentLighting = float3(0.0f, 0.0f, 0.0f);
@@ -131,13 +131,19 @@ PixelShaderOutput main(VertexShaderOutput input)
         // すべてのライティングを合成
         float3 totalLighting = directionalLighting + spotLighting + ambient + environmentLighting;
         
-        output.color.rgb = gMaterial.color.rgb * textureColor.rgb * totalLighting;
+        float3 litColor = gMaterial.color.rgb * textureColor.rgb * totalLighting;
+
+        // 彩度ブースト: テクスチャの色味を濃く出す
+        float luminance = dot(litColor, float3(0.2126f, 0.7152f, 0.0722f));
+        litColor = lerp(float3(luminance, luminance, luminance), litColor, 1.6f);
+
+        output.color.rgb = litColor;
         output.color.a = gMaterial.color.a * textureColor.a;
     }
     else
     {
         output.color = gMaterial.color * textureColor;
     }
-    
+
     return output;
 }

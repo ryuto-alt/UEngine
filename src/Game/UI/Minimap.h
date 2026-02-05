@@ -4,16 +4,13 @@
 #include <string>
 #include "../../Engine/Math/Mymath.h"
 
-// Forward declarations
 class DirectXCommon;
 class SrvManager;
 class Camera;
 class Player;
-class Enemy;
 class Orb;
 class Sprite;
 class SpriteCommon;
-class TextRenderer;
 
 class Minimap {
 public:
@@ -21,44 +18,41 @@ public:
     ~Minimap();
 
     void Initialize(DirectXCommon* dxCommon, SrvManager* srvManager);
-    void Update(Player* player, Enemy* enemy, const std::vector<std::unique_ptr<Orb>>& orbs);
+    void Update(Player* player, const std::vector<std::unique_ptr<Orb>>& orbs);
     void Draw();
 
-    // Orb counter
     int GetTotalOrbs() const { return totalOrbs_; }
     int GetCollectedOrbs() const { return collectedOrbs_; }
+    int GetRemainingOrbs() const { return totalOrbs_ - collectedOrbs_; }
 
 private:
     DirectXCommon* dxCommon_ = nullptr;
     SrvManager* srvManager_ = nullptr;
 
     // Minimap settings
-    static constexpr float MAP_SIZE = 200.0f;  // ミニマップのサイズ
-    static constexpr float MAP_SCALE = 0.02f;  // ワールド座標からミニマップへのスケール
-    static constexpr float MAP_X = 10.0f;      // 左からの距離
-    static constexpr float MAP_Y_OFFSET = 10.0f;  // 下からの距離
+    static constexpr float MAP_SIZE = 180.0f;
+    static constexpr float MAP_MARGIN = 10.0f;
+    static constexpr float MAP_SCALE = 2.5f;  // pixels per world unit
 
     // Sprites
     std::unique_ptr<SpriteCommon> spriteCommon_;
     std::unique_ptr<Sprite> backgroundSprite_;
-    std::unique_ptr<Sprite> playerSprite_;
-    std::unique_ptr<Sprite> enemySprite_;
     std::unique_ptr<Sprite> borderSprite_;
+    std::unique_ptr<Sprite> playerSprite_;
 
-    // Pre-allocated orb sprites pool (max 70 orbs)
+    // Pre-allocated orb sprites (max 70)
     static constexpr int MAX_ORBS = 70;
-    std::vector<std::unique_ptr<Sprite>> orbSpritesPool_;
-    std::vector<int> activeOrbIndices_;  // Indices of active orbs
-
-    // Text rendering for orb counter
-    std::unique_ptr<TextRenderer> textRenderer_;
+    std::vector<std::unique_ptr<Sprite>> orbSprites_;
+    std::vector<int> activeOrbIndices_;
 
     // Orb tracking
     int totalOrbs_ = 0;
     int collectedOrbs_ = 0;
 
-    // Helper functions
-    Vector2 WorldToMinimap(const Vector3& worldPos) const;
-    void CreateTextures();
-    void UpdateOrbCounter();
+    // Cached position (bottom-right)
+    float mapLeft_ = 0.0f;
+    float mapTop_ = 0.0f;
+
+    // Helper
+    Vector2 WorldToMinimap(const Vector3& worldPos, const Vector3& playerPos) const;
 };

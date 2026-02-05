@@ -1,198 +1,161 @@
 #include "Minimap.h"
-#include "TextRenderer.h"
 #include "../../Engine/Graphics/DirectXCommon.h"
 #include "../../Engine/Graphics/SRVManager.h"
 #include "../../Engine/Graphics/Sprite.h"
 #include "../../Engine/Graphics/SpriteCommon.h"
 #include "../../Engine/Graphics/TextureManager.h"
 #include "../GameObject/Player.h"
-#include "../GameObject/Enemy.h"
 #include "../GameObject/Orb.h"
 #include "../../Engine/Utility/WinApp.h"
-#include <format>
+#include "imgui.h"
+#include <cmath>
 
-Minimap::Minimap() {
-}
-
-Minimap::~Minimap() {
-}
+Minimap::Minimap() = default;
+Minimap::~Minimap() = default;
 
 void Minimap::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager) {
     dxCommon_ = dxCommon;
     srvManager_ = srvManager;
 
-    OutputDebugStringA("Minimap::Initialize - Starting initialization\n");
+    // Bottom-right position
+    float windowW = static_cast<float>(WinApp::kClientWidth);
+    float windowH = static_cast<float>(WinApp::kClientHeight);
+    mapLeft_ = windowW - MAP_SIZE - MAP_MARGIN;
+    mapTop_ = windowH - MAP_SIZE - MAP_MARGIN;
 
-    // Initialize sprite common
     spriteCommon_ = std::make_unique<SpriteCommon>();
     spriteCommon_->Initialize(dxCommon_);
 
-    // Get window dimensions for positioning
-    float windowHeight = static_cast<float>(WinApp::kClientHeight);
-    float mapY = windowHeight - MAP_SIZE - MAP_Y_OFFSET;
+    const std::string whiteTex = "Resources/UI/white.png";
 
-    // Create minimap background (dark semi-transparent)
-    backgroundSprite_ = std::make_unique<Sprite>();
-    backgroundSprite_->Initialize(spriteCommon_.get(), "Resources/Models/Enemy/Enemy_Run/default_baseColor.png");
-    backgroundSprite_->SetPosition({ MAP_X, mapY });
-    backgroundSprite_->SetSize({ MAP_SIZE, MAP_SIZE });
-
-    // Create minimap border
+    // Border
     borderSprite_ = std::make_unique<Sprite>();
-    borderSprite_->Initialize(spriteCommon_.get(), "Resources/Models/Enemy/Enemy_Run/default_baseColor.png");
-    borderSprite_->SetPosition({ MAP_X - 2, mapY - 2 });
+    borderSprite_->Initialize(spriteCommon_.get(), whiteTex);
+    borderSprite_->SetPosition({ mapLeft_ - 2, mapTop_ - 2 });
     borderSprite_->SetSize({ MAP_SIZE + 4, MAP_SIZE + 4 });
+    borderSprite_->setColor({ 0.5f, 0.5f, 0.5f, 0.9f });
 
-    // Create player icon (green dot)
+    // Background
+    backgroundSprite_ = std::make_unique<Sprite>();
+    backgroundSprite_->Initialize(spriteCommon_.get(), whiteTex);
+    backgroundSprite_->SetPosition({ mapLeft_, mapTop_ });
+    backgroundSprite_->SetSize({ MAP_SIZE, MAP_SIZE });
+    backgroundSprite_->setColor({ 0.08f, 0.08f, 0.12f, 0.75f });
+
+    // Player dot (always center)
     playerSprite_ = std::make_unique<Sprite>();
-    playerSprite_->Initialize(spriteCommon_.get(), "Resources/Models/Enemy/Enemy_Run/default_baseColor.png");
+    playerSprite_->Initialize(spriteCommon_.get(), whiteTex);
     playerSprite_->SetSize({ 8.0f, 8.0f });
+    playerSprite_->setColor({ 0.0f, 1.0f, 0.0f, 1.0f });
 
-    // Create enemy icon (red dot)
-    enemySprite_ = std::make_unique<Sprite>();
-    enemySprite_->Initialize(spriteCommon_.get(), "Resources/Models/Enemy/Enemy_Run/default_baseColor.png");
-    enemySprite_->SetSize({ 8.0f, 8.0f });
-
-    // Initialize text renderer for orb counter
-    textRenderer_ = std::make_unique<TextRenderer>();
-    textRenderer_->Initialize(dxCommon, srvManager);
-    textRenderer_->LoadFont("Resources/fonts/DigitalNumbers-Regular.ttf");
-
-    // Pre-allocate orb sprites to avoid dynamic allocation during gameplay
-    orbSpritesPool_.reserve(MAX_ORBS);
+    // Pre-allocate orb sprites
+    orbSprites_.reserve(MAX_ORBS);
     for (int i = 0; i < MAX_ORBS; ++i) {
-        auto orbSprite = std::make_unique<Sprite>();
-        orbSprite->Initialize(spriteCommon_.get(), "Resources/Models/Enemy/Enemy_Run/default_baseColor.png");
-        orbSprite->SetSize({ 4.0f, 4.0f });
-        orbSpritesPool_.push_back(std::move(orbSprite));
+        auto s = std::make_unique<Sprite>();
+        s->Initialize(spriteCommon_.get(), whiteTex);
+        s->SetSize({ 5.0f, 5.0f });
+        s->setColor({ 1.0f, 0.85f, 0.0f, 1.0f });
+        orbSprites_.push_back(std::move(s));
     }
-
-    OutputDebugStringA("Minimap::Initialize - Completed successfully\n");
 }
 
-void Minimap::Update(Player* player, Enemy* enemy, const std::vector<std::unique_ptr<Orb>>& orbs) {
+void Minimap::Update(Player* player, const std::vector<std::unique_ptr<Orb>>& orbs) {
     if (!player) return;
 
-    // Get window dimensions
-    float windowHeight = static_cast<float>(WinApp::kClientHeight);
-    float mapY = windowHeight - MAP_SIZE - MAP_Y_OFFSET;
-
-    // Update player position on minimap
     Vector3 playerWorldPos = player->GetPosition();
-    Vector2 playerMapPos = WorldToMinimap(playerWorldPos);
-    playerMapPos.x += MAP_X + MAP_SIZE / 2.0f;
-    playerMapPos.y += mapY + MAP_SIZE / 2.0f;
-    playerSprite_->SetPosition({ playerMapPos.x - 4, playerMapPos.y - 4 });
+    float centerX = mapLeft_ + MAP_SIZE * 0.5f;
+    float centerY = mapTop_ + MAP_SIZE * 0.5f;
 
-    // Update enemy position on minimap
-    if (enemy) {
-        Vector3 enemyWorldPos = enemy->GetPosition();
-        Vector2 enemyMapPos = WorldToMinimap(enemyWorldPos);
-        enemyMapPos.x += MAP_X + MAP_SIZE / 2.0f;
-        enemyMapPos.y += mapY + MAP_SIZE / 2.0f;
-        enemySprite_->SetPosition({ enemyMapPos.x - 4, enemyMapPos.y - 4 });
-    }
+    // Player is always at center
+    playerSprite_->SetPosition({ centerX - 4.0f, centerY - 4.0f });
 
-    // Update orb positions and count
+    // Update orbs
     activeOrbIndices_.clear();
     totalOrbs_ = 0;
     collectedOrbs_ = 0;
+    int spriteIdx = 0;
 
-    int spriteIndex = 0;
     for (const auto& orb : orbs) {
         if (!orb) continue;
-
         totalOrbs_++;
 
         if (orb->IsCollected()) {
             collectedOrbs_++;
-            continue;  // Don't show collected orbs on minimap
+            continue;
         }
 
-        // Use pre-allocated sprite from pool
-        if (spriteIndex < MAX_ORBS && spriteIndex < orbSpritesPool_.size()) {
-            Vector3 orbWorldPos = orb->GetPosition();
-            Vector2 orbMapPos = WorldToMinimap(orbWorldPos);
-            orbMapPos.x += MAP_X + MAP_SIZE / 2.0f;
-            orbMapPos.y += mapY + MAP_SIZE / 2.0f;
+        if (spriteIdx >= MAX_ORBS) continue;
 
-            orbSpritesPool_[spriteIndex]->SetPosition({ orbMapPos.x - 2, orbMapPos.y - 2 });
-            activeOrbIndices_.push_back(spriteIndex);
-            spriteIndex++;
-        }
+        Vector2 mapPos = WorldToMinimap(orb->GetPosition(), playerWorldPos);
+        float sx = centerX + mapPos.x - 2.5f;
+        float sy = centerY + mapPos.y - 2.5f;
+
+        // Skip orbs outside minimap bounds
+        float halfMap = MAP_SIZE * 0.5f - 4.0f;
+        if (std::abs(sx - centerX) > halfMap || std::abs(sy - centerY) > halfMap) continue;
+
+        orbSprites_[spriteIdx]->SetPosition({ sx, sy });
+        activeOrbIndices_.push_back(spriteIdx);
+        spriteIdx++;
     }
-
-    UpdateOrbCounter();
 }
 
 void Minimap::Draw() {
-    if (!spriteCommon_ || !backgroundSprite_) {
-        OutputDebugStringA("Minimap::Draw - Missing required objects!\n");
-        return;
-    }
+    if (!spriteCommon_) return;
 
-    OutputDebugStringA("Minimap::Draw - Starting draw\n");
-
-    // Start sprite drawing - this sets up the rendering pipeline
     spriteCommon_->CommonDraw();
 
-    // Draw minimap layers in order (back to front)
+    // Back to front: border → background → orbs → player
     if (borderSprite_) {
         borderSprite_->Update();
         borderSprite_->Draw();
     }
-
     if (backgroundSprite_) {
         backgroundSprite_->Update();
         backgroundSprite_->Draw();
     }
 
-    // Draw only active orbs using indices
-    for (int index : activeOrbIndices_) {
-        if (index < orbSpritesPool_.size() && orbSpritesPool_[index]) {
-            orbSpritesPool_[index]->Update();
-            orbSpritesPool_[index]->Draw();
+    for (int idx : activeOrbIndices_) {
+        if (idx < static_cast<int>(orbSprites_.size()) && orbSprites_[idx]) {
+            orbSprites_[idx]->Update();
+            orbSprites_[idx]->Draw();
         }
     }
 
-    // Draw enemy
-    if (enemySprite_) {
-        enemySprite_->Update();
-        enemySprite_->Draw();
-    }
-
-    // Draw player (on top)
     if (playerSprite_) {
         playerSprite_->Update();
         playerSprite_->Draw();
     }
 
-    // Draw orb counter text
-    if (textRenderer_) {
-        float windowHeight = static_cast<float>(WinApp::kClientHeight);
-        float mapY = windowHeight - MAP_SIZE - MAP_Y_OFFSET;
-        Vector2 counterPos = { MAP_X, mapY - 40 };
-        textRenderer_->RenderOrbCounter(collectedOrbs_, totalOrbs_, counterPos);
-    }
+    // Orb counter (ImGui overlay above minimap)
+    int remaining = totalOrbs_ - collectedOrbs_;
+    ImGui::SetNextWindowPos(ImVec2(mapLeft_, mapTop_ - 30.0f), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(MAP_SIZE, 28.0f), ImGuiCond_Always);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.6f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 4.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 4.0f));
+    ImGui::Begin("##OrbCounter", nullptr,
+        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
+        ImGuiWindowFlags_NoInputs);
+
+    // Color based on progress
+    float pct = totalOrbs_ > 0 ? static_cast<float>(collectedOrbs_) / totalOrbs_ : 0.0f;
+    ImVec4 color;
+    if (pct >= 1.0f)      color = ImVec4(0.0f, 1.0f, 0.3f, 1.0f);  // Green
+    else if (pct >= 0.5f) color = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);  // Yellow
+    else                  color = ImVec4(1.0f, 0.6f, 0.0f, 1.0f);  // Orange
+
+    ImGui::TextColored(color, "ORBS: %d / %d", remaining, totalOrbs_);
+    ImGui::End();
+    ImGui::PopStyleVar(2);
+    ImGui::PopStyleColor();
 }
 
-Vector2 Minimap::WorldToMinimap(const Vector3& worldPos) const {
-    // Convert world coordinates to minimap coordinates
-    // Center the minimap at origin (0, 0) in world space
-    Vector2 mapPos;
-    mapPos.x = worldPos.x * MAP_SCALE;
-    mapPos.y = -worldPos.z * MAP_SCALE;  // Z becomes Y on 2D map, inverted
+Vector2 Minimap::WorldToMinimap(const Vector3& worldPos, const Vector3& playerPos) const {
+    // Player-centered: offset from player position
+    float dx = worldPos.x - playerPos.x;
+    float dz = worldPos.z - playerPos.z;
 
-    // Clamp to minimap bounds
-    float halfSize = MAP_SIZE / 2.0f * 0.9f;  // Keep icons within bounds
-    if (mapPos.x < -halfSize) mapPos.x = -halfSize;
-    if (mapPos.x > halfSize) mapPos.x = halfSize;
-    if (mapPos.y < -halfSize) mapPos.y = -halfSize;
-    if (mapPos.y > halfSize) mapPos.y = halfSize;
-
-    return mapPos;
-}
-
-void Minimap::UpdateOrbCounter() {
-    // Orb counter is now handled by TextRenderer in Draw()
+    return { dx * MAP_SCALE, -dz * MAP_SCALE };
 }

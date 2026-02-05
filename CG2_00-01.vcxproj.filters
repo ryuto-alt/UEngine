@@ -362,6 +362,9 @@
     <ClCompile Include="src\Game\Utils\JsonLoader.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\UI\Minimap.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="externals\imgui\imconfig.h">
@@ -577,6 +580,7 @@
     <ClInclude Include="src\Game\scene\GameOverScene.h" />
     <ClInclude Include="src\Game\GameObject\Orb.h" />
     <ClInclude Include="src\Game\Utils\JsonLoader.h" />
+    <ClInclude Include="src\Game\UI\Minimap.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt">

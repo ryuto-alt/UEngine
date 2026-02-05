@@ -11,6 +11,7 @@
 #include "PostProcess.h"
 #include "Scene/SceneConfigurator.h"
 #include "../Utils/JsonLoader.h"
+#include "UI/Minimap.h"
 #include <memory>
 #include <vector>
 
@@ -37,6 +38,7 @@ private:
     std::unique_ptr<PostProcess> postProcess_;
     std::unique_ptr<SpatialAudioListener> audioListener_;
     std::unique_ptr<Sprite> fadeSprite_;  // 暗転用スプライト
+    std::unique_ptr<Minimap> minimap_;
 
     SceneData sceneData_;
     bool skyboxEnabled_ = false;

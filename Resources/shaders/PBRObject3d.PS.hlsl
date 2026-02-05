@@ -166,9 +166,7 @@ PixelShaderOutput main(VertexShaderOutput input)
     if (gPBRMaterial.hasBaseColorTexture)
     {
         float32_t4 baseColorTexture = gBaseColorTexture.Sample(gSampler, uv);
-        // テクスチャはsRGB形式で保存されているが、リニア空間で読み込まれるため
-        // 明るさ補正として軽めのガンマ補正のみ適用
-        baseColorTexture.rgb = pow(baseColorTexture.rgb, 2.0);
+        baseColorTexture.rgb = pow(baseColorTexture.rgb, 2.2);
         baseColor *= baseColorTexture;
     }
     
@@ -321,6 +319,10 @@ PixelShaderOutput main(VertexShaderOutput input)
 
     // ガンマ補正
     color = LinearToGamma(color);
+
+    // 彩度ブースト: テクスチャの色味を濃く出す
+    float32_t gray = dot(color, float32_t3(0.2126, 0.7152, 0.0722));
+    color = lerp(float32_t3(gray, gray, gray), color, 1.6);
 
     // ============== Fog計算 ==============
     if (gCameraData.enableFog != 0)

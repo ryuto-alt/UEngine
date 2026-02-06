@@ -138,132 +138,18 @@ void GamePlayScene::Update() {
 	}
 
 #ifdef _DEBUG
-	// デバッグ用：Fog & Lighting調整
 	ImGui::Begin("Debug: Visibility");
-
-	// Fog設定
-	ImGui::Text("Fog Settings");
-	static bool enableFog = true;
-	if (ImGui::Checkbox("Enable Fog", &enableFog)) {
-		// 全てのObject3dのFogを切り替え
-		for (auto& obj : sceneObjects_) {
-			obj->SetFogEnabled(enableFog);
-		}
-	}
-
-	// ライティング設定
-	ImGui::Separator();
-	ImGui::Text("Lighting Settings");
-	if (lightManager_) {
-		static float lightBoost = 1.0f;
-		if (ImGui::SliderFloat("Light Intensity Boost", &lightBoost, 1.0f, 100.0f)) {
-			lightManager_->SetLightBoost(lightBoost);
-		}
-		if (ImGui::Button("Reset Light")) {
-			lightBoost = 1.0f;
-			lightManager_->ResetLightBoost();
-		}
-	}
-
-	ImGui::Separator();
-	ImGui::SliderFloat("Fisheye Strength", &fisheyeStrength_, 0.0f, 100.0f);
-	ImGui::SliderFloat("Fisheye Radius", &fisheyeRadius_, 0.1f, 3.0f);
-
-	// カリング統計の表示
-	ImGui::Separator();
-	ImGui::Text("=== Culling Statistics ===");
-	ImGui::Text("Total Objects: %d", cullingStats_.totalObjects);
-	ImGui::Text("Visible Objects: %d", cullingStats_.visibleObjects);
-	ImGui::Text("Culled Objects: %d", cullingStats_.culledObjects);
-	ImGui::Text("Culling Rate: %.1f%%", cullingStats_.cullingRate);
-	ImGui::Separator();
-	ImGui::Text("Visible Meshes: %d", cullingStats_.visibleMeshes);
-	ImGui::Text("Culled Meshes: %d", cullingStats_.culledMeshes);
-	if (cullingStats_.visibleMeshes + cullingStats_.culledMeshes > 0) {
-		float meshCullingRate = (float)cullingStats_.culledMeshes /
-			(cullingStats_.visibleMeshes + cullingStats_.culledMeshes) * 100.0f;
-		ImGui::Text("Mesh Culling Rate: %.1f%%", meshCullingRate);
-	}
-
-	// パフォーマンス向上の目安
-	ImGui::Separator();
-	if (cullingStats_.cullingRate > 50.0f) {
-		ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Good culling efficiency!");
-	}
-	else if (cullingStats_.cullingRate > 25.0f) {
-		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Moderate culling efficiency");
-	}
-	else {
-		ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "Low culling efficiency");
-	}
-
-	//Enemy設定
-	ImGui::Separator();
-	ImGui::Text("Enemy Settings");
 	if (enemy_) {
-		ImGui::Checkbox("Stop Enemy Move", &enemy_->debugStopMovement_);
-		ImGui::Checkbox("Draw Foot Bones", &enemy_->debugDrawFootBones_);
-
-		ImGui::Separator();
-		ImGui::Text("Animation Control:");
-
-		// アニメーション速度スライダー
-		ImGui::SliderFloat("Animation Speed", &enemy_->debugAnimationSpeed_, 0.0f, 2.0f, "%.2fx");
-		if (ImGui::Button("Reset Speed")) {
-			enemy_->debugAnimationSpeed_ = 1.0f;
+		// ステルス足音モードのトグル
+		bool stealthOn = enemy_->IsStealthFootstepsEnabled();
+		if (ImGui::Checkbox("Stealth Footsteps", &stealthOn)) {
+			enemy_->EnableStealthFootsteps(stealthOn);
 		}
-
-		// 手動アニメーション制御
-		ImGui::Checkbox("Manual Control", &enemy_->debugManualAnimationControl_);
-		if (enemy_->debugManualAnimationControl_ && enemy_->GetModel()) {
-			float maxTime = enemy_->GetModel()->GetAnimationPlayer().GetDuration();
-			ImGui::SliderFloat("Animation Time", &enemy_->debugManualAnimationTime_, 0.0f, maxTime, "%.3fs");
-			if (ImGui::Button("Reset Time")) {
-				enemy_->debugManualAnimationTime_ = 0.0f;
-			}
-		}
-
-		// 足のボーン位置デバッグ情報
-		if (enemy_->debugDrawFootBones_ && enemy_->GetModel()) {
-			ImGui::Separator();
-			ImGui::Text("Foot Debug Info:");
-
-			const Skeleton& skeleton = enemy_->GetModel()->GetSkeleton();
-
-			// つま先ボーンを検索（UpdateFootstepAudioと同じロジック）
-			auto leftFootIt = skeleton.jointMap.find("mixamorig:LeftToeBase");
-			auto rightFootIt = skeleton.jointMap.find("mixamorig:RightToeBase");
-
-			if (leftFootIt == skeleton.jointMap.end()) {
-				leftFootIt = skeleton.jointMap.find("mixamorig:LeftFoot");
-			}
-			if (rightFootIt == skeleton.jointMap.end()) {
-				rightFootIt = skeleton.jointMap.find("mixamorig:RightFoot");
-			}
-
-			if (leftFootIt != skeleton.jointMap.end() && rightFootIt != skeleton.jointMap.end()) {
-				const Joint& leftFootJoint = skeleton.joints[leftFootIt->second];
-				const Joint& rightFootJoint = skeleton.joints[rightFootIt->second];
-
-				float leftFootY = leftFootJoint.skeletonSpaceMatrix.m[3][1];
-				float rightFootY = rightFootJoint.skeletonSpaceMatrix.m[3][1];
-
-				const float modelScale = 0.05f;
-				float leftFootWorldY = enemy_->GetPosition().y + leftFootY * modelScale;
-				float rightFootWorldY = enemy_->GetPosition().y + rightFootY * modelScale;
-
-				bool leftGrounded = leftFootWorldY <= 0.0f + 0.15f;
-				bool rightGrounded = rightFootWorldY <= 0.0f + 0.15f;
-
-				ImGui::Text("Left Foot Y: %.3f %s", leftFootWorldY, leftGrounded ? "[GREEN]" : "[RED]");
-				ImGui::Text("Right Foot Y: %.3f %s", rightFootWorldY, rightGrounded ? "[GREEN]" : "[RED]");
-				ImGui::Text("Difference: %.3f", std::abs(leftFootWorldY - rightFootWorldY));
-				ImGui::Text("Ground Level: 0.000");
-				ImGui::Text("Threshold: 0.150");
-			}
+		if (stealthOn) {
+			ImGui::SameLine();
+			ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "(ACTIVE)");
 		}
 	}
-
 	ImGui::End();
 #endif
 
@@ -595,6 +481,12 @@ void GamePlayScene::Update() {
 					char debugMsg[256];
 					sprintf_s(debugMsg, "Remaining Orbs: %d / 70\n", remainingOrbs);
 					OutputDebugStringA(debugMsg);
+
+					// 残り25個以下でエネミーのステルス足音を有効化
+					if (remainingOrbs <= 25 && enemy_ && !enemy_->IsStealthFootstepsEnabled()) {
+						enemy_->EnableStealthFootsteps(true);
+						OutputDebugStringA("[GamePlay] Stealth footsteps activated! Orbs <= 25\n");
+					}
 
 					if (remainingOrbs == 0) {
 						OutputDebugStringA("All Orbs collected! Congratulations!\n");

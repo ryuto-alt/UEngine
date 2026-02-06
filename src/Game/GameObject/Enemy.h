@@ -47,6 +47,10 @@ public:
 	// Audio
 	void SetAudioListener(SpatialAudioListener* listener) { audioListener_ = listener; }
 
+	// ステルス足音モード
+	void EnableStealthFootsteps(bool enable) { stealthEnabled_ = enable; stealthActive_ = enable; }
+	bool IsStealthFootstepsEnabled() const { return stealthEnabled_; }
+
 	// Player tracking
 	void SetPlayer(Player* player) { player_ = player; }
 
@@ -193,6 +197,13 @@ private:
 	std::unique_ptr<SpatialAudioSource> footstepSource1_;
 	std::unique_ptr<SpatialAudioSource> footstepSource2_;
 	bool useFootstep1_{true};
+
+	// ステルス足音制御
+	// stealthEnabled_: 機能自体のON/OFF（オーブ残り25個以下で有効化）
+	// stealthActive_: 現在ステルス中か（離れたらtrue、見つかったらfalse）
+	bool stealthEnabled_{false};  // 初期状態: ステルス機能OFF（通常の足音）
+	bool stealthActive_{false};
+	const float STEALTH_AUDIO_RANGE = 22.0f;  // 足音の聞こえる最大距離
 	float lastAnimationTime_{0.0f};
 	const float FOOTSTEP_INTERVAL = 0.25f;
 

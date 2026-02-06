@@ -462,6 +462,36 @@ void Enemy::UpdateFootstepAudio(float deltaTime) {
 		return;
 	}
 
+	// ステルス足音制御（stealthEnabled_ が true の場合のみ動作）
+	if (stealthEnabled_) {
+		if (isChasing_) {
+			// 追跡開始 → ステルス解除（足音復活）
+			stealthActive_ = false;
+		} else {
+			// 徘徊中のステルス制御
+			if (stealthActive_) {
+				// ステルス有効中: どんなに近くても足音を鳴らさない
+				// 次に見つかるまでずっと無音
+				return;
+			}
+
+			// ステルス未有効: プレイヤーが範囲外に離れたらステルス発動
+			Vector3 listenerPos = audioListener_->GetPosition();
+			Vector3 diff = {
+				listenerPos.x - position_.x,
+				listenerPos.y - position_.y,
+				listenerPos.z - position_.z
+			};
+			float distanceToPlayer = sqrtf(diff.x * diff.x + diff.y * diff.y + diff.z * diff.z);
+
+			if (distanceToPlayer > STEALTH_AUDIO_RANGE) {
+				stealthActive_ = true;  // ステルス発動 → 次に見つかるまで無音
+				return;
+			}
+			// 範囲内にまだいる → 足音は鳴り続ける
+		}
+	}
+
 	// スケルトンから左右の足のボーン位置を取得
 	const Skeleton& skeleton = animatedModel_->GetSkeleton();
 
@@ -619,8 +649,8 @@ void Enemy::UpdateFootstepAudio(float deltaTime) {
 }
 
 void Enemy::UpdateDetectionSound() {
-	// プレイヤーとリスナーが設定されていない場合はスキップ
-	if (!player_ || !audioListener_ || !detectionSound_) {
+	// リスナーが設定されていない場合はスキップ
+	if (!audioListener_ || !detectionSound_) {
 		return;
 	}
 
@@ -632,42 +662,24 @@ void Enemy::UpdateDetectionSound() {
 	detectionSound_->SetPosition(position_);
 	detectionSound_->Update(listenerPos, listenerForward);
 
-	// 現在の時刻を取得（秒単位）
-	static float totalTime = 0.0f;
-	totalTime += 1.0f / 60.0f;
-
-	// 再生状態を確認
-	bool currentlyPlaying = detectionSound_->IsPlaying();
-
-	// 前フレームで再生中だったが今は停止している場合、終了時刻を記録
-	if (isDetectionSoundPlaying_ && !currentlyPlaying) {
-		lastDetectionSoundEndTime_ = totalTime;
-		isDetectionSoundPlaying_ = false;
-	}
-
-	// 現在再生中の場合、フラグを更新
-	if (currentlyPlaying) {
-		isDetectionSoundPlaying_ = true;
-	}
-
-	// プレイヤーとの距離を計算
-	Vector3 playerPos = player_->GetPosition();
-	Vector3 toPlayer = {
-		playerPos.x - position_.x,
-		0.0f,
-		playerPos.z - position_.z
-	};
-	float distanceToPlayer = std::sqrt(toPlayer.x * toPlayer.x + toPlayer.z * toPlayer.z);
-
-	// 20m以内にプレイヤーがいるかチェック
-	if (distanceToPlayer <= DETECTION_SOUND_RANGE) {
-		// 再生中でなく、かつクールタイムが経過している場合のみ再生
-		if (!isDetectionSoundPlaying_ &&
-		    totalTime - lastDetectionSoundEndTime_ >= DETECTION_SOUND_COOLDOWN) {
-			// 再生
-			//detectionSound_->Play(false);  // ループなし
-			isDetectionSoundPlaying_ = true;
+	// ステルスモード有効時のみ: 追跡開始の瞬間に大声を出す
+	bool justStartedChasing = isChasing_ && !wasChasing_;
+	if (justStartedChasing && stealthEnabled_) {
+		if (detectionSound_->IsPlaying()) {
+			detectionSound_->Stop();
 		}
+		detectionSound_->SetVolume(2.5f);  // 大きな音量で恐怖感を演出
+		detectionSound_->Play(false);  // ループなし
+		isDetectionSoundPlaying_ = true;
+
+#ifdef _DEBUG
+		OutputDebugStringA("[Enemy] Detection scream! Player spotted from stealth!\n");
+#endif
+	}
+
+	// 再生状態を追跡
+	if (isDetectionSoundPlaying_ && !detectionSound_->IsPlaying()) {
+		isDetectionSoundPlaying_ = false;
 	}
 }
 
@@ -1612,7 +1624,8 @@ void Enemy::ResetAIState() {
 	isChasing_ = false;
 	wasChasing_ = false;
 	isSearching_ = false;
-	
+	stealthActive_ = stealthEnabled_;  // ステルスが有効ならステルス状態でリセット
+
 	// 音の検出状態をクリア
 	lastHeardSoundPosition_ = {};
 	lastSoundTime_ = -999.0f;

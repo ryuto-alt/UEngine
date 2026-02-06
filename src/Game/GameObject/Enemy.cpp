@@ -467,6 +467,7 @@ void Enemy::UpdateFootstepAudio(float deltaTime) {
 		if (isChasing_) {
 			// 追跡開始 → ステルス解除（足音復活）
 			stealthActive_ = false;
+			stealthOutOfRangeTimer_ = 0.0f;
 		} else {
 			// 徘徊中のステルス制御
 			if (stealthActive_) {
@@ -475,7 +476,7 @@ void Enemy::UpdateFootstepAudio(float deltaTime) {
 				return;
 			}
 
-			// ステルス未有効: プレイヤーが範囲外に離れたらステルス発動
+			// ステルス未有効: 範囲外に10秒間いたらステルス発動
 			Vector3 listenerPos = audioListener_->GetPosition();
 			Vector3 diff = {
 				listenerPos.x - position_.x,
@@ -485,10 +486,16 @@ void Enemy::UpdateFootstepAudio(float deltaTime) {
 			float distanceToPlayer = sqrtf(diff.x * diff.x + diff.y * diff.y + diff.z * diff.z);
 
 			if (distanceToPlayer > STEALTH_AUDIO_RANGE) {
-				stealthActive_ = true;  // ステルス発動 → 次に見つかるまで無音
-				return;
+				stealthOutOfRangeTimer_ += deltaTime;
+				if (stealthOutOfRangeTimer_ >= STEALTH_ACTIVATION_TIME) {
+					stealthActive_ = true;  // 10秒経過 → ステルス発動
+					return;
+				}
+			} else {
+				// 範囲内に戻ったらタイマーリセット
+				stealthOutOfRangeTimer_ = 0.0f;
 			}
-			// 範囲内にまだいる → 足音は鳴り続ける
+			// まだステルス発動してない → 足音は鳴り続ける
 		}
 	}
 
@@ -1495,8 +1502,9 @@ bool Enemy::IsPlayerInVision() {
 		return true;
 	}
 
-	// 視界検知距離外なら検知しない（20m以内のみ検知）
-	if (distanceToPlayer > VISION_DETECTION_DISTANCE) {
+	// 視界検知距離外なら検知しない（ステルス中は10m、通常は18m）
+	float detectionDist = (stealthEnabled_ && stealthActive_) ? STEALTH_VISION_DETECTION_DISTANCE : VISION_DETECTION_DISTANCE;
+	if (distanceToPlayer > detectionDist) {
 		return false;
 	}
 
@@ -1619,12 +1627,19 @@ void Enemy::ResetJumpscare() {
 	OutputDebugStringA("Enemy jumpscare state reset\n");
 }
 
+void Enemy::EnableStealthFootsteps(bool enable) {
+	stealthEnabled_ = enable;
+	stealthActive_ = false;  // すぐには無音にしない
+	stealthOutOfRangeTimer_ = 0.0f;  // タイマーリセット
+}
+
 void Enemy::ResetAIState() {
 	// AI状態のリセット
 	isChasing_ = false;
 	wasChasing_ = false;
 	isSearching_ = false;
 	stealthActive_ = stealthEnabled_;  // ステルスが有効ならステルス状態でリセット
+	stealthOutOfRangeTimer_ = 0.0f;
 
 	// 音の検出状態をクリア
 	lastHeardSoundPosition_ = {};

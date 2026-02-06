@@ -48,7 +48,7 @@ public:
 	void SetAudioListener(SpatialAudioListener* listener) { audioListener_ = listener; }
 
 	// ステルス足音モード
-	void EnableStealthFootsteps(bool enable) { stealthEnabled_ = enable; stealthActive_ = enable; }
+	void EnableStealthFootsteps(bool enable);
 	bool IsStealthFootstepsEnabled() const { return stealthEnabled_; }
 
 	// Player tracking
@@ -161,6 +161,7 @@ private:
 	const float VISION_RANGE = 27.0f;
 	const float VISION_ANGLE = 90.0f;
 	const float VISION_DETECTION_DISTANCE = 18.0f;
+	const float STEALTH_VISION_DETECTION_DISTANCE = 10.0f;  // ステルス中の検知距離
 	const float PROXIMITY_DETECTION_DISTANCE = 5.0f;
 	const float CHASE_RELEASE_DISTANCE = 25.0f;
 	const float LOST_SIGHT_GRACE_PERIOD = 7.0f;
@@ -200,10 +201,12 @@ private:
 
 	// ステルス足音制御
 	// stealthEnabled_: 機能自体のON/OFF（オーブ残り25個以下で有効化）
-	// stealthActive_: 現在ステルス中か（離れたらtrue、見つかったらfalse）
+	// stealthActive_: 現在ステルス中か（範囲外10秒でtrue、見つかったらfalse）
 	bool stealthEnabled_{false};  // 初期状態: ステルス機能OFF（通常の足音）
 	bool stealthActive_{false};
+	float stealthOutOfRangeTimer_{0.0f};  // 範囲外にいる累計時間
 	const float STEALTH_AUDIO_RANGE = 22.0f;  // 足音の聞こえる最大距離
+	const float STEALTH_ACTIVATION_TIME = 10.0f;  // 範囲外に何秒いたらステルス発動
 	float lastAnimationTime_{0.0f};
 	const float FOOTSTEP_INTERVAL = 0.25f;
 

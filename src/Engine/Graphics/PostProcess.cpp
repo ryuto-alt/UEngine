@@ -61,6 +61,17 @@ void PostProcess::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager, Ef
         currentPSXParams_.enableDithering = 1;
         memcpy(paramsData_, &currentPSXParams_, sizeof(PSXParams));
         break;
+    case EffectType::VHS:
+        currentVHSParams_.time = 0.0f;
+        currentVHSParams_.scanlineIntensity = 0.5f;
+        currentVHSParams_.noiseIntensity = 0.3f;
+        currentVHSParams_.trackingError = 1.0f;
+        currentVHSParams_.chromaticAberration = 1.5f;
+        currentVHSParams_.colorBleed = 0.8f;
+        currentVHSParams_.sharpness = 0.6f;
+        currentVHSParams_.tapeCrease = 0.5f;
+        memcpy(paramsData_, &currentVHSParams_, sizeof(VHSParams));
+        break;
     }
 }
 
@@ -176,6 +187,7 @@ void PostProcess::CreatePipeline() {
     case EffectType::Horror:     psShaderPath = L"Resources/shaders/Horror.PS.hlsl"; break;
     case EffectType::TitleNoise: psShaderPath = L"Resources/shaders/TitleNoise.PS.hlsl"; break;
     case EffectType::PSXRetro:   psShaderPath = L"Resources/shaders/PSXEffect.PS.hlsl"; break;
+    case EffectType::VHS:        psShaderPath = L"Resources/shaders/VHS.PS.hlsl"; break;
     }
     Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = dxCommon_->CompileShader(psShaderPath, L"ps_6_0");
 
@@ -385,6 +397,22 @@ void PostProcess::SetPSXParams(float screenW, float screenH, float targetW, floa
 
     if (paramsData_) {
         memcpy(paramsData_, &currentPSXParams_, sizeof(PSXParams));
+    }
+}
+
+void PostProcess::SetVHSParams(float time, float scanline, float noise, float tracking,
+                               float chromatic, float bleed, float sharpness, float crease) {
+    currentVHSParams_.time = time;
+    currentVHSParams_.scanlineIntensity = scanline;
+    currentVHSParams_.noiseIntensity = noise;
+    currentVHSParams_.trackingError = tracking;
+    currentVHSParams_.chromaticAberration = chromatic;
+    currentVHSParams_.colorBleed = bleed;
+    currentVHSParams_.sharpness = sharpness;
+    currentVHSParams_.tapeCrease = crease;
+
+    if (paramsData_) {
+        memcpy(paramsData_, &currentVHSParams_, sizeof(VHSParams));
     }
 }
 

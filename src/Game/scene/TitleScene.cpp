@@ -196,9 +196,9 @@ void TitleScene::Update() {
     // マウスクリックで決定
     DIMOUSESTATE mouseState;
     if (SUCCEEDED(input_->GetMouseState(&mouseState))) {
-        if (mouseState.rgbButtons[0] & 0x80) { // 左クリック
+        if (mouseState.rgbButtons[0] & 0x80) {
             if (hazimeruHovered) {
-                sceneManager_->ChangeScene("GamePlay");
+                sceneManager_->ChangeScene("Intro");
             }
             if (owaruHovered) {
                 sceneManager_->RequestExit();
@@ -209,7 +209,7 @@ void TitleScene::Update() {
     // SPACEまたはENTERで決定
     if (input_->TriggerKey(DIK_SPACE) || input_->TriggerKey(DIK_RETURN)) {
         if (currentSelection_ == MenuSelection::Start) {
-            sceneManager_->ChangeScene("GamePlay");
+            sceneManager_->ChangeScene("Intro");
         } else {
             sceneManager_->RequestExit();
         }

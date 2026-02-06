@@ -1,6 +1,7 @@
 #include "SceneManager.h"
 #include "LogoScene.h"
 #include "TitleScene.h"
+#include "IntroScene.h"
 #include "GamePlayScene.h"
 #include "GameOverScene.h"
 #include "GameClearScene.h"
@@ -19,12 +20,11 @@ SceneManager* SceneManager::GetInstance() {
 void SceneManager::Initialize() {
     // 最初のシーンを設定
 #ifdef _DEBUG
-    nextScene_ = "GameClear";  // デバッグ時は直接GameClearから
+    nextScene_ = "Title";  // デバッグ時はTitleから
 #else
-    nextScene_ = "Logo";       // リリース時はLogoから
+    nextScene_ = "Logo";   // リリース時はLogoから
 #endif
 
-    // デバッグ出力
     OutputDebugStringA("SceneManager initialized successfully\n");
 }
 
@@ -50,6 +50,8 @@ void SceneManager::Update() {
             currentScene_ = std::make_unique<LogoScene>();
         } else if (nextScene_ == "Title") {
             currentScene_ = std::make_unique<TitleScene>();
+        } else if (nextScene_ == "Intro") {
+            currentScene_ = std::make_unique<IntroScene>();
         } else if (nextScene_ == "GamePlay") {
             currentScene_ = std::make_unique<GamePlayScene>();
         } else if (nextScene_ == "GameOver") {

@@ -12,7 +12,8 @@ public:
     enum class EffectType {
         Horror,
         TitleNoise,
-        PSXRetro
+        PSXRetro,
+        VHS
     };
 
     struct HorrorParams {
@@ -48,6 +49,17 @@ public:
         float padding1;
     };
 
+    struct VHSParams {
+        float time;
+        float scanlineIntensity;
+        float noiseIntensity;
+        float trackingError;
+        float chromaticAberration;
+        float colorBleed;
+        float sharpness;
+        float tapeCrease;
+    };
+
     PostProcess() = default;
     ~PostProcess();
 
@@ -70,6 +82,10 @@ public:
     // PSX
     void SetPSXParams(float screenW, float screenH, float targetW, float targetH,
                       int colorDepth, bool dithering);
+
+    // VHS
+    void SetVHSParams(float time, float scanline, float noise, float tracking,
+                      float chromatic, float bleed, float sharpness, float crease);
 
     void ResizeRenderTarget();
 
@@ -105,6 +121,7 @@ private:
     HorrorParams currentHorrorParams_{};
     TitleNoiseParams currentNoiseParams_{};
     PSXParams currentPSXParams_{};
+    VHSParams currentVHSParams_{};
 
     uint32_t backBufferIndex_ = 0;
 };

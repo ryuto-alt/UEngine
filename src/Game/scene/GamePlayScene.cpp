@@ -226,11 +226,11 @@ void GamePlayScene::Update() {
 					playerCol->Update();
 					enemyCol->Update();
 
-					// AABBを各方向0.5f縮小して判定を厳しくする
-					constexpr float shrink = 0.2f;
+					// AABBを各方向拡大して捕まりやすくする
+					constexpr float expand = 0.3f;
 					Collision::AABB enemyBox = enemyCol->GetWorldAABB();
-					enemyBox.min.x += shrink; enemyBox.min.z += shrink;
-					enemyBox.max.x -= shrink; enemyBox.max.z -= shrink;
+					enemyBox.min.x -= expand; enemyBox.min.z -= expand;
+					enemyBox.max.x += expand; enemyBox.max.z += expand;
 
 					shouldTriggerJumpscare = Collision::CheckAABBCollision(
 						playerCol->GetWorldAABB(),

@@ -69,7 +69,7 @@ private:
 
     // ゲームオーバー関連
     bool isGameOver_ = false;
-    const float GAMEOVER_DISTANCE = 1.5f;  // AABB判定のフォールバック用XZ距離閾値
+    const float GAMEOVER_DISTANCE = 2.0f;  // AABB判定のフォールバック用XZ距離閾値
 
     // ジャンプスケア関連
     bool jumpscareStarted_ = false;  // ジャンプスケアが開始されたか

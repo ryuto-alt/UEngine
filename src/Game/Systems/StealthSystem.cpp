@@ -20,6 +20,7 @@ void StealthSystem::Update(World& world, float deltaTime) {
         [deltaTime, &playerTransform](Entity entity, EnemyTag&, TransformComponent& transform,
                    StealthComponent& stealth, EnemyAIComponent& ai) {
 
+            if (!ai.isActive) return;
             if (!stealth.stealthEnabled) return;
 
             if (ai.isChasing) {

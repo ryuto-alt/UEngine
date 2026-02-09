@@ -178,6 +178,24 @@ bool NavMesh::FindPath(const float* startPos, const float* endPos, NavMeshPath& 
     return true;
 }
 
+Vector3 NavMesh::FindNearestPoint(const Vector3& position, const Vector3& extents) const {
+    if (!navQuery_ || !builder_ || !builder_->GetNavMesh()) {
+        return position;
+    }
+
+    float startPos[3] = {position.x, position.y, position.z};
+    float extentsArray[3] = {extents.x, extents.y, extents.z};
+
+    dtPolyRef nearestPoly = 0;
+    float nearestPoint[3];
+
+    dtStatus status = navQuery_->findNearestPoly(startPos, extentsArray, &filter_, &nearestPoly, nearestPoint);
+    if (dtStatusSucceed(status) && nearestPoly != 0) {
+        return {nearestPoint[0], nearestPoint[1], nearestPoint[2]};
+    }
+    return position;
+}
+
 bool NavMesh::Raycast(const Vector3& start, const Vector3& end) {
     if (!navQuery_ || !builder_ || !builder_->GetNavMesh()) {
         return false;  // NavMesh無効時は通る

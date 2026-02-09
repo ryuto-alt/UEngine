@@ -14,36 +14,8 @@ Vector3 NavMeshHelper::ClampToNavMesh(
 		return position;
 	}
 
-	float startPos[3] = {position.x, position.y, position.z};
-	float extentsArray[3] = {extents.x, extents.y, extents.z};
-
-	dtNavMeshQuery* query = navMesh->GetBuilder()->GetNavMesh() ?
-		dtAllocNavMeshQuery() : nullptr;
-
-	if (!query || !navMesh->GetBuilder()->GetNavMesh()) {
-		return position;
-	}
-
-	query->init(navMesh->GetBuilder()->GetNavMesh(), 2048);
-
-	dtQueryFilter filter;
-	filter.setIncludeFlags(0xffff);
-	filter.setExcludeFlags(0);
-
-	dtPolyRef nearestPoly = 0;
-	float nearestPoint[3];
-
-	dtStatus status = query->findNearestPoly(startPos, extentsArray, &filter, &nearestPoly, nearestPoint);
-
-	Vector3 result = position;
-	if (dtStatusSucceed(status) && nearestPoly != 0) {
-		result.x = nearestPoint[0];
-		result.y = nearestPoint[1];
-		result.z = nearestPoint[2];
-	}
-
-	dtFreeNavMeshQuery(query);
-	return result;
+	// Use NavMesh's cached query instead of allocating a new one every frame
+	return navMesh->FindNearestPoint(position, extents);
 }
 
 void NavMeshHelper::FollowPath(
@@ -62,6 +34,22 @@ void NavMeshHelper::FollowPath(
 		return;
 	}
 
+	// Advance past any waypoints already within reach (don't skip a frame per waypoint)
+	const float WAYPOINT_REACH_THRESHOLD = 0.5f;
+	while (currentWaypointIndex < static_cast<int>(currentPath.size())) {
+		const Vector3& wp = currentPath[currentWaypointIndex];
+		float dx = wp.x - position.x;
+		float dz = wp.z - position.z;
+		if (std::sqrt(dx * dx + dz * dz) >= WAYPOINT_REACH_THRESHOLD) break;
+		currentWaypointIndex++;
+	}
+
+	if (currentWaypointIndex >= static_cast<int>(currentPath.size())) {
+		currentPath.clear();
+		currentWaypointIndex = 0;
+		return;
+	}
+
 	const Vector3& targetWaypoint = currentPath[currentWaypointIndex];
 
 	// 目標ウェイポイントへのベクトル
@@ -72,17 +60,6 @@ void NavMeshHelper::FollowPath(
 	};
 
 	float distanceToWaypoint = std::sqrt(toWaypoint.x * toWaypoint.x + toWaypoint.z * toWaypoint.z);
-
-	// ウェイポイントに到達したら次へ（より近くまで進んでから曲がる）
-	const float WAYPOINT_REACH_THRESHOLD = 0.5f;  // 0.5mまで近づいてから次へ
-	if (distanceToWaypoint < WAYPOINT_REACH_THRESHOLD) {
-		currentWaypointIndex++;
-		if (currentWaypointIndex >= static_cast<int>(currentPath.size())) {
-			currentPath.clear();
-			currentWaypointIndex = 0;
-		}
-		return;
-	}
 
 	// 先読み：次のウェイポイントがある場合、そちらにも少し引き寄せられる
 	Vector3 targetDirection = toWaypoint;
@@ -110,21 +87,20 @@ void NavMeshHelper::FollowPath(
 			float dotProduct = normalizedToWaypointX * toNextWaypoint.x + normalizedToWaypointZ * toNextWaypoint.z;
 			float angle = std::acos(std::clamp(dotProduct, -1.0f, 1.0f));
 
-			// 角度が大きい（急カーブ）場合は減速
+			// 角度が大きい（急カーブ）場合は軽く減速（最低0.55倍速）
 			const float SHARP_TURN_THRESHOLD = 1.0f;
 			if (angle > SHARP_TURN_THRESHOLD) {
 				atCorner = true;
-				slowdownFactor = 0.3f + (1.0f - angle / 3.14159f) * 0.7f;
+				slowdownFactor = 0.55f + (1.0f - angle / 3.14159f) * 0.45f;
 			}
 
-			// 現在のウェイポイントに近い場合のみ次のウェイポイントへの先読みを行う
-			// 角度が急な場合は先読みを抑制して壁に突っかからないようにする
-			float baseBlendFactor = 1.0f - (distanceToWaypoint / WAYPOINT_REACH_THRESHOLD);
-			baseBlendFactor = std::clamp(baseBlendFactor, 0.0f, 1.0f);
+			// 先読みブレンド：2m以内で効き始め、角度が急でも一定量ブレンド
+			const float LOOKAHEAD_DISTANCE = 2.0f;
+			float baseBlendFactor = 1.0f - std::clamp(distanceToWaypoint / LOOKAHEAD_DISTANCE, 0.0f, 1.0f);
 
-			// 角度が急なほどブレンドを弱くする（早く曲がりすぎないように）
-			float angleInfluence = std::clamp(1.0f - (angle / 1.57f), 0.0f, 1.0f);  // 90度以上でブレンド無効化
-			float blendFactor = baseBlendFactor * angleInfluence * 0.3f;  // 最大30%のブレンド
+			// 角度が急なほどブレンドを弱くする（ただし完全無効化はしない）
+			float angleInfluence = std::clamp(1.0f - (angle / 2.5f), 0.15f, 1.0f);
+			float blendFactor = baseBlendFactor * angleInfluence * 0.5f;
 
 			targetDirection.x = normalizedToWaypointX * (1.0f - blendFactor) + toNextWaypoint.x * blendFactor;
 			targetDirection.z = normalizedToWaypointZ * (1.0f - blendFactor) + toNextWaypoint.z * blendFactor;
@@ -142,7 +118,7 @@ void NavMeshHelper::FollowPath(
 	float targetRotationY = std::atan2(targetDirection.x, targetDirection.z);
 
 	// 回転の補間（デルタタイムを考慮）
-	const float ROTATION_SPEED = 9.0f;  // 1秒あたりの回転速度（ラジアン/秒）
+	const float ROTATION_SPEED = 12.0f;  // 1秒あたりの回転速度（ラジアン/秒）
 	float angleDiff = targetRotationY - currentRotationY;
 	while (angleDiff > 3.14159f) angleDiff -= 2.0f * 3.14159f;
 	while (angleDiff < -3.14159f) angleDiff += 2.0f * 3.14159f;
@@ -158,7 +134,7 @@ void NavMeshHelper::FollowPath(
 	}
 
 	// 速度の補間（デルタタイムを考慮）
-	const float SPEED_LERP_RATE = 6.0f;  // 1秒あたりの補間速度
+	const float SPEED_LERP_RATE = 10.0f;  // 1秒あたりの補間速度
 	float targetSpeed = moveSpeed * slowdownFactor;
 	float speedLerpFactor = 1.0f - std::exp(-SPEED_LERP_RATE * deltaTime);
 	currentSpeed += (targetSpeed - currentSpeed) * speedLerpFactor;

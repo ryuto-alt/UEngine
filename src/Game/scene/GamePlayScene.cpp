@@ -69,6 +69,7 @@
 // Engine
 #include "Collision/AABBCollision.h"
 #include "NavMesh/NavMesh.h"
+#include "LineRenderer.h"
 
 // ECS component types are in namespace ECS
 using namespace ECS;
@@ -201,6 +202,7 @@ void GamePlayScene::Initialize() {
         enemyModel->AddAnimation("Run", runAnim);
         Animation jumpscareAnim = engine->LoadAnim("Resources/Models/Enemy/Enemy_Jumpscare", "Enemy_Jumpscare.gltf");
         enemyModel->AddAnimation("Jumpscare", jumpscareAnim);
+        float jumpscareDuration = jumpscareAnim.duration;
         enemyModel->ChangeAnimation("Walk");
         enemyModel->PlayAnimation();
 
@@ -224,6 +226,11 @@ void GamePlayScene::Initialize() {
         enemyTransform.scale = {0.05f, 0.05f, 0.05f};
         enemyTransform.rotation = {0.0f, 3.14159f, 0.0f};
 
+        // Sync RotationSmoothingComponent with initial rotation
+        auto& enemyRot = m_world->GetComponent<RotationSmoothingComponent>(m_enemyEntity);
+        enemyRot.currentRotationY = 3.14159f;
+        enemyRot.targetRotationY = 3.14159f;
+
         // Register enemy AABB collision
         {
             auto* collisionManager = Collision::AABBCollisionManager::GetInstance();
@@ -232,6 +239,15 @@ void GamePlayScene::Initialize() {
                 collisionManager->RegisterObject(enemyRenderer.object3d.get(), enemyAABB, true, "Enemy");
             }
         }
+
+#ifdef _DEBUG
+        // Initialize debug foot bone line renderer
+        if (m_world->HasComponent<EnemyDebugComponent>(m_enemyEntity)) {
+            auto& debugComp = m_world->GetComponent<EnemyDebugComponent>(m_enemyEntity);
+            debugComp.lineRenderer = std::make_unique<LineRenderer>();
+            debugComp.lineRenderer->Initialize(dxCommon_, camera_);
+        }
+#endif
 
         // Initialize enemy audio sources
         auto& footstepAudio = m_world->GetComponent<EnemyFootstepAudioComponent>(m_enemyEntity);
@@ -266,6 +282,10 @@ void GamePlayScene::Initialize() {
         if (navMeshManager && navMeshManager->GetNavMesh()) {
             pathfinding.navMesh = navMeshManager->GetNavMesh();
         }
+
+        // Set jumpscare duration from animation data
+        auto& jumpscareComp = m_world->GetComponent<EnemyJumpscareComponent>(m_enemyEntity);
+        jumpscareComp.duration = jumpscareDuration;
     }
 
     // Orb entities (each needs its own model)
@@ -440,6 +460,20 @@ void GamePlayScene::RegisterSystems() {
 void GamePlayScene::Update() {
     UnoEngine* engine = UnoEngine::GetInstance();
     const float deltaTime = engine->GetDelta();
+
+#ifdef _DEBUG
+    // M key: toggle NavMesh debug window
+    if (engine->IsKeyTrig(DIK_M)) {
+        m_showNavMeshDebug = !m_showNavMeshDebug;
+    }
+    // F key: toggle LightManager debug window
+    if (engine->IsKeyTrig(DIK_F)) {
+        auto* lightManager = m_world->GetResource<LightManager*>();
+        if (lightManager) {
+            lightManager->ToggleDebugDisplay();
+        }
+    }
+#endif
 
     // PostProcess resize on window size change
     static uint32_t prevWidth = 0, prevHeight = 0;

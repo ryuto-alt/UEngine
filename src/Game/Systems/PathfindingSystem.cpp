@@ -88,6 +88,7 @@ void PathfindingSystem::Update(World& world, float deltaTime) {
                    RotationSmoothingComponent& rot, EnemyAIComponent& ai,
                    VisionComponent& vision, PathfindingComponent& pathfinding) {
 
+            if (!ai.isActive) return;
             if (!pathfinding.navMesh || !pathfinding.navMesh->IsValid()) return;
 
             pathfinding.updateTimer -= deltaTime;
@@ -135,11 +136,10 @@ void PathfindingSystem::Update(World& world, float deltaTime) {
                     currentMoveSpeed = ai.patrolMoveSpeed;
                 }
 
-                float currentSpeed = 0.0f;
                 NavMeshHelper::FollowPath(
                     transform.position,
                     rot.currentRotationY,
-                    currentSpeed,
+                    pathfinding.currentSpeed,
                     pathfinding.currentPath,
                     pathfinding.waypointIndex,
                     currentMoveSpeed,
@@ -148,6 +148,11 @@ void PathfindingSystem::Update(World& world, float deltaTime) {
                     &pathfinding.isAtCorner,
                     &pathfinding.cornerSlowdown
                 );
+
+                // Sync rotation: FollowPath handles its own smoothing,
+                // prevent RotationSmoothingSystem from overriding
+                rot.targetRotationY = rot.currentRotationY;
+                transform.rotation.y = rot.currentRotationY;
             }
         }
     );

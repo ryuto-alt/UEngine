@@ -24,6 +24,7 @@ void BarkSoundSystem::Update(World& world, float deltaTime) {
         [deltaTime, &listenerPos, &listenerFwd](Entity entity, EnemyTag&, TransformComponent& transform,
                    EnemyAIComponent& ai, BarkSoundComponent& bark) {
 
+            if (!ai.isActive) return;
             if (!bark.source) return;
 
             bark.source->SetPosition(transform.position);

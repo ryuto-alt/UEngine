@@ -81,9 +81,9 @@ ECS::Entity CreateEnemyEntity(ECS::World& world, const Vector3& position,
     });
 
     world.AddComponent(entity, ECS::PreviousPositionComponent{.previousPosition = position});
-    world.AddComponent(entity, ECS::VelocityComponent{});
-    world.AddComponent(entity, ECS::GravityComponent{.gravity = -0.5f, .isGrounded = false});
-    world.AddComponent(entity, ECS::RotationSmoothingComponent{});
+    // Note: Enemy does NOT use VelocityComponent/GravityComponent
+    // PathfindingSystem directly controls position via NavMeshHelper::FollowPath
+    world.AddComponent(entity, ECS::RotationSmoothingComponent{.externalControl = true});
 
     // AI
     world.AddComponent(entity, ECS::EnemyAIComponent{
@@ -92,7 +92,7 @@ ECS::Entity CreateEnemyEntity(ECS::World& world, const Vector3& position,
         .mobility = aiConfig.mobility,
         .patrolMobility = aiConfig.patrolMobility,
         .searchMobility = aiConfig.searchMobility,
-        .moveSpeed = aiConfig.mobility * 1.5f,
+        .moveSpeed = aiConfig.mobility,
         .patrolMoveSpeed = aiConfig.patrolMobility,
         .searchMoveSpeed = aiConfig.searchMobility
     });
@@ -116,6 +116,10 @@ ECS::Entity CreateEnemyEntity(ECS::World& world, const Vector3& position,
 
     // Collision
     world.AddComponent(entity, ECS::AABBColliderComponent{.enabled = true, .name = "Enemy"});
+
+#ifdef _DEBUG
+    world.AddComponent(entity, ECS::EnemyDebugComponent{});
+#endif
 
     return entity;
 }

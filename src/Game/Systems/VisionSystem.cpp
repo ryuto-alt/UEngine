@@ -45,6 +45,8 @@ void VisionSystem::Update(World& world, float deltaTime) {
                    EnemyAIComponent& ai, PathfindingComponent& pathfinding,
                    StealthComponent& stealth) {
 
+            if (!ai.isActive) return;
+
             Vector3 toPlayer = {
                 playerPos.x - transform.position.x,
                 0.0f,
@@ -116,12 +118,24 @@ void VisionSystem::Update(World& world, float deltaTime) {
                 (ai.isChasing && vision.lostSightTimer < vision.lostSightGracePeriod
                  && distanceToPlayer <= vision.chaseReleaseDistance);
 
-            if (!shouldChase && (ai.isChasing || ai.isSearching)) {
+            if (!shouldChase && ai.isChasing) {
                 ai.isChasing = false;
-                ai.isSearching = false;
+                // Transition chase → search at last known position
+                ai.isSearching = true;
+                ai.searchTimer = 0.0f;
                 pathfinding.currentPath.clear();
                 pathfinding.waypointIndex = 0;
+                pathfinding.updateTimer = 0.0f;
                 vision.lostSightTimer = 0.0f;
+            }
+
+            // Search timeout: give up after maxSearchTime with no new sounds
+            if (ai.isSearching && !ai.isChasing) {
+                ai.searchTimer += deltaTime;
+                if (ai.searchTimer >= ai.maxSearchTime) {
+                    ai.isSearching = false;
+                    ai.searchTimer = 0.0f;
+                }
             }
         }
     );

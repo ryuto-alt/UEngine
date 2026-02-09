@@ -46,6 +46,7 @@ void EnemyFootstepAudioSystem::Update(World& world, float deltaTime) {
                    EnemyAIComponent& ai, StealthComponent& stealth,
                    AnimatedModelComponent& anim, EnemyFootstepAudioComponent& audio) {
 
+            if (!ai.isActive) return;
             if (!anim.animatedModel || anim.animationPaused) return;
 
             // Only during Walk/Run animations

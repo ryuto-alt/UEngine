@@ -24,6 +24,7 @@ void DetectionSoundSystem::Update(World& world, float deltaTime) {
            EnemyAIComponent& ai, StealthComponent& stealth,
            DetectionSoundComponent& detection) {
 
+            if (!ai.isActive) return;
             if (!detection.source) return;
 
             detection.source->SetPosition(transform.position);

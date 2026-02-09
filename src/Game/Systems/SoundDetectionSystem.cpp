@@ -26,6 +26,7 @@ void SoundDetectionSystem::Update(World& world, float deltaTime) {
             SoundDetectionComponent& sound, EnemyAIComponent& ai,
             VisionComponent& vision, PathfindingComponent& pathfinding) {
 
+            if (!ai.isActive) return;
             if (!hasRecentFootstep) return;
 
             Vector3 footstepPos = playerFootstep.lastFootstepPosition;
@@ -37,12 +38,16 @@ void SoundDetectionSystem::Update(World& world, float deltaTime) {
                 sound.lastHeardPosition = footstepPos;
                 sound.lastSoundTime = currentTime;
 
-                // If not already chasing, enter search mode
+                // If not already chasing, enter or continue search mode
                 if (!ai.isChasing && !ai.isSearching) {
                     ai.isSearching = true;
+                    ai.searchTimer = 0.0f;
                     vision.lastSeenPlayerPosition = footstepPos;
                     pathfinding.updateTimer = 0.0f;
                 } else if (!ai.isChasing) {
+                    // New sound heard during search: reset timer (stay persistent)
+                    ai.searchTimer = 0.0f;
+
                     // Update sound target if significantly different
                     float sdx = footstepPos.x - vision.lastSeenPlayerPosition.x;
                     float sdz = footstepPos.z - vision.lastSeenPlayerPosition.z;

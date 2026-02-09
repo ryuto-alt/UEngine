@@ -2,8 +2,10 @@
 #include "Mymath.h"
 #include <vector>
 #include <cstdint>
+#include <memory>
 
 class NavMesh;
+class LineRenderer;
 
 // Forward declare EnemyAIConfig if header not included
 struct EnemyAIConfig;
@@ -25,6 +27,9 @@ struct EnemyAIComponent {
     bool isChasing = false;
     bool wasChasing = false;
     bool isSearching = false;
+    bool isActive = false;
+    float searchTimer = 0.0f;
+    float maxSearchTime = 15.0f;
 };
 
 struct VisionComponent {
@@ -54,14 +59,17 @@ struct PathfindingComponent {
     float updateInterval = 0.5f;
     bool isAtCorner = false;
     float cornerSlowdown = 1.0f;
+    float currentSpeed = 0.0f;
 };
 
 struct StuckDetectionComponent {
     float timer = 0.0f;
     float detectionTime = 2.5f;
-    float distanceThreshold = 0.3f;
+    float distanceThreshold = 1.0f; // Total distance over detectionTime period
     bool isRecovering = false;
     int32_t recoveryAttempts = 0;
+    Vector3 checkOrigin{0.0f, 0.0f, 0.0f}; // Position when tracking started
+    bool isTracking = false;
 };
 
 struct EnemyJumpscareComponent {
@@ -76,6 +84,11 @@ struct StealthComponent {
     float outOfRangeTimer = 0.0f;
     float stealthAudioRange = 22.0f;
     float stealthActivationTime = 10.0f;
+};
+
+struct EnemyDebugComponent {
+    std::unique_ptr<LineRenderer> lineRenderer;
+    bool drawFootBones = true;
 };
 
 } // namespace ECS

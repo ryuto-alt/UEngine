@@ -19,6 +19,10 @@ void JumpscareSystem::Update(World& world, float deltaTime) {
     auto& gameState = world.GetComponent<GameStateComponent>(gameStateEntity);
     if (gameState.isGameOver) return;
 
+    // Skip during respawn to prevent re-triggering jumpscare
+    auto& respawn = world.GetComponent<RespawnStateComponent>(gameStateEntity);
+    if (respawn.state != RespawnStateComponent::State::None) return;
+
     Entity playerEntity = world.FindEntityWith<PlayerTag>();
     if (!playerEntity.IsValid()) return;
 
@@ -33,6 +37,8 @@ void JumpscareSystem::Update(World& world, float deltaTime) {
         [&](Entity entity, EnemyTag&, TransformComponent& enemyTransform,
             EnemyJumpscareComponent& jumpscare, EnemyAIComponent& ai,
             AnimatedModelComponent& anim) {
+
+            if (!ai.isActive) return;
 
             // Trigger check: AABB overlap or distance fallback
             if (!jumpscare.isJumpscaring && !gameState.jumpscareStarted) {
@@ -164,10 +170,18 @@ void JumpscareSystem::Update(World& world, float deltaTime) {
             }
 
             // Jumpscare finished
+            if (jumpscare.duration <= 0.0f) jumpscare.duration = 2.0f; // Safety fallback
             if (jumpscare.isJumpscaring && jumpscare.timer >= jumpscare.duration) {
                 gameState.captureCount++;
 
-                if (gameState.captureCount >= gameState.maxCaptures) {
+#ifdef _DEBUG
+                // Debug: always respawn, never game over
+                constexpr bool shouldGameOver = false;
+#else
+                bool shouldGameOver = (gameState.captureCount >= gameState.maxCaptures);
+#endif
+
+                if (shouldGameOver) {
                     gameState.isGameOver = true;
 
                     // Launch jumpscare process and exit
@@ -192,10 +206,10 @@ void JumpscareSystem::Update(World& world, float deltaTime) {
                 } else {
                     // Start respawn
                     if (gameStateEntity.IsValid()) {
-                        auto& respawn = world.GetComponent<RespawnStateComponent>(gameStateEntity);
-                        respawn.state = RespawnStateComponent::State::FadeOut;
-                        respawn.timer = 0.0f;
-                        respawn.fadeAlpha = 0.0f;
+                        auto& respawnState = world.GetComponent<RespawnStateComponent>(gameStateEntity);
+                        respawnState.state = RespawnStateComponent::State::FadeOut;
+                        respawnState.timer = 0.0f;
+                        respawnState.fadeAlpha = 0.0f;
                     }
                 }
 

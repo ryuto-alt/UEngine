@@ -35,7 +35,7 @@
   },
   "enemies": [
     {
-      "position": [50.0, 0.0, 0.0]
+      "position": [15.0, 0.0, 0.0]
     }
   ],
   "objects": [

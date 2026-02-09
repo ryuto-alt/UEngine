@@ -46,6 +46,9 @@ public:
     // レイキャスト: 2点間に障害物がないかチェック
     bool Raycast(const Vector3& start, const Vector3& end);
 
+    // 最近接NavMeshポイントを取得（キャッシュ済みクエリを使用）
+    Vector3 FindNearestPoint(const Vector3& position, const Vector3& extents = {2.0f, 4.0f, 2.0f}) const;
+
     // ナビメッシュが有効か
     bool IsValid() const { return builder_ && builder_->GetNavMesh() != nullptr; }
 

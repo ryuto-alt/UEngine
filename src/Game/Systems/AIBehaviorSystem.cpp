@@ -31,7 +31,8 @@ void AIBehaviorSystem::Update(World& world, float deltaTime) {
         [deltaTime](Entity entity, EnemyTag&, EnemyAIComponent& ai,
                    AnimatedModelComponent& anim, EnemyJumpscareComponent& jumpscare) {
 
-            // Skip AI during jumpscare
+            // Skip AI if inactive or during jumpscare
+            if (!ai.isActive) return;
             if (jumpscare.isJumpscaring) return;
 
             // Track chase state transitions for animation changes

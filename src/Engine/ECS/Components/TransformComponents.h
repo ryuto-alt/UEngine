@@ -26,6 +26,7 @@ struct RotationSmoothingComponent {
     float currentRotationY = 0.0f;
     float targetRotationY = 0.0f;
     float smoothingSpeed = 17.0f;
+    bool externalControl = false; // true: skip smoothing (PathfindingSystem controls rotation directly)
 };
 
 } // namespace ECS

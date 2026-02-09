@@ -13,36 +13,47 @@ void StuckDetectionSystem::Update(World& world, float deltaTime) {
                   PreviousPositionComponent& prevPos, StuckDetectionComponent& stuck,
                   PathfindingComponent& pathfinding, EnemyAIComponent& ai) {
 
+            if (!ai.isActive) return;
+
             if (stuck.isRecovering) {
                 // Recovery: clear path and recalculate
                 pathfinding.currentPath.clear();
                 pathfinding.waypointIndex = 0;
 
                 if (ai.isChasing && pathfinding.navMesh) {
-                    // Will be recalculated by PathfindingSystem next frame
                     pathfinding.updateTimer = 0.0f;
                 }
 
                 stuck.isRecovering = false;
                 stuck.recoveryAttempts = 0;
+                stuck.isTracking = false;
                 return;
             }
 
-            // Calculate movement since last frame
-            float dx = transform.position.x - prevPos.previousPosition.x;
-            float dz = transform.position.z - prevPos.previousPosition.z;
-            float movementDist = std::sqrt(dx * dx + dz * dz);
+            // Start tracking from current position
+            if (!stuck.isTracking) {
+                stuck.checkOrigin = transform.position;
+                stuck.isTracking = true;
+                stuck.timer = 0.0f;
+            }
 
-            if (movementDist < stuck.distanceThreshold) {
-                stuck.timer += deltaTime;
+            stuck.timer += deltaTime;
 
-                if (stuck.timer >= stuck.detectionTime) {
+            // Check cumulative distance over the detection period
+            if (stuck.timer >= stuck.detectionTime) {
+                float dx = transform.position.x - stuck.checkOrigin.x;
+                float dz = transform.position.z - stuck.checkOrigin.z;
+                float totalDist = std::sqrt(dx * dx + dz * dz);
+
+                if (totalDist < stuck.distanceThreshold) {
+                    // Truly stuck: hasn't moved enough over the entire period
                     stuck.isRecovering = true;
-                    stuck.timer = 0.0f;
                     pathfinding.currentPath.clear();
                     pathfinding.waypointIndex = 0;
                 }
-            } else {
+
+                // Reset tracking for next period
+                stuck.checkOrigin = transform.position;
                 stuck.timer = 0.0f;
             }
 

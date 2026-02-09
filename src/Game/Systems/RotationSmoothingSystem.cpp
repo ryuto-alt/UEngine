@@ -8,6 +8,9 @@ namespace ECS {
 void RotationSmoothingSystem::Update(World& world, float deltaTime) {
     world.ForEach<TransformComponent, RotationSmoothingComponent>(
         [deltaTime](Entity entity, TransformComponent& transform, RotationSmoothingComponent& rot) {
+            // Skip entities with external rotation control (e.g., enemy uses PathfindingSystem)
+            if (rot.externalControl) return;
+
             // Shortest-path angle interpolation
             float diff = rot.targetRotationY - rot.currentRotationY;
 

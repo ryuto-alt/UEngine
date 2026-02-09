@@ -1,6 +1,7 @@
 #include "TutorialSystem.h"
 #include "ECS/World.h"
 #include "ECS/Components/PlayerComponents.h"
+#include "ECS/Components/EnemyComponents.h"
 #include "ECS/Components/GameStateComponents.h"
 #include "ECS/Components/PostProcessComponents.h"
 #include "UnoEngine.h"
@@ -22,7 +23,7 @@ void TutorialSystem::Update(World& world, float deltaTime) {
 
             subtitle.subtitleManager->Update(deltaTime, skipPressed);
 
-            // Tutorial complete: unlock movement and show hint
+            // Tutorial complete: unlock movement, activate enemy, show hint
             if (wasActive && subtitle.subtitleManager->IsFinished()) {
                 tutorial.isFinished = true;
 
@@ -31,6 +32,13 @@ void TutorialSystem::Update(World& world, float deltaTime) {
                     auto& jumpscare = world.GetComponent<JumpscareVictimComponent>(playerEntity);
                     jumpscare.isInJumpscare = false;
                 }
+
+                // Activate enemy
+                world.ForEach<EnemyTag, EnemyAIComponent>(
+                    [](Entity e, EnemyTag&, EnemyAIComponent& ai) {
+                        ai.isActive = true;
+                    }
+                );
 
                 subtitle.subtitleManager->ShowHint(L"WASDで移動", 5.0f);
             }

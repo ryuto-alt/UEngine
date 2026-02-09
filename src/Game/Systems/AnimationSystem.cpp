@@ -49,6 +49,7 @@ void AnimationSystem::Update(World& world, float deltaTime) {
     world.ForEach<EnemyTag, EnemyAIComponent, AnimatedModelComponent>(
         [deltaTime](Entity entity, EnemyTag&, EnemyAIComponent& ai,
                    AnimatedModelComponent& anim) {
+            if (!ai.isActive) return;
             if (!anim.animatedModel) return;
 
             // Blend timer

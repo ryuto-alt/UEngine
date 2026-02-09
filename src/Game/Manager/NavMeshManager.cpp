@@ -185,7 +185,7 @@ void NavMeshManager::GenerateAndSaveNavMesh(
             sprintf_s(msg, "  Object has %d vertices, %d indices",
                 static_cast<int>(vertices.size()),
                 static_cast<int>(indices.size()));
-            AddLog(msg);
+            AddLog(msg);                        
 
             if (vertices.empty() || indices.empty()) {
                 AddLog("    -> Skipping: empty geometry");

@@ -7,8 +7,6 @@
 class DirectXCommon;
 class SrvManager;
 class Camera;
-class Player;
-class Orb;
 class Sprite;
 class SpriteCommon;
 
@@ -18,7 +16,9 @@ public:
     ~Minimap();
 
     void Initialize(DirectXCommon* dxCommon, SrvManager* srvManager);
-    void Update(Player* player, const std::vector<std::unique_ptr<Orb>>& orbs);
+    void UpdateState(const Vector3& playerPos,
+                     const std::vector<Vector3>& uncollectedOrbPositions,
+                     int totalOrbs, int collectedOrbs);
     void Draw();
 
     int GetTotalOrbs() const { return totalOrbs_; }

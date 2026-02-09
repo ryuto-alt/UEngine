@@ -4,8 +4,6 @@
 #include "../../Engine/Graphics/Sprite.h"
 #include "../../Engine/Graphics/SpriteCommon.h"
 #include "../../Engine/Graphics/TextureManager.h"
-#include "../GameObject/Player.h"
-#include "../GameObject/Orb.h"
 #include "../../Engine/Utility/WinApp.h"
 #include "imgui.h"
 #include <cmath>
@@ -59,44 +57,33 @@ void Minimap::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager) {
     }
 }
 
-void Minimap::Update(Player* player, const std::vector<std::unique_ptr<Orb>>& orbs) {
-    if (!player) return;
+void Minimap::UpdateState(const Vector3& playerPos,
+                          const std::vector<Vector3>& uncollectedOrbPositions,
+                          int totalOrbs, int collectedOrbs) {
+    totalOrbs_ = totalOrbs;
+    collectedOrbs_ = collectedOrbs;
 
-    Vector3 playerWorldPos = player->GetPosition();
-    float centerX = mapLeft_ + MAP_SIZE * 0.5f;
-    float centerY = mapTop_ + MAP_SIZE * 0.5f;
+    // Player dot at minimap center
+    float centerX = mapLeft_ + MAP_SIZE * 0.5f - 4.0f;
+    float centerY = mapTop_ + MAP_SIZE * 0.5f - 4.0f;
+    if (playerSprite_) {
+        playerSprite_->SetPosition({centerX, centerY});
+    }
 
-    // Player is always at center
-    playerSprite_->SetPosition({ centerX - 4.0f, centerY - 4.0f });
-
-    // Update orbs
+    // Update orb sprites
     activeOrbIndices_.clear();
-    totalOrbs_ = 0;
-    collectedOrbs_ = 0;
-    int spriteIdx = 0;
+    float halfMap = MAP_SIZE * 0.5f;
 
-    for (const auto& orb : orbs) {
-        if (!orb) continue;
-        totalOrbs_++;
-
-        if (orb->IsCollected()) {
-            collectedOrbs_++;
-            continue;
-        }
-
-        if (spriteIdx >= MAX_ORBS) continue;
-
-        Vector2 mapPos = WorldToMinimap(orb->GetPosition(), playerWorldPos);
-        float sx = centerX + mapPos.x - 2.5f;
-        float sy = centerY + mapPos.y - 2.5f;
+    for (int i = 0; i < static_cast<int>(uncollectedOrbPositions.size()) && i < MAX_ORBS; ++i) {
+        Vector2 offset = WorldToMinimap(uncollectedOrbPositions[i], playerPos);
 
         // Skip orbs outside minimap bounds
-        float halfMap = MAP_SIZE * 0.5f - 4.0f;
-        if (std::abs(sx - centerX) > halfMap || std::abs(sy - centerY) > halfMap) continue;
+        if (std::abs(offset.x) > halfMap || std::abs(offset.y) > halfMap) continue;
 
-        orbSprites_[spriteIdx]->SetPosition({ sx, sy });
-        activeOrbIndices_.push_back(spriteIdx);
-        spriteIdx++;
+        float sx = mapLeft_ + halfMap + offset.x - 2.5f;
+        float sy = mapTop_ + halfMap + offset.y - 2.5f;
+        orbSprites_[i]->SetPosition({sx, sy});
+        activeOrbIndices_.push_back(i);
     }
 }
 

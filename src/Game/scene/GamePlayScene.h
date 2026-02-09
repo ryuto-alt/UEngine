@@ -1,26 +1,22 @@
 #pragma once
 #include "IScene.h"
-#include "Sprite.h"
-#include "GameObject/Player.h"
-#include "GameObject/Enemy.h"
-#include "GameObject/Orb.h"
-#include "GameObject/FPSCamera.h"
-#include "Skybox.h"
-#include "Manager/LightManager.h"
-#include "InstancedRenderer.h"
-#include "PostProcess.h"
+#include "ECS/World.h"
+#include "ECS/Entity.h"
 #include "Scene/SceneConfigurator.h"
 #include "../Utils/JsonLoader.h"
-#include "UI/Minimap.h"
-#include "UI/BitmapFont.h"
-#include "UI/SubtitleManager.h"
 #include <memory>
 #include <vector>
+#include <string>
+
+namespace ECS {
+class RenderSystem;
+class UIRenderSystem;
+}
 
 class GamePlayScene : public IScene {
 public:
-    GamePlayScene() = default;
-    ~GamePlayScene() override = default;
+    GamePlayScene();
+    ~GamePlayScene() override;
 
     void Initialize() override;
     void Update() override;
@@ -28,77 +24,27 @@ public:
     void Finalize() override;
 
 private:
-    void HandleInput();
+    void RegisterSystems();
 
-    std::unique_ptr<Player> player_;
-    std::unique_ptr<Enemy> enemy_;
-    std::vector<std::unique_ptr<Orb>> orbs_;
-    std::vector<std::unique_ptr<Object3d>> sceneObjects_;
-    std::unique_ptr<Skybox> skybox_;
-    std::unique_ptr<LightManager> lightManager_;
-    std::unique_ptr<FPSCamera> fpsCamera_;
-    std::unique_ptr<PostProcess> postProcess_;
-    std::unique_ptr<PostProcess> horrorEffect_;
-    std::unique_ptr<SpatialAudioListener> audioListener_;
-    std::unique_ptr<Sprite> fadeSprite_;  // 暗転用スプライト
-    std::unique_ptr<Minimap> minimap_;
-    std::unique_ptr<BitmapFont> bitmapFont_;
-    std::unique_ptr<SubtitleManager> subtitleManager_;
+    ECS::World* m_world = nullptr;
 
-    SceneData sceneData_;
-    bool skyboxEnabled_ = false;
-    float fisheyeStrength_ = 2.58f;
-    float fisheyeRadius_ = 1.5f;
+    // Entity handles
+    ECS::Entity m_playerEntity;
+    ECS::Entity m_enemyEntity;
+    ECS::Entity m_gameStateEntity;
+    std::vector<ECS::Entity> m_orbEntities;
+    std::vector<ECS::Entity> m_sceneObjectEntities;
 
-    // NavMeshログ
-    std::vector<std::string> navMeshLogs_;
+    // Render systems (called in Draw, not in UpdateSystems)
+    std::unique_ptr<ECS::RenderSystem> m_renderSystem;
+    std::unique_ptr<ECS::UIRenderSystem> m_uiRenderSystem;
+
+    // Scene configuration data (kept for JSON loading)
+    SceneData m_sceneData;
+
+    // NavMesh debug (kept for ImGui)
+    std::vector<std::string> m_navMeshLogs;
+    bool m_showNavMeshDebug = false;
     void AddNavMeshLog(const std::string& message);
     void ClearNavMeshLogs();
-
-    // NavMesh Debug表示フラグ
-    bool showNavMeshDebug_ = false;
-
-    // マウスカーソル表示フラグ (TABで切替)
-    bool showMouseCursor_ = false;
-
-    // カリング統計
-    struct CullingStats {
-        int totalObjects = 0;
-        int visibleObjects = 0;
-        int culledObjects = 0;
-        int visibleMeshes = 0;
-        int culledMeshes = 0;
-        float cullingRate = 0.0f;
-    } cullingStats_;
-
-    // ゲームオーバー関連
-    bool isGameOver_ = false;
-    const float GAMEOVER_DISTANCE = 2.0f;  // AABB判定のフォールバック用XZ距離閾値
-
-    // ジャンプスケア関連
-    bool jumpscareStarted_ = false;  // ジャンプスケアが開始されたか
-
-    // キャプチャカウンター（3回まで）
-    int captureCount_ = 0;
-    static constexpr int MAX_CAPTURES = 3;
-
-    // 初期位置
-    Vector3 playerInitialPos_ = {0.0f, 0.0f, 0.0f};
-    Vector3 enemyInitialPos_ = {50.0f, 0.0f, 0.0f};
-
-    // リスポーン処理用
-    enum class RespawnState {
-        None,
-        FadeOut,
-        Respawning,
-        FadeIn
-    };
-    RespawnState respawnState_ = RespawnState::None;
-    float respawnTimer_ = 0.0f;
-    static constexpr float FADE_DURATION = 1.0f;  // 暗転の長さ
-    float fadeAlpha_ = 0.0f;  // 0.0f = 透明, 1.0f = 完全に黒
-
-    void UpdateRespawn(float deltaTime);
-    void StartRespawn();
-    void ResetPositions();
 };

@@ -4,10 +4,7 @@
 #include <memory>
 #include "Mymath.h"
 
-// 前方宣言
 class Object3d;
-class Player;
-class Enemy;
 class Camera;
 class PostProcess;
 class FPSCamera;

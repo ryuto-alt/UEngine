@@ -66,17 +66,20 @@
     <Filter Include="src\engine\Animation">
       <UniqueIdentifier>{a1b2c3d4-5e6f-7890-abcd-ef1234567890}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\Game\Player">
+    <Filter Include="src\engine\ECS">
       <UniqueIdentifier>{c7d1c0b8-5331-4b77-8564-6968ba414bf0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\engine\ECS\Components">
+      <UniqueIdentifier>{d8e2c1b9-6442-4c88-9675-7a79cb525ef1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Game\Systems">
+      <UniqueIdentifier>{e9f3d2ca-7553-5d99-a786-8b8adc636f02}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\Game\Light">
       <UniqueIdentifier>{aebc30fc-f6a2-41f9-b277-3cc61bdf7280}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\Game\SkyBox">
       <UniqueIdentifier>{5ed5bd49-1719-413f-81e2-b66afd61948c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\Game\Enemy">
-      <UniqueIdentifier>{84b91cef-82ef-4bbb-a455-717118ec2970}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\engine\Resource">
       <UniqueIdentifier>{d1e2f3a4-b5c6-7890-1234-567890abcdef}</UniqueIdentifier>
@@ -242,9 +245,6 @@
     <ClCompile Include="src\Engine\Collision\CollisionHelper.cpp">
       <Filter>src\engine\Collision</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\GameObject\Player.cpp">
-      <Filter>src\Game\Player</Filter>
-    </ClCompile>
     <ClCompile Include="src\Game\Core\MyGame.cpp">
       <Filter>src\Game</Filter>
     </ClCompile>
@@ -268,9 +268,6 @@
     </ClCompile>
     <ClCompile Include="src\Engine\Graphics\InstancedRenderer.cpp">
       <Filter>src\engine\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\GameObject\Enemy.cpp">
-      <Filter>src\Game\Enemy</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\Scene\SceneLoader.cpp">
       <Filter>src\engine\Scene</Filter>
@@ -356,9 +353,6 @@
     <ClCompile Include="src\Game\scene\GameOverScene.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\GameObject\Orb.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\Game\Utils\JsonLoader.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -370,6 +364,120 @@
     </ClCompile>
     <ClCompile Include="src\Game\UI\SubtitleManager.cpp">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\EntityFactory.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\InputSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\DebugInputSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\PlayerMovementSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\GravitySystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\GroundCollisionSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\VelocityIntegrationSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\RotationSmoothingSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\CollisionResponseSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\SoundDetectionSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\VisionSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\AIBehaviorSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\PathfindingSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\StuckDetectionSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\StealthSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\OrbCollectionSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\FloatingAnimationSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\SpotLightGlowSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\JumpscareSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\RespawnSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\FearEffectSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\TutorialSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\AnimationSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\CameraSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\CameraShakeSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\AudioListenerSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\EnemyFootstepAudioSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\DetectionSoundSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\BarkSoundSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\ChaseBGMSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\PlayerFootstepSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\LightingSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\FlashlightSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\LightDistributionSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\TransformSyncSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\CullingSystemECS.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\RenderSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\UIRenderSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -529,9 +637,6 @@
     <ClInclude Include="src\Engine\Collision\CollisionHelper.h">
       <Filter>src\engine\Collision</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\GameObject\Player.h">
-      <Filter>src\Game\Player</Filter>
-    </ClInclude>
     <ClInclude Include="src\Game\Core\MyGame.h">
       <Filter>src\Game</Filter>
     </ClInclude>
@@ -553,11 +658,8 @@
     <ClInclude Include="src\Engine\Graphics\InstancedRenderer.h">
       <Filter>src\engine\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\GameObject\Enemy.h">
-      <Filter>src\Game\Enemy</Filter>
-    </ClInclude>
     <ClInclude Include="src\Game\GameObject\EnemyAIConfig.h">
-      <Filter>src\Game\Enemy</Filter>
+      <Filter>src\Game\GameObject</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\GameObject\FPSCamera.h">
       <Filter>src\Game\GameObject</Filter>
@@ -584,11 +686,181 @@
     <ClInclude Include="src\Engine\Graphics\CullingSystem.h" />
     <ClInclude Include="src\Engine\StepTimer.h" />
     <ClInclude Include="src\Game\scene\GameOverScene.h" />
-    <ClInclude Include="src\Game\GameObject\Orb.h" />
     <ClInclude Include="src\Game\Utils\JsonLoader.h" />
     <ClInclude Include="src\Game\UI\Minimap.h" />
     <ClInclude Include="src\Game\UI\BitmapFont.h" />
     <ClInclude Include="src\Game\UI\SubtitleManager.h" />
+    <ClInclude Include="src\Engine\ECS\Entity.h">
+      <Filter>src\engine\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\ECS\ComponentRegistry.h">
+      <Filter>src\engine\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\ECS\ComponentArray.h">
+      <Filter>src\engine\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\ECS\Archetype.h">
+      <Filter>src\engine\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\ECS\World.h">
+      <Filter>src\engine\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\ECS\System.h">
+      <Filter>src\engine\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\ECS\Query.h">
+      <Filter>src\engine\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\ECS\JobSystem.h">
+      <Filter>src\engine\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\ECS\Components\TransformComponents.h">
+      <Filter>src\engine\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\ECS\Components\RenderComponents.h">
+      <Filter>src\engine\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\ECS\Components\PlayerComponents.h">
+      <Filter>src\engine\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\ECS\Components\CameraComponents.h">
+      <Filter>src\engine\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\ECS\Components\EnemyComponents.h">
+      <Filter>src\engine\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\ECS\Components\AudioComponents.h">
+      <Filter>src\engine\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\ECS\Components\CollisionComponents.h">
+      <Filter>src\engine\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\ECS\Components\CollectibleComponents.h">
+      <Filter>src\engine\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\ECS\Components\GameStateComponents.h">
+      <Filter>src\engine\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\ECS\Components\LightingComponents.h">
+      <Filter>src\engine\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\ECS\Components\PostProcessComponents.h">
+      <Filter>src\engine\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\EntityFactory.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\InputSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\DebugInputSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\PlayerMovementSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\GravitySystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\GroundCollisionSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\VelocityIntegrationSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\RotationSmoothingSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\CollisionResponseSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\SoundDetectionSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\VisionSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\AIBehaviorSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\PathfindingSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\StuckDetectionSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\StealthSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\OrbCollectionSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\FloatingAnimationSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\SpotLightGlowSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\JumpscareSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\RespawnSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\FearEffectSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\TutorialSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\AnimationSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\CameraSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\CameraShakeSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\AudioListenerSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\EnemyFootstepAudioSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\DetectionSoundSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\BarkSoundSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\ChaseBGMSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\PlayerFootstepSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\LightingSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\FlashlightSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\LightDistributionSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\TransformSyncSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\CullingSystemECS.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\RenderSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\UIRenderSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt">

@@ -1,1116 +1,577 @@
 #include "GamePlayScene.h"
-#include "imgui.h"
 #include "UnoEngine.h"
 #include "SceneManager.h"
-#include "InstancedRenderer.h"
-#include <cmath>
-#include <algorithm>
-#include <filesystem>
+
+// ECS
+#include "ECS/World.h"
+#include "ECS/Components/TransformComponents.h"
+#include "ECS/Components/RenderComponents.h"
+#include "ECS/Components/PlayerComponents.h"
+#include "ECS/Components/CameraComponents.h"
+#include "ECS/Components/EnemyComponents.h"
+#include "ECS/Components/AudioComponents.h"
+#include "ECS/Components/CollisionComponents.h"
+#include "ECS/Components/CollectibleComponents.h"
+#include "ECS/Components/GameStateComponents.h"
+#include "ECS/Components/LightingComponents.h"
+#include "ECS/Components/PostProcessComponents.h"
+
+// Systems
+#include "Systems/InputSystem.h"
+#include "Systems/DebugInputSystem.h"
+#include "Systems/PlayerMovementSystem.h"
+#include "Systems/GravitySystem.h"
+#include "Systems/GroundCollisionSystem.h"
+#include "Systems/VelocityIntegrationSystem.h"
+#include "Systems/RotationSmoothingSystem.h"
+#include "Systems/CollisionResponseSystem.h"
+#include "Systems/SoundDetectionSystem.h"
+#include "Systems/VisionSystem.h"
+#include "Systems/AIBehaviorSystem.h"
+#include "Systems/PathfindingSystem.h"
+#include "Systems/StuckDetectionSystem.h"
+#include "Systems/StealthSystem.h"
+#include "Systems/OrbCollectionSystem.h"
+#include "Systems/FloatingAnimationSystem.h"
+#include "Systems/SpotLightGlowSystem.h"
+#include "Systems/JumpscareSystem.h"
+#include "Systems/RespawnSystem.h"
+#include "Systems/FearEffectSystem.h"
+#include "Systems/TutorialSystem.h"
+#include "Systems/AnimationSystem.h"
+#include "Systems/CameraSystem.h"
+#include "Systems/CameraShakeSystem.h"
+#include "Systems/AudioListenerSystem.h"
+#include "Systems/EnemyFootstepAudioSystem.h"
+#include "Systems/DetectionSoundSystem.h"
+#include "Systems/BarkSoundSystem.h"
+#include "Systems/ChaseBGMSystem.h"
+#include "Systems/PlayerFootstepSystem.h"
+#include "Systems/LightingSystem.h"
+#include "Systems/FlashlightSystem.h"
+#include "Systems/LightDistributionSystem.h"
+#include "Systems/TransformSyncSystem.h"
+#include "Systems/CullingSystemECS.h"
+#include "Systems/RenderSystem.h"
+#include "Systems/UIRenderSystem.h"
+
+// EntityFactory
+#include "EntityFactory.h"
+
+#include "GameObject/FPSCamera.h"
+#include "GameObject/EnemyAIConfig.h"
+
+// UI
+#include "UI/BitmapFont.h"
+#include "UI/SubtitleManager.h"
+#include "UI/Minimap.h"
+
+// Engine
 #include "Collision/AABBCollision.h"
+#include "NavMesh/NavMesh.h"
 
-void GamePlayScene::Initialize() {
-	if (!dxCommon_ || !srvManager_ || !camera_) {
-		OutputDebugStringA("GamePlayScene::Initialize - Critical error: Required pointers are null!\n");
-		return;
-	}
-
-	SceneConfigurator configurator;
-	sceneData_ = configurator.LoadSceneFromJSON("Resources/Scenes/gameplay_scene.json");
-	configurator.ApplySceneData(
-		sceneData_, dxCommon_, srvManager_, camera_,
-		player_, enemy_, sceneObjects_, skybox_, lightManager_,
-		fpsCamera_, postProcess_, horrorEffect_, skyboxEnabled_,
-		fisheyeStrength_, fisheyeRadius_
-	);
-
-	// ナビメッシュの初期化（UnoEngine経由）
-	UnoEngine* engine = UnoEngine::GetInstance();
-	NavMeshManager* navMeshManager = engine->GetNavMgr();
-
-	if (navMeshManager) {
-		navMeshManager->SetLogCallback([this](const std::string& message) {
-			AddNavMeshLog(message);
-			});
-	}
-
-	const std::string navMeshPath = "externals/navimap/stage.navmesh";
-	engine->InitNav(navMeshPath);
-
-	// NavMeshが読み込まれなかった場合は生成
-	navMeshManager = engine->GetNavMgr();
-	if (!navMeshManager->GetNavMesh() || !navMeshManager->GetNavMesh()->IsValid()) {
-		AddNavMeshLog("No existing NavMesh found, auto-generating...");
-		engine->GenNav(sceneObjects_, navMeshPath);
-	}
-
-	// 3D空間オーディオリスナーの初期化
-	audioListener_ = std::make_unique<SpatialAudioListener>();
-	if (player_) {
-		audioListener_->SetPosition(player_->GetPosition());
-	}
-
-	// EnemyにNavMeshとAudioListenerを設定
-	if (enemy_) {
-		navMeshManager = engine->GetNavMgr();
-		if (navMeshManager && navMeshManager->GetNavMesh()) {
-			enemy_->SetNavMesh(navMeshManager->GetNavMesh());
-			AddNavMeshLog("NavMesh set to Enemy");
-		}
-		if (player_) {
-			enemy_->SetPlayer(player_.get());
-		}
-		if (audioListener_) {
-			enemy_->SetAudioListener(audioListener_.get());
-			AddNavMeshLog("Player and AudioListener set to Enemy");
-		}
-	}
-
-	// JSONから読んだ実際の初期位置を保存（リスポーン用）
-	if (player_) {
-		playerInitialPos_ = player_->GetPosition();
-	}
-	if (enemy_) {
-		enemyInitialPos_ = enemy_->GetPosition();
-	}
-
-	// Orbの初期化（70個）
-	orbs_.clear();
-
-	// JSONファイルからOrb位置を読み込み
-	std::vector<Vector3> orbPositions;
-	const std::string orbPositionFile = "Resources/Models/orb/orb_positions.json";
-
-	if (!JsonLoader::LoadOrbPositions(orbPositionFile, orbPositions)) {
-		OutputDebugStringA("ERROR: Failed to load orb positions from JSON!\n");
-		return; // JSONファイルが読み込めない場合は初期化を中断
-	}
-	OutputDebugStringA(("Successfully loaded " + std::to_string(orbPositions.size()) + " orb positions from JSON\n").c_str());
-
-	// 各位置にOrbを生成
-	for (const auto& pos : orbPositions) {
-		auto orb = std::make_unique<Orb>();
-		orb->Initialize(pos, camera_);
-		orbs_.push_back(std::move(orb));
-	}
-
-	OutputDebugStringA(("GamePlayScene: Initialized " + std::to_string(orbs_.size()) + " Orbs\n").c_str());
-
-	// ミニマップの初期化
-	minimap_ = std::make_unique<Minimap>();
-	minimap_->Initialize(dxCommon_, srvManager_);
-
-	// Orb取得音の読み込み
-	AudioManager::GetInstance()->LoadMP3("orbGet", "Resources/Audio/get.mp3");
-	AudioManager::GetInstance()->SetVolume("orbGet", 0.5f);
-
-	// 暗転用スプライトの初期化（黒い四角形）
-	fadeSprite_ = std::make_unique<Sprite>();
-	fadeSprite_->Initialize(spriteCommon_, "Resources/textures/white1x1.png");
-	fadeSprite_->SetPosition({0.0f, 0.0f});
-	fadeSprite_->SetSize({1280.0f, 720.0f});  // 画面全体をカバー
-	fadeSprite_->setColor({0.0f, 0.0f, 0.0f, 0.0f});  // 初期状態は透明
-
-	// ビットマップフォント＆字幕の初期化
-	bitmapFont_ = std::make_unique<BitmapFont>();
-	bitmapFont_->Initialize(spriteCommon_, "Resources/font/Honoka-Shin-Maru-Gothic_R_16.fnt");
-
-	subtitleManager_ = std::make_unique<SubtitleManager>();
-	subtitleManager_->Initialize(spriteCommon_, bitmapFont_.get());
-	subtitleManager_->SetSteps({
-		{L"ここがみんなが言っていた夢か...", 2.5f, 0.05f},
-		{L"SNSで見た情報だと、捕まらないように\nすべてのオーブを集めればいいらしい。", 4.0f, 0.05f},
-		{L"ただ厄介なのがあの青い熊だ", 2.0f, 0.05f},
-		{L"どうやらあの熊は追いかけるスピードが速いようだ", 2.0f, 0.05f},
-		{L"通路が結構入り組んでいるのを使って、なんとか対策できないだろうか。", 3.0f, 0.05f},
-		{L"とりあえず、奴の足音に注意して集めよう", 2.0f, 0.10f},
-	});
-	subtitleManager_->Start();
-
-	// チュートリアル中は移動無効
-	if (player_) {
-		player_->SetJumpscareMode(true);
-	}
-}
-
-
-void GamePlayScene::Update() {
-	UnoEngine* engine = UnoEngine::GetInstance();
-	const float deltaTime = engine->GetDelta();
-
-	// リスポーン処理の更新
-	UpdateRespawn(deltaTime);
-
-	// フェードスプライトのアルファ値を更新
-	if (fadeSprite_) {
-		fadeSprite_->setColor({0.0f, 0.0f, 0.0f, fadeAlpha_});
-		fadeSprite_->Update();
-	}
-
-	// リスポーン処理中は通常のゲームロジックをスキップ
-	if (respawnState_ != RespawnState::None) {
-		return;
-	}
-
-	// ウィンドウサイズが変わったときにPostProcessのレンダーターゲットをリサイズ
-	static uint32_t previousWidth = 0;
-	static uint32_t previousHeight = 0;
-	uint32_t currentWidth = dxCommon_->GetCurrentWindowWidth();
-	uint32_t currentHeight = dxCommon_->GetCurrentWindowHeight();
-
-	if (previousWidth != currentWidth || previousHeight != currentHeight) {
-		if (previousWidth != 0 && previousHeight != 0) {
-			if (postProcess_) postProcess_->ResizeRenderTarget();
-			if (horrorEffect_) horrorEffect_->ResizeRenderTarget();
-		}
-		previousWidth = currentWidth;
-		previousHeight = currentHeight;
-	}
+// ECS component types are in namespace ECS
+using namespace ECS;
 
 #ifdef _DEBUG
-	ImGui::Begin("Debug: Visibility");
-	if (enemy_) {
-		// ステルス足音モードのトグル
-		bool stealthOn = enemy_->IsStealthFootstepsEnabled();
-		if (ImGui::Checkbox("Stealth Footsteps", &stealthOn)) {
-			enemy_->EnableStealthFootsteps(stealthOn);
-		}
-		if (stealthOn) {
-			ImGui::SameLine();
-			ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "(ACTIVE)");
-		}
-	}
-	ImGui::End();
+#include "imgui.h"
 #endif
 
-	// 魚眼強度と範囲を適用
-	if (horrorEffect_) {
-		horrorEffect_->SetFisheyeStrength(fisheyeStrength_);
-		horrorEffect_->SetFisheyeRadius(fisheyeRadius_);
-	}
+GamePlayScene::GamePlayScene() = default;
+GamePlayScene::~GamePlayScene() = default;
 
-	player_->HandleInput(engine);
-	HandleInput();
+void GamePlayScene::Initialize() {
+    if (!dxCommon_ || !srvManager_ || !camera_) {
+        OutputDebugStringA("GamePlayScene::Initialize - Critical error: Required pointers are null!\n");
+        return;
+    }
 
-	// ジャンプスケア中は通常のカメラ更新をスキップ
-	if (!jumpscareStarted_) {
-		// FPSカメラモードかどうかでカメラ更新を切り替え
-		if (fpsCamera_ && fpsCamera_->IsFPSMode()) {
-			// FPSモード: FPSカメラ専用の更新
-			fpsCamera_->UpdateCameraRotation(camera_, engine);
+    UnoEngine* engine = UnoEngine::GetInstance();
+    m_world = engine->GetECSWorld();
 
-			// カメラシェイクを更新（プレイヤーの移動状態に基づく）
-			fpsCamera_->UpdateCameraShake(player_->IsMoving(), player_->IsRunning(), deltaTime, engine);
+    SceneConfigurator configurator;
+    std::vector<std::unique_ptr<Object3d>> sceneObjects;
+    std::unique_ptr<Skybox> skybox;
+    std::unique_ptr<LightManager> lightManager;
+    std::unique_ptr<FPSCamera> fpsCamera;
+    std::unique_ptr<PostProcess> postProcess;
+    std::unique_ptr<PostProcess> horrorEffect;
+    bool skyboxEnabled = false;
+    float fisheyeStrength = 2.58f;
+    float fisheyeRadius = 1.5f;
 
-			player_->UpdateFPSCamera(fpsCamera_.get());
-			camera_->Update();
-		}
-		else {
-			// 三人称モード: 通常のカメラシステム
-			player_->UpdateCameraSystem(engine);
-		}
-	}
+    m_sceneData = configurator.LoadSceneFromJSON("Resources/Scenes/gameplay_scene.json");
+    configurator.ApplySceneData(
+        m_sceneData, dxCommon_, srvManager_, camera_,
+        sceneObjects, skybox, lightManager,
+        fpsCamera, postProcess, horrorEffect, skyboxEnabled,
+        fisheyeStrength, fisheyeRadius
+    );
 
-	lightManager_->Update(engine->GetDelta());
+    // NavMesh initialization
+    NavMeshManager* navMeshManager = engine->GetNavMgr();
+    if (navMeshManager) {
+        navMeshManager->SetLogCallback([this](const std::string& message) {
+            AddNavMeshLog(message);
+        });
+    }
+    engine->InitNav("externals/navimap/stage.navmesh");
+    navMeshManager = engine->GetNavMgr();
+    if (!navMeshManager->GetNavMesh() || !navMeshManager->GetNavMesh()->IsValid()) {
+        engine->GenNav(sceneObjects, "externals/navimap/stage.navmesh");
+    }
 
-	// スポットライトをプレイヤー視点に追従させる
-	if (fpsCamera_) {
-		lightManager_->UpdateFlashlight(player_->GetPosition(), fpsCamera_->GetCameraRotation());
-	}
+    // --- Create ECS Entities ---
 
-	const DirectionalLight& dirLight = lightManager_->GetDirectionalLight();
-	const SpotLight& spotLight = lightManager_->GetSpotLight();
+    // Player entity
+    Vector3 playerPos = m_sceneData.player.position;
+    m_playerEntity = EntityFactory::CreatePlayerEntity(*m_world, playerPos, camera_);
 
-	player_->SetDirectionalLight(dirLight);
-	player_->SetSpotLight(spotLight);
+    // Load player model directly
+    {
+        auto playerModel = engine->CreateAnim();
+        auto* preloader = ResourcePreloader::GetInstance();
+        auto preloaded = preloader->GetPreloadedModel("human_walk");
+        if (preloaded) {
+            playerModel = std::move(preloaded);
+        } else {
+            playerModel->LoadFromFile("Resources/Models/human", "walk.gltf");
+        }
 
-	// AudioListenerの位置と向きを更新（プレイヤーの位置とカメラの向き）
-	if (audioListener_ && player_ && camera_) {
-		audioListener_->SetPosition(player_->GetPosition());
-		// カメラの回転からforward vectorを計算
-		Vector3 cameraRot = camera_->GetRotate();
-		Vector3 forward = {
-			std::sin(cameraRot.y),
-			0.0f,
-			std::cos(cameraRot.y)
-		};
-		audioListener_->SetOrientation(forward, Vector3{ 0.0f, 1.0f, 0.0f });
-	}
+        // Register named animations
+        Animation walkAnim = playerModel->GetAnimationPlayer().GetAnimation();
+        playerModel->AddAnimation("walk", walkAnim);
+        Animation sneakWalkAnim = engine->LoadAnim("Resources/Models/human", "sneakWalk.gltf");
+        playerModel->AddAnimation("sneakWalk", sneakWalkAnim);
+        playerModel->ChangeAnimation("walk");
+        playerModel->PlayAnimation();
 
-	// チュートリアル中はEnemy無効
-	bool tutorialActive = subtitleManager_ && subtitleManager_->IsActive();
+        auto playerObj = engine->CreateObj3();
+        playerObj->SetModel(static_cast<Model*>(playerModel.get()));
+        playerObj->SetAnimatedModel(playerModel.get());
+        playerObj->SetPosition(playerPos);
+        playerObj->SetScale({1.0f, 1.0f, 1.0f});
+        playerObj->SetRotation({0.0f, 3.14159f, 0.0f});
+        playerObj->SetEnableLighting(true);
+        playerObj->SetCamera(camera_);
+        playerObj->Update();
 
-	if (enemy_ && !tutorialActive) {
-		enemy_->SetDirectionalLight(const_cast<DirectionalLight*>(&dirLight));
-		enemy_->SetSpotLight(const_cast<SpotLight*>(&spotLight));
-		enemy_->Update(UnoEngine::GetInstance());
+        auto& anim = m_world->GetComponent<AnimatedModelComponent>(m_playerEntity);
+        anim.animatedModel = std::move(playerModel);
+        auto& renderer = m_world->GetComponent<MeshRendererComponent>(m_playerEntity);
+        renderer.object3d = std::move(playerObj);
 
-		// プレイヤーとの衝突チェック（ジャンプスケア判定）
-		if (player_ && !isGameOver_ && !enemy_->IsJumpscaring()) {
-			bool shouldTriggerJumpscare = false;
+        // Sync TransformComponent rotation with Object3d
+        auto& playerTransform = m_world->GetComponent<TransformComponent>(m_playerEntity);
+        playerTransform.rotation = {0.0f, 3.14159f, 0.0f};
 
-			// Primary: AABB重なり判定（見た目通りの当たり判定）
-			auto* collisionManager = Collision::AABBCollisionManager::GetInstance();
-			if (collisionManager) {
-				auto playerCol = collisionManager->FindCollisionObject(player_->GetObject());
-				auto enemyCol = collisionManager->FindCollisionObject(enemy_->GetObject());
+        // Register player AABB collision
+        auto* collisionManager = Collision::AABBCollisionManager::GetInstance();
+        if (collisionManager && anim.animatedModel) {
+            Collision::AABB playerAABB = Collision::AABBExtractor::ExtractFromAnimatedModel(anim.animatedModel.get());
+            collisionManager->RegisterObject(renderer.object3d.get(), playerAABB, true, "Player");
+        }
+    }
 
-				if (playerCol && enemyCol && playerCol->IsEnabled() && enemyCol->IsEnabled()) {
-					playerCol->Update();
-					enemyCol->Update();
+    if (fpsCamera) {
+        auto& fpsCam = m_world->GetComponent<FPSCameraComponent>(m_playerEntity);
+        fpsCam.fpsCamera = std::move(fpsCamera);
+    }
 
-					// AABBを各方向拡大して捕まりやすくする
-					constexpr float expand = 0.3f;
-					Collision::AABB enemyBox = enemyCol->GetWorldAABB();
-					enemyBox.min.x -= expand; enemyBox.min.z -= expand;
-					enemyBox.max.x += expand; enemyBox.max.z += expand;
+    // Audio listener
+    auto audioListener = std::make_unique<SpatialAudioListener>();
+    audioListener->SetPosition(playerPos);
+    auto& listenerComp = m_world->GetComponent<AudioListenerComponent>(m_playerEntity);
+    listenerComp.listener = std::move(audioListener);
 
-					shouldTriggerJumpscare = Collision::CheckAABBCollision(
-						playerCol->GetWorldAABB(),
-						enemyBox
-					);
-				}
-			}
+    // Enemy entity
+    if (!m_sceneData.enemies.empty()) {
+        Vector3 enemyPos = m_sceneData.enemies[0].position;
+        EnemyAIConfig aiConfig;
+        m_enemyEntity = EntityFactory::CreateEnemyEntity(*m_world, enemyPos, aiConfig, camera_);
 
-			// Fallback: XZ平面距離チェック（Y成分を除外してすり抜け防止）
-			if (!shouldTriggerJumpscare) {
-				Vector3 playerPos = player_->GetPosition();
-				Vector3 enemyPos = enemy_->GetPosition();
-				float dx = enemyPos.x - playerPos.x;
-				float dz = enemyPos.z - playerPos.z;
-				float distanceXZ = sqrtf(dx * dx + dz * dz);
-				shouldTriggerJumpscare = distanceXZ < GAMEOVER_DISTANCE;
-			}
+        // Load enemy model directly
+        auto enemyModel = engine->CreateAnim();
+        enemyModel->LoadFromFile("Resources/Models/Enemy/Enemy_Walk", "Enemy_Walk.gltf");
 
-			if (shouldTriggerJumpscare) {
-				enemy_->StartJumpscare();
-				player_->SetJumpscareMode(true);
-				jumpscareStarted_ = true;
-				OutputDebugStringA("Jumpscare started! Player movement disabled.\n");
-			}
-		}
+        // Register named animations
+        Animation walkAnim = enemyModel->GetAnimationPlayer().GetAnimation();
+        enemyModel->AddAnimation("Walk", walkAnim);
+        Animation runAnim = engine->LoadAnim("Resources/Models/Enemy/Enemy_Run", "Enemy_Run.gltf");
+        enemyModel->AddAnimation("Run", runAnim);
+        Animation jumpscareAnim = engine->LoadAnim("Resources/Models/Enemy/Enemy_Jumpscare", "Enemy_Jumpscare.gltf");
+        enemyModel->AddAnimation("Jumpscare", jumpscareAnim);
+        enemyModel->ChangeAnimation("Walk");
+        enemyModel->PlayAnimation();
 
-		// ジャンプスケア中のカメラ制御
-		if (enemy_->IsJumpscaring() && jumpscareStarted_ && camera_ && player_) {
-			Vector3 playerPos = player_->GetPosition();
-			Vector3 enemyHeadPos = enemy_->GetHeadPosition();  // 顔の位置を取得
+        auto enemyObj = engine->CreateObj3();
+        enemyObj->SetModel(static_cast<Model*>(enemyModel.get()));
+        enemyObj->SetAnimatedModel(enemyModel.get());
+        enemyObj->SetPosition(enemyPos);
+        enemyObj->SetScale({0.05f, 0.05f, 0.05f});
+        enemyObj->SetRotation({0.0f, 3.14159f, 0.0f});
+        enemyObj->SetEnableLighting(true);
+        enemyObj->SetCamera(camera_);
+        enemyObj->Update();
 
-			// プレイヤーから顔への方向ベクトル
-			Vector3 playerToHead = {
-				enemyHeadPos.x - playerPos.x,
-				enemyHeadPos.y - playerPos.y,
-				enemyHeadPos.z - playerPos.z
-			};
+        auto& enemyAnim = m_world->GetComponent<AnimatedModelComponent>(m_enemyEntity);
+        enemyAnim.animatedModel = std::move(enemyModel);
+        auto& enemyRenderer = m_world->GetComponent<MeshRendererComponent>(m_enemyEntity);
+        enemyRenderer.object3d = std::move(enemyObj);
 
-			// 正規化
-			float length = std::sqrt(playerToHead.x * playerToHead.x +
-			                         playerToHead.y * playerToHead.y +
-			                         playerToHead.z * playerToHead.z);
+        // Sync TransformComponent scale/rotation with Object3d
+        auto& enemyTransform = m_world->GetComponent<TransformComponent>(m_enemyEntity);
+        enemyTransform.scale = {0.05f, 0.05f, 0.05f};
+        enemyTransform.rotation = {0.0f, 3.14159f, 0.0f};
 
-			if (length > 0.0f) {
-				playerToHead.x /= length;
-				playerToHead.y /= length;
-				playerToHead.z /= length;
-			}
+        // Register enemy AABB collision
+        {
+            auto* collisionManager = Collision::AABBCollisionManager::GetInstance();
+            if (collisionManager && enemyAnim.animatedModel) {
+                Collision::AABB enemyAABB = Collision::AABBExtractor::ExtractFromAnimatedModel(enemyAnim.animatedModel.get());
+                collisionManager->RegisterObject(enemyRenderer.object3d.get(), enemyAABB, true, "Enemy");
+            }
+        }
 
-			// 元の方向から少し左に回転（-30度）
-			const float angleOffset = -30.0f * 3.14159f / 180.0f;  // ラジアンに変換
-			float cosAngle = std::cos(angleOffset);
-			float sinAngle = std::sin(angleOffset);
+        // Initialize enemy audio sources
+        auto& footstepAudio = m_world->GetComponent<EnemyFootstepAudioComponent>(m_enemyEntity);
+        footstepAudio.footstepSource1 = std::make_unique<SpatialAudioSource>();
+        footstepAudio.footstepSource1->Initialize("Resources/Audio/Enemy_feet.mp3", enemyPos);
+        footstepAudio.footstepSource1->SetVolume(1.2f);
+        footstepAudio.footstepSource1->SetMaxDistance(22.0f);
+        footstepAudio.footstepSource1->SetMinDistance(1.0f);
+        footstepAudio.footstepSource2 = std::make_unique<SpatialAudioSource>();
+        footstepAudio.footstepSource2->Initialize("Resources/Audio/Enemy_feet2.mp3", enemyPos);
+        footstepAudio.footstepSource2->SetVolume(1.2f);
+        footstepAudio.footstepSource2->SetMaxDistance(22.0f);
+        footstepAudio.footstepSource2->SetMinDistance(1.0f);
 
-			// Y軸周りの回転（水平方向のみ）
-			Vector3 adjustedDirection = {
-				playerToHead.x * cosAngle - playerToHead.z * sinAngle,
-				playerToHead.y,
-				playerToHead.x * sinAngle + playerToHead.z * cosAngle
-			};
+        auto& detection = m_world->GetComponent<DetectionSoundComponent>(m_enemyEntity);
+        detection.source = std::make_unique<SpatialAudioSource>();
+        detection.source->Initialize("Resources/Audio/enemysound.mp3", enemyPos);
+        detection.source->SetVolume(2.2f);
+        detection.source->SetMaxDistance(40.0f);
+        detection.source->SetMinDistance(1.0f);
 
-			// カメラを顔の前に配置（調整した方向で）
-			const float cameraDistance = 3.0f;  // 顔から3.0m離れた位置
-			const float heightOffset = -0.4f;  // 顔より少し下（見上げる角度）
-			Vector3 cameraPos = {
-				enemyHeadPos.x - adjustedDirection.x * cameraDistance,
-				enemyHeadPos.y + heightOffset,  // 顔より少し下から
-				enemyHeadPos.z - adjustedDirection.z * cameraDistance
-			};
-			camera_->SetTranslate(cameraPos);
+        auto& bark = m_world->GetComponent<BarkSoundComponent>(m_enemyEntity);
+        bark.source = std::make_unique<SpatialAudioSource>();
+        bark.source->Initialize("Resources/Audio/enemy_bark.mp3", enemyPos);
+        bark.source->SetVolume(1.5f);
+        bark.source->SetMaxDistance(35.0f);
+        bark.source->SetMinDistance(1.0f);
 
-			// エネミーの顔を見るようにカメラの回転を計算
-			Vector3 cameraToHead = {
-				enemyHeadPos.x - cameraPos.x,
-				enemyHeadPos.y - cameraPos.y,
-				enemyHeadPos.z - cameraPos.z
-			};
+        // Set NavMesh
+        auto& pathfinding = m_world->GetComponent<PathfindingComponent>(m_enemyEntity);
+        navMeshManager = engine->GetNavMgr();
+        if (navMeshManager && navMeshManager->GetNavMesh()) {
+            pathfinding.navMesh = navMeshManager->GetNavMesh();
+        }
+    }
 
-			float horizontalDist = std::sqrt(cameraToHead.x * cameraToHead.x + cameraToHead.z * cameraToHead.z);
-			float rotY = std::atan2(cameraToHead.x, cameraToHead.z);
-			float rotX = -std::atan2(cameraToHead.y, horizontalDist);
+    // Orb entities (each needs its own model)
+    std::vector<Vector3> orbPositions;
+    if (JsonLoader::LoadOrbPositions("Resources/Models/orb/orb_positions.json", orbPositions)) {
+        for (const auto& pos : orbPositions) {
+            ECS::Entity orbEntity = EntityFactory::CreateOrbEntity(*m_world, pos, camera_);
 
-			camera_->SetRotate({rotX, rotY, 0.0f});
-			camera_->Update();
+            // Load orb model
+            auto orbModel = engine->CreateAnim();
+            orbModel->LoadFromFile("Resources/Models/orb", "orbtest.gltf");
+            auto orbObj = engine->CreateObj3();
+            orbObj->SetModel(static_cast<Model*>(orbModel.get()));
+            orbObj->SetAnimatedModel(orbModel.get());
+            orbObj->SetPosition(pos);
+            orbObj->SetScale({1.0f, 1.0f, 1.0f});
+            orbObj->SetEnableLighting(true);
+            orbObj->SetCamera(camera_);
+            orbObj->SetEmissiveFactor({20.0f, 20.0f, 20.0f});
+            orbObj->Update();
 
-			// スポットライトを顔全体に向けて強く照らす
-			if (lightManager_) {
-				SpotLight jumpscareLight;
-				jumpscareLight.position = cameraPos;  // カメラと同じ位置
-				jumpscareLight.direction = cameraToHead;  // 顔に向ける
-				jumpscareLight.color = {1.0f, 1.0f, 1.0f, 1.0f};  // 白色
-				jumpscareLight.intensity = 15.0f;  // 強い光
-				jumpscareLight.innerCone = std::cos(45.0f * 3.14159f / 180.0f);  // 45度の内側角度
-				jumpscareLight.outerCone = std::cos(60.0f * 3.14159f / 180.0f);  // 60度の外側角度
-				jumpscareLight.attenuation = {1.0f, 0.1f, 0.01f};  // 減衰パラメータ（定数、線形、二次）
+            auto& orbAnim = m_world->GetComponent<AnimatedModelComponent>(orbEntity);
+            orbAnim.animatedModel = std::move(orbModel);
+            auto& orbRenderer = m_world->GetComponent<MeshRendererComponent>(orbEntity);
+            orbRenderer.object3d = std::move(orbObj);
 
-				// 一時的にスポットライトを更新
-				lightManager_->SetJumpscareLight(jumpscareLight);
-			}
-		}
+            m_orbEntities.push_back(orbEntity);
+        }
+    }
 
-		// ジャンプスケア終了後の処理
-		if (enemy_->IsJumpscareFinished() && !isGameOver_) {
-			captureCount_++;
-			OutputDebugStringA(("Captured! Count: " + std::to_string(captureCount_) + "/" + std::to_string(MAX_CAPTURES) + "\n").c_str());
+    // Scene object entities
+    for (auto& obj : sceneObjects) {
+        ECS::Entity sceneEntity = EntityFactory::CreateSceneObjectEntity(*m_world, std::move(obj));
+        m_sceneObjectEntities.push_back(sceneEntity);
+    }
 
-			if (captureCount_ >= MAX_CAPTURES) {
-				// 3回目はゲームオーバー - 先にジャンプスケアプロセスを起動してからゲーム終了
-				isGameOver_ = true;
-				OutputDebugStringA("Max captures reached, launching jumpscare process and exiting immediately...\n");
+    // Game state entity
+    m_gameStateEntity = EntityFactory::CreateGameStateEntity(*m_world);
+    auto& respawn = m_world->GetComponent<RespawnStateComponent>(m_gameStateEntity);
+    respawn.playerInitialPosition = playerPos;
+    if (!m_sceneData.enemies.empty()) {
+        respawn.enemyInitialPosition = m_sceneData.enemies[0].position;
+    }
 
-				// 自分自身を--jumpscareオプション付きで起動
-				char exePath[MAX_PATH];
-				GetModuleFileNameA(nullptr, exePath, MAX_PATH);
+    // Skybox component on game state entity
+    if (skybox) {
+        auto& skyboxComp = m_world->GetComponent<SkyboxComponent>(m_gameStateEntity);
+        skyboxComp.skybox = std::move(skybox);
+        skyboxComp.enabled = skyboxEnabled;
+    }
 
-				STARTUPINFOA si = {};
-				si.cb = sizeof(si);
-				si.dwFlags = STARTF_USESHOWWINDOW;
-				si.wShowWindow = SW_HIDE;
+    // Post-process chain on game state entity
+    if (postProcess || horrorEffect) {
+        auto& ppChain = m_world->GetComponent<PostProcessChainComponent>(m_gameStateEntity);
+        ppChain.psxEffect = std::move(postProcess);
+        ppChain.horrorEffect = std::move(horrorEffect);
+        ppChain.fisheyeStrength = fisheyeStrength;
+        ppChain.fisheyeRadius = fisheyeRadius;
+    }
 
-				PROCESS_INFORMATION pi = {};
+    // Minimap
+    auto minimap = std::make_unique<Minimap>();
+    minimap->Initialize(dxCommon_, srvManager_);
+    auto& minimapComp = m_world->GetComponent<MinimapComponent>(m_gameStateEntity);
+    minimapComp.minimap = std::move(minimap);
 
-				// --jumpscareオプションを付けて起動
-				char cmdLine[MAX_PATH + 20];
-				sprintf_s(cmdLine, "\"%s\" --jumpscare", exePath);
+    // Fade sprite
+    auto fadeSprite = std::make_unique<Sprite>();
+    fadeSprite->Initialize(spriteCommon_, "Resources/textures/white1x1.png");
+    fadeSprite->SetPosition({0.0f, 0.0f});
+    fadeSprite->SetSize({1280.0f, 720.0f});
+    fadeSprite->setColor({0.0f, 0.0f, 0.0f, 0.0f});
+    auto& fadeComp = m_world->GetComponent<FadeSpriteComponent>(m_gameStateEntity);
+    fadeComp.sprite = std::move(fadeSprite);
 
-				BOOL processCreated = CreateProcessA(
-					nullptr,
-					cmdLine,
-					nullptr,
-					nullptr,
-					FALSE,
-					DETACHED_PROCESS,  // 完全に独立したプロセスとして起動
-					nullptr,
-					nullptr,
-					&si,
-					&pi
-				);
+    // Register LightManager as global resource (ownership transfer)
+    m_world->SetResource<LightManager*>(lightManager.release());
 
-				if (processCreated) {
-					CloseHandle(pi.hProcess);
-					CloseHandle(pi.hThread);
-					OutputDebugStringA("Jumpscare process launched successfully.\n");
-				} else {
-					OutputDebugStringA("Failed to launch jumpscare process!\n");
-				}
+    // Subtitle/Tutorial
+    auto bitmapFont = std::make_unique<BitmapFont>();
+    bitmapFont->Initialize(spriteCommon_, "Resources/font/Honoka-Shin-Maru-Gothic_R_16.fnt");
+    auto subtitleManager = std::make_unique<SubtitleManager>();
+    subtitleManager->Initialize(spriteCommon_, bitmapFont.get());
+    subtitleManager->SetSteps({
+        {L"ここがみんなが言っていた夢か...", 2.5f, 0.05f},
+        {L"SNSで見た情報だと、捕まらないように\nすべてのオーブを集めればいいらしい。", 4.0f, 0.05f},
+        {L"ただ厄介なのがあの青い熊だ", 2.0f, 0.05f},
+        {L"どうやらあの熊は追いかけるスピードが速いようだ", 2.0f, 0.05f},
+        {L"通路が結構入り組んでいるのを使って、なんとか対策できないだろうか。", 3.0f, 0.05f},
+        {L"とりあえず、奴の足音に注意して集めよう", 2.0f, 0.10f},
+    });
+    subtitleManager->Start();
 
-				// ゲームを即座に強制終了
-				OutputDebugStringA("Terminating game immediately...\n");
-				ExitProcess(0);  // PostQuitMessageではなくExitProcessで即座に終了
-			} else {
-				// 3回未満ならリスポーン開始
-				StartRespawn();
-			}
-		}
+    auto& subtitleComp = m_world->GetComponent<SubtitleUIComponent>(m_gameStateEntity);
+    subtitleComp.bitmapFont = std::move(bitmapFont);
+    subtitleComp.subtitleManager = std::move(subtitleManager);
 
-		// 追跡モード時の距離に応じたビネット効果とカメラ振動
-		if (enemy_->IsChasing() && player_) {
-			Vector3 playerPos = player_->GetPosition();
-			Vector3 enemyPos = enemy_->GetPosition();
+    auto& tutorial = m_world->GetComponent<TutorialComponent>(m_gameStateEntity);
+    tutorial.isActive = true;
 
-			float dx = enemyPos.x - playerPos.x;
-			float dy = enemyPos.y - playerPos.y;
-			float dz = enemyPos.z - playerPos.z;
-			float distance = sqrtf(dx * dx + dy * dy + dz * dz);
+    // Lock player movement during tutorial
+    auto& jumpscareVictim = m_world->GetComponent<JumpscareVictimComponent>(m_playerEntity);
+    jumpscareVictim.isInJumpscare = true;
 
-			const float MIN_DISTANCE = 3.0f;
-			const float MAX_DISTANCE = 15.0f;
+    // Orb collection audio
+    AudioManager::GetInstance()->LoadMP3("orbGet", "Resources/Audio/get.mp3");
+    AudioManager::GetInstance()->SetVolume("orbGet", 0.5f);
 
-			float fearShakeIntensity = 0.0f;
+    // Register all update systems
+    RegisterSystems();
 
-			if (distance < MAX_DISTANCE) {
-				float normalizedDistance = 1.0f - ((distance - MIN_DISTANCE) / (MAX_DISTANCE - MIN_DISTANCE));
-				normalizedDistance = (std::max)(0.0f, (std::min)(1.0f, normalizedDistance));
-				fearShakeIntensity = normalizedDistance;
+    // Create render systems (called separately in Draw)
+    m_renderSystem = std::make_unique<ECS::RenderSystem>();
+    m_uiRenderSystem = std::make_unique<ECS::UIRenderSystem>();
+}
 
-				if (horrorEffect_) {
-					static float time = 0.0f;
-					time += deltaTime;
-					horrorEffect_->SetHorrorParams(time, 0.0f, 0.0f, 0.0f, normalizedDistance * 0.8f);
-				}
-			}
-			else {
-				if (horrorEffect_) {
-					static float time = 0.0f;
-					time += deltaTime;
-					horrorEffect_->SetHorrorParams(time, 0.0f, 0.0f, 0.0f, 0.0f);
-				}
-			}
+void GamePlayScene::RegisterSystems() {
+    // Input (0-99)
+    m_world->RegisterSystem(std::make_unique<ECS::InputSystem>(), 0);
+    m_world->RegisterSystem(std::make_unique<ECS::DebugInputSystem>(), 10);
 
-			if (lightManager_) {
-				lightManager_->SetFearFlickerIntensity(fearShakeIntensity);
-			}
-		}
-		else {
-			if (horrorEffect_) {
-				static float time = 0.0f;
-				time += deltaTime;
-				horrorEffect_->SetHorrorParams(time, 0.0f, 0.0f, 0.0f, 0.0f);
-			}
-			if (lightManager_) {
-				lightManager_->SetFearFlickerIntensity(0.0f);
-			}
-		}
-	}
+    // Physics (100-199)
+    m_world->RegisterSystem(std::make_unique<ECS::PlayerMovementSystem>(), 100);
+    m_world->RegisterSystem(std::make_unique<ECS::GravitySystem>(), 110);
+    m_world->RegisterSystem(std::make_unique<ECS::GroundCollisionSystem>(), 120);
+    m_world->RegisterSystem(std::make_unique<ECS::VelocityIntegrationSystem>(), 130);
+    m_world->RegisterSystem(std::make_unique<ECS::RotationSmoothingSystem>(), 140);
+    m_world->RegisterSystem(std::make_unique<ECS::CollisionResponseSystem>(), 150);
 
-	// 全シーンオブジェクトを更新
-	for (auto& obj : sceneObjects_) {
-		obj->SetDirectionalLight(dirLight);
-		obj->SetSpotLight(spotLight);
-		obj->Update();
-	}
+    // AI (200-299)
+    m_world->RegisterSystem(std::make_unique<ECS::SoundDetectionSystem>(), 200);
+    m_world->RegisterSystem(std::make_unique<ECS::VisionSystem>(), 210);
+    m_world->RegisterSystem(std::make_unique<ECS::AIBehaviorSystem>(), 220);
+    m_world->RegisterSystem(std::make_unique<ECS::PathfindingSystem>(), 230);
+    m_world->RegisterSystem(std::make_unique<ECS::StuckDetectionSystem>(), 240);
+    m_world->RegisterSystem(std::make_unique<ECS::StealthSystem>(), 250);
 
-	if (skyboxEnabled_ && skybox_) {
-		skybox_->Update();
-	}
-	player_->Update(engine);
+    // Gameplay (300-399)
+    m_world->RegisterSystem(std::make_unique<ECS::OrbCollectionSystem>(), 300);
+    m_world->RegisterSystem(std::make_unique<ECS::FloatingAnimationSystem>(), 310);
+    m_world->RegisterSystem(std::make_unique<ECS::SpotLightGlowSystem>(), 320);
+    m_world->RegisterSystem(std::make_unique<ECS::JumpscareSystem>(), 330);
+    m_world->RegisterSystem(std::make_unique<ECS::RespawnSystem>(), 340);
+    m_world->RegisterSystem(std::make_unique<ECS::FearEffectSystem>(), 350);
+    m_world->RegisterSystem(std::make_unique<ECS::TutorialSystem>(), 360);
 
-	// Orbの更新と衝突判定
-	for (auto& orb : orbs_) {
-		if (orb) {
-			// ライト設定
-			orb->SetDirectionalLight(dirLight);
-			orb->SetSpotLight(spotLight);
+    // Animation (400)
+    m_world->RegisterSystem(std::make_unique<ECS::AnimationSystem>(), 400);
 
-			// 更新
-			orb->Update(deltaTime);
+    // Camera (500-510)
+    m_world->RegisterSystem(std::make_unique<ECS::CameraSystem>(), 500);
+    m_world->RegisterSystem(std::make_unique<ECS::CameraShakeSystem>(), 510);
 
-			// プレイヤーとの衝突判定（簡易的な球体判定）
-			if (player_) {
-				Vector3 playerPos = player_->GetPosition();
-				float playerRadius = 0.5f;  // プレイヤーの衝突半径（小さくしてより近づく必要がある）
+    // Audio (600-650)
+    m_world->RegisterSystem(std::make_unique<ECS::AudioListenerSystem>(), 600);
+    m_world->RegisterSystem(std::make_unique<ECS::EnemyFootstepAudioSystem>(), 610);
+    m_world->RegisterSystem(std::make_unique<ECS::DetectionSoundSystem>(), 620);
+    m_world->RegisterSystem(std::make_unique<ECS::BarkSoundSystem>(), 630);
+    m_world->RegisterSystem(std::make_unique<ECS::ChaseBGMSystem>(), 640);
+    m_world->RegisterSystem(std::make_unique<ECS::PlayerFootstepSystem>(), 650);
 
-				if (orb->CheckCollisionWithPlayer(playerPos, playerRadius)) {
-					OutputDebugStringA("Orb collected!\n");
+    // Lighting (700-720)
+    m_world->RegisterSystem(std::make_unique<ECS::LightingSystem>(), 700);
+    m_world->RegisterSystem(std::make_unique<ECS::FlashlightSystem>(), 710);
+    m_world->RegisterSystem(std::make_unique<ECS::LightDistributionSystem>(), 720);
 
-					// Orb取得音を再生
-					AudioManager::GetInstance()->Play("orbGet", false);
+    // Render preparation (800-810)
+    m_world->RegisterSystem(std::make_unique<ECS::TransformSyncSystem>(), 800);
+    m_world->RegisterSystem(std::make_unique<ECS::CullingSystemECS>(), 810);
+}
 
-					// 残りのOrbを数える
-					int remainingOrbs = 0;
-					for (const auto& o : orbs_) {
-						if (o && !o->IsCollected()) {
-							remainingOrbs++;
-						}
-					}
+void GamePlayScene::Update() {
+    UnoEngine* engine = UnoEngine::GetInstance();
+    const float deltaTime = engine->GetDelta();
 
-					char debugMsg[256];
-					sprintf_s(debugMsg, "Remaining Orbs: %d / 70\n", remainingOrbs);
-					OutputDebugStringA(debugMsg);
+    // PostProcess resize on window size change
+    static uint32_t prevWidth = 0, prevHeight = 0;
+    uint32_t curWidth = dxCommon_->GetCurrentWindowWidth();
+    uint32_t curHeight = dxCommon_->GetCurrentWindowHeight();
+    if (prevWidth != curWidth || prevHeight != curHeight) {
+        if (prevWidth != 0) {
+            m_world->ForEach<PostProcessChainComponent>(
+                [](ECS::Entity entity, PostProcessChainComponent& pp) {
+                    if (pp.psxEffect) pp.psxEffect->ResizeRenderTarget();
+                    if (pp.horrorEffect) pp.horrorEffect->ResizeRenderTarget();
+                }
+            );
+        }
+        prevWidth = curWidth;
+        prevHeight = curHeight;
+    }
 
-					// 残り25個以下でエネミーのステルス足音を有効化
-					if (remainingOrbs <= 25 && enemy_ && !enemy_->IsStealthFootstepsEnabled()) {
-						enemy_->EnableStealthFootsteps(true);
-						OutputDebugStringA("[GamePlay] Stealth footsteps activated! Orbs <= 25\n");
-					}
+    // All game logic via ECS
+    m_world->UpdateSystems(deltaTime);
 
-					if (remainingOrbs == 0) {
-						OutputDebugStringA("All Orbs collected! Congratulations!\n");
-					}
-				}
-			}
-		}
-	}
-
-	// ミニマップの更新
-	if (minimap_ && player_) {
-		minimap_->Update(player_.get(), orbs_);
-	}
-
-	// 字幕の更新（SPACEキーでスキップ/次へ）
-	if (subtitleManager_) {
-		bool skipPressed = engine->IsKeyTrig(DIK_SPACE);
-		bool wasActive = subtitleManager_->IsActive();
-		subtitleManager_->Update(deltaTime, skipPressed);
-
-		// チュートリアル完了 → 移動解放 + ヒント表示
-		if (wasActive && subtitleManager_->IsFinished()) {
-			if (player_) {
-				player_->SetJumpscareMode(false);
-			}
-			subtitleManager_->ShowHint(L"WASDで移動", 5.0f);
-		}
-	}
-
-	// NavMesh更新（UnoEngine経由）
-	engine->UpdateNavMesh();
+    // NavMesh update
+    engine->UpdateNavMesh();
 }
 
 void GamePlayScene::Draw() {
-	// ポストプロセス用のレンダーターゲットに描画
-	if (postProcess_) {
-		postProcess_->PreDraw();
-	}
-
-	if (skyboxEnabled_ && skybox_) {
-		skybox_->Draw(camera_);
-	}
-
-	spriteCommon_->CommonDraw();
-
-	// カリング統計をリセット
-	cullingStats_.totalObjects = 0;
-	cullingStats_.visibleObjects = 0;
-	cullingStats_.culledObjects = 0;
-	cullingStats_.visibleMeshes = 0;
-	cullingStats_.culledMeshes = 0;
-
-	// 全シーンオブジェクトを描画（カリング統計付き）
-	for (auto& obj : sceneObjects_) {
-		int visibleMeshCount = 0;
-		int culledMeshCount = 0;
-		obj->Draw(camera_, &visibleMeshCount, &culledMeshCount);
-
-		cullingStats_.totalObjects++;
-		cullingStats_.visibleMeshes += visibleMeshCount;
-		cullingStats_.culledMeshes += culledMeshCount;
-
-		if (visibleMeshCount > 0) {
-			cullingStats_.visibleObjects++;
-		}
-		else {
-			cullingStats_.culledObjects++;
-		}
-	}
-
-	// カリング率を計算
-	if (cullingStats_.totalObjects > 0) {
-		cullingStats_.cullingRate = (float)cullingStats_.culledObjects / cullingStats_.totalObjects * 100.0f;
-	}
-
-	if (!fpsCamera_ || !fpsCamera_->IsFPSMode()) {
-		player_->Draw();
-	}
-
-	// Orbの描画（常に描画する）
-	for (auto& orb : orbs_) {
-		if (orb) {
-			orb->Draw();
-		}
-	}
-
-	// チュートリアル中はEnemy非表示
-	bool tutorialActiveDraw = subtitleManager_ && subtitleManager_->IsActive();
-	if (enemy_ && !tutorialActiveDraw) {
-		enemy_->Draw();
-	}
-
-	// NavMeshの視覚化（UnoEngine経由）
-	UnoEngine::GetInstance()->DrawNavVis();
-
-	// NavMeshデバッグプレビュー描画
-	{
-		auto* navMeshManager = UnoEngine::GetInstance()->GetNavMgr();
-		if (navMeshManager) {
-			navMeshManager->DrawDebugPreview();
-		}
-	}
-
-	// チェーン: PSXRetro → Horror(魚眼+ビネット) → Backbuffer
-	if (postProcess_ && horrorEffect_) {
-		postProcess_->PostDrawTo(horrorEffect_.get());
-		horrorEffect_->PostDraw();
-	} else if (postProcess_) {
-		postProcess_->PostDraw();
-	}
-
-	// ミニマップを描画（PostProcess後、暗転前）
-	if (minimap_) {
-		minimap_->Draw();
-	}
-
-	// 字幕・ヒント描画（ミニマップの上、暗転の下）
-	if (subtitleManager_ && (subtitleManager_->IsActive() || subtitleManager_->IsHintActive())) {
-		subtitleManager_->Draw();
-	}
-
-	// 暗転エフェクトを最前面に描画（リスポーン中）
-	if (fadeAlpha_ > 0.0f && fadeSprite_) {
-		spriteCommon_->CommonDraw();
-		fadeSprite_->Draw();
-	}
+    // Render and UI via ECS render systems
+    m_renderSystem->Update(*m_world, 0.0f);
+    m_uiRenderSystem->Update(*m_world, 0.0f);
 
 #ifdef _DEBUG
-	player_->DrawUI();
+    // ImGui debug (NavMesh, Enemy AI, etc.)
+    if (m_showNavMeshDebug) {
+        ImGui::Begin("NavMesh Debug (M key)");
+        UnoEngine* engine = UnoEngine::GetInstance();
+        NavMeshManager* navMeshManager = engine->GetNavMgr();
 
-	if (lightManager_) {
-		lightManager_->DrawImGui();
-	}
+        if (navMeshManager) {
+            NavMesh* navMesh = navMeshManager->GetNavMesh();
+            if (navMesh) {
+                ImGui::Text("NavMesh Status: %s", navMesh->IsValid() ? "Valid" : "Invalid");
+            }
 
-	// NavMeshデバッグウィンドウ
-	if (showNavMeshDebug_) {
-		ImGui::Begin("NavMesh Debug (M キーで表示切替)");
+            // NavMesh visualization toggle
+            bool showViz = engine->IsNavVis();
+            if (ImGui::Checkbox("Show NavMesh Visualization", &showViz)) {
+                if (showViz) {
+                    engine->CreateNavVis();
+                    engine->SetNavVis(true);
+                } else {
+                    engine->SetNavVis(false);
+                }
+            }
 
-		UnoEngine* engine = UnoEngine::GetInstance();
-		NavMeshManager* navMeshManager = engine->GetNavMgr();
+            // Grid preview
+            static bool showPreview = false;
+            static bool showGrid = false;
+            static bool showBoundingBox = false;
+            if (ImGui::Checkbox("Show Grid Preview", &showPreview)) {
+                navMeshManager->SetDebugPreviewEnabled(showPreview);
+            }
+            if (showPreview) {
+                ImGui::Checkbox("Show Grid (Cyan)", &showGrid);
+                ImGui::Checkbox("Show Bounding Box (Yellow)", &showBoundingBox);
 
-		if (navMeshManager) {
-			// NavMeshManagerのImGui描画
-			bool showViz = engine->IsNavVis();
-			if (ImGui::Checkbox("Show NavMesh Visualization", &showViz)) {
-				if (showViz) {
-					// 視覚化を有効にする場合、視覚化オブジェクトを作成
-					engine->CreateNavVis();
-					engine->SetNavVis(true);
-					AddNavMeshLog("NavMesh visualization enabled");
-				}
-				else {
-					// 視覚化を無効にする
-					engine->SetNavVis(false);
-					AddNavMeshLog("NavMesh visualization disabled");
-				}
-			}
+                Entity enemyEntity = m_world->FindEntityWith<EnemyTag>();
+                Vector3 center = {0.0f, 3.0f, 15.55f};
+                if (enemyEntity.IsValid()) {
+                    center = m_world->GetComponent<TransformComponent>(enemyEntity).position;
+                }
 
-			// Enemy視界の可視化
-			if (enemy_) {
-				bool showEnemyVision = enemy_->debugDrawVision_;
-				if (ImGui::Checkbox("Show Enemy Vision", &showEnemyVision)) {
-					enemy_->debugDrawVision_ = showEnemyVision;
-				}
-			}
+                NavMeshBuildSettings& settings = engine->GetNavSet();
+                float displayRadius = (std::max)(settings.agentRadius * 5.0f, 10.0f);
+                Vector3 minBounds = {center.x - displayRadius, center.y - settings.agentHeight, center.z - displayRadius};
+                Vector3 maxBounds = {center.x + displayRadius, center.y + settings.agentHeight, center.z + displayRadius};
+                navMeshManager->SetPreviewBounds(minBounds, maxBounds);
+                navMeshManager->CreateDebugPreview(engine->GetDXCom(), engine->GetCamera(), settings, center, showBoundingBox, showGrid);
+            }
+        }
 
-			if (ImGui::CollapsingHeader("About Recast Navigation")) {
-				ImGui::TextWrapped("This project uses Recast Navigation, the industry-standard NavMesh library.");
-				ImGui::TextWrapped("Used in: Unreal Engine, Unity, many AAA games");
-				ImGui::Separator();
-				ImGui::Text("Precision depends on settings:");
-				ImGui::BulletText("Lower Cell Size = Higher precision (0.1-0.2 recommended)");
-				ImGui::BulletText("Smaller Agent Radius = Closer to walls (0.3-0.6)");
-				ImGui::BulletText("Lower Edge Max Error = Smoother paths (0.5-1.0)");
-				ImGui::Separator();
-				ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "This is professional-grade pathfinding!");
-				ImGui::TextWrapped("If precision seems low, try the High Precision Preset below.");
-			}
+        if (!m_navMeshLogs.empty()) {
+            ImGui::BeginChild("Logs", ImVec2(0, 200), true);
+            for (const auto& log : m_navMeshLogs) {
+                ImGui::Text("%s", log.c_str());
+            }
+            ImGui::EndChild();
+        }
+        ImGui::End();
+    }
 
-			NavMeshBuildSettings& settings = engine->GetNavSet();
-
-			// リアルタイムプレビュー機能
-			static bool showPreview = true;  // 最初からON
-			static NavMeshBuildSettings lastSettings = settings;
-			bool settingsChanged = false;
-
-			// プレビュー範囲の設定
-			static float previewRadius = 30.0f;  // Enemyの周りに表示する範囲
-			static bool useEnemyCenter = true;   // Enemyを中心にするか
-
-			// 初回のみDebugPreviewを有効化
-			static bool initialized = false;
-			if (!initialized) {
-				navMeshManager->SetDebugPreviewEnabled(true);
-				initialized = true;
-			}
-
-			if (ImGui::Checkbox("Show Grid Preview (Real-time)", &showPreview)) {
-				navMeshManager->SetDebugPreviewEnabled(showPreview);
-			}
-
-			if (showPreview) {
-				ImGui::SameLine();
-				ImGui::Checkbox("Center on Enemy", &useEnemyCenter);
-
-				// Agent設定に基づいた表示範囲
-				static bool useAgentSettings = true;
-				static bool showBoundingBox = false;  // 黄色い箱は最初はOFF
-				static bool showGrid = false;  // グリッドも最初はOFF
-				ImGui::Checkbox("Use Agent Settings for Preview", &useAgentSettings);
-				ImGui::Checkbox("Show Grid (Cyan)", &showGrid);
-				ImGui::Checkbox("Show Bounding Box (Yellow)", &showBoundingBox);
-
-				if (!useAgentSettings) {
-					ImGui::SliderFloat("Preview Radius", &previewRadius, 10.0f, 100.0f);
-				}
-
-				// バウンド計算
-				Vector3 center;
-				if (useEnemyCenter && enemy_) {
-					center = enemy_->GetPosition();
-				}
-				else {
-					// シーン全体を表示
-					center = { 0.0f, 3.0f, 15.55f };
-				}
-
-				// Agent設定に基づいた範囲計算
-				float displayRadius = previewRadius;
-				if (useAgentSettings) {
-					// Agent Radiusの5倍程度を表示範囲とする
-					displayRadius = settings.agentRadius * 5.0f;
-					if (displayRadius < 10.0f) displayRadius = 10.0f;
-					if (displayRadius > 50.0f) displayRadius = 50.0f;
-				}
-
-				Vector3 minBounds = {
-					center.x - displayRadius,
-					center.y - settings.agentHeight,
-					center.z - displayRadius
-				};
-				Vector3 maxBounds = {
-					center.x + displayRadius,
-					center.y + settings.agentHeight,
-					center.z + displayRadius
-				};
-
-				// 毎フレーム更新（Enemyが動いた場合も反映）
-				navMeshManager->SetPreviewBounds(minBounds, maxBounds);
-				navMeshManager->CreateDebugPreview(engine->GetDXCom(), engine->GetCamera(), settings, enemy_ ? enemy_->GetPosition() : center, showBoundingBox, showGrid);
-
-				// デバッグ情報表示
-				ImGui::Text("Debug Info:");
-				ImGui::Text("  Preview Enabled: %s", navMeshManager->IsDebugPreviewEnabled() ? "YES" : "NO");
-				ImGui::Text("  Center: (%.1f, %.1f, %.1f)", center.x, center.y, center.z);
-				ImGui::Text("  Display Radius: %.1f", displayRadius);
-				ImGui::Text("  Agent Radius: %.2f", settings.agentRadius);
-				ImGui::Text("  Agent Height: %.2f", settings.agentHeight);
-				ImGui::Text("  Cell Size: %.3f", settings.cellSize);
-			}
-
-			ImGui::Separator();
-
-			if (ImGui::CollapsingHeader("NavMesh Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
-				ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Quick Fix: Apply High Precision Preset");
-				ImGui::Separator();
-
-				if (ImGui::Button("Apply High Precision Preset")) {
-					settings.cellSize = 0.15f;
-					settings.cellHeight = 0.2f;
-					settings.agentHeight = 2.0f;
-					settings.agentRadius = 0.4f;
-					settings.agentMaxClimb = 0.5f;
-					settings.agentMaxSlope = 45.0f;
-					settings.edgeMaxError = 0.8f;
-					settings.detailSampleDist = 6.0f;
-					AddNavMeshLog("Applied high precision preset");
-					settingsChanged = true;
-				}
-
-				ImGui::Separator();
-				if (ImGui::SliderFloat("Cell Size", &settings.cellSize, 0.05f, 1.0f)) settingsChanged = true;
-				if (ImGui::SliderFloat("Cell Height", &settings.cellHeight, 0.05f, 0.5f)) settingsChanged = true;
-				if (ImGui::SliderFloat("Agent Height", &settings.agentHeight, 0.5f, 5.0f)) settingsChanged = true;
-				if (ImGui::SliderFloat("Agent Radius", &settings.agentRadius, 0.1f, 5.0f)) settingsChanged = true;
-				if (ImGui::SliderFloat("Agent Max Climb", &settings.agentMaxClimb, 0.1f, 1.0f)) settingsChanged = true;
-				if (ImGui::SliderFloat("Agent Max Slope", &settings.agentMaxSlope, 0.0f, 90.0f)) settingsChanged = true;
-
-				ImGui::Separator();
-				ImGui::Text("Corner Smoothness Settings");
-				if (ImGui::SliderFloat("Edge Max Error", &settings.edgeMaxError, 0.1f, 3.0f)) settingsChanged = true;
-				if (ImGui::SliderFloat("Detail Sample Dist", &settings.detailSampleDist, 1.0f, 10.0f)) settingsChanged = true;
-
-			}
-
-			if (ImGui::Button("Generate NavMesh")) {
-				ClearNavMeshLogs();
-				AddNavMeshLog("=== Manual NavMesh generation triggered ===");
-				engine->GenNav(sceneObjects_, "externals/navimap/stage.navmesh");
-				NavMesh* navMesh = navMeshManager->GetNavMesh();
-				if (enemy_ && navMesh) {
-					enemy_->SetNavMesh(navMesh);
-					AddNavMeshLog("NavMesh re-set to Enemy");
-				}
-
-				// 可視化が有効な場合は次のフレームで更新
-				if (engine->IsNavVis()) {
-					engine->RequestNavVisUpdate();
-					AddNavMeshLog("NavMesh visualization will update next frame");
-				}
-			}
-
-			ImGui::SameLine();
-			if (ImGui::Button("Load NavMesh")) {
-				ClearNavMeshLogs();
-				const std::string navMeshPath = "externals/navimap/stage.navmesh";
-				if (engine->LoadNavMesh(navMeshPath)) {
-					NavMesh* navMesh = navMeshManager->GetNavMesh();
-					if (enemy_ && navMesh) {
-						enemy_->SetNavMesh(navMesh);
-					}
-				}
-			}
-
-			ImGui::SameLine();
-			if (ImGui::Button("Clear Logs")) {
-				ClearNavMeshLogs();
-			}
-
-			ImGui::Separator();
-
-			// NavMesh情報表示
-			NavMesh* navMesh = navMeshManager->GetNavMesh();
-			if (navMesh) {
-				ImGui::Text("NavMesh Status: %s", navMesh->IsValid() ? "Valid" : "Invalid");
-
-				// シーンオブジェクト数を表示
-				ImGui::Text("Scene Objects: %d", static_cast<int>(sceneObjects_.size()));
-
-				if (ImGui::CollapsingHeader("Scene Objects Details")) {
-					int idx = 0;
-					for (const auto& obj : sceneObjects_) {
-						Model* model = obj->GetModel();
-						if (model) {
-							const ModelData& modelData = model->GetModelData();
-							ImGui::Text("Object %d: %d vertices, %d triangles",
-								idx++,
-								static_cast<int>(modelData.vertices.size()),
-								static_cast<int>(modelData.indices.size()) / 3);
-						}
-					}
-				}
-			}
-			else {
-				ImGui::Text("NavMesh: Not Initialized");
-			}
-		}
-
-		// Enemy AI Debug情報
-		if (ImGui::CollapsingHeader("Enemy AI Debug", ImGuiTreeNodeFlags_DefaultOpen)) {
-			if (enemy_) {
-				ImGui::Text("Enemy Position: (%.2f, %.2f, %.2f)",
-					enemy_->GetPosition().x,
-					enemy_->GetPosition().y,
-					enemy_->GetPosition().z);
-
-				ImGui::Text("Is Chasing: %s", enemy_->IsChasing() ? "Yes" : "No");
-			}
-			else {
-				ImGui::Text("Enemy: Not Initialized");
-			}
-		}
-
-		ImGui::Separator();
-
-		// ログ表示
-		if (ImGui::CollapsingHeader("NavMesh Logs", ImGuiTreeNodeFlags_DefaultOpen)) {
-			ImGui::BeginChild("LogScrolling", ImVec2(0, 300), true, ImGuiWindowFlags_HorizontalScrollbar);
-			for (const auto& log : navMeshLogs_) {
-				// エラーは赤、成功は緑、それ以外は白
-				if (log.find("ERROR") != std::string::npos) {
-					ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "%s", log.c_str());
-				}
-				else if (log.find("SUCCESS") != std::string::npos) {
-					ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.2f, 1.0f), "%s", log.c_str());
-				}
-				else if (log.find("===") != std::string::npos) {
-					ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.2f, 1.0f), "%s", log.c_str());
-				}
-				else {
-					ImGui::Text("%s", log.c_str());
-				}
-			}
-			// 自動スクロール
-			if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
-				ImGui::SetScrollHereY(1.0f);
-			}
-			ImGui::EndChild();
-		}
-
-		ImGui::End();
-	}
+    auto* lightManager = m_world->GetResource<LightManager*>();
+    if (lightManager) {
+        lightManager->DrawImGui();
+    }
 #endif
 }
 
 void GamePlayScene::Finalize() {
-	// BGMを停止
-	UnoEngine* engine = UnoEngine::GetInstance();
-	if (engine && !sceneData_.audio.bgm.name.empty()) {
-		engine->StopAudio(sceneData_.audio.bgm.name);
-	}
+    UnoEngine* engine = UnoEngine::GetInstance();
 
-	if (player_) {
-		player_->Finalize();
-		player_.reset();
-	}
-	if (enemy_) {
-		enemy_->Finalize();
-		enemy_.reset();
-	}
+    // Stop BGM
+    if (!m_sceneData.audio.bgm.name.empty()) {
+        engine->StopAudio(m_sceneData.audio.bgm.name);
+    }
 
-	// Orbのクリーンアップ
-	for (auto& orb : orbs_) {
-		if (orb) {
-			orb->Finalize();
-		}
-	}
-	orbs_.clear();
+    // Destroy all entities
+    for (auto& entity : m_orbEntities) {
+        m_world->DestroyEntity(entity);
+    }
+    for (auto& entity : m_sceneObjectEntities) {
+        m_world->DestroyEntity(entity);
+    }
+    if (m_playerEntity.IsValid()) m_world->DestroyEntity(m_playerEntity);
+    if (m_enemyEntity.IsValid()) m_world->DestroyEntity(m_enemyEntity);
+    if (m_gameStateEntity.IsValid()) m_world->DestroyEntity(m_gameStateEntity);
 
-	sceneObjects_.clear();
-	skybox_.reset();
-	lightManager_.reset();
-	fpsCamera_.reset();
-	postProcess_.reset();
-	horrorEffect_.reset();
-	fadeSprite_.reset();
-	minimap_.reset();
-	subtitleManager_.reset();
-	bitmapFont_.reset();
+    m_orbEntities.clear();
+    m_sceneObjectEntities.clear();
+
+    // Clear systems
+    m_world->ClearSystems();
+    m_renderSystem.reset();
+    m_uiRenderSystem.reset();
 }
 
 void GamePlayScene::AddNavMeshLog(const std::string& message) {
-	navMeshLogs_.push_back(message);
-	// 最大1000行まで保持
-	if (navMeshLogs_.size() > 1000) {
-		navMeshLogs_.erase(navMeshLogs_.begin());
-	}
+    m_navMeshLogs.push_back(message);
+    if (m_navMeshLogs.size() > 1000) {
+        m_navMeshLogs.erase(m_navMeshLogs.begin());
+    }
 }
 
 void GamePlayScene::ClearNavMeshLogs() {
-	navMeshLogs_.clear();
+    m_navMeshLogs.clear();
 }
-
-void GamePlayScene::HandleInput() {
-	UnoEngine* engine = UnoEngine::GetInstance();
-
-	if (engine->IsKeyTrig(DIK_F)) {
-		lightManager_->ToggleDebugDisplay();
-	}
-
-	if (engine->IsKeyTrig(DIK_M)) {
-		showNavMeshDebug_ = !showNavMeshDebug_;
-	}
-
-	if (engine->IsKeyTrig(DIK_V)) {
-		if (fpsCamera_) {
-			bool currentMode = fpsCamera_->IsFPSMode();
-			fpsCamera_->SetFPSMode(!currentMode);
-		}
-	}
-
-	if (engine->IsKeyTrig(DIK_TAB)) {
-		// TABキーでマウス固定/非固定を切り替え
-		if (fpsCamera_) {
-			fpsCamera_->ToggleMouseLook();
-		}
-	}
-
-	// F4キーで魚眼レンズのON/OFF切り替え
-	if (engine->IsKeyTrig(DIK_F4)) {
-		static bool fisheyeEnabled = true;
-		fisheyeEnabled = !fisheyeEnabled;
-		if (fisheyeEnabled) {
-			fisheyeStrength_ = 2.58f;  // デフォルト値に戻す
-			OutputDebugStringA("Fisheye lens: ON\n");
-		} else {
-			fisheyeStrength_ = 0.0f;   // 魚眼レンズを無効化
-			OutputDebugStringA("Fisheye lens: OFF\n");
-		}
-	}
-
-	// R キーでナビメッシュ再生成
-	if (engine->IsKeyTrig(DIK_R)) {
-		ClearNavMeshLogs();
-		AddNavMeshLog("=== Regenerating NavMesh (R key) ===");
-		engine->GenNav(sceneObjects_, "externals/navimap/stage.navmesh");
-
-		// 可視化が有効な場合は次のフレームで更新
-		if (engine->IsNavVis()) {
-			engine->RequestNavVisUpdate();
-			AddNavMeshLog("NavMesh visualization will update next frame");
-		}
-	}
-}
-
-void GamePlayScene::UpdateRespawn(float deltaTime) {
-	// リスポーン処理中でない場合は何もしない
-	if (respawnState_ == RespawnState::None) {
-		return;
-	}
-
-	respawnTimer_ += deltaTime;
-
-	switch (respawnState_) {
-	case RespawnState::FadeOut:
-		// 暗転開始
-		fadeAlpha_ = respawnTimer_ / FADE_DURATION;
-		if (fadeAlpha_ >= 1.0f) {
-			fadeAlpha_ = 1.0f;
-			// 完全に暗転したら位置をリセット
-			ResetPositions();
-			respawnState_ = RespawnState::Respawning;
-			respawnTimer_ = 0.0f;
-		}
-		break;
-
-	case RespawnState::Respawning:
-		// 少し待機(0.5秒)
-		if (respawnTimer_ >= 0.5f) {
-			respawnState_ = RespawnState::FadeIn;
-			respawnTimer_ = 0.0f;
-		}
-		break;
-
-	case RespawnState::FadeIn:
-		// 明転開始
-		fadeAlpha_ = 1.0f - (respawnTimer_ / FADE_DURATION);
-		if (fadeAlpha_ <= 0.0f) {
-			fadeAlpha_ = 0.0f;
-			// 完全に明るくなったらリスポーン終了
-			respawnState_ = RespawnState::None;
-			respawnTimer_ = 0.0f;
-		}
-		break;
-	}
-}
-
-void GamePlayScene::StartRespawn() {
-	OutputDebugStringA("Starting respawn process...\n");
-	respawnState_ = RespawnState::FadeOut;
-	respawnTimer_ = 0.0f;
-	fadeAlpha_ = 0.0f;
-}
-
-void GamePlayScene::ResetPositions() {
-	OutputDebugStringA("Resetting player and enemy positions...\n");
-
-	// プレイヤーを初期位置に戻す
-	if (player_) {
-		player_->SetPosition(playerInitialPos_);
-		player_->SetJumpscareMode(false);  // 動けるようにする
-		OutputDebugStringA(("Player reset to position: (" + 
-			std::to_string(playerInitialPos_.x) + ", " +
-			std::to_string(playerInitialPos_.y) + ", " +
-			std::to_string(playerInitialPos_.z) + ")\n").c_str());
-	}
-
-	// エネミーを初期位置に戻して全ての状態をリセット
-	if (enemy_) {
-		enemy_->SetPosition(enemyInitialPos_);
-		enemy_->ResetAIState();  // AI状態、BGM、アニメーション全てをリセット
-		OutputDebugStringA(("Enemy reset to position: (" + 
-			std::to_string(enemyInitialPos_.x) + ", " +
-			std::to_string(enemyInitialPos_.y) + ", " +
-			std::to_string(enemyInitialPos_.z) + ")\n").c_str());
-	}
-
-	// ジャンプスケアフラグをリセット
-	jumpscareStarted_ = false;
-
-	// ライティングを初期状態にリセット
-	if (lightManager_) {
-		lightManager_->Initialize();
-		OutputDebugStringA("Lighting reset to initial state\n");
-	}
-
-	// カメラをプレイヤー位置に戻す
-	if (camera_) {
-		camera_->SetTranslate({playerInitialPos_.x, playerInitialPos_.y + 1.5f, playerInitialPos_.z - 5.0f});
-		camera_->Update();
-	}
-
-	OutputDebugStringA("Position reset complete. Orbs preserved.\n");
-}
-

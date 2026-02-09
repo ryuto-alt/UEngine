@@ -65,6 +65,9 @@
 #include "imgui_impl_win32.h"
 #include "imgui_impl_dx12.h"
 
+#include "ECS/World.h"
+#include "ECS/JobSystem.h"
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -207,10 +210,6 @@ public:
     std::unique_ptr<AnimatedModel> CreateAnim();
     Animation LoadAnim(const std::string& directoryPath, const std::string& filename);
 
-    // ゲームオブジェクト
-    std::unique_ptr<class Enemy> CreateEnemy(const Vector3& position);
-    std::unique_ptr<class Enemy> CreateEnemy(const Vector3& position, const struct EnemyAIConfig& aiConfig);
-
     // 2Dスプライト
     std::unique_ptr<Sprite> CreateSpr(const std::string& texturePath);
 
@@ -271,6 +270,9 @@ public:
 
     // デバッグ
     void ShowDebug();
+
+    // ECS World
+    ECS::World* GetECSWorld() const { return m_ecsWorld.get(); }
     
     // ========================================
     // 🧱 マネージャー取得
@@ -415,4 +417,7 @@ private:
 
     // 時間管理（高精度タイマー）
     StepTimer timer_;
+
+    // ECS World
+    std::unique_ptr<ECS::World> m_ecsWorld;
 };

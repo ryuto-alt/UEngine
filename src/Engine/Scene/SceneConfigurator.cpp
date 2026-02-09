@@ -2,8 +2,6 @@
 #include "UnoEngine.h"
 #include "DirectXCommon.h"
 #include "Camera.h"
-#include "GameObject/Player.h"
-#include "GameObject/Enemy.h"
 #include "GameObject/FPSCamera.h"
 #include "PostProcess.h"
 #include "Manager/LightManager.h"
@@ -20,8 +18,6 @@ void SceneConfigurator::ApplySceneData(
     DirectXCommon* dxCommon,
     SrvManager* srvManager,
     Camera* camera,
-    std::unique_ptr<Player>& player,
-    std::unique_ptr<Enemy>& enemy,
     std::vector<std::unique_ptr<Object3d>>& sceneObjects,
     std::unique_ptr<Skybox>& skybox,
     std::unique_ptr<LightManager>& lightManager,
@@ -49,8 +45,6 @@ void SceneConfigurator::ApplySceneData(
     ApplyEnvironment(sceneData, skyboxEnabled);
     ApplyCamera(sceneData, camera, fpsCamera);
     ApplyPostProcess(sceneData, postProcess, horrorEffect, fisheyeStrength, fisheyeRadius);
-    ApplyPlayer(sceneData, player, camera, engine);
-    ApplyEnemy(sceneData, enemy, player.get(), camera);
     ApplyObjects(sceneData, sceneObjects, engine);
     ApplyAudio(sceneData, engine);
 }
@@ -61,7 +55,6 @@ void SceneConfigurator::ApplyEnvironment(const SceneData& data, bool& skyboxEnab
 }
 
 void SceneConfigurator::ApplyCamera(const SceneData& data, Camera* camera, std::unique_ptr<FPSCamera>& fpsCamera) {
-    // FOVを度数からラジアンに変換
     float fovRadians = data.camera.fovDegrees * 3.14159265358979323846f / 180.0f;
     camera->SetFov(fovRadians);
 
@@ -76,30 +69,11 @@ void SceneConfigurator::ApplyPostProcess(const SceneData& data, std::unique_ptr<
     fisheyeStrength = data.postProcess.fisheyeStrength;
     fisheyeRadius = data.postProcess.fisheyeRadius;
 
-    // Horror effect gets fisheye + vignette params
     if (horrorEffect) {
         horrorEffect->SetFisheyeStrength(fisheyeStrength);
         horrorEffect->SetFisheyeRadius(fisheyeRadius);
         const auto& hp = data.postProcess.horrorParams;
         horrorEffect->SetHorrorParams(hp.vignette, hp.aberration, hp.noise, hp.scanlines, hp.distortion);
-    }
-}
-
-void SceneConfigurator::ApplyPlayer(const SceneData& data, std::unique_ptr<Player>& player,
-                                   Camera* camera, UnoEngine* engine) {
-    player = std::make_unique<Player>();
-    player->Initialize(camera, data.player.useFPSCamera, data.player.enableCollision);
-    player->SetupCamera(engine);
-    player->SetPosition(data.player.position);
-}
-
-void SceneConfigurator::ApplyEnemy(const SceneData& data, std::unique_ptr<Enemy>& enemy,
-                                  Player* player, Camera* camera) {
-    if (!data.enemies.empty()) {
-        enemy = std::make_unique<Enemy>();
-        enemy->Initialize(camera);
-        enemy->SetPosition(data.enemies[0].position);
-        enemy->SetPlayer(player);
     }
 }
 

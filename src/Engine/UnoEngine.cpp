@@ -1,7 +1,6 @@
 #include "UnoEngine.h"
 #include "AABBCollision.h" // AABBコリジョンシステム
 #include "InstancedRenderer.h"
-#include "GameObject/Enemy.h"
 #include "GameObject/EnemyAIConfig.h"
 #include <cassert>
 #include <algorithm>
@@ -124,6 +123,22 @@ void UnoEngine::Initialize() {
         // 初期化時のGPU同期を実行（削除）
         // dxCommon_->CommandKick();
 
+        // ECS World 初期化
+        m_ecsWorld = std::make_unique<ECS::World>();
+
+        // グローバルリソースを ECS World に登録
+        m_ecsWorld->SetResource<DirectXCommon*>(dxCommon_.get());
+        m_ecsWorld->SetResource<Input*>(input_.get());
+        m_ecsWorld->SetResource<Camera*>(camera_.get());
+        m_ecsWorld->SetResource<SpriteCommon*>(spriteCommon_.get());
+        m_ecsWorld->SetResource<SrvManager*>(srvManager_.get());
+        m_ecsWorld->SetResource<LightManager*>(lightManager_.get());
+        m_ecsWorld->SetResource<NavMeshManager*>(navMeshManager_.get());
+        m_ecsWorld->SetResource<PostProcess*>(postProcess_.get());
+
+        // JobSystem 初期化
+        ECS::JobSystem::GetInstance().Initialize();
+
     }
     catch (const std::exception&) {
         // エラーは無視
@@ -243,6 +258,14 @@ void UnoEngine::Finalize() {
     finalized_ = true;
     
     try {
+        // ECS 終了処理
+        ECS::JobSystem::GetInstance().Shutdown();
+        if (m_ecsWorld) {
+            m_ecsWorld->DestroyAllEntities();
+            m_ecsWorld->ClearSystems();
+            m_ecsWorld.reset();
+        }
+
         // 3D空間オーディオの解放（最初に）
         spatialAudioSources_.clear();
         audioListener_.reset();
@@ -449,34 +472,6 @@ std::unique_ptr<AnimatedModel> UnoEngine::CreateAnim() {
 // アニメーションファイルを読み込む
 Animation UnoEngine::LoadAnim(const std::string& directoryPath, const std::string& filename) {
     return LoadAnimationFile(directoryPath, filename);
-}
-
-// Enemyを作成（デフォルトAI設定）
-std::unique_ptr<Enemy> UnoEngine::CreateEnemy(const Vector3& position) {
-    auto enemy = std::make_unique<Enemy>();
-    enemy->Initialize(camera_.get());
-    enemy->SetPosition(position);
-
-    // NavMeshが存在する場合は自動設定
-    if (navMeshManager_ && navMeshManager_->GetNavMesh()) {
-        enemy->SetNavMesh(navMeshManager_->GetNavMesh());
-    }
-
-    return enemy;
-}
-
-// Enemyを作成（AI設定指定）
-std::unique_ptr<Enemy> UnoEngine::CreateEnemy(const Vector3& position, const EnemyAIConfig& aiConfig) {
-    auto enemy = std::make_unique<Enemy>();
-    enemy->Initialize(camera_.get(), aiConfig);
-    enemy->SetPosition(position);
-
-    // NavMeshが存在する場合は自動設定
-    if (navMeshManager_ && navMeshManager_->GetNavMesh()) {
-        enemy->SetNavMesh(navMeshManager_->GetNavMesh());
-    }
-
-    return enemy;
 }
 
 // 2Dスプライトを作成

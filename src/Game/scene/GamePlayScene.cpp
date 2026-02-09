@@ -65,6 +65,14 @@ void GamePlayScene::Initialize() {
 		}
 	}
 
+	// JSONから読んだ実際の初期位置を保存（リスポーン用）
+	if (player_) {
+		playerInitialPos_ = player_->GetPosition();
+	}
+	if (enemy_) {
+		enemyInitialPos_ = enemy_->GetPosition();
+	}
+
 	// Orbの初期化（70個）
 	orbs_.clear();
 
@@ -101,6 +109,27 @@ void GamePlayScene::Initialize() {
 	fadeSprite_->SetPosition({0.0f, 0.0f});
 	fadeSprite_->SetSize({1280.0f, 720.0f});  // 画面全体をカバー
 	fadeSprite_->setColor({0.0f, 0.0f, 0.0f, 0.0f});  // 初期状態は透明
+
+	// ビットマップフォント＆字幕の初期化
+	bitmapFont_ = std::make_unique<BitmapFont>();
+	bitmapFont_->Initialize(spriteCommon_, "Resources/font/Honoka-Shin-Maru-Gothic_R_16.fnt");
+
+	subtitleManager_ = std::make_unique<SubtitleManager>();
+	subtitleManager_->Initialize(spriteCommon_, bitmapFont_.get());
+	subtitleManager_->SetSteps({
+		{L"ここがみんなが言っていた夢か...", 2.5f, 0.05f},
+		{L"SNSで見た情報だと、捕まらないように\nすべてのオーブを集めればいいらしい。", 4.0f, 0.05f},
+		{L"ただ厄介なのがあの青い熊だ", 2.0f, 0.05f},
+		{L"どうやらあの熊は追いかけるスピードが速いようだ", 2.0f, 0.05f},
+		{L"通路が結構入り組んでいるのを使って、なんとか対策できないだろうか。", 3.0f, 0.05f},
+		{L"とりあえず、奴の足音に注意して集めよう", 2.0f, 0.10f},
+	});
+	subtitleManager_->Start();
+
+	// チュートリアル中は移動無効
+	if (player_) {
+		player_->SetJumpscareMode(true);
+	}
 }
 
 
@@ -207,7 +236,10 @@ void GamePlayScene::Update() {
 		audioListener_->SetOrientation(forward, Vector3{ 0.0f, 1.0f, 0.0f });
 	}
 
-	if (enemy_) {
+	// チュートリアル中はEnemy無効
+	bool tutorialActive = subtitleManager_ && subtitleManager_->IsActive();
+
+	if (enemy_ && !tutorialActive) {
 		enemy_->SetDirectionalLight(const_cast<DirectionalLight*>(&dirLight));
 		enemy_->SetSpotLight(const_cast<SpotLight*>(&spotLight));
 		enemy_->Update(UnoEngine::GetInstance());
@@ -501,6 +533,21 @@ void GamePlayScene::Update() {
 		minimap_->Update(player_.get(), orbs_);
 	}
 
+	// 字幕の更新（SPACEキーでスキップ/次へ）
+	if (subtitleManager_) {
+		bool skipPressed = engine->IsKeyTrig(DIK_SPACE);
+		bool wasActive = subtitleManager_->IsActive();
+		subtitleManager_->Update(deltaTime, skipPressed);
+
+		// チュートリアル完了 → 移動解放 + ヒント表示
+		if (wasActive && subtitleManager_->IsFinished()) {
+			if (player_) {
+				player_->SetJumpscareMode(false);
+			}
+			subtitleManager_->ShowHint(L"WASDで移動", 5.0f);
+		}
+	}
+
 	// NavMesh更新（UnoEngine経由）
 	engine->UpdateNavMesh();
 }
@@ -558,8 +605,9 @@ void GamePlayScene::Draw() {
 		}
 	}
 
-	// Enemyを描画（ジャンプスケア中も同じモデルでアニメーションが切り替わる）
-	if (enemy_) {
+	// チュートリアル中はEnemy非表示
+	bool tutorialActiveDraw = subtitleManager_ && subtitleManager_->IsActive();
+	if (enemy_ && !tutorialActiveDraw) {
 		enemy_->Draw();
 	}
 
@@ -585,6 +633,11 @@ void GamePlayScene::Draw() {
 	// ミニマップを描画（PostProcess後、暗転前）
 	if (minimap_) {
 		minimap_->Draw();
+	}
+
+	// 字幕・ヒント描画（ミニマップの上、暗転の下）
+	if (subtitleManager_ && (subtitleManager_->IsActive() || subtitleManager_->IsHintActive())) {
+		subtitleManager_->Draw();
 	}
 
 	// 暗転エフェクトを最前面に描画（リスポーン中）
@@ -903,6 +956,8 @@ void GamePlayScene::Finalize() {
 	horrorEffect_.reset();
 	fadeSprite_.reset();
 	minimap_.reset();
+	subtitleManager_.reset();
+	bitmapFont_.reset();
 }
 
 void GamePlayScene::AddNavMeshLog(const std::string& message) {

@@ -12,6 +12,8 @@
 #include "Scene/SceneConfigurator.h"
 #include "../Utils/JsonLoader.h"
 #include "UI/Minimap.h"
+#include "UI/BitmapFont.h"
+#include "UI/SubtitleManager.h"
 #include <memory>
 #include <vector>
 
@@ -40,6 +42,8 @@ private:
     std::unique_ptr<SpatialAudioListener> audioListener_;
     std::unique_ptr<Sprite> fadeSprite_;  // 暗転用スプライト
     std::unique_ptr<Minimap> minimap_;
+    std::unique_ptr<BitmapFont> bitmapFont_;
+    std::unique_ptr<SubtitleManager> subtitleManager_;
 
     SceneData sceneData_;
     bool skyboxEnabled_ = false;
@@ -80,7 +84,7 @@ private:
 
     // 初期位置
     Vector3 playerInitialPos_ = {0.0f, 0.0f, 0.0f};
-    Vector3 enemyInitialPos_ = {15.0f, 0.0f, 0.0f};
+    Vector3 enemyInitialPos_ = {50.0f, 0.0f, 0.0f};
 
     // リスポーン処理用
     enum class RespawnState {

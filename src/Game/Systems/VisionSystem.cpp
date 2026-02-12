@@ -56,8 +56,13 @@ void VisionSystem::Update(World& world, float deltaTime) {
 
             bool playerVisible = false;
 
-            // Proximity detection: within 5m regardless of direction
-            if (distanceToPlayer <= vision.proximityDetectionDistance) {
+            // Close proximity: within 3m always detect (no raycast needed at this range)
+            if (distanceToPlayer <= 3.0f) {
+                playerVisible = true;
+            }
+
+            // Proximity detection: within proximityDetectionDistance regardless of direction
+            if (!playerVisible && distanceToPlayer <= vision.proximityDetectionDistance) {
                 if (pathfinding.navMesh && pathfinding.navMesh->IsValid()) {
                     Vector3 enemyEye = {transform.position.x, transform.position.y + 1.5f, transform.position.z};
                     Vector3 playerEye = {playerPos.x, playerPos.y + 1.5f, playerPos.z};
@@ -77,6 +82,7 @@ void VisionSystem::Update(World& world, float deltaTime) {
                     float invLen = 1.0f / distanceToPlayer;
                     Vector3 toPlayerNorm = {toPlayer.x * invLen, 0.0f, toPlayer.z * invLen};
 
+                    // Facing direction (body rotation)
                     Vector3 forward = {
                         std::sin(rot.currentRotationY),
                         0.0f,
@@ -87,7 +93,32 @@ void VisionSystem::Update(World& world, float deltaTime) {
                     dot = std::clamp(dot, -1.0f, 1.0f);
                     float angleDeg = std::acos(dot) * (180.0f / 3.14159f);
 
-                    if (angleDeg <= vision.visionAngle) {
+                    // Widen vision cone at corners (rotation lags behind movement)
+                    float effectiveAngle = vision.visionAngle;
+                    if (pathfinding.isAtCorner) {
+                        effectiveAngle = 130.0f;
+                    }
+
+                    // Also check movement direction: if enemy is actively moving,
+                    // use path direction as secondary vision check
+                    bool inVisionCone = (angleDeg <= effectiveAngle);
+
+                    if (!inVisionCone && pathfinding.currentSpeed > 0.5f &&
+                        pathfinding.waypointIndex < static_cast<int>(pathfinding.currentPath.size())) {
+                        const Vector3& wp = pathfinding.currentPath[pathfinding.waypointIndex];
+                        Vector3 moveDir = {wp.x - transform.position.x, 0.0f, wp.z - transform.position.z};
+                        float moveDirLen = std::sqrt(moveDir.x * moveDir.x + moveDir.z * moveDir.z);
+                        if (moveDirLen > 0.01f) {
+                            moveDir.x /= moveDirLen;
+                            moveDir.z /= moveDirLen;
+                            float moveDot = toPlayerNorm.x * moveDir.x + toPlayerNorm.z * moveDir.z;
+                            moveDot = std::clamp(moveDot, -1.0f, 1.0f);
+                            float moveAngleDeg = std::acos(moveDot) * (180.0f / 3.14159f);
+                            inVisionCone = (moveAngleDeg <= vision.visionAngle);
+                        }
+                    }
+
+                    if (inVisionCone) {
                         // Wall check via NavMesh raycast
                         if (pathfinding.navMesh && pathfinding.navMesh->IsValid()) {
                             Vector3 enemyEye = {transform.position.x, transform.position.y + 1.5f, transform.position.z};

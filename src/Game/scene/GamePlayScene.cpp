@@ -38,6 +38,7 @@
 #include "Systems/RespawnSystem.h"
 #include "Systems/FearEffectSystem.h"
 #include "Systems/TutorialSystem.h"
+#include "Systems/StealthTutorialSystem.h"
 #include "Systems/AnimationSystem.h"
 #include "Systems/CameraSystem.h"
 #include "Systems/CameraShakeSystem.h"
@@ -431,6 +432,7 @@ void GamePlayScene::RegisterSystems() {
     m_world->RegisterSystem(std::make_unique<ECS::RespawnSystem>(), 340);
     m_world->RegisterSystem(std::make_unique<ECS::FearEffectSystem>(), 350);
     m_world->RegisterSystem(std::make_unique<ECS::TutorialSystem>(), 360);
+    m_world->RegisterSystem(std::make_unique<ECS::StealthTutorialSystem>(), 365);
 
     // Animation (400)
     m_world->RegisterSystem(std::make_unique<ECS::AnimationSystem>(), 400);

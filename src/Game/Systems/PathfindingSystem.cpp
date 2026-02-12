@@ -98,7 +98,7 @@ void PathfindingSystem::Update(World& world, float deltaTime) {
                 if (pathfinding.updateTimer <= 0.0f) {
                     FindNavMeshPath(transform.position, playerPos, pathfinding.navMesh,
                                    pathfinding.currentPath, pathfinding.waypointIndex);
-                    pathfinding.updateTimer = 0.1f;
+                    pathfinding.updateTimer = 0.4f;
                 }
             } else if (ai.isSearching) {
                 // Search: path to last heard sound position
@@ -146,7 +146,8 @@ void PathfindingSystem::Update(World& world, float deltaTime) {
                     deltaTime,
                     pathfinding.navMesh,
                     &pathfinding.isAtCorner,
-                    &pathfinding.cornerSlowdown
+                    &pathfinding.cornerSlowdown,
+                    ai.isChasing
                 );
 
                 // Sync rotation: FollowPath handles its own smoothing,

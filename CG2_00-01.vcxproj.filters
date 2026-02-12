@@ -431,6 +431,9 @@
     <ClCompile Include="src\Game\Systems\TutorialSystem.cpp">
       <Filter>src\Game\Systems</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Systems\StealthTutorialSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\Systems\AnimationSystem.cpp">
       <Filter>src\Game\Systems</Filter>
     </ClCompile>
@@ -811,6 +814,9 @@
       <Filter>src\Game\Systems</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Systems\TutorialSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\StealthTutorialSystem.h">
       <Filter>src\Game\Systems</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Systems\AnimationSystem.h">

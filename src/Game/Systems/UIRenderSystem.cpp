@@ -14,10 +14,23 @@ namespace ECS {
 void UIRenderSystem::Update(World& world, float deltaTime) {
     auto* spriteCommon = world.GetResource<SpriteCommon*>();
 
-    // Minimap - gather ECS data then draw
+    // Minimap - gather ECS data then draw (only after tutorial)
     world.ForEach<MinimapComponent>(
         [&world](Entity entity, MinimapComponent& minimap) {
             if (!minimap.minimap) return;
+
+            // Check if tutorial is finished
+            bool tutorialFinished = true;
+            world.ForEach<TutorialComponent>(
+                [&tutorialFinished](Entity e, TutorialComponent& tutorial) {
+                    if (!tutorial.isFinished) {
+                        tutorialFinished = false;
+                    }
+                }
+            );
+
+            // Don't draw minimap during tutorial
+            if (!tutorialFinished) return;
 
             // Player position
             Entity playerEntity = world.FindEntityWith<PlayerTag>();

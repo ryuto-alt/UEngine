@@ -33,4 +33,9 @@ struct TutorialComponent {
     bool isFinished = false;
 };
 
+struct StealthTutorialComponent {
+    bool triggered = false;   // Already shown once
+    bool active = false;      // Currently showing subtitle
+};
+
 } // namespace ECS

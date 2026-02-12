@@ -28,6 +28,7 @@ void SubtitleManager::Start() {
 	m_typeTimer = 0.0f;
 	m_fullyRevealed = false;
 	m_waitTimer = 0.0f;
+	m_hintActive = false;
 }
 
 void SubtitleManager::Update(float deltaTime, bool skipPressed) {

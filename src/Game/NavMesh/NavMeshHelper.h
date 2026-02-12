@@ -46,6 +46,7 @@ public:
 		float deltaTime,
 		NavMesh* navMesh = nullptr,
 		bool* isAtCorner = nullptr,
-		float* cornerSlowdownFactor = nullptr
+		float* cornerSlowdownFactor = nullptr,
+		bool aggressiveCorner = false
 	);
 };

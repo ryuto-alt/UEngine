@@ -182,6 +182,7 @@ ECS::Entity CreateGameStateEntity(ECS::World& world) {
     world.AddComponent(entity, ECS::MinimapComponent{});
     world.AddComponent(entity, ECS::FadeSpriteComponent{});
     world.AddComponent(entity, ECS::SubtitleUIComponent{});
+    world.AddComponent(entity, ECS::StealthTutorialComponent{});
 
     return entity;
 }

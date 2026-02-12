@@ -182,6 +182,7 @@
     <ClCompile Include="src\Game\Systems\RespawnSystem.cpp" />
     <ClCompile Include="src\Game\Systems\FearEffectSystem.cpp" />
     <ClCompile Include="src\Game\Systems\TutorialSystem.cpp" />
+    <ClCompile Include="src\Game\Systems\StealthTutorialSystem.cpp" />
     <ClCompile Include="src\Game\Systems\AnimationSystem.cpp" />
     <ClCompile Include="src\Game\Systems\CameraSystem.cpp" />
     <ClCompile Include="src\Game\Systems\CameraShakeSystem.cpp" />
@@ -345,6 +346,7 @@
     <ClInclude Include="src\Game\Systems\RespawnSystem.h" />
     <ClInclude Include="src\Game\Systems\FearEffectSystem.h" />
     <ClInclude Include="src\Game\Systems\TutorialSystem.h" />
+    <ClInclude Include="src\Game\Systems\StealthTutorialSystem.h" />
     <ClInclude Include="src\Game\Systems\AnimationSystem.h" />
     <ClInclude Include="src\Game\Systems\CameraSystem.h" />
     <ClInclude Include="src\Game\Systems\CameraShakeSystem.h" />

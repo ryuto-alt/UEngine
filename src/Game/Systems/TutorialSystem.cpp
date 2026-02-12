@@ -16,7 +16,13 @@ void TutorialSystem::Update(World& world, float deltaTime) {
         [engine, deltaTime, &world](Entity entity, SubtitleUIComponent& subtitle,
                                      TutorialComponent& tutorial) {
             if (!subtitle.subtitleManager) return;
-            if (tutorial.isFinished) return;
+            if (tutorial.isFinished) {
+                // Keep updating hint timer so "WASDで移動" fades out properly
+                if (subtitle.subtitleManager->IsHintActive()) {
+                    subtitle.subtitleManager->Update(deltaTime, false);
+                }
+                return;
+            }
 
             bool skipPressed = engine->IsKeyTrig(DIK_SPACE);
             bool wasActive = subtitle.subtitleManager->IsActive();

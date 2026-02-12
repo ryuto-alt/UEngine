@@ -4,6 +4,7 @@
 #include "IntroScene.h"
 #include "GamePlayScene.h"
 #include "GameOverScene.h"
+#include "EndingScene.h"
 #include "GameClearScene.h"
 #include <cassert>
 
@@ -54,6 +55,8 @@ void SceneManager::Update() {
             currentScene_ = std::make_unique<IntroScene>();
         } else if (nextScene_ == "GamePlay") {
             currentScene_ = std::make_unique<GamePlayScene>();
+        } else if (nextScene_ == "Ending") {
+            currentScene_ = std::make_unique<EndingScene>();
         } else if (nextScene_ == "GameOver") {
             currentScene_ = std::make_unique<GameOverScene>();
         } else if (nextScene_ == "GameClear") {

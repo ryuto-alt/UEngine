@@ -9,6 +9,8 @@ struct GameStateComponent {
     int32_t captureCount = 0;
     int32_t maxCaptures = 3;
     bool jumpscareStarted = false;
+    bool allOrbsCollected = false;
+    float endingFadeTimer = 0.0f;
 };
 
 struct RespawnStateComponent {

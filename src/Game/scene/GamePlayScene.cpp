@@ -497,6 +497,23 @@ void GamePlayScene::Update() {
     // All game logic via ECS
     m_world->UpdateSystems(deltaTime);
 
+    // Ending fade-out: all orbs collected → fade to black → EndingScene
+    if (m_gameStateEntity.IsValid()) {
+        auto& gameState = m_world->GetComponent<GameStateComponent>(m_gameStateEntity);
+        if (gameState.allOrbsCollected) {
+            gameState.endingFadeTimer += deltaTime;
+            constexpr float kEndingFadeDuration = 2.0f;
+            float alpha = gameState.endingFadeTimer / kEndingFadeDuration;
+            if (alpha >= 1.0f) {
+                alpha = 1.0f;
+                sceneManager_->ChangeScene("Ending");
+            }
+            // Write to respawn fadeAlpha so UIRenderSystem draws the fade sprite
+            auto& respawn = m_world->GetComponent<RespawnStateComponent>(m_gameStateEntity);
+            respawn.fadeAlpha = alpha;
+        }
+    }
+
     // NavMesh update
     engine->UpdateNavMesh();
 }
@@ -569,6 +586,14 @@ void GamePlayScene::Draw() {
     auto* lightManager = m_world->GetResource<LightManager*>();
     if (lightManager) {
         lightManager->DrawImGui();
+    }
+
+    // Game State debug
+    if (m_gameStateEntity.IsValid()) {
+        auto& gameState = m_world->GetComponent<GameStateComponent>(m_gameStateEntity);
+        ImGui::Begin("Game State Debug");
+        ImGui::Checkbox("allOrbsCollected", &gameState.allOrbsCollected);
+        ImGui::End();
     }
 #endif
 }

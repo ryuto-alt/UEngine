@@ -353,6 +353,9 @@
     <ClCompile Include="src\Game\scene\GameOverScene.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\scene\EndingScene.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\Utils\JsonLoader.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -689,6 +692,7 @@
     <ClInclude Include="src\Engine\Graphics\CullingSystem.h" />
     <ClInclude Include="src\Engine\StepTimer.h" />
     <ClInclude Include="src\Game\scene\GameOverScene.h" />
+    <ClInclude Include="src\Game\scene\EndingScene.h" />
     <ClInclude Include="src\Game\Utils\JsonLoader.h" />
     <ClInclude Include="src\Game\UI\Minimap.h" />
     <ClInclude Include="src\Game\UI\BitmapFont.h" />

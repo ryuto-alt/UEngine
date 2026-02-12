@@ -55,6 +55,30 @@ void OrbCollectionSystem::Update(World& world, float deltaTime) {
             }
         );
 
+        // All orbs collected — trigger ending sequence
+        if (remaining == 0) {
+            auto& gameState = world.GetComponent<GameStateComponent>(gameStateEntity);
+            if (!gameState.allOrbsCollected) {
+                gameState.allOrbsCollected = true;
+
+                // Freeze player
+                world.ForEach<JumpscareVictimComponent, PlayerMovementComponent>(
+                    [](Entity e, JumpscareVictimComponent& victim, PlayerMovementComponent& movement) {
+                        victim.isInJumpscare = true;
+                        movement.isMoving = false;
+                    }
+                );
+
+                // Stop enemy AI and clear path
+                world.ForEach<EnemyAIComponent, PathfindingComponent>(
+                    [](Entity e, EnemyAIComponent& ai, PathfindingComponent& path) {
+                        ai.isActive = false;
+                        path.currentPath.clear();
+                    }
+                );
+            }
+        }
+
         // Trigger stealth mode at threshold
         if (remaining <= 25) {
             world.ForEach<EnemyTag, StealthComponent>(

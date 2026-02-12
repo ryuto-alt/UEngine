@@ -12,7 +12,7 @@ void LogoScene::Initialize() {
 
     // ロゴサウンドの読み込み（再生は1.5秒後）
     AudioManager::GetInstance()->LoadMP3("logoSound", "Resources/Audio/logosound.mp3");
-    AudioManager::GetInstance()->SetVolume("logoSound", 0.5f);
+    AudioManager::GetInstance()->SetVolume("logoSound", 0.125f);
 
     // ロゴスプライトの初期化
     logoSprite_ = std::make_unique<Sprite>();

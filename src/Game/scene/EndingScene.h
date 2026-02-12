@@ -25,7 +25,7 @@ private:
     float timer_ = 0.0f;
     float phaseTimer_ = 0.0f;
     float fadeAlpha_ = 1.0f;
-    float bgmVolume_ = 0.2f;
+    float bgmVolume_ = 0.05f;
 
     enum class Phase { Bell, AlarmStop, AsaFadeIn, Scrolling, FadeOut };
     Phase phase_ = Phase::Bell;

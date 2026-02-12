@@ -36,7 +36,7 @@ void DetectionSoundSystem::Update(World& world, float deltaTime) {
                 if (detection.source->IsPlaying()) {
                     detection.source->Stop();
                 }
-                detection.source->SetVolume(2.5f);
+                detection.source->SetVolume(0.625f);
                 detection.source->Play(false);
                 detection.isPlaying = true;
             }

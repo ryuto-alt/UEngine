@@ -16,14 +16,14 @@ namespace {
 // Horror-style non-linear volume falloff
 float CalculateHorrorVolume(float distance) {
     constexpr float kClose = 5.0f, kMid = 15.0f, kFar = 30.0f;
-    if (distance < kClose) return 1.2f;
+    if (distance < kClose) return 0.6f;
     if (distance < kMid) {
         float t = (distance - kClose) / (kMid - kClose);
-        return 1.2f * std::pow(0.3f, t);
+        return 0.6f * std::pow(0.3f, t);
     }
     if (distance < kFar) {
         float t = (distance - kMid) / (kFar - kMid);
-        return 0.36f * (1.0f - t);
+        return 0.18f * (1.0f - t);
     }
     return 0.0f;
 }

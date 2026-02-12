@@ -38,7 +38,7 @@ void EndingScene::Initialize() {
 
     scrollY_ = kStartY;
     fadeAlpha_ = 1.0f;
-    bgmVolume_ = 0.2f;
+    bgmVolume_ = 0.05f;
 
     // Load audio
     auto* audio = AudioManager::GetInstance();
@@ -49,6 +49,7 @@ void EndingScene::Initialize() {
     // Start bell immediately
     phase_ = Phase::Bell;
     phaseTimer_ = 0.0f;
+    audio->SetVolume("endingBell", 0.25f);
     audio->Play("endingBell", false);
 
     OutputDebugStringA("EndingScene::Initialize - DONE\n");
@@ -76,6 +77,7 @@ void EndingScene::Update() {
     case Phase::Bell:
         if (phaseTimer_ >= kBellDuration) {
             audio->Stop("endingBell");
+            audio->SetVolume("endingStop", 0.25f);
             audio->Play("endingStop", false);
             phase_ = Phase::AlarmStop;
             phaseTimer_ = 0.0f;
@@ -95,7 +97,7 @@ void EndingScene::Update() {
         if (fadeAlpha_ <= 0.0f) {
             fadeAlpha_ = 0.0f;
             // Start BGM + text scroll
-            audio->SetVolume("endingBGM", 0.2f);
+            audio->SetVolume("endingBGM", 0.05f);
             audio->Play("endingBGM", false);
             phase_ = Phase::Scrolling;
             phaseTimer_ = 0.0f;
@@ -114,7 +116,7 @@ void EndingScene::Update() {
 
     case Phase::FadeOut:
         fadeAlpha_ += kDeltaTime / kFadeOutDuration;
-        bgmVolume_ = 0.2f * (1.0f - phaseTimer_ / kBgmFadeOutDuration);
+        bgmVolume_ = 0.05f * (1.0f - phaseTimer_ / kBgmFadeOutDuration);
         if (bgmVolume_ < 0.0f) bgmVolume_ = 0.0f;
         audio->SetVolume("endingBGM", bgmVolume_);
 

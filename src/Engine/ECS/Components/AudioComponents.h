@@ -55,7 +55,7 @@ struct ChaseBGMComponent {
     float targetVolume = 0.0f;
     bool fadingIn = false;
     bool fadingOut = false;
-    float maxVolume = 0.3f;
+    float maxVolume = 0.075f;
     float fadeInDuration = 2.0f;
     float fadeOutDuration = 3.0f;
 };

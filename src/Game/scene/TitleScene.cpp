@@ -58,7 +58,7 @@ void TitleScene::Initialize() {
 
     // タイトルBGMの読み込みと再生
     AudioManager::GetInstance()->LoadMP3("titleBGM", "Resources/Audio/title.mp3");
-    AudioManager::GetInstance()->SetVolume("titleBGM", 0.3f);
+    AudioManager::GetInstance()->SetVolume("titleBGM", 0.075f);
     AudioManager::GetInstance()->Play("titleBGM", true);
 }
 

@@ -134,7 +134,7 @@ void FPSCamera::UpdateCameraShake(bool isMoving, bool isRunning, float deltaTime
         if (engine && previousYOffset_ < 0.0f && yOffset >= 0.0f) {
             // 音が再生中でなければ再生
             if (!engine->IsAudPlay("footstep")) {
-                engine->PlayAudio("footstep", false, 0.3f);  // ボリューム30%
+                engine->PlayAudio("footstep", false, 0.15f);  // ボリューム15%
             }
         }
 

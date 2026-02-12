@@ -41,7 +41,7 @@ void OrbCollectionSystem::Update(World& world, float deltaTime) {
 
                 // Play collection sound
                 UnoEngine* engine = UnoEngine::GetInstance();
-                engine->PlayAudio("orbGet", false, 0.7f);
+                engine->PlayAudio("orbGet", false, 0.175f);
             }
         }
     );

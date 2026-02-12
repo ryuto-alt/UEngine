@@ -62,7 +62,7 @@ void ChaseBGMSystem::Update(World& world, float deltaTime) {
 
                     // Resume stage BGM
                     if (!engine->IsAudPlay("stagebgm")) {
-                        engine->PlayAudio("stagebgm", true, 0.1f);
+                        engine->PlayAudio("stagebgm", true, 0.025f);
                     }
                 } else {
                     engine->SetAudVol("chaseBGM", bgm.volume);

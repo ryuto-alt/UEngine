@@ -254,26 +254,26 @@ void GamePlayScene::Initialize() {
         auto& footstepAudio = m_world->GetComponent<EnemyFootstepAudioComponent>(m_enemyEntity);
         footstepAudio.footstepSource1 = std::make_unique<SpatialAudioSource>();
         footstepAudio.footstepSource1->Initialize("Resources/Audio/Enemy_feet.mp3", enemyPos);
-        footstepAudio.footstepSource1->SetVolume(1.2f);
+        footstepAudio.footstepSource1->SetVolume(0.6f);
         footstepAudio.footstepSource1->SetMaxDistance(22.0f);
         footstepAudio.footstepSource1->SetMinDistance(1.0f);
         footstepAudio.footstepSource2 = std::make_unique<SpatialAudioSource>();
         footstepAudio.footstepSource2->Initialize("Resources/Audio/Enemy_feet2.mp3", enemyPos);
-        footstepAudio.footstepSource2->SetVolume(1.2f);
+        footstepAudio.footstepSource2->SetVolume(0.6f);
         footstepAudio.footstepSource2->SetMaxDistance(22.0f);
         footstepAudio.footstepSource2->SetMinDistance(1.0f);
 
         auto& detection = m_world->GetComponent<DetectionSoundComponent>(m_enemyEntity);
         detection.source = std::make_unique<SpatialAudioSource>();
         detection.source->Initialize("Resources/Audio/enemysound.mp3", enemyPos);
-        detection.source->SetVolume(2.2f);
+        detection.source->SetVolume(0.55f);
         detection.source->SetMaxDistance(40.0f);
         detection.source->SetMinDistance(1.0f);
 
         auto& bark = m_world->GetComponent<BarkSoundComponent>(m_enemyEntity);
         bark.source = std::make_unique<SpatialAudioSource>();
         bark.source->Initialize("Resources/Audio/enemy_bark.mp3", enemyPos);
-        bark.source->SetVolume(1.5f);
+        bark.source->SetVolume(0.375f);
         bark.source->SetMaxDistance(35.0f);
         bark.source->SetMinDistance(1.0f);
 
@@ -393,7 +393,7 @@ void GamePlayScene::Initialize() {
 
     // Orb collection audio
     AudioManager::GetInstance()->LoadMP3("orbGet", "Resources/Audio/get.mp3");
-    AudioManager::GetInstance()->SetVolume("orbGet", 0.5f);
+    AudioManager::GetInstance()->SetVolume("orbGet", 0.125f);
 
     // Register all update systems
     RegisterSystems();

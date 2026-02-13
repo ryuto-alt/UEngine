@@ -371,6 +371,14 @@ brave-mcp/
 .mcp.json
 .serena/
 serena/
+skills/
+CLAUDE.md
+
+# Auto-generated / temp files
+imgui.ini
+debug.txt
+NUL
+temp_*.txt
 
 # Screenshots
 *.png

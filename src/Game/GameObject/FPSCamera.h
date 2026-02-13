@@ -26,6 +26,10 @@ public:
     // カメラの回転を取得
     Vector3 GetCameraRotation() const { return cameraRotation_; }
 
+    // マウス感度
+    void SetMouseSensitivity(float sensitivity) { mouseSensitivity_ = sensitivity; }
+    float GetMouseSensitivity() const { return mouseSensitivity_; }
+
     // マウス視点のON/OFF
     void SetMouseLookEnabled(bool enabled) { mouseLookEnabled_ = enabled; }
     bool IsMouseLookEnabled() const { return mouseLookEnabled_; }

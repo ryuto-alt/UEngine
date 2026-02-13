@@ -97,6 +97,10 @@ void SubtitleManager::Draw() {
 	constexpr float bottomMargin = 80.0f;
 	constexpr float bgPadding = 12.0f;
 
+	if (m_font) {
+		m_font->BeginDraw();
+	}
+
 	// チュートリアル字幕
 	if (m_active && !m_finished && m_font &&
 		m_currentStep < static_cast<int32_t>(m_steps.size())) {

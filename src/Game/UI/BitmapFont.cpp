@@ -1,32 +1,52 @@
 #include "BitmapFont.h"
 #include "../../Engine/Graphics/Sprite.h"
 #include "../../Engine/Graphics/SpriteCommon.h"
+#include "../../Engine/Utility/StringUtility.h"
 #include <fstream>
 #include <sstream>
 #include <filesystem>
+
+// Helper: open ifstream with UTF-8 narrow path on Windows
+static std::ifstream OpenUtf8(const std::string& utf8Path) {
+	std::wstring widePath = StringUtility::ConvertString(utf8Path);
+	return std::ifstream(widePath);
+}
+
+// Helper: get parent directory from UTF-8 path (returns UTF-8)
+static std::string GetParentDirUtf8(const std::string& utf8Path) {
+	std::wstring widePath = StringUtility::ConvertString(utf8Path);
+	std::wstring wideParent = std::filesystem::path(widePath).parent_path().wstring();
+	return StringUtility::ConvertString(wideParent) + "/";
+}
 
 void BitmapFont::Initialize(SpriteCommon* spriteCommon, const std::string& fntFilePath) {
 	m_spriteCommon = spriteCommon;
 
 	ParseFntFile(fntFilePath);
 
-	m_spritePool.reserve(MAX_SPRITES);
-	for (int32_t i = 0; i < MAX_SPRITES; ++i) {
-		auto sprite = std::make_unique<Sprite>();
-		sprite->Initialize(m_spriteCommon, m_atlasTexturePath);
-		m_spritePool.push_back(std::move(sprite));
+	// Create sprite pools per page
+	m_spritePoolPerPage.resize(m_pageCount);
+	m_nextSpritePerPage.resize(m_pageCount, 0);
+
+	for (int32_t p = 0; p < m_pageCount; ++p) {
+		m_spritePoolPerPage[p].reserve(MAX_SPRITES_PER_PAGE);
+		for (int32_t i = 0; i < MAX_SPRITES_PER_PAGE; ++i) {
+			auto sprite = std::make_unique<Sprite>();
+			sprite->Initialize(m_spriteCommon, m_atlasTexturePaths[p]);
+			m_spritePoolPerPage[p].push_back(std::move(sprite));
+		}
 	}
 }
 
 void BitmapFont::ParseFntFile(const std::string& fntFilePath) {
-	std::ifstream file(fntFilePath);
+	std::ifstream file = OpenUtf8(fntFilePath);
 	if (!file.is_open()) {
 		OutputDebugStringA(("BitmapFont: Failed to open " + fntFilePath + "\n").c_str());
 		return;
 	}
 
-	// .fntファイルの親ディレクトリ
-	std::string parentDir = std::filesystem::path(fntFilePath).parent_path().string() + "/";
+	// .fntファイルの親ディレクトリ (UTF-8)
+	std::string parentDir = GetParentDirUtf8(fntFilePath);
 
 	std::string line;
 	while (std::getline(file, line)) {
@@ -38,15 +58,30 @@ void BitmapFont::ParseFntFile(const std::string& fntFilePath) {
 					m_lineHeight = std::stoi(token.substr(11));
 				} else if (token.substr(0, 5) == "base=") {
 					m_base = std::stoi(token.substr(5));
+				} else if (token.substr(0, 6) == "pages=") {
+					m_pageCount = std::stoi(token.substr(6));
+					if (m_pageCount < 1) m_pageCount = 1;
+					m_atlasTexturePaths.resize(m_pageCount);
 				}
 			}
 		} else if (line.substr(0, 4) == "page") {
 			// page id=0 file="filename.png"
+			int pageId = 0;
+			std::istringstream ss(line);
+			std::string token;
+			while (ss >> token) {
+				if (token.substr(0, 3) == "id=") {
+					pageId = std::stoi(token.substr(3));
+				}
+			}
+
 			auto pos = line.find("file=\"");
 			if (pos != std::string::npos) {
 				auto endPos = line.find('\"', pos + 6);
 				std::string fileName = line.substr(pos + 6, endPos - (pos + 6));
-				m_atlasTexturePath = parentDir + fileName;
+				if (pageId < m_pageCount) {
+					m_atlasTexturePaths[pageId] = parentDir + fileName;
+				}
 			}
 		} else if (line.substr(0, 5) == "char ") {
 			Glyph glyph{};
@@ -71,13 +106,26 @@ void BitmapFont::ParseFntFile(const std::string& fntFilePath) {
 					glyph.yOffset = static_cast<int16_t>(std::stoi(token.substr(8)));
 				} else if (token.substr(0, 9) == "xadvance=") {
 					glyph.xAdvance = static_cast<uint16_t>(std::stoi(token.substr(9)));
+				} else if (token.substr(0, 5) == "page=") {
+					glyph.page = static_cast<uint16_t>(std::stoi(token.substr(5)));
 				}
 			}
 			m_glyphs[id] = glyph;
 		}
 	}
 
-	OutputDebugStringA(("BitmapFont: Loaded " + std::to_string(m_glyphs.size()) + " glyphs from " + fntFilePath + "\n").c_str());
+	// Ensure at least 1 page path exists for backwards compatibility
+	if (m_atlasTexturePaths.empty()) {
+		m_atlasTexturePaths.push_back("");
+		m_pageCount = 1;
+	}
+
+	OutputDebugStringA(("BitmapFont: Loaded " + std::to_string(m_glyphs.size()) +
+		" glyphs (" + std::to_string(m_pageCount) + " pages) from " + fntFilePath + "\n").c_str());
+}
+
+void BitmapFont::BeginDraw() {
+	ResetPool();
 }
 
 void BitmapFont::RenderText(
@@ -87,7 +135,6 @@ void BitmapFont::RenderText(
 	const Vector4& color,
 	int32_t charCount
 ) {
-	ResetPool();
 
 	float cursorX = position.x;
 	int32_t rendered = 0;
@@ -106,7 +153,7 @@ void BitmapFont::RenderText(
 		}
 
 		const Glyph& g = it->second;
-		Sprite* sprite = AcquireSprite();
+		Sprite* sprite = AcquireSprite(g.page);
 		if (!sprite) break;
 
 		sprite->SetTextureLeftTop({static_cast<float>(g.x), static_cast<float>(g.y)});
@@ -135,13 +182,18 @@ float BitmapFont::MeasureTextWidth(const std::wstring& text, float scale) const 
 	return width;
 }
 
-Sprite* BitmapFont::AcquireSprite() {
-	if (m_nextSprite < static_cast<int32_t>(m_spritePool.size())) {
-		return m_spritePool[m_nextSprite++].get();
+Sprite* BitmapFont::AcquireSprite(uint16_t page) {
+	if (page >= m_spritePoolPerPage.size()) return nullptr;
+	auto& pool = m_spritePoolPerPage[page];
+	auto& next = m_nextSpritePerPage[page];
+	if (next < static_cast<int32_t>(pool.size())) {
+		return pool[next++].get();
 	}
 	return nullptr;
 }
 
 void BitmapFont::ResetPool() {
-	m_nextSprite = 0;
+	for (auto& next : m_nextSpritePerPage) {
+		next = 0;
+	}
 }

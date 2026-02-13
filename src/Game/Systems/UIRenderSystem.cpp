@@ -8,6 +8,7 @@
 #include "UnoEngine.h"
 #include "UI/Minimap.h"
 #include "UI/SubtitleManager.h"
+#include "UI/SettingsMenu.h"
 
 namespace ECS {
 
@@ -86,6 +87,15 @@ void UIRenderSystem::Update(World& world, float deltaTime) {
             );
         }
     }
+
+    // Settings menu (drawn on top when paused)
+    world.ForEach<SettingsMenuComponent>(
+        [](Entity entity, SettingsMenuComponent& settings) {
+            if (settings.settingsMenu && settings.settingsMenu->IsOpen()) {
+                settings.settingsMenu->Draw();
+            }
+        }
+    );
 }
 
 } // namespace ECS

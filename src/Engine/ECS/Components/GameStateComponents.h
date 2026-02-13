@@ -1,16 +1,25 @@
 #pragma once
 #include "Mymath.h"
 #include <cstdint>
+#include <memory>
+
+class SettingsMenu; // forward declaration
 
 namespace ECS {
 
 struct GameStateComponent {
     bool isGameOver = false;
+    bool isPaused = false;
     int32_t captureCount = 0;
     int32_t maxCaptures = 3;
     bool jumpscareStarted = false;
     bool allOrbsCollected = false;
     float endingFadeTimer = 0.0f;
+};
+
+struct SettingsMenuComponent {
+    SettingsMenu* settingsMenu = nullptr;
+    std::unique_ptr<SettingsMenu> ownedSettingsMenu;
 };
 
 struct RespawnStateComponent {

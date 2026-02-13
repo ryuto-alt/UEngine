@@ -5,6 +5,7 @@
 #include "UI/BitmapFont.h"
 #include "UI/SubtitleManager.h"
 #include "UI/Minimap.h"
+#include "UI/SettingsMenu.h"
 
 // ECS Components
 #include "ECS/Components/TransformComponents.h"
@@ -183,6 +184,7 @@ ECS::Entity CreateGameStateEntity(ECS::World& world) {
     world.AddComponent(entity, ECS::FadeSpriteComponent{});
     world.AddComponent(entity, ECS::SubtitleUIComponent{});
     world.AddComponent(entity, ECS::StealthTutorialComponent{});
+    world.AddComponent(entity, ECS::SettingsMenuComponent{});
 
     return entity;
 }

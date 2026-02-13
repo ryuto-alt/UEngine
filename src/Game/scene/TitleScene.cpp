@@ -215,9 +215,6 @@ void TitleScene::Update() {
         }
     }
 
-    if (input_->TriggerKey(DIK_ESCAPE)) {
-        sceneManager_->RequestExit();
-    }
 }
 
 void TitleScene::Draw() {

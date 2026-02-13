@@ -371,6 +371,9 @@
     <ClCompile Include="src\Game\UI\SubtitleManager.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\UI\SettingsMenu.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\EntityFactory.cpp">
       <Filter>src\Game\Systems</Filter>
     </ClCompile>
@@ -701,6 +704,7 @@
     <ClInclude Include="src\Game\UI\Minimap.h" />
     <ClInclude Include="src\Game\UI\BitmapFont.h" />
     <ClInclude Include="src\Game\UI\SubtitleManager.h" />
+    <ClInclude Include="src\Game\UI\SettingsMenu.h" />
     <ClInclude Include="src\Engine\ECS\Entity.h">
       <Filter>src\engine\ECS</Filter>
     </ClInclude>

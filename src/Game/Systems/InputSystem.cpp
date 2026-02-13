@@ -16,11 +16,6 @@ void InputSystem::Update(World& world, float deltaTime) {
                            PlayerInputComponent& input, JumpscareVictimComponent& jumpscare) {
             if (jumpscare.isInJumpscare) return;
 
-            if (engine->IsKeyTrig(DIK_ESCAPE)) {
-                engine->RequestEnd();
-                return;
-            }
-
             // Sneak toggle (1 key or RShift)
             if (engine->IsKeyTrig(DIK_1) || engine->IsKeyTrig(DIK_RSHIFT)) {
                 movement.isSneaking = !movement.isSneaking;

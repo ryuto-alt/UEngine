@@ -17,6 +17,9 @@ public:
 
 	void Initialize(SpriteCommon* spriteCommon, const std::string& fntFilePath);
 
+	// 複数回RenderTextを呼ぶ前に1回呼ぶ（スプライトプールリセット）
+	void BeginDraw();
+
 	// charCountで表示文字数を制限（タイプライター用）
 	// -1 = 全文字表示
 	void RenderText(
@@ -41,20 +44,22 @@ private:
 		int16_t xOffset = 0;
 		int16_t yOffset = 0;
 		uint16_t xAdvance = 0;
+		uint16_t page = 0;
 	};
 
 	void ParseFntFile(const std::string& fntFilePath);
-	Sprite* AcquireSprite();
+	Sprite* AcquireSprite(uint16_t page);
 	void ResetPool();
 
 	SpriteCommon* m_spriteCommon = nullptr;
-	std::string m_atlasTexturePath;
+	std::vector<std::string> m_atlasTexturePaths;
 
 	std::unordered_map<uint32_t, Glyph> m_glyphs;
 	int32_t m_lineHeight = 0;
 	int32_t m_base = 0;
+	int32_t m_pageCount = 1;
 
-	static constexpr int32_t MAX_SPRITES = 128;
-	std::vector<std::unique_ptr<Sprite>> m_spritePool;
-	int32_t m_nextSprite = 0;
+	static constexpr int32_t MAX_SPRITES_PER_PAGE = 128;
+	std::vector<std::vector<std::unique_ptr<Sprite>>> m_spritePoolPerPage;
+	std::vector<int32_t> m_nextSpritePerPage;
 };

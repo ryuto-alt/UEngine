@@ -211,6 +211,7 @@
     <ClCompile Include="src\Game\UI\Minimap.cpp" />
     <ClCompile Include="src\Game\UI\BitmapFont.cpp" />
     <ClCompile Include="src\Game\UI\SubtitleManager.cpp" />
+    <ClCompile Include="src\Game\UI\SettingsMenu.cpp" />
     <ClCompile Include="src\Engine\Animation\AnimatedModel.cpp" />
     <ClCompile Include="src\Engine\Animation\AnimationBlender.cpp" />
     <ClCompile Include="src\Engine\Animation\AnimationPlayer.cpp" />
@@ -309,6 +310,7 @@
     <ClInclude Include="src\Game\UI\Minimap.h" />
     <ClInclude Include="src\Game\UI\BitmapFont.h" />
     <ClInclude Include="src\Game\UI\SubtitleManager.h" />
+    <ClInclude Include="src\Game\UI\SettingsMenu.h" />
     <ClInclude Include="src\Engine\ECS\Entity.h" />
     <ClInclude Include="src\Engine\ECS\ComponentRegistry.h" />
     <ClInclude Include="src\Engine\ECS\ComponentArray.h" />

@@ -66,6 +66,7 @@
 #include "UI/BitmapFont.h"
 #include "UI/SubtitleManager.h"
 #include "UI/Minimap.h"
+#include "UI/SettingsMenu.h"
 
 // Engine
 #include "Collision/AABBCollision.h"
@@ -387,6 +388,20 @@ void GamePlayScene::Initialize() {
     auto& tutorial = m_world->GetComponent<TutorialComponent>(m_gameStateEntity);
     tutorial.isActive = true;
 
+    // Settings menu
+    {
+        auto settingsMenu = std::make_unique<SettingsMenu>();
+        settingsMenu->Initialize(spriteCommon_, engine->GetInput());
+        // Set FPSCamera reference
+        auto& fpsCam = m_world->GetComponent<FPSCameraComponent>(m_playerEntity);
+        if (fpsCam.fpsCamera) {
+            settingsMenu->SetFPSCamera(fpsCam.fpsCamera.get());
+        }
+        auto& settingsComp = m_world->GetComponent<SettingsMenuComponent>(m_gameStateEntity);
+        settingsComp.settingsMenu = settingsMenu.get();
+        settingsComp.ownedSettingsMenu = std::move(settingsMenu);
+    }
+
     // Lock player movement during tutorial
     auto& jumpscareVictim = m_world->GetComponent<JumpscareVictimComponent>(m_playerEntity);
     jumpscareVictim.isInJumpscare = true;
@@ -462,6 +477,33 @@ void GamePlayScene::RegisterSystems() {
 void GamePlayScene::Update() {
     UnoEngine* engine = UnoEngine::GetInstance();
     const float deltaTime = engine->GetDelta();
+
+    // ESC key: toggle settings menu
+    if (engine->IsKeyTrig(DIK_ESCAPE) && m_gameStateEntity.IsValid()) {
+        auto& gameState = m_world->GetComponent<GameStateComponent>(m_gameStateEntity);
+        auto& settingsComp = m_world->GetComponent<SettingsMenuComponent>(m_gameStateEntity);
+        if (settingsComp.settingsMenu) {
+            if (settingsComp.settingsMenu->IsOpen()) {
+                settingsComp.settingsMenu->Close();
+                gameState.isPaused = false;
+            } else {
+                settingsComp.settingsMenu->Open();
+                gameState.isPaused = true;
+            }
+        }
+    }
+
+    // When paused, only update settings menu
+    if (m_gameStateEntity.IsValid()) {
+        auto& gameState = m_world->GetComponent<GameStateComponent>(m_gameStateEntity);
+        if (gameState.isPaused) {
+            auto& settingsComp = m_world->GetComponent<SettingsMenuComponent>(m_gameStateEntity);
+            if (settingsComp.settingsMenu) {
+                settingsComp.settingsMenu->Update(deltaTime);
+            }
+            return;
+        }
+    }
 
 #ifdef _DEBUG
     // M key: toggle NavMesh debug window

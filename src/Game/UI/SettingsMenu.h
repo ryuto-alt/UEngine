@@ -56,6 +56,10 @@ private:
     // Slider interaction state
     int draggingSlider_ = -1; // -1: none, 0: sensitivity, 1: volume
 
+    // Fade-in
+    float fadeAlpha_ = 0.0f;
+    static constexpr float FADE_DURATION = 0.15f;
+
     // Layout constants
     static constexpr float PANEL_X = 290.0f;
     static constexpr float PANEL_Y = 80.0f;

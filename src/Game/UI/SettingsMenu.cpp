@@ -85,6 +85,7 @@ void SettingsMenu::Open() {
     if (isOpen_) return;
     isOpen_ = true;
     draggingSlider_ = -1;
+    fadeAlpha_ = 0.0f;
 
     // Read current values
     if (fpsCamera_) {
@@ -111,6 +112,12 @@ void SettingsMenu::Close() {
 
 void SettingsMenu::Update(float deltaTime) {
     if (!isOpen_) return;
+
+    // Fade-in
+    if (fadeAlpha_ < 1.0f) {
+        fadeAlpha_ += deltaTime / FADE_DURATION;
+        if (fadeAlpha_ > 1.0f) fadeAlpha_ = 1.0f;
+    }
 
     float mx = GetMouseX();
     float my = GetMouseY();
@@ -172,16 +179,30 @@ void SettingsMenu::Update(float deltaTime) {
         if (IsPointInRect(mx, my, BUTTON1_X, BUTTON_Y, BUTTON_W, BUTTON_H)) {
             if (!isFullscreen_) {
                 isFullscreen_ = true;
-                auto* winApp = UnoEngine::GetInstance()->GetWinApp();
-                if (winApp) winApp->ToggleFullscreen();
+                auto* engine = UnoEngine::GetInstance();
+                auto* winApp = engine->GetWinApp();
+                if (winApp) {
+                    winApp->ToggleFullscreen();
+                    uint32_t w = winApp->GetCurrentWindowWidth();
+                    uint32_t h = winApp->GetCurrentWindowHeight();
+                    engine->GetDXCom()->ResizeBuffers(w, h);
+                }
+                if (input_) input_->UpdateWindowCenter();
             }
         }
         // Windowed button
         if (IsPointInRect(mx, my, BUTTON2_X, BUTTON_Y, BUTTON_W, BUTTON_H)) {
             if (isFullscreen_) {
                 isFullscreen_ = false;
-                auto* winApp = UnoEngine::GetInstance()->GetWinApp();
-                if (winApp) winApp->ToggleFullscreen();
+                auto* engine = UnoEngine::GetInstance();
+                auto* winApp = engine->GetWinApp();
+                if (winApp) {
+                    winApp->ToggleFullscreen();
+                    uint32_t w = winApp->GetCurrentWindowWidth();
+                    uint32_t h = winApp->GetCurrentWindowHeight();
+                    engine->GetDXCom()->ResizeBuffers(w, h);
+                }
+                if (input_) input_->UpdateWindowCenter();
             }
         }
     }
@@ -200,26 +221,32 @@ void SettingsMenu::Update(float deltaTime) {
 void SettingsMenu::Draw() {
     if (!isOpen_ || !spriteCommon_) return;
 
+    float a = fadeAlpha_;
+
     spriteCommon_->CommonDraw();
 
     // Background
+    bgSprite_->setColor({1.0f, 1.0f, 1.0f, a});
     bgSprite_->Update();
     bgSprite_->Draw();
 
     // Dividers
     for (auto& div : dividerSprites_) {
+        div->setColor({1.0f, 1.0f, 1.0f, a});
         div->Update();
         div->Draw();
     }
 
     // Slider tracks
     for (auto& track : sliderTrackSprites_) {
+        track->setColor({1.0f, 1.0f, 1.0f, a});
         track->Update();
         track->Draw();
     }
 
     // Slider knobs
     for (auto& knob : sliderKnobSprites_) {
+        knob->setColor({1.0f, 1.0f, 1.0f, a});
         knob->Update();
         knob->Draw();
     }
@@ -228,15 +255,18 @@ void SettingsMenu::Draw() {
     for (int i = 0; i < 2; ++i) {
         bool selected = (i == 0) ? isFullscreen_ : !isFullscreen_;
         if (selected) {
+            buttonSelectedSprites_[i]->setColor({1.0f, 1.0f, 1.0f, a});
             buttonSelectedSprites_[i]->Update();
             buttonSelectedSprites_[i]->Draw();
         } else {
+            buttonNormalSprites_[i]->setColor({1.0f, 1.0f, 1.0f, a});
             buttonNormalSprites_[i]->Update();
             buttonNormalSprites_[i]->Draw();
         }
     }
 
     // Close icon
+    closeIconSprite_->setColor({1.0f, 1.0f, 1.0f, a});
     closeIconSprite_->Update();
     closeIconSprite_->Draw();
 
@@ -250,41 +280,43 @@ void SettingsMenu::Draw() {
         constexpr float BTN_SCALE   = 0.45f;   // ~14px
         constexpr float HINT_SCALE  = 0.45f;   // ~14px
 
+        Vector4 textColor = {1.0f, 1.0f, 1.0f, a};
+        Vector4 hintColor = {0.7f, 0.7f, 0.7f, a};
+
         // Title (centered)
         float titleW = bitmapFont_->MeasureTextWidth(L"設定", TITLE_SCALE);
         bitmapFont_->RenderText(L"設定",
-            {PANEL_X + (PANEL_W - titleW) * 0.5f, PANEL_Y + 18.0f}, TITLE_SCALE);
+            {PANEL_X + (PANEL_W - titleW) * 0.5f, PANEL_Y + 18.0f}, TITLE_SCALE, textColor);
 
         // Sensitivity label + value
         float sensPercent = (mouseSensitivity_ - SENS_MIN) / (SENS_MAX - SENS_MIN) * 100.0f;
-        bitmapFont_->RenderText(L"マウス感度", {SLIDER_X, SENSITIVITY_SLIDER_Y - 35.0f}, LABEL_SCALE);
+        bitmapFont_->RenderText(L"マウス感度", {SLIDER_X, SENSITIVITY_SLIDER_Y - 35.0f}, LABEL_SCALE, textColor);
         wchar_t sensBuf[16];
         swprintf_s(sensBuf, L"%.0f%%", sensPercent);
-        bitmapFont_->RenderText(sensBuf, {SLIDER_X + SLIDER_W + 15.0f, SENSITIVITY_SLIDER_Y - 6.0f}, VALUE_SCALE);
+        bitmapFont_->RenderText(sensBuf, {SLIDER_X + SLIDER_W + 15.0f, SENSITIVITY_SLIDER_Y - 6.0f}, VALUE_SCALE, textColor);
 
         // Volume label + value
         float volPercent = masterVolume_ * 100.0f;
-        bitmapFont_->RenderText(L"音量", {SLIDER_X, VOLUME_SLIDER_Y - 35.0f}, LABEL_SCALE);
+        bitmapFont_->RenderText(L"音量", {SLIDER_X, VOLUME_SLIDER_Y - 35.0f}, LABEL_SCALE, textColor);
         wchar_t volBuf[16];
         swprintf_s(volBuf, L"%.0f%%", volPercent);
-        bitmapFont_->RenderText(volBuf, {SLIDER_X + SLIDER_W + 15.0f, VOLUME_SLIDER_Y - 6.0f}, VALUE_SCALE);
+        bitmapFont_->RenderText(volBuf, {SLIDER_X + SLIDER_W + 15.0f, VOLUME_SLIDER_Y - 6.0f}, VALUE_SCALE, textColor);
 
         // Window mode label
-        bitmapFont_->RenderText(L"ウィンドウモード", {SLIDER_X, BUTTON_Y - 35.0f}, LABEL_SCALE);
+        bitmapFont_->RenderText(L"ウィンドウモード", {SLIDER_X, BUTTON_Y - 35.0f}, LABEL_SCALE, textColor);
 
         // Button labels (centered in buttons)
         float fs_w = bitmapFont_->MeasureTextWidth(L"フルスクリーン", BTN_SCALE);
         float win_w = bitmapFont_->MeasureTextWidth(L"ウィンドウ", BTN_SCALE);
         bitmapFont_->RenderText(L"フルスクリーン",
-            {BUTTON1_X + (BUTTON_W - fs_w) * 0.5f, BUTTON_Y + (BUTTON_H - 32.0f * BTN_SCALE) * 0.5f}, BTN_SCALE);
+            {BUTTON1_X + (BUTTON_W - fs_w) * 0.5f, BUTTON_Y + (BUTTON_H - 32.0f * BTN_SCALE) * 0.5f}, BTN_SCALE, textColor);
         bitmapFont_->RenderText(L"ウィンドウ",
-            {BUTTON2_X + (BUTTON_W - win_w) * 0.5f, BUTTON_Y + (BUTTON_H - 32.0f * BTN_SCALE) * 0.5f}, BTN_SCALE);
+            {BUTTON2_X + (BUTTON_W - win_w) * 0.5f, BUTTON_Y + (BUTTON_H - 32.0f * BTN_SCALE) * 0.5f}, BTN_SCALE, textColor);
 
         // Hint (centered)
         float hintW = bitmapFont_->MeasureTextWidth(L"ESC: 閉じる", HINT_SCALE);
         bitmapFont_->RenderText(L"ESC: 閉じる",
-            {PANEL_X + (PANEL_W - hintW) * 0.5f, PANEL_Y + PANEL_H - 40.0f}, HINT_SCALE,
-            {0.7f, 0.7f, 0.7f, 1.0f});
+            {PANEL_X + (PANEL_W - hintW) * 0.5f, PANEL_Y + PANEL_H - 40.0f}, HINT_SCALE, hintColor);
     }
 }
 
@@ -303,7 +335,11 @@ float SettingsMenu::GetMouseX() const {
     GetCursorPos(&pt);
     HWND hwnd = UnoEngine::GetInstance()->GetWinApp()->GetHwnd();
     ScreenToClient(hwnd, &pt);
-    return static_cast<float>(pt.x);
+    // フルスクリーン時はクライアント座標を論理座標(1280x720)にスケーリング
+    RECT rc;
+    GetClientRect(hwnd, &rc);
+    float clientW = static_cast<float>(rc.right - rc.left);
+    return static_cast<float>(pt.x) * (static_cast<float>(WinApp::kClientWidth) / clientW);
 }
 
 float SettingsMenu::GetMouseY() const {
@@ -311,7 +347,10 @@ float SettingsMenu::GetMouseY() const {
     GetCursorPos(&pt);
     HWND hwnd = UnoEngine::GetInstance()->GetWinApp()->GetHwnd();
     ScreenToClient(hwnd, &pt);
-    return static_cast<float>(pt.y);
+    RECT rc;
+    GetClientRect(hwnd, &rc);
+    float clientH = static_cast<float>(rc.bottom - rc.top);
+    return static_cast<float>(pt.y) * (static_cast<float>(WinApp::kClientHeight) / clientH);
 }
 
 bool SettingsMenu::IsMouseDown() const {

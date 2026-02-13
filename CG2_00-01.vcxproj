@@ -160,6 +160,7 @@
     <ClCompile Include="src\Game\scene\SceneManager.cpp" />
     <ClCompile Include="src\Game\scene\TitleScene.cpp" />
     <ClCompile Include="src\Game\scene\IntroScene.cpp" />
+    <ClCompile Include="src\Game\scene\CreditScene.cpp" />
     <ClCompile Include="src\Game\scene\EndingScene.cpp" />
     <ClCompile Include="src\Game\EntityFactory.cpp" />
     <ClCompile Include="src\Game\Systems\InputSystem.cpp" />
@@ -295,6 +296,7 @@
     <ClInclude Include="src\Game\scene\SceneManager.h" />
     <ClInclude Include="src\Game\scene\TitleScene.h" />
     <ClInclude Include="src\Game\scene\IntroScene.h" />
+    <ClInclude Include="src\Game\scene\CreditScene.h" />
     <ClInclude Include="src\Game\scene\EndingScene.h" />
     <ClInclude Include="src\Game\GameObject\EnemyAIConfig.h" />
     <ClInclude Include="src\Game\GameObject\FPSCamera.h" />

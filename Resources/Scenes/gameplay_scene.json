@@ -2,7 +2,7 @@
   "sceneName": "GamePlay",
   "environment": {
     "skyboxEnabled": false,
-    "environmentMap": "Resources/Models/skybox/warm_restaurant_night_2k.hdr"
+    "environmentMap": ""
   },
   "camera": {
     "fovDegrees": 103.00,

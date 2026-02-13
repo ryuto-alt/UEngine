@@ -3,8 +3,6 @@
 #include "Audio/AudioManager.h"
 
 void EndingScene::Initialize() {
-    OutputDebugStringA("EndingScene::Initialize - START\n");
-
     camera_->SetTranslate({0.0f, 0.0f, -10.0f});
 
     vhsEffect_ = std::make_unique<PostProcess>();
@@ -48,19 +46,15 @@ void EndingScene::Initialize() {
     audio->LoadMP3("endingBell", "Resources/Audio/mezamasi/bell.mp3");
     audio->LoadMP3("endingStop", "Resources/Audio/mezamasi/stop.mp3");
     audio->LoadMP3("endingBGM", "Resources/Audio/song/ep.mp3");
-    audio->LoadMP3("creditBGM", "Resources/Audio/song/credit.mp3");
 
     // Start bell immediately
     phase_ = Phase::Bell;
     phaseTimer_ = 0.0f;
     audio->SetVolume("endingBell", 0.25f);
     audio->Play("endingBell", false);
-
-    OutputDebugStringA("EndingScene::Initialize - DONE\n");
 }
 
 void EndingScene::Update() {
-    OutputDebugStringA("EndingScene::Update - START\n");
     camera_->Update();
 
     constexpr float kDeltaTime = 1.0f / 60.0f;
@@ -69,15 +63,12 @@ void EndingScene::Update() {
 
     auto* audio = AudioManager::GetInstance();
 
-    // Skip with Space (debug feature) - fade out gracefully
+    // Skip with Space - fade out gracefully
     if (input_->TriggerKey(DIK_SPACE)) {
-        // Stop all audio
         audio->Stop("endingBell");
         audio->Stop("endingStop");
         audio->Stop("endingBGM");
-        audio->Stop("creditBGM");
 
-        // Start fade out and mark as skip
         skipRequested_ = true;
         phase_ = Phase::FadeOut;
         phaseTimer_ = 0.0f;
@@ -103,11 +94,9 @@ void EndingScene::Update() {
         break;
 
     case Phase::AsaFadeIn:
-        // Black overlay fades out slowly, revealing darkened asa.png
         fadeAlpha_ = 1.0f - phaseTimer_ / kAsaFadeInDuration;
         if (fadeAlpha_ <= 0.0f) {
             fadeAlpha_ = 0.0f;
-            // Start BGM + text scroll
             audio->SetVolume("endingBGM", 0.15f);
             audio->Play("endingBGM", false);
             phase_ = Phase::Scrolling;
@@ -116,7 +105,6 @@ void EndingScene::Update() {
         break;
 
     case Phase::Scrolling:
-        // asa.png stays visible as background, text scrolls on top
         scrollY_ -= kScrollSpeed * kDeltaTime;
         if (scrollY_ <= kEndY) {
             phase_ = Phase::FadeOut;
@@ -136,25 +124,7 @@ void EndingScene::Update() {
         if (fadeAlpha_ >= 1.0f) {
             fadeAlpha_ = 1.0f;
             audio->Stop("endingBGM");
-
-            // If skip requested, go directly to GameClear
-            if (skipRequested_) {
-                sceneManager_->ChangeScene("GameClear");
-                return;
-            }
-
-            // Otherwise, start credit music and wait 2 seconds
-            audio->SetVolume("creditBGM", 0.15f);
-            audio->Play("creditBGM", false);
-            phase_ = Phase::CreditPlay;
-            phaseTimer_ = 0.0f;
-        }
-        break;
-
-    case Phase::CreditPlay:
-        // Wait for credit music to finish playing
-        if (!audio->IsPlaying("creditBGM")) {
-            sceneManager_->ChangeScene("GameClear");
+            sceneManager_->ChangeScene("Credit");
             return;
         }
         break;
@@ -168,18 +138,12 @@ void EndingScene::Update() {
     fadeSprite_->setColor({0.0f, 0.0f, 0.0f, fadeAlpha_});
     fadeSprite_->Update();
 
-    // VHS: heavier grain/noise for asa background feel, lighter during text
+    // VHS effect
     bool asaVisible = (phase_ == Phase::AsaFadeIn || phase_ == Phase::Scrolling || phase_ == Phase::FadeOut);
     if (asaVisible) {
         vhsEffect_->SetVHSParams(
             timer_,
-            0.20f,  // scanlineIntensity — stronger
-            0.12f,  // noiseIntensity — grainy
-            0.15f,  // trackingError
-            0.4f,   // chromaticAberration
-            0.25f,  // colorBleed
-            0.4f,   // sharpness — lower = rougher
-            0.10f   // tapeCrease
+            0.20f, 0.12f, 0.15f, 0.4f, 0.25f, 0.4f, 0.10f
         );
     } else {
         vhsEffect_->SetVHSParams(
@@ -190,24 +154,20 @@ void EndingScene::Update() {
 }
 
 void EndingScene::Draw() {
-    OutputDebugStringA("EndingScene::Draw - START\n");
     vhsEffect_->PreDraw();
 
     spriteCommon_->CommonDraw();
     bgSprite_->Draw();
 
-    // asa.png background (visible from AsaFadeIn through FadeOut)
     bool asaVisible = (phase_ == Phase::AsaFadeIn || phase_ == Phase::Scrolling || phase_ == Phase::FadeOut);
     if (asaVisible) {
         asaSprite_->Draw();
     }
 
-    // Text (visible from Scrolling through FadeOut)
     if (phase_ == Phase::Scrolling || phase_ == Phase::FadeOut) {
         textSprite_->Draw();
     }
 
-    // Black fade overlay
     if (fadeAlpha_ > 0.0f) {
         spriteCommon_->CommonDraw();
         fadeSprite_->Draw();
@@ -221,7 +181,6 @@ void EndingScene::Finalize() {
     audio->Stop("endingBell");
     audio->Stop("endingStop");
     audio->Stop("endingBGM");
-    audio->Stop("creditBGM");
 
     bgSprite_.reset();
     asaSprite_.reset();

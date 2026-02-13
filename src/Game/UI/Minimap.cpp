@@ -24,7 +24,7 @@ void Minimap::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager) {
     spriteCommon_ = std::make_unique<SpriteCommon>();
     spriteCommon_->Initialize(dxCommon_);
 
-    const std::string whiteTex = "Resources/UI/white.png";
+    const std::string whiteTex = "Resources/textures/white1x1.png";
 
     // Border
     borderSprite_ = std::make_unique<Sprite>();

@@ -1,0 +1,139 @@
+#include "CreditScene.h"
+#include "SceneManager.h"
+
+void CreditScene::Initialize() {
+    camera_->SetTranslate({0.0f, 0.0f, -10.0f});
+
+    // Vignette only (Horror effect with everything else at 0)
+    vignetteEffect_ = std::make_unique<PostProcess>();
+    vignetteEffect_->Initialize(dxCommon_, srvManager_, PostProcess::EffectType::Horror);
+
+    // Black background
+    bgSprite_ = std::make_unique<Sprite>();
+    bgSprite_->Initialize(spriteCommon_, "Resources/textures/white1x1.png");
+    bgSprite_->SetPosition({0.0f, 0.0f});
+    bgSprite_->SetSize({1280.0f, 720.0f});
+    bgSprite_->setColor({0.0f, 0.0f, 0.0f, 1.0f});
+
+    // Credit text image (scrolls up)
+    creditTextSprite_ = std::make_unique<Sprite>();
+    creditTextSprite_->Initialize(spriteCommon_, "Resources/textures/Ending/credit_text.png");
+    creditTextSprite_->SetAnchorPoint({0.5f, 0.0f});
+
+    // Fade overlay
+    fadeSprite_ = std::make_unique<Sprite>();
+    fadeSprite_->Initialize(spriteCommon_, "Resources/textures/white1x1.png");
+    fadeSprite_->SetPosition({0.0f, 0.0f});
+    fadeSprite_->SetSize({1280.0f, 720.0f});
+    fadeSprite_->setColor({0.0f, 0.0f, 0.0f, 1.0f});
+
+    scrollY_ = kStartY;
+    fadeAlpha_ = 1.0f;
+    timer_ = 0.0f;
+    phaseTimer_ = 0.0f;
+    phase_ = Phase::FadeIn;
+
+    // Load and play credit BGM
+    auto* audio = AudioManager::GetInstance();
+    bgmLoaded_ = audio->LoadMP3("creditBGM", "Resources/Audio/song/credit.mp3");
+    if (bgmLoaded_) {
+        audio->SetVolume("creditBGM", 0.15f);
+        audio->Play("creditBGM", false);
+    }
+}
+
+void CreditScene::Update() {
+    camera_->Update();
+
+    constexpr float kDeltaTime = 1.0f / 60.0f;
+    timer_ += kDeltaTime;
+    phaseTimer_ += kDeltaTime;
+
+    auto* audio = AudioManager::GetInstance();
+
+    // Skip with Space
+    if (input_->TriggerKey(DIK_SPACE)) {
+        if (bgmLoaded_) {
+            audio->Stop("creditBGM");
+        }
+        sceneManager_->ChangeScene("Title");
+        return;
+    }
+
+    switch (phase_) {
+    case Phase::FadeIn:
+        fadeAlpha_ = 1.0f - phaseTimer_ / kFadeInDuration;
+        if (fadeAlpha_ <= 0.0f) {
+            fadeAlpha_ = 0.0f;
+            phase_ = Phase::Scrolling;
+            phaseTimer_ = 0.0f;
+        }
+        break;
+
+    case Phase::Scrolling:
+        scrollY_ -= kScrollSpeed * kDeltaTime;
+        if (scrollY_ <= kEndY) {
+            phase_ = Phase::FadeOut;
+            phaseTimer_ = 0.0f;
+            fadeAlpha_ = 0.0f;
+        }
+        break;
+
+    case Phase::FadeOut:
+        fadeAlpha_ = phaseTimer_ / kFadeOutDuration;
+        // Fade out BGM
+        if (bgmLoaded_) {
+            float vol = 0.15f * (1.0f - phaseTimer_ / kFadeOutDuration);
+            if (vol < 0.0f) vol = 0.0f;
+            audio->SetVolume("creditBGM", vol);
+        }
+        if (fadeAlpha_ >= 1.0f) {
+            fadeAlpha_ = 1.0f;
+            if (bgmLoaded_) {
+                audio->Stop("creditBGM");
+            }
+            sceneManager_->ChangeScene("Title");
+            return;
+        }
+        break;
+    }
+
+    // Update sprites
+    creditTextSprite_->SetPosition({640.0f, scrollY_});
+    bgSprite_->Update();
+    creditTextSprite_->Update();
+    fadeSprite_->setColor({0.0f, 0.0f, 0.0f, fadeAlpha_});
+    fadeSprite_->Update();
+
+    // Vignette effect only (no noise, no distortion, no blood)
+    vignetteEffect_->SetHorrorParams(timer_, 0.0f, 0.0f, 0.0f, 0.8f);
+}
+
+void CreditScene::Draw() {
+    vignetteEffect_->PreDraw();
+
+    spriteCommon_->CommonDraw();
+    bgSprite_->Draw();
+    creditTextSprite_->Draw();
+
+    // Fade overlay
+    if (fadeAlpha_ > 0.0f) {
+        spriteCommon_->CommonDraw();
+        fadeSprite_->Draw();
+    }
+
+    vignetteEffect_->PostDraw();
+}
+
+void CreditScene::Finalize() {
+    auto* audio = AudioManager::GetInstance();
+    audio->Stop("creditBGM");
+
+    bgSprite_.reset();
+    creditTextSprite_.reset();
+    fadeSprite_.reset();
+    if (vignetteEffect_) {
+        vignetteEffect_->Finalize();
+        vignetteEffect_.reset();
+    }
+}

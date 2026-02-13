@@ -124,15 +124,13 @@ void Object3d::Initialize(DirectXCommon* dxCommon, SpriteCommon* spriteCommon) {
 	// デフォルトテクスチャを事前にロードして描画中の動的SRV作成を避ける
 	TextureManager::GetInstance()->LoadDefaultTexture();
 	
-	// デフォルト環境マップテクスチャを事前にロード
-	std::string defaultEnvMap = "Resources/Models/skybox/warm_restaurant_night_2k.hdr";
-	DWORD envMapAttribs = GetFileAttributesA(defaultEnvMap.c_str());
-	if (envMapAttribs != INVALID_FILE_ATTRIBUTES) {
-		TextureManager::GetInstance()->LoadTexture(defaultEnvMap);
-		OutputDebugStringA(("Object3d::Initialize - Loaded default environment map: " + defaultEnvMap + "\n").c_str());
-	}
-	else {
-		OutputDebugStringA(("Object3d::Initialize - WARNING: Default environment map not found: " + defaultEnvMap + "\n").c_str());
+	// デフォルト環境マップテクスチャを事前にロード（静的パスが設定されている場合のみ）
+	if (!globalEnvironmentTexturePath_.empty()) {
+		DWORD envMapAttribs = GetFileAttributesA(globalEnvironmentTexturePath_.c_str());
+		if (envMapAttribs != INVALID_FILE_ATTRIBUTES) {
+			TextureManager::GetInstance()->LoadTexture(globalEnvironmentTexturePath_);
+			OutputDebugStringA(("Object3d::Initialize - Loaded default environment map: " + globalEnvironmentTexturePath_ + "\n").c_str());
+		}
 	}
 }
 
@@ -525,18 +523,14 @@ void Object3d::Draw() {
 	dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2,
 		TextureManager::GetInstance()->GetSrvHandleGPU(texturePath));
 
-	// グローバル環境マップテクスチャを使用
-	std::string envTexturePath = globalEnvironmentTexturePath_;
-	if (envTexturePath.empty() || !TextureManager::GetInstance()->IsTextureExists(envTexturePath)) {
-		envTexturePath = "Resources/Models/skybox/warm_restaurant_night_2k.hdr";
-
-		if (!TextureManager::GetInstance()->IsTextureExists(envTexturePath)) {
-			TextureManager::GetInstance()->LoadTexture(envTexturePath);
-		}
+	// グローバル環境マップテクスチャを使用（設定されている場合のみ）
+	if (!globalEnvironmentTexturePath_.empty() && TextureManager::GetInstance()->IsTextureExists(globalEnvironmentTexturePath_)) {
+		dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(6,
+			TextureManager::GetInstance()->GetSrvHandleGPU(globalEnvironmentTexturePath_));
+	} else {
+		dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(6,
+			TextureManager::GetInstance()->GetSrvHandleGPU(TextureManager::GetInstance()->GetDefaultTexturePath()));
 	}
-
-	dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(6,
-		TextureManager::GetInstance()->GetSrvHandleGPU(envTexturePath));
 
 	// ライトCBufferの場所を設定
 	dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, directionalLightResource_->GetGPUVirtualAddress());
@@ -690,16 +684,14 @@ void Object3d::Draw(Camera* camera, int* visibleMeshCount, int* culledMeshCount)
 	dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, spotLightResource_->GetGPUVirtualAddress());
 	dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, cameraResource_->GetGPUVirtualAddress());
 
-	// 環境マップテクスチャ
-	std::string envTexturePath = globalEnvironmentTexturePath_;
-	if (envTexturePath.empty() || !TextureManager::GetInstance()->IsTextureExists(envTexturePath)) {
-		envTexturePath = "Resources/Models/skybox/warm_restaurant_night_2k.hdr";
-		if (!TextureManager::GetInstance()->IsTextureExists(envTexturePath)) {
-			TextureManager::GetInstance()->LoadTexture(envTexturePath);
-		}
+	// 環境マップテクスチャ（設定されている場合のみ）
+	if (!globalEnvironmentTexturePath_.empty() && TextureManager::GetInstance()->IsTextureExists(globalEnvironmentTexturePath_)) {
+		dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(6,
+			TextureManager::GetInstance()->GetSrvHandleGPU(globalEnvironmentTexturePath_));
+	} else {
+		dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(6,
+			TextureManager::GetInstance()->GetSrvHandleGPU(TextureManager::GetInstance()->GetDefaultTexturePath()));
 	}
-	dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(6,
-		TextureManager::GetInstance()->GetSrvHandleGPU(envTexturePath));
 
 	// パレットSRVの設定（アニメーション用）
 	if (useAnimation) {
@@ -954,7 +946,7 @@ void Object3d::EnableCollision(bool enabled, const std::string& name) {
 }
 
 // 静的メンバ変数の定義
-std::string Object3d::globalEnvironmentTexturePath_ = "Resources/Models/skybox/warm_restaurant_night_2k.hdr";
+std::string Object3d::globalEnvironmentTexturePath_ = "";
 
 void Object3d::SetEnvTex(const std::string& texturePath) {
 	globalEnvironmentTexturePath_ = texturePath;

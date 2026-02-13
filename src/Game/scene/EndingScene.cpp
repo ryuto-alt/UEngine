@@ -39,12 +39,16 @@ void EndingScene::Initialize() {
     scrollY_ = kStartY;
     fadeAlpha_ = 1.0f;
     bgmVolume_ = 0.05f;
+    skipRequested_ = false;
+    timer_ = 0.0f;
+    phaseTimer_ = 0.0f;
 
     // Load audio
     auto* audio = AudioManager::GetInstance();
     audio->LoadMP3("endingBell", "Resources/Audio/mezamasi/bell.mp3");
     audio->LoadMP3("endingStop", "Resources/Audio/mezamasi/stop.mp3");
     audio->LoadMP3("endingBGM", "Resources/Audio/song/ep.mp3");
+    audio->LoadMP3("creditBGM", "Resources/Audio/song/credit.mp3");
 
     // Start bell immediately
     phase_ = Phase::Bell;
@@ -56,6 +60,7 @@ void EndingScene::Initialize() {
 }
 
 void EndingScene::Update() {
+    OutputDebugStringA("EndingScene::Update - START\n");
     camera_->Update();
 
     constexpr float kDeltaTime = 1.0f / 60.0f;
@@ -64,13 +69,19 @@ void EndingScene::Update() {
 
     auto* audio = AudioManager::GetInstance();
 
-    // Skip with Space or Enter
-    if (input_->TriggerKey(DIK_SPACE) || input_->TriggerKey(DIK_RETURN)) {
+    // Skip with Space (debug feature) - fade out gracefully
+    if (input_->TriggerKey(DIK_SPACE)) {
+        // Stop all audio
         audio->Stop("endingBell");
         audio->Stop("endingStop");
         audio->Stop("endingBGM");
-        sceneManager_->ChangeScene("GameClear");
-        return;
+        audio->Stop("creditBGM");
+
+        // Start fade out and mark as skip
+        skipRequested_ = true;
+        phase_ = Phase::FadeOut;
+        phaseTimer_ = 0.0f;
+        fadeAlpha_ = 0.0f;
     }
 
     switch (phase_) {
@@ -97,7 +108,7 @@ void EndingScene::Update() {
         if (fadeAlpha_ <= 0.0f) {
             fadeAlpha_ = 0.0f;
             // Start BGM + text scroll
-            audio->SetVolume("endingBGM", 0.05f);
+            audio->SetVolume("endingBGM", 0.15f);
             audio->Play("endingBGM", false);
             phase_ = Phase::Scrolling;
             phaseTimer_ = 0.0f;
@@ -116,13 +127,33 @@ void EndingScene::Update() {
 
     case Phase::FadeOut:
         fadeAlpha_ += kDeltaTime / kFadeOutDuration;
-        bgmVolume_ = 0.05f * (1.0f - phaseTimer_ / kBgmFadeOutDuration);
-        if (bgmVolume_ < 0.0f) bgmVolume_ = 0.0f;
-        audio->SetVolume("endingBGM", bgmVolume_);
+        if (!skipRequested_) {
+            bgmVolume_ = 0.15f * (1.0f - phaseTimer_ / kBgmFadeOutDuration);
+            if (bgmVolume_ < 0.0f) bgmVolume_ = 0.0f;
+            audio->SetVolume("endingBGM", bgmVolume_);
+        }
 
         if (fadeAlpha_ >= 1.0f) {
             fadeAlpha_ = 1.0f;
             audio->Stop("endingBGM");
+
+            // If skip requested, go directly to GameClear
+            if (skipRequested_) {
+                sceneManager_->ChangeScene("GameClear");
+                return;
+            }
+
+            // Otherwise, start credit music and wait 2 seconds
+            audio->SetVolume("creditBGM", 0.15f);
+            audio->Play("creditBGM", false);
+            phase_ = Phase::CreditPlay;
+            phaseTimer_ = 0.0f;
+        }
+        break;
+
+    case Phase::CreditPlay:
+        // Wait for credit music to finish playing
+        if (!audio->IsPlaying("creditBGM")) {
             sceneManager_->ChangeScene("GameClear");
             return;
         }
@@ -159,6 +190,7 @@ void EndingScene::Update() {
 }
 
 void EndingScene::Draw() {
+    OutputDebugStringA("EndingScene::Draw - START\n");
     vhsEffect_->PreDraw();
 
     spriteCommon_->CommonDraw();
@@ -189,6 +221,7 @@ void EndingScene::Finalize() {
     audio->Stop("endingBell");
     audio->Stop("endingStop");
     audio->Stop("endingBGM");
+    audio->Stop("creditBGM");
 
     bgSprite_.reset();
     asaSprite_.reset();

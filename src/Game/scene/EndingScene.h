@@ -26,8 +26,9 @@ private:
     float phaseTimer_ = 0.0f;
     float fadeAlpha_ = 1.0f;
     float bgmVolume_ = 0.05f;
+    bool skipRequested_ = false;
 
-    enum class Phase { Bell, AlarmStop, AsaFadeIn, Scrolling, FadeOut };
+    enum class Phase { Bell, AlarmStop, AsaFadeIn, Scrolling, FadeOut, CreditPlay };
     Phase phase_ = Phase::Bell;
 
     static constexpr float kScrollSpeed = 30.0f;
@@ -36,6 +37,7 @@ private:
     static constexpr float kEndY = -kTextHeight;
     static constexpr float kBellDuration = 3.0f;
     static constexpr float kAsaFadeInDuration = 4.0f;
-    static constexpr float kFadeOutDuration = 2.0f;
-    static constexpr float kBgmFadeOutDuration = 2.0f;
+    static constexpr float kFadeOutDuration = 4.0f;
+    static constexpr float kBgmFadeOutDuration = 4.0f;
+    static constexpr float kCreditWaitDuration = 2.0f;
 };

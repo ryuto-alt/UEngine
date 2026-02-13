@@ -215,16 +215,36 @@ void PostProcess::CreatePipeline() {
 }
 
 void PostProcess::PreDraw() {
-    auto commandList = dxCommon_->GetCommandList();
+    OutputDebugStringA("PostProcess::PreDraw - 1: Start\n");
+    if (!dxCommon_ || !renderTargetResource_) {
+        OutputDebugStringA("ERROR: PostProcess::PreDraw - null pointer detected!\n");
+        return;
+    }
 
+    OutputDebugStringA("PostProcess::PreDraw - 2: Getting command list\n");
+    auto commandList = dxCommon_->GetCommandList();
+    if (!commandList) {
+        OutputDebugStringA("ERROR: commandList is null!\n");
+        return;
+    }
+
+    OutputDebugStringA("PostProcess::PreDraw - 3: Clearing RT\n");
     float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
     commandList->ClearRenderTargetView(rtvHandle_, clearColor, 0, nullptr);
 
+    OutputDebugStringA("PostProcess::PreDraw - 4: Getting DSV handle\n");
     D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dxCommon_->GetDSVCPUDescriptorHandle(0);
+
+    OutputDebugStringA("PostProcess::PreDraw - 5: Setting render targets\n");
     commandList->OMSetRenderTargets(1, &rtvHandle_, false, &dsvHandle);
 
-    UINT width = dxCommon_->GetCurrentWindowWidth();
-    UINT height = dxCommon_->GetCurrentWindowHeight();
+    OutputDebugStringA("PostProcess::PreDraw - 6: Getting RT desc\n");
+    // Use render target's actual dimensions (not window size) for viewport
+    D3D12_RESOURCE_DESC rtDesc = renderTargetResource_->GetDesc();
+    UINT width = static_cast<UINT>(rtDesc.Width);
+    UINT height = rtDesc.Height;
+
+    OutputDebugStringA("PostProcess::PreDraw - 7: Setting viewport\n");
 
     D3D12_VIEWPORT viewport{};
     viewport.Width = static_cast<FLOAT>(width);
@@ -245,6 +265,11 @@ void PostProcess::PreDraw() {
 }
 
 void PostProcess::PostDraw() {
+    if (!dxCommon_ || !renderTargetResource_) {
+        OutputDebugStringA("ERROR: PostProcess::PostDraw - null pointer detected!\n");
+        return;
+    }
+
     auto commandList = dxCommon_->GetCommandList();
 
     D3D12_RESOURCE_BARRIER barrier{};
@@ -260,6 +285,27 @@ void PostProcess::PostDraw() {
     D3D12_CPU_DESCRIPTOR_HANDLE backBufferRTV = dxCommon_->GetRTVCPUDescriptorHandle(backBufferIndex);
     D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dxCommon_->GetDSVCPUDescriptorHandle(0);
     commandList->OMSetRenderTargets(1, &backBufferRTV, false, &dsvHandle);
+
+    // Set viewport to back buffer dimensions for final output
+    UINT backBufferWidth = dxCommon_->GetCurrentWindowWidth();
+    UINT backBufferHeight = dxCommon_->GetCurrentWindowHeight();
+
+    D3D12_VIEWPORT viewport{};
+    viewport.Width = static_cast<FLOAT>(backBufferWidth);
+    viewport.Height = static_cast<FLOAT>(backBufferHeight);
+    viewport.TopLeftX = 0;
+    viewport.TopLeftY = 0;
+    viewport.MinDepth = 0.0f;
+    viewport.MaxDepth = 1.0f;
+
+    D3D12_RECT scissorRect{};
+    scissorRect.left = 0;
+    scissorRect.top = 0;
+    scissorRect.right = backBufferWidth;
+    scissorRect.bottom = backBufferHeight;
+
+    commandList->RSSetViewports(1, &viewport);
+    commandList->RSSetScissorRects(1, &scissorRect);
 
     commandList->SetPipelineState(pipelineState_.Get());
     commandList->SetGraphicsRootSignature(rootSignature_.Get());
@@ -299,8 +345,10 @@ void PostProcess::PostDrawTo(PostProcess* nextEffect) {
     commandList->ClearRenderTargetView(nextRTV, clearColor, 0, nullptr);
     commandList->OMSetRenderTargets(1, &nextRTV, false, nullptr);
 
-    UINT width = dxCommon_->GetCurrentWindowWidth();
-    UINT height = dxCommon_->GetCurrentWindowHeight();
+    // Use next effect's render target actual dimensions for viewport
+    D3D12_RESOURCE_DESC nextRtDesc = nextEffect->GetRenderTarget()->GetDesc();
+    UINT width = static_cast<UINT>(nextRtDesc.Width);
+    UINT height = nextRtDesc.Height;
 
     D3D12_VIEWPORT viewport{};
     viewport.Width = static_cast<FLOAT>(width);

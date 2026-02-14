@@ -127,14 +127,19 @@ void GamePlayScene::Initialize() {
         engine->GenNav(sceneObjects, "externals/navimap/stage.navmesh");
     }
 
-    // Generate minimap texture from NavMesh (cached as PNG)
+    // Generate minimap textures (cached as PNG)
     const std::string mapPng = "Resources/textures/UI/minimap_navmesh.png";
     const std::string mapBounds = "Resources/textures/UI/minimap_bounds.txt";
+    const std::string mapFrame = "Resources/textures/UI/minimap_frame.png";
     if (!std::filesystem::exists(mapPng)) {
         navMeshManager = engine->GetNavMgr();
         if (navMeshManager && navMeshManager->GetNavMesh() && navMeshManager->GetNavMesh()->IsValid()) {
             MinimapGenerator::Generate(navMeshManager->GetNavMesh(), mapPng, mapBounds, 512);
         }
+    }
+    if (!std::filesystem::exists(mapFrame)) {
+        // circleRatio = 1/FRAME_SCALE so the opening appears as MAP_SIZE on screen
+        MinimapGenerator::GenerateCircularFrame(mapFrame, 512, 1.0f / 1.45f);
     }
 
     // --- Create ECS Entities ---
@@ -363,7 +368,7 @@ void GamePlayScene::Initialize() {
 
     // Minimap
     auto minimap = std::make_unique<Minimap>();
-    minimap->Initialize(dxCommon_, srvManager_, mapPng, mapBounds);
+    minimap->Initialize(dxCommon_, srvManager_, mapPng, mapBounds, mapFrame);
     auto& minimapComp = m_world->GetComponent<MinimapComponent>(m_gameStateEntity);
     minimapComp.minimap = std::move(minimap);
 

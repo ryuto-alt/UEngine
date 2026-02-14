@@ -19,9 +19,10 @@ public:
 
     void Initialize(DirectXCommon* dxCommon, SrvManager* srvManager,
                     const std::string& mapTexturePath = "",
-                    const std::string& boundsPath = "");
+                    const std::string& boundsPath = "",
+                    const std::string& framePath = "");
     void SetBitmapFont(BitmapFont* font) { bitmapFont_ = font; }
-    void UpdateState(const Vector3& playerPos,
+    void UpdateState(const Vector3& playerPos, float playerYaw,
                      const std::vector<Vector3>& uncollectedOrbPositions,
                      int totalOrbs, int collectedOrbs);
     void Draw();
@@ -37,7 +38,9 @@ private:
     // Minimap settings
     static constexpr float MAP_SIZE = 240.0f;
     static constexpr float MAP_MARGIN = 10.0f;
-    static constexpr float MAP_SCALE = 3.0f;  // pixels per world unit
+    static constexpr float MAP_SCALE = 3.0f;
+    // Frame must cover rotated bg corners: MAP_SIZE * sqrt(2)/2 from center
+    static constexpr float FRAME_SCALE = 1.45f;
 
     // NavMesh map bounds
     bool hasNavMeshMap_ = false;
@@ -48,7 +51,7 @@ private:
     // Sprites
     std::unique_ptr<SpriteCommon> spriteCommon_;
     std::unique_ptr<Sprite> backgroundSprite_;
-    std::unique_ptr<Sprite> borderSprite_;
+    std::unique_ptr<Sprite> frameSprite_;      // Circular frame overlay
     std::unique_ptr<Sprite> playerSprite_;
 
     // Pre-allocated orb sprites (max 70)
@@ -68,5 +71,6 @@ private:
     float mapTop_ = 0.0f;
 
     // Helper
-    Vector2 WorldToMinimap(const Vector3& worldPos, const Vector3& playerPos) const;
+    Vector2 WorldToMinimap(const Vector3& worldPos, const Vector3& playerPos, float yaw) const;
+    bool IsInsideCircle(float screenX, float screenY) const;
 };

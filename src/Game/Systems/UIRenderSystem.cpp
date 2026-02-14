@@ -9,6 +9,8 @@
 #include "UI/Minimap.h"
 #include "UI/SubtitleManager.h"
 #include "UI/SettingsMenu.h"
+#include "ECS/Components/CameraComponents.h"
+#include "GameObject/FPSCamera.h"
 
 namespace ECS {
 
@@ -33,11 +35,18 @@ void UIRenderSystem::Update(World& world, float deltaTime) {
             // Don't draw minimap during tutorial
             if (!tutorialFinished) return;
 
-            // Player position
+            // Player position and yaw
             Entity playerEntity = world.FindEntityWith<PlayerTag>();
             Vector3 playerPos{};
+            float playerYaw = 0.0f;
             if (playerEntity.IsValid()) {
                 playerPos = world.GetComponent<TransformComponent>(playerEntity).position;
+                if (world.HasComponent<FPSCameraComponent>(playerEntity)) {
+                    auto& fpsCam = world.GetComponent<FPSCameraComponent>(playerEntity);
+                    if (fpsCam.fpsCamera) {
+                        playerYaw = fpsCam.fpsCamera->GetCameraRotation().y;
+                    }
+                }
             }
 
             // Orb data
@@ -55,7 +64,7 @@ void UIRenderSystem::Update(World& world, float deltaTime) {
                 }
             );
 
-            minimap.minimap->UpdateState(playerPos, uncollectedPositions, totalOrbs, collectedOrbs);
+            minimap.minimap->UpdateState(playerPos, playerYaw, uncollectedPositions, totalOrbs, collectedOrbs);
             minimap.minimap->Draw();
         }
     );

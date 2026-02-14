@@ -66,6 +66,7 @@
 #include "UI/BitmapFont.h"
 #include "UI/SubtitleManager.h"
 #include "UI/Minimap.h"
+#include "UI/MinimapGenerator.h"
 #include "UI/SettingsMenu.h"
 
 // Engine
@@ -75,6 +76,8 @@
 
 // ECS component types are in namespace ECS
 using namespace ECS;
+
+#include <filesystem>
 
 #ifdef _DEBUG
 #include "imgui.h"
@@ -122,6 +125,16 @@ void GamePlayScene::Initialize() {
     navMeshManager = engine->GetNavMgr();
     if (!navMeshManager->GetNavMesh() || !navMeshManager->GetNavMesh()->IsValid()) {
         engine->GenNav(sceneObjects, "externals/navimap/stage.navmesh");
+    }
+
+    // Generate minimap texture from NavMesh (cached as PNG)
+    const std::string mapPng = "Resources/textures/UI/minimap_navmesh.png";
+    const std::string mapBounds = "Resources/textures/UI/minimap_bounds.txt";
+    if (!std::filesystem::exists(mapPng)) {
+        navMeshManager = engine->GetNavMgr();
+        if (navMeshManager && navMeshManager->GetNavMesh() && navMeshManager->GetNavMesh()->IsValid()) {
+            MinimapGenerator::Generate(navMeshManager->GetNavMesh(), mapPng, mapBounds, 512);
+        }
     }
 
     // --- Create ECS Entities ---
@@ -350,7 +363,7 @@ void GamePlayScene::Initialize() {
 
     // Minimap
     auto minimap = std::make_unique<Minimap>();
-    minimap->Initialize(dxCommon_, srvManager_);
+    minimap->Initialize(dxCommon_, srvManager_, mapPng, mapBounds);
     auto& minimapComp = m_world->GetComponent<MinimapComponent>(m_gameStateEntity);
     minimapComp.minimap = std::move(minimap);
 
@@ -384,6 +397,11 @@ void GamePlayScene::Initialize() {
     auto& subtitleComp = m_world->GetComponent<SubtitleUIComponent>(m_gameStateEntity);
     subtitleComp.bitmapFont = std::move(bitmapFont);
     subtitleComp.subtitleManager = std::move(subtitleManager);
+
+    // Set BitmapFont for minimap orb counter (shared pointer, owned by subtitleComp)
+    if (minimapComp.minimap && subtitleComp.bitmapFont) {
+        minimapComp.minimap->SetBitmapFont(subtitleComp.bitmapFont.get());
+    }
 
     auto& tutorial = m_world->GetComponent<TutorialComponent>(m_gameStateEntity);
     tutorial.isActive = true;

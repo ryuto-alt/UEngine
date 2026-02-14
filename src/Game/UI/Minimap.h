@@ -3,19 +3,24 @@
 #include <vector>
 #include <string>
 #include "../../Engine/Math/Mymath.h"
+#include "MinimapGenerator.h"
 
 class DirectXCommon;
 class SrvManager;
 class Camera;
 class Sprite;
 class SpriteCommon;
+class BitmapFont;
 
 class Minimap {
 public:
     Minimap();
     ~Minimap();
 
-    void Initialize(DirectXCommon* dxCommon, SrvManager* srvManager);
+    void Initialize(DirectXCommon* dxCommon, SrvManager* srvManager,
+                    const std::string& mapTexturePath = "",
+                    const std::string& boundsPath = "");
+    void SetBitmapFont(BitmapFont* font) { bitmapFont_ = font; }
     void UpdateState(const Vector3& playerPos,
                      const std::vector<Vector3>& uncollectedOrbPositions,
                      int totalOrbs, int collectedOrbs);
@@ -30,9 +35,15 @@ private:
     SrvManager* srvManager_ = nullptr;
 
     // Minimap settings
-    static constexpr float MAP_SIZE = 180.0f;
+    static constexpr float MAP_SIZE = 240.0f;
     static constexpr float MAP_MARGIN = 10.0f;
-    static constexpr float MAP_SCALE = 2.5f;  // pixels per world unit
+    static constexpr float MAP_SCALE = 3.0f;  // pixels per world unit
+
+    // NavMesh map bounds
+    bool hasNavMeshMap_ = false;
+    MinimapBounds bounds_{};
+    int mapTexWidth_ = 512;
+    int mapTexHeight_ = 512;
 
     // Sprites
     std::unique_ptr<SpriteCommon> spriteCommon_;
@@ -48,6 +59,9 @@ private:
     // Orb tracking
     int totalOrbs_ = 0;
     int collectedOrbs_ = 0;
+
+    // BitmapFont for orb counter
+    BitmapFont* bitmapFont_ = nullptr;
 
     // Cached position (bottom-right)
     float mapLeft_ = 0.0f;

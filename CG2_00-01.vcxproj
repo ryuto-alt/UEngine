@@ -209,6 +209,7 @@
     <ClCompile Include="src\Game\NavMesh\NavMeshHelper.cpp" />
     <ClCompile Include="src\Game\Utils\JsonLoader.cpp" />
     <ClCompile Include="src\Game\UI\Minimap.cpp" />
+    <ClCompile Include="src\Game\UI\MinimapGenerator.cpp" />
     <ClCompile Include="src\Game\UI\BitmapFont.cpp" />
     <ClCompile Include="src\Game\UI\SubtitleManager.cpp" />
     <ClCompile Include="src\Game\UI\SettingsMenu.cpp" />
@@ -308,6 +309,7 @@
     <ClInclude Include="src\Game\NavMesh\NavMeshHelper.h" />
     <ClInclude Include="src\Game\Utils\JsonLoader.h" />
     <ClInclude Include="src\Game\UI\Minimap.h" />
+    <ClInclude Include="src\Game\UI\MinimapGenerator.h" />
     <ClInclude Include="src\Game\UI\BitmapFont.h" />
     <ClInclude Include="src\Game\UI\SubtitleManager.h" />
     <ClInclude Include="src\Game\UI\SettingsMenu.h" />

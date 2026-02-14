@@ -365,6 +365,9 @@
     <ClCompile Include="src\Game\UI\Minimap.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\UI\MinimapGenerator.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\UI\BitmapFont.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -702,6 +705,7 @@
     <ClInclude Include="src\Game\scene\EndingScene.h" />
     <ClInclude Include="src\Game\Utils\JsonLoader.h" />
     <ClInclude Include="src\Game\UI\Minimap.h" />
+    <ClInclude Include="src\Game\UI\MinimapGenerator.h" />
     <ClInclude Include="src\Game\UI\BitmapFont.h" />
     <ClInclude Include="src\Game\UI\SubtitleManager.h" />
     <ClInclude Include="src\Game\UI\SettingsMenu.h" />

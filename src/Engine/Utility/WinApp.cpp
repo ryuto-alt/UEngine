@@ -52,7 +52,30 @@ void WinApp::Initialize()
 	);
 #pragma endregion
 
-	ShowWindow(hwnd, SW_SHOW);
+	// デフォルトでボーダレスウィンドウ（フルスクリーン）で起動
+	// ウィンドウモードに戻すための情報を保存
+	windowedStyle_ = GetWindowLong(hwnd, GWL_STYLE);
+	GetWindowRect(hwnd, &windowedRect_);
+
+	// ボーダレスウィンドウスタイルに変更
+	SetWindowLong(hwnd, GWL_STYLE, WS_VISIBLE | WS_POPUP);
+
+	// モニター情報を取得してフルスクリーンサイズに設定
+	HMONITOR hMonitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY);
+	MONITORINFO monitorInfo = { sizeof(MONITORINFO) };
+	GetMonitorInfo(hMonitor, &monitorInfo);
+
+	fullscreenWidth_ = monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left;
+	fullscreenHeight_ = monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top;
+
+	SetWindowPos(hwnd, HWND_TOPMOST,
+		monitorInfo.rcMonitor.left,
+		monitorInfo.rcMonitor.top,
+		fullscreenWidth_,
+		fullscreenHeight_,
+		SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+
+	isFullscreen_ = true;
 
 
 }

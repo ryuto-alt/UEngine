@@ -49,6 +49,13 @@ void UnoEngine::Initialize() {
         dxCommon_ = std::make_unique<DirectXCommon>();
         dxCommon_->Initialize(winApp_.get());
 
+        // ボーダレスウィンドウで起動した場合、スワップチェーンをフルスクリーンサイズにリサイズ
+        if (winApp_->IsFullscreen()) {
+            uint32_t w = winApp_->GetCurrentWindowWidth();
+            uint32_t h = winApp_->GetCurrentWindowHeight();
+            dxCommon_->ResizeBuffers(w, h);
+        }
+
         // SRVマネージャの初期化
         srvManager_ = std::make_unique<SrvManager>();
         srvManager_->Initialize(dxCommon_.get());

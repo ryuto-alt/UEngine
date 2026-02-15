@@ -64,6 +64,9 @@ public:
     // 左右の音量を個別設定
     void SetLeftRightVolume(float leftVolume, float rightVolume);
 
+    // ボリューム取得
+    float GetVolume() const { return volume; }
+
     // 再生中かどうか
     bool IsPlaying() const;
 

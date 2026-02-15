@@ -56,16 +56,57 @@ void TitleScene::Initialize() {
     srand(static_cast<unsigned int>(time(nullptr)));
     nextNoiseTime_ = kMinNoiseInterval + static_cast<float>(rand()) / RAND_MAX * (kMaxNoiseInterval - kMinNoiseInterval);
 
+    // フェードスプライト（黒オーバーレイ）
+    fadeSprite_ = std::make_unique<Sprite>();
+    fadeSprite_->Initialize(spriteCommon_, "Resources/textures/white1x1.png");
+    fadeSprite_->SetPosition({0.0f, 0.0f});
+    fadeSprite_->SetSize({1280.0f, 720.0f});
+    fadeSprite_->setColor({0.0f, 0.0f, 0.0f, 0.0f});
+
     // タイトルBGMの読み込みと再生
     AudioManager::GetInstance()->LoadMP3("titleBGM", "Resources/Audio/title.mp3");
     AudioManager::GetInstance()->SetVolume("titleBGM", 0.075f);
     AudioManager::GetInstance()->Play("titleBGM", true);
+
+    // 設定メニューの初期化
+    settingsMenu_ = std::make_unique<SettingsMenu>();
+    settingsMenu_->Initialize(spriteCommon_, input_);
 }
 
 void TitleScene::Update() {
     camera_->Update();
 
+    // PostProcess resize on window size change
+    {
+        static uint32_t prevW = 0, prevH = 0;
+        uint32_t curW = dxCommon_->GetCurrentWindowWidth();
+        uint32_t curH = dxCommon_->GetCurrentWindowHeight();
+        if (prevW != curW || prevH != curH) {
+            if (prevW != 0) {
+                if (noiseEffect_) noiseEffect_->ResizeRenderTarget();
+                if (vignetteEffect_) vignetteEffect_->ResizeRenderTarget();
+            }
+            prevW = curW;
+            prevH = curH;
+        }
+    }
+
     float deltaTime = 1.0f / 60.0f;
+
+    // ESC key: toggle settings menu
+    if (input_->TriggerKey(DIK_ESCAPE) && settingsMenu_) {
+        if (settingsMenu_->IsOpen()) {
+            settingsMenu_->Close();
+        } else {
+            settingsMenu_->Open();
+        }
+    }
+
+    // 設定メニューが開いている間はシーン更新をスキップ
+    if (settingsMenu_ && settingsMenu_->IsOpen()) {
+        settingsMenu_->Update(deltaTime);
+        return;
+    }
 
     // 初回砂嵐エフェクト
     if (showInitialNoise_) {
@@ -127,8 +168,17 @@ void TitleScene::Update() {
     if (!keyPressed) {
         POINT cursorPos;
         GetCursorPos(&cursorPos);
-        ScreenToClient(FindWindowW(L"CG2WindowClass", nullptr), &cursorPos);
-        Vector2 mousePos = { static_cast<float>(cursorPos.x), static_cast<float>(cursorPos.y) };
+        HWND hwnd = FindWindowW(L"CG2WindowClass", nullptr);
+        ScreenToClient(hwnd, &cursorPos);
+        // クライアント座標を論理座標(1280x720)にスケーリング
+        RECT rc;
+        GetClientRect(hwnd, &rc);
+        float clientW = static_cast<float>(rc.right - rc.left);
+        float clientH = static_cast<float>(rc.bottom - rc.top);
+        Vector2 mousePos = {
+            static_cast<float>(cursorPos.x) * (static_cast<float>(WinApp::kClientWidth) / clientW),
+            static_cast<float>(cursorPos.y) * (static_cast<float>(WinApp::kClientHeight) / clientH)
+        };
 
         // アンカーポイントを考慮した判定範囲を計算
         Vector2 hazimeruPos = hazimeruSprite_->GetPosition();
@@ -193,12 +243,33 @@ void TitleScene::Update() {
     // ビネットエフェクトのパラメータ更新
     vignetteEffect_->SetHorrorParams(time_, 0.0f, 0.0f, 0.0f, 0.8f);
 
+    // フェードアウト中は入力を無視
+    if (fadingOut_) {
+        constexpr float kDeltaTime = 1.0f / 60.0f;
+        fadeAlpha_ += kDeltaTime / kFadeOutDuration;
+
+        // BGMフェードアウト
+        float bgmVol = 0.075f * (1.0f - fadeAlpha_);
+        if (bgmVol < 0.0f) bgmVol = 0.0f;
+        AudioManager::GetInstance()->SetVolume("titleBGM", bgmVol);
+
+        if (fadeAlpha_ >= 1.0f) {
+            fadeAlpha_ = 1.0f;
+            AudioManager::GetInstance()->Stop("titleBGM");
+            sceneManager_->ChangeScene("Intro");
+            return;
+        }
+        fadeSprite_->setColor({0.0f, 0.0f, 0.0f, fadeAlpha_});
+        fadeSprite_->Update();
+        return;
+    }
+
     // マウスクリックで決定
     DIMOUSESTATE mouseState;
     if (SUCCEEDED(input_->GetMouseState(&mouseState))) {
         if (mouseState.rgbButtons[0] & 0x80) {
             if (hazimeruHovered) {
-                sceneManager_->ChangeScene("Intro");
+                fadingOut_ = true;
             }
             if (owaruHovered) {
                 sceneManager_->RequestExit();
@@ -209,7 +280,7 @@ void TitleScene::Update() {
     // SPACEまたはENTERで決定
     if (input_->TriggerKey(DIK_SPACE) || input_->TriggerKey(DIK_RETURN)) {
         if (currentSelection_ == MenuSelection::Start) {
-            sceneManager_->ChangeScene("Intro");
+            fadingOut_ = true;
         } else {
             sceneManager_->RequestExit();
         }
@@ -239,7 +310,16 @@ void TitleScene::Draw() {
     hazimeruSprite_->Draw();
     owaruSprite_->Draw();
 
-    
+    // フェードアウト描画
+    if (fadingOut_ && fadeAlpha_ > 0.0f) {
+        spriteCommon_->CommonDraw();
+        fadeSprite_->Draw();
+    }
+
+    // 設定メニュー描画（最前面）
+    if (settingsMenu_ && settingsMenu_->IsOpen()) {
+        settingsMenu_->Draw();
+    }
 }
 
 bool TitleScene::CheckMouseHover(const Vector2& mousePos, const Vector2& spritePos, const Vector2& spriteSize) {
@@ -249,6 +329,9 @@ bool TitleScene::CheckMouseHover(const Vector2& mousePos, const Vector2& spriteP
 
 void TitleScene::Finalize() {
     OutputDebugStringA("TitleScene::Finalize() called\n");
+
+    // 設定メニューの解放
+    settingsMenu_.reset();
 
     // タイトルBGMの停止
     AudioManager::GetInstance()->Stop("titleBGM");
@@ -273,6 +356,9 @@ void TitleScene::Finalize() {
     }
     if (noiseSprite_) {
         noiseSprite_.reset();
+    }
+    if (fadeSprite_) {
+        fadeSprite_.reset();
     }
 
     if (noiseEffect_) {

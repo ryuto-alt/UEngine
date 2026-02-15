@@ -45,6 +45,10 @@ void GameOverScene::Initialize() {
     titleOriginalSize_ = titleSprite_->GetSize();
     titleSprite_->SetPosition({640.0f, 590.0f});
     titleSprite_->SetAnchorPoint({0.5f, 0.5f});
+
+    // 設定メニューの初期化
+    settingsMenu_ = std::make_unique<SettingsMenu>();
+    settingsMenu_->Initialize(spriteCommon_, input_);
 }
 
 void GameOverScene::Update() {
@@ -54,7 +58,36 @@ void GameOverScene::Update() {
 
     camera_->Update();
 
+    // PostProcess resize on window size change
+    {
+        static uint32_t prevW = 0, prevH = 0;
+        uint32_t curW = dxCommon_->GetCurrentWindowWidth();
+        uint32_t curH = dxCommon_->GetCurrentWindowHeight();
+        if (prevW != curW || prevH != curH) {
+            if (prevW != 0 && horrorEffect_) {
+                horrorEffect_->ResizeRenderTarget();
+            }
+            prevW = curW;
+            prevH = curH;
+        }
+    }
+
     float deltaTime = 1.0f / 60.0f;
+
+    // ESC key: toggle settings menu
+    if (input_->TriggerKey(DIK_ESCAPE) && settingsMenu_) {
+        if (settingsMenu_->IsOpen()) {
+            settingsMenu_->Close();
+        } else {
+            settingsMenu_->Open();
+        }
+    }
+
+    // 設定メニューが開いている間はシーン更新をスキップ
+    if (settingsMenu_ && settingsMenu_->IsOpen()) {
+        settingsMenu_->Update(deltaTime);
+        return;
+    }
     time_ += deltaTime;
 
     // TVノイズのパラメータを更新（時間だけ）
@@ -88,8 +121,17 @@ void GameOverScene::Update() {
     if (!keyPressed) {
         POINT cursorPos;
         GetCursorPos(&cursorPos);
-        ScreenToClient(FindWindowW(L"CG2WindowClass", nullptr), &cursorPos);
-        Vector2 mousePos = { static_cast<float>(cursorPos.x), static_cast<float>(cursorPos.y) };
+        HWND hwnd = FindWindowW(L"CG2WindowClass", nullptr);
+        ScreenToClient(hwnd, &cursorPos);
+        // クライアント座標を論理座標(1280x720)にスケーリング
+        RECT rc;
+        GetClientRect(hwnd, &rc);
+        float clientW = static_cast<float>(rc.right - rc.left);
+        float clientH = static_cast<float>(rc.bottom - rc.top);
+        Vector2 mousePos = {
+            static_cast<float>(cursorPos.x) * (static_cast<float>(WinApp::kClientWidth) / clientW),
+            static_cast<float>(cursorPos.y) * (static_cast<float>(WinApp::kClientHeight) / clientH)
+        };
 
         // アンカーポイントを考慮した判定範囲を計算
         Vector2 retryPos = retrySprite_->GetPosition();
@@ -169,9 +211,15 @@ void GameOverScene::Draw() {
     if (horrorEffect_) {
         horrorEffect_->PostDraw();
     }
+
+    // 設定メニュー描画（最前面）
+    if (settingsMenu_ && settingsMenu_->IsOpen()) {
+        settingsMenu_->Draw();
+    }
 }
 
 void GameOverScene::Finalize() {
+    settingsMenu_.reset();
     if (horrorEffect_) {
         horrorEffect_->Finalize();
         horrorEffect_.reset();

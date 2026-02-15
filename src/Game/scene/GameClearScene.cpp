@@ -32,6 +32,10 @@ void GameClearScene::Initialize() {
 
 	// エンドロールの初期化
 	InitializeCredits();
+
+	// 設定メニューの初期化
+	settingsMenu_ = std::make_unique<SettingsMenu>();
+	settingsMenu_->Initialize(spriteCommon_, input_);
 }
 
 void GameClearScene::InitializeCredits() {
@@ -121,6 +125,21 @@ void GameClearScene::Update() {
 	camera_->Update();
 
 	float deltaTime = 1.0f / 60.0f;
+
+	// ESC key: toggle settings menu
+	if (input_->TriggerKey(DIK_ESCAPE) && settingsMenu_) {
+		if (settingsMenu_->IsOpen()) {
+			settingsMenu_->Close();
+		} else {
+			settingsMenu_->Open();
+		}
+	}
+
+	// 設定メニューが開いている間はシーン更新をスキップ
+	if (settingsMenu_ && settingsMenu_->IsOpen()) {
+		settingsMenu_->Update(deltaTime);
+		return;
+	}
 	time_ += deltaTime;
 
 	// エンドロールのスクロール
@@ -196,6 +215,11 @@ void GameClearScene::Draw() {
 
 	// エンドロール描画
 	DrawCredits();
+
+	// 設定メニュー描画（最前面）
+	if (settingsMenu_ && settingsMenu_->IsOpen()) {
+		settingsMenu_->Draw();
+	}
 }
 
 void GameClearScene::DrawCredits() {
@@ -260,6 +284,8 @@ void GameClearScene::DrawCredits() {
 }
 
 void GameClearScene::Finalize() {
+	settingsMenu_.reset();
+
 	// エンドロール用のクリーンアップ
 	credits_.clear();
 	blackBgSprite_.reset();

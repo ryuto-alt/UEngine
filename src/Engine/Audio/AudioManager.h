@@ -90,6 +90,9 @@ public:
     // 左右の音量を個別設定
     void SetLeftRightVolume(const std::string& name, float leftVolume, float rightVolume);
 
+    // ボリューム取得
+    float GetVolume(const std::string& name);
+
     // マスターボリューム設定（0.0f ～ 1.0f）
     void SetMasterVolume(float volume);
 

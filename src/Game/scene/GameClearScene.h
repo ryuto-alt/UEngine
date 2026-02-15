@@ -1,6 +1,7 @@
 #pragma once
 #include "IScene.h"
 #include "Sprite.h"
+#include "../UI/SettingsMenu.h"
 #include <memory>
 #include <vector>
 #include <string>
@@ -40,4 +41,7 @@ private:
 
     void InitializeCredits();
     void DrawCredits();
+
+    // 設定メニュー
+    std::unique_ptr<SettingsMenu> settingsMenu_;
 };

@@ -2,6 +2,7 @@
 #include "IScene.h"
 #include "Sprite.h"
 #include "PostProcess.h"
+#include "../UI/SettingsMenu.h"
 #include <memory>
 
 class GameOverScene : public IScene {
@@ -32,4 +33,7 @@ private:
     // 選択エフェクト用
     Vector2 retryOriginalSize_;
     Vector2 titleOriginalSize_;
+
+    // 設定メニュー
+    std::unique_ptr<SettingsMenu> settingsMenu_;
 };

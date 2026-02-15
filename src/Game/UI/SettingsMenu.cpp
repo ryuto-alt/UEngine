@@ -6,6 +6,7 @@
 #include "../../Engine/Audio/AudioManager.h"
 #include "../../Engine/Utility/WinApp.h"
 #include "../GameObject/FPSCamera.h"
+#include "../scene/SceneManager.h"
 #include "UnoEngine.h"
 #include <algorithm>
 #include <cmath>
@@ -41,9 +42,9 @@ void SettingsMenu::Initialize(SpriteCommon* spriteCommon, Input* input) {
         sliderKnobSprites_[i]->SetSize({KNOB_SIZE, KNOB_SIZE});
     }
 
-    // Dividers (3: under title, under sensitivity, under volume)
-    float dividerYs[] = {175.0f, 290.0f, 420.0f};
-    for (int i = 0; i < 3; ++i) {
+    // Dividers (4: under title, under sensitivity, under volume, under window mode)
+    float dividerYs[] = {175.0f, 290.0f, 420.0f, 545.0f};
+    for (int i = 0; i < 4; ++i) {
         dividerSprites_[i] = std::make_unique<Sprite>();
         dividerSprites_[i]->Initialize(spriteCommon_, uiPath + "divider.png");
         dividerSprites_[i]->SetPosition({PANEL_X + 20.0f, PANEL_Y + dividerYs[i] - PANEL_Y});
@@ -63,6 +64,12 @@ void SettingsMenu::Initialize(SpriteCommon* spriteCommon, Input* input) {
         buttonSelectedSprites_[i]->SetPosition({x, BUTTON_Y});
         buttonSelectedSprites_[i]->SetSize({BUTTON_W, BUTTON_H});
     }
+
+    // Exit button (centered with window mode buttons)
+    exitButtonSprite_ = std::make_unique<Sprite>();
+    exitButtonSprite_->Initialize(spriteCommon_, uiPath + "button_normal.png");
+    exitButtonSprite_->SetPosition({EXIT_BUTTON_X, EXIT_BUTTON_Y});
+    exitButtonSprite_->SetSize({BUTTON_W, BUTTON_H});
 
     // Close icon
     closeIconSprite_ = std::make_unique<Sprite>();
@@ -96,6 +103,18 @@ void SettingsMenu::Open() {
     if (input_) {
         input_->SetMouseCursor(true);
     }
+
+    // BGMフェードアウト開始
+    if (!bgmKeys_.empty()) {
+        auto* audio = AudioManager::GetInstance();
+        savedBGMVolumes_.clear();
+        for (auto& key : bgmKeys_) {
+            savedBGMVolumes_[key] = audio->GetVolume(key);
+        }
+        bgmFadingOut_ = true;
+        bgmFadeTimer_ = 0.0f;
+        bgmPaused_ = false;
+    }
 }
 
 void SettingsMenu::Close() {
@@ -103,10 +122,25 @@ void SettingsMenu::Close() {
     isOpen_ = false;
     draggingSlider_ = -1;
 
-    // Hide cursor and reset mouse center
     if (input_) {
-        input_->SetMouseCursor(false);
+        // FPSCamera使用時のみカーソルを非表示（ゲームプレイ画面）
+        if (fpsCamera_) {
+            input_->SetMouseCursor(false);
+        }
         input_->ResetMouseCenter();
+    }
+
+    // BGM再開（保存した音量に復元）
+    if (bgmPaused_ || bgmFadingOut_) {
+        auto* audio = AudioManager::GetInstance();
+        for (auto& key : bgmKeys_) {
+            audio->Resume(key);
+            if (savedBGMVolumes_.count(key)) {
+                audio->SetVolume(key, savedBGMVolumes_[key]);
+            }
+        }
+        bgmPaused_ = false;
+        bgmFadingOut_ = false;
     }
 }
 
@@ -173,6 +207,18 @@ void SettingsMenu::Update(float deltaTime) {
         draggingSlider_ = -1;
     }
 
+    // --- Smooth hover transitions ---
+    {
+        auto lerp = [&](float& t, bool hovered) {
+            float target = hovered ? 1.0f : 0.0f;
+            t += (target - t) * (std::min)(1.0f, HOVER_SPEED * deltaTime);
+            t = (std::max)(0.0f, (std::min)(1.0f, t));
+        };
+        lerp(hoverFullscreenT_, IsPointInRect(mx, my, BUTTON1_X, BUTTON_Y, BUTTON_W, BUTTON_H));
+        lerp(hoverWindowedT_, IsPointInRect(mx, my, BUTTON2_X, BUTTON_Y, BUTTON_W, BUTTON_H));
+        lerp(hoverExitT_, IsPointInRect(mx, my, EXIT_BUTTON_X, EXIT_BUTTON_Y, BUTTON_W, BUTTON_H));
+    }
+
     // --- Window mode buttons ---
     if (clicked) {
         // Fullscreen button
@@ -207,6 +253,15 @@ void SettingsMenu::Update(float deltaTime) {
         }
     }
 
+    // --- Exit button ---
+    if (clicked) {
+        if (IsPointInRect(mx, my, EXIT_BUTTON_X, EXIT_BUTTON_Y, BUTTON_W, BUTTON_H)) {
+            Close();
+            SceneManager::GetInstance()->RequestExit();
+            return;
+        }
+    }
+
     // Update knob positions based on current values
     float sensNorm = (mouseSensitivity_ - SENS_MIN) / (SENS_MAX - SENS_MIN);
     float sensKnobX = SLIDER_X + sensNorm * SLIDER_W - KNOB_SIZE * 0.5f;
@@ -216,6 +271,28 @@ void SettingsMenu::Update(float deltaTime) {
     float volKnobX = SLIDER_X + masterVolume_ * SLIDER_W - KNOB_SIZE * 0.5f;
     float volKnobY = VOLUME_SLIDER_Y - KNOB_SIZE * 0.5f + SLIDER_H * 0.5f;
     sliderKnobSprites_[1]->SetPosition({volKnobX, volKnobY});
+
+    // --- BGM fade out ---
+    if (bgmFadingOut_ && !bgmPaused_) {
+        bgmFadeTimer_ += deltaTime;
+        float t = bgmFadeTimer_ / BGM_FADE_DURATION;
+        auto* audio = AudioManager::GetInstance();
+        if (t >= 1.0f) {
+            // フェード完了 → 一時停止
+            for (auto& key : bgmKeys_) {
+                audio->SetVolume(key, 0.0f);
+                audio->Pause(key);
+            }
+            bgmFadingOut_ = false;
+            bgmPaused_ = true;
+        } else {
+            // フェード中
+            for (auto& key : bgmKeys_) {
+                float saved = savedBGMVolumes_.count(key) ? savedBGMVolumes_[key] : 0.0f;
+                audio->SetVolume(key, saved * (1.0f - t));
+            }
+        }
+    }
 }
 
 void SettingsMenu::Draw() {
@@ -251,18 +328,49 @@ void SettingsMenu::Draw() {
         knob->Draw();
     }
 
-    // Window mode buttons
+    // Window mode buttons (smooth hover: brightness + scale)
     for (int i = 0; i < 2; ++i) {
         bool selected = (i == 0) ? isFullscreen_ : !isFullscreen_;
-        if (selected) {
-            buttonSelectedSprites_[i]->setColor({1.0f, 1.0f, 1.0f, a});
-            buttonSelectedSprites_[i]->Update();
-            buttonSelectedSprites_[i]->Draw();
-        } else {
-            buttonNormalSprites_[i]->setColor({1.0f, 1.0f, 1.0f, a});
-            buttonNormalSprites_[i]->Update();
-            buttonNormalSprites_[i]->Draw();
-        }
+        float t = (i == 0) ? hoverFullscreenT_ : hoverWindowedT_;
+        float origX = (i == 0) ? BUTTON1_X : BUTTON2_X;
+
+        float scale = 1.0f + (HOVER_SCALE - 1.0f) * t;
+        float sw = BUTTON_W * scale;
+        float sh = BUTTON_H * scale;
+        float sx = origX - (sw - BUTTON_W) * 0.5f;
+        float sy = BUTTON_Y - (sh - BUTTON_H) * 0.5f;
+
+        Sprite* sprite = selected ? buttonSelectedSprites_[i].get() : buttonNormalSprites_[i].get();
+        float b = selected ? 1.0f : (0.55f + 0.45f * t);
+        sprite->SetPosition({sx, sy});
+        sprite->SetSize({sw, sh});
+        sprite->setColor({b, b, b, a});
+        sprite->Update();
+        sprite->Draw();
+        // 元サイズに戻す（他フレームへの影響防止）
+        sprite->SetPosition({origX, BUTTON_Y});
+        sprite->SetSize({BUTTON_W, BUTTON_H});
+    }
+
+    // Exit button (smooth hover: red brightness + scale)
+    {
+        float t = hoverExitT_;
+        float scale = 1.0f + (HOVER_SCALE - 1.0f) * t;
+        float sw = BUTTON_W * scale;
+        float sh = BUTTON_H * scale;
+        float sx = EXIT_BUTTON_X - (sw - BUTTON_W) * 0.5f;
+        float sy = EXIT_BUTTON_Y - (sh - BUTTON_H) * 0.5f;
+
+        float r = 0.65f + 0.35f * t;
+        float g = 0.22f + 0.28f * t;
+        float b = 0.22f + 0.28f * t;
+        exitButtonSprite_->SetPosition({sx, sy});
+        exitButtonSprite_->SetSize({sw, sh});
+        exitButtonSprite_->setColor({r, g, b, a});
+        exitButtonSprite_->Update();
+        exitButtonSprite_->Draw();
+        exitButtonSprite_->SetPosition({EXIT_BUTTON_X, EXIT_BUTTON_Y});
+        exitButtonSprite_->SetSize({BUTTON_W, BUTTON_H});
     }
 
     // Close icon
@@ -313,11 +421,20 @@ void SettingsMenu::Draw() {
         bitmapFont_->RenderText(L"ウィンドウ",
             {BUTTON2_X + (BUTTON_W - win_w) * 0.5f, BUTTON_Y + (BUTTON_H - 32.0f * BTN_SCALE) * 0.5f}, BTN_SCALE, textColor);
 
+        // Exit button label (centered)
+        float exit_w = bitmapFont_->MeasureTextWidth(L"ゲーム終了", BTN_SCALE);
+        bitmapFont_->RenderText(L"ゲーム終了",
+            {EXIT_BUTTON_X + (BUTTON_W - exit_w) * 0.5f, EXIT_BUTTON_Y + (BUTTON_H - 32.0f * BTN_SCALE) * 0.5f}, BTN_SCALE, textColor);
+
         // Hint (centered)
         float hintW = bitmapFont_->MeasureTextWidth(L"ESC: 閉じる", HINT_SCALE);
         bitmapFont_->RenderText(L"ESC: 閉じる",
             {PANEL_X + (PANEL_W - hintW) * 0.5f, PANEL_Y + PANEL_H - 40.0f}, HINT_SCALE, hintColor);
     }
+}
+
+void SettingsMenu::AddBGMKey(const std::string& key) {
+    bgmKeys_.push_back(key);
 }
 
 void SettingsMenu::ApplySettings() {

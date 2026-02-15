@@ -1,6 +1,9 @@
 #pragma once
 #include <memory>
 #include <array>
+#include <vector>
+#include <string>
+#include <unordered_map>
 
 class SpriteCommon;
 class Sprite;
@@ -23,6 +26,9 @@ public:
 
     void SetFPSCamera(FPSCamera* camera) { fpsCamera_ = camera; }
 
+    // BGMキー登録（設定メニュー中にフェードアウト→一時停止、閉じたら再開）
+    void AddBGMKey(const std::string& key);
+
 private:
     void ApplySettings();
     float GetMouseX() const;
@@ -40,9 +46,10 @@ private:
     std::unique_ptr<Sprite> bgSprite_;
     std::array<std::unique_ptr<Sprite>, 2> sliderTrackSprites_;
     std::array<std::unique_ptr<Sprite>, 2> sliderKnobSprites_;
-    std::array<std::unique_ptr<Sprite>, 3> dividerSprites_;
+    std::array<std::unique_ptr<Sprite>, 4> dividerSprites_;
     std::array<std::unique_ptr<Sprite>, 2> buttonNormalSprites_;
     std::array<std::unique_ptr<Sprite>, 2> buttonSelectedSprites_;
+    std::unique_ptr<Sprite> exitButtonSprite_;
     std::unique_ptr<Sprite> closeIconSprite_;
 
     // BitmapFont for text
@@ -56,6 +63,13 @@ private:
     // Slider interaction state
     int draggingSlider_ = -1; // -1: none, 0: sensitivity, 1: volume
 
+    // Button hover animation (0.0 ~ 1.0, smoothly interpolated)
+    float hoverFullscreenT_ = 0.0f;
+    float hoverWindowedT_ = 0.0f;
+    float hoverExitT_ = 0.0f;
+    static constexpr float HOVER_SPEED = 8.0f;
+    static constexpr float HOVER_SCALE = 1.06f;
+
     // Fade-in
     float fadeAlpha_ = 0.0f;
     static constexpr float FADE_DURATION = 0.15f;
@@ -64,7 +78,7 @@ private:
     static constexpr float PANEL_X = 290.0f;
     static constexpr float PANEL_Y = 80.0f;
     static constexpr float PANEL_W = 700.0f;
-    static constexpr float PANEL_H = 560.0f;
+    static constexpr float PANEL_H = 630.0f;
 
     static constexpr float SLIDER_X = 340.0f;
     static constexpr float SLIDER_W = 400.0f;
@@ -80,7 +94,19 @@ private:
     static constexpr float BUTTON1_X = 400.0f;
     static constexpr float BUTTON2_X = 620.0f;
 
+    // Exit button (centered with window mode button group)
+    static constexpr float EXIT_BUTTON_X = (BUTTON1_X + BUTTON2_X + BUTTON_W) * 0.5f - BUTTON_W * 0.5f;
+    static constexpr float EXIT_BUTTON_Y = 560.0f;
+
     // Sensitivity range
     static constexpr float SENS_MIN = 0.001f;
     static constexpr float SENS_MAX = 0.01f;
+
+    // BGM fade on pause
+    std::vector<std::string> bgmKeys_;
+    std::unordered_map<std::string, float> savedBGMVolumes_;
+    float bgmFadeTimer_ = 0.0f;
+    bool bgmFadingOut_ = false;
+    bool bgmPaused_ = false;
+    static constexpr float BGM_FADE_DURATION = 0.4f;
 };

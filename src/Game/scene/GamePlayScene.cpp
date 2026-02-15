@@ -420,6 +420,11 @@ void GamePlayScene::Initialize() {
         if (fpsCam.fpsCamera) {
             settingsMenu->SetFPSCamera(fpsCam.fpsCamera.get());
         }
+        // BGMキー登録（ポーズ時にフェードアウト）
+        if (!m_sceneData.audio.bgm.name.empty()) {
+            settingsMenu->AddBGMKey(m_sceneData.audio.bgm.name);
+        }
+        settingsMenu->AddBGMKey("chaseBGM");
         auto& settingsComp = m_world->GetComponent<SettingsMenuComponent>(m_gameStateEntity);
         settingsComp.settingsMenu = settingsMenu.get();
         settingsComp.ownedSettingsMenu = std::move(settingsMenu);
@@ -523,6 +528,10 @@ void GamePlayScene::Update() {
             auto& settingsComp = m_world->GetComponent<SettingsMenuComponent>(m_gameStateEntity);
             if (settingsComp.settingsMenu) {
                 settingsComp.settingsMenu->Update(deltaTime);
+                // ×ボタンで閉じた場合、ポーズを解除
+                if (!settingsComp.settingsMenu->IsOpen()) {
+                    gameState.isPaused = false;
+                }
             }
             return;
         }
@@ -543,20 +552,22 @@ void GamePlayScene::Update() {
 #endif
 
     // PostProcess resize on window size change
-    static uint32_t prevWidth = 0, prevHeight = 0;
-    uint32_t curWidth = dxCommon_->GetCurrentWindowWidth();
-    uint32_t curHeight = dxCommon_->GetCurrentWindowHeight();
-    if (prevWidth != curWidth || prevHeight != curHeight) {
-        if (prevWidth != 0) {
-            m_world->ForEach<PostProcessChainComponent>(
-                [](ECS::Entity entity, PostProcessChainComponent& pp) {
-                    if (pp.psxEffect) pp.psxEffect->ResizeRenderTarget();
-                    if (pp.horrorEffect) pp.horrorEffect->ResizeRenderTarget();
-                }
-            );
+    {
+        static uint32_t prevWidth = 0, prevHeight = 0;
+        uint32_t curWidth = dxCommon_->GetCurrentWindowWidth();
+        uint32_t curHeight = dxCommon_->GetCurrentWindowHeight();
+        if (prevWidth != curWidth || prevHeight != curHeight) {
+            if (prevWidth != 0) {
+                m_world->ForEach<PostProcessChainComponent>(
+                    [](ECS::Entity entity, PostProcessChainComponent& pp) {
+                        if (pp.psxEffect) pp.psxEffect->ResizeRenderTarget();
+                        if (pp.horrorEffect) pp.horrorEffect->ResizeRenderTarget();
+                    }
+                );
+            }
+            prevWidth = curWidth;
+            prevHeight = curHeight;
         }
-        prevWidth = curWidth;
-        prevHeight = curHeight;
     }
 
     // All game logic via ECS
@@ -670,6 +681,8 @@ void GamePlayScene::Finalize() {
     if (!m_sceneData.audio.bgm.name.empty()) {
         engine->StopAudio(m_sceneData.audio.bgm.name);
     }
+    // Stop chase BGM (may still be playing if orbs collected during chase)
+    engine->StopAudio("chaseBGM");
 
     // Destroy all entities
     for (auto& entity : m_orbEntities) {

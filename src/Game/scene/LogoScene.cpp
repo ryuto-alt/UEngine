@@ -46,6 +46,10 @@ void LogoScene::Initialize() {
     fadeState_ = FadeState::Wait;
     soundPlayed_ = false;
 
+    // 設定メニューの初期化
+    settingsMenu_ = std::make_unique<SettingsMenu>();
+    settingsMenu_->Initialize(spriteCommon_, input_);
+
     OutputDebugStringA("LogoScene::Initialize() completed\n");
 }
 
@@ -53,6 +57,21 @@ void LogoScene::Update() {
     camera_->Update();
 
     float deltaTime = 1.0f / 60.0f;
+
+    // ESC key: toggle settings menu
+    if (input_->TriggerKey(DIK_ESCAPE) && settingsMenu_) {
+        if (settingsMenu_->IsOpen()) {
+            settingsMenu_->Close();
+        } else {
+            settingsMenu_->Open();
+        }
+    }
+
+    // 設定メニューが開いている間はシーン更新をスキップ
+    if (settingsMenu_ && settingsMenu_->IsOpen()) {
+        settingsMenu_->Update(deltaTime);
+        return;
+    }
 
     switch (fadeState_) {
     case FadeState::Wait:
@@ -187,9 +206,16 @@ void LogoScene::Draw() {
         fadeState_ == FadeState::WarningFadeOut) {
         warningSprite_->Draw();
     }
+
+    // 設定メニュー描画（最前面）
+    if (settingsMenu_ && settingsMenu_->IsOpen()) {
+        settingsMenu_->Draw();
+    }
 }
 
 void LogoScene::Finalize() {
+    settingsMenu_.reset();
+
     // ロゴサウンドの停止
     AudioManager::GetInstance()->Stop("logoSound");
 

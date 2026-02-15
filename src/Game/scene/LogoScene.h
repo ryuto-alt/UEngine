@@ -1,6 +1,7 @@
 #pragma once
 #include "IScene.h"
 #include "Sprite.h"
+#include "../UI/SettingsMenu.h"
 #include <memory>
 
 class LogoScene : public IScene {
@@ -42,4 +43,7 @@ private:
     const float kWarningDisplayDuration = 5.0f;    // 警告表示時間
 
     bool soundPlayed_ = false;  // サウンド再生フラグ
+
+    // 設定メニュー
+    std::unique_ptr<SettingsMenu> settingsMenu_;
 };

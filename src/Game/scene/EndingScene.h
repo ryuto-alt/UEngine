@@ -2,6 +2,7 @@
 #include "IScene.h"
 #include "Sprite.h"
 #include "PostProcess.h"
+#include "../UI/SettingsMenu.h"
 #include <memory>
 
 class EndingScene : public IScene {
@@ -39,4 +40,7 @@ private:
     static constexpr float kAsaFadeInDuration = 4.0f;
     static constexpr float kFadeOutDuration = 4.0f;
     static constexpr float kBgmFadeOutDuration = 4.0f;
+
+    // 設定メニュー
+    std::unique_ptr<SettingsMenu> settingsMenu_;
 };

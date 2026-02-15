@@ -52,12 +52,45 @@ void EndingScene::Initialize() {
     phaseTimer_ = 0.0f;
     audio->SetVolume("endingBell", 0.25f);
     audio->Play("endingBell", false);
+
+    // 設定メニューの初期化
+    settingsMenu_ = std::make_unique<SettingsMenu>();
+    settingsMenu_->Initialize(spriteCommon_, input_);
 }
 
 void EndingScene::Update() {
     camera_->Update();
 
+    // PostProcess resize on window size change
+    {
+        static uint32_t prevW = 0, prevH = 0;
+        uint32_t curW = dxCommon_->GetCurrentWindowWidth();
+        uint32_t curH = dxCommon_->GetCurrentWindowHeight();
+        if (prevW != curW || prevH != curH) {
+            if (prevW != 0 && vhsEffect_) {
+                vhsEffect_->ResizeRenderTarget();
+            }
+            prevW = curW;
+            prevH = curH;
+        }
+    }
+
     constexpr float kDeltaTime = 1.0f / 60.0f;
+
+    // ESC key: toggle settings menu
+    if (input_->TriggerKey(DIK_ESCAPE) && settingsMenu_) {
+        if (settingsMenu_->IsOpen()) {
+            settingsMenu_->Close();
+        } else {
+            settingsMenu_->Open();
+        }
+    }
+
+    // 設定メニューが開いている間はシーン更新をスキップ
+    if (settingsMenu_ && settingsMenu_->IsOpen()) {
+        settingsMenu_->Update(kDeltaTime);
+        return;
+    }
     timer_ += kDeltaTime;
     phaseTimer_ += kDeltaTime;
 
@@ -174,9 +207,15 @@ void EndingScene::Draw() {
     }
 
     vhsEffect_->PostDraw();
+
+    // 設定メニュー描画（最前面）
+    if (settingsMenu_ && settingsMenu_->IsOpen()) {
+        settingsMenu_->Draw();
+    }
 }
 
 void EndingScene::Finalize() {
+    settingsMenu_.reset();
     auto* audio = AudioManager::GetInstance();
     audio->Stop("endingBell");
     audio->Stop("endingStop");

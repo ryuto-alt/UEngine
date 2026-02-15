@@ -250,6 +250,14 @@ void AudioManager::SetVolume(const std::string& name, float volume) {
     it->second->SetVolume(volume);
 }
 
+float AudioManager::GetVolume(const std::string& name) {
+    auto it = audioSources.find(name);
+    if (it == audioSources.end()) {
+        return 0.0f;
+    }
+    return it->second->GetVolume();
+}
+
 void AudioManager::SetPanning(const std::string& name, float pan) {
     // 指定された名前のオーディオソースを検索
     auto it = audioSources.find(name);

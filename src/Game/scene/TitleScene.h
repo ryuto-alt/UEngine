@@ -2,6 +2,7 @@
 #include "IScene.h"
 #include "Sprite.h"
 #include "PostProcess.h"
+#include "../UI/SettingsMenu.h"
 #include <memory>
 
 class TitleScene : public IScene {
@@ -49,4 +50,14 @@ private:
     const float kRandomNoiseDuration = 0.15f; // ランダム砂嵐表示時間
     const float kMinNoiseInterval = 8.0f;     // 最小間隔
     const float kMaxNoiseInterval = 20.0f;    // 最大間隔
+
+    // フェードアウト（Introへの遷移用）
+    std::unique_ptr<Sprite> fadeSprite_;
+    bool fadingOut_ = false;
+    float fadeAlpha_ = 0.0f;
+    static constexpr float kFadeOutDuration = 1.5f;
+    static constexpr float kBgmFadeOutDuration = 1.5f;
+
+    // 設定メニュー
+    std::unique_ptr<SettingsMenu> settingsMenu_;
 };

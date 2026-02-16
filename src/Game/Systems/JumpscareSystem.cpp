@@ -9,6 +9,9 @@
 #include "Collision/AABBCollision.h"
 #include "UnoEngine.h"
 #include <cmath>
+#include <fstream>
+#include <format>
+#include <chrono>
 
 namespace ECS {
 
@@ -58,22 +61,49 @@ void JumpscareSystem::Update(World& world, float deltaTime) {
                             playerCol->Update();
                             enemyCol->Update();
 
-                            constexpr float expand = 0.3f;
+                            constexpr float expandXZ = 1.2f; // Wider horizontal trigger
+                            constexpr float expandY = 0.8f;  // Vertical trigger
                             Collision::AABB enemyBox = enemyCol->GetWorldAABB();
-                            enemyBox.min.x -= expand; enemyBox.min.z -= expand;
-                            enemyBox.max.x += expand; enemyBox.max.z += expand;
+                            enemyBox.min.x -= expandXZ;
+                            enemyBox.min.z -= expandXZ;
+                            enemyBox.min.y -= expandY;
+                            enemyBox.max.x += expandXZ;
+                            enemyBox.max.z += expandXZ;
+                            enemyBox.max.y += expandY;
 
                             shouldTrigger = Collision::CheckAABBCollision(playerCol->GetWorldAABB(), enemyBox);
                         }
                     }
                 }
 
-                // Fallback: XZ distance check
+                // Fallback: XZ distance check (very generous)
                 if (!shouldTrigger) {
                     float dx = enemyTransform.position.x - playerTransform.position.x;
                     float dz = enemyTransform.position.z - playerTransform.position.z;
                     float distXZ = std::sqrt(dx * dx + dz * dz);
-                    shouldTrigger = distXZ < 1.0f;
+                    shouldTrigger = distXZ < 5.5f; // Very wide trigger zone (enemy scale is 0.05)
+
+                    // Debug output to file
+                    if (distXZ < 6.0f) {
+                        std::ofstream debugFile("C:\\Users\\Unoryuto\\Documents\\UI\\jumpscare_debug.txt",
+                                               std::ios::app);
+                        if (debugFile.is_open()) {
+                            auto now = std::chrono::system_clock::now();
+                            auto time = std::chrono::system_clock::to_time_t(now);
+                            debugFile << std::format("[{}] Distance: {:.2f}m (trigger at <5.5m) | "
+                                                    "Player({:.2f}, {:.2f}, {:.2f}) | "
+                                                    "Enemy({:.2f}, {:.2f}, {:.2f}) | "
+                                                    "Triggered: {}\n",
+                                                    time, distXZ,
+                                                    playerTransform.position.x,
+                                                    playerTransform.position.y,
+                                                    playerTransform.position.z,
+                                                    enemyTransform.position.x,
+                                                    enemyTransform.position.y,
+                                                    enemyTransform.position.z,
+                                                    shouldTrigger ? "YES" : "NO");
+                        }
+                    }
                 }
 
                 if (shouldTrigger) {
@@ -93,7 +123,7 @@ void JumpscareSystem::Update(World& world, float deltaTime) {
             if (jumpscare.isJumpscaring && gameState.jumpscareStarted && camera) {
                 jumpscare.timer += deltaTime;
 
-                // Camera looks at enemy head
+                // Get enemy head position
                 Vector3 enemyHeadPos = enemyTransform.position;
                 enemyHeadPos.y += 2.0f; // Approximate head height
 
@@ -111,60 +141,53 @@ void JumpscareSystem::Update(World& world, float deltaTime) {
                     }
                 }
 
-                Vector3 playerToHead = {
-                    enemyHeadPos.x - playerTransform.position.x,
-                    enemyHeadPos.y - playerTransform.position.y,
-                    enemyHeadPos.z - playerTransform.position.z
-                };
-                float length = std::sqrt(playerToHead.x * playerToHead.x +
-                                         playerToHead.y * playerToHead.y +
-                                         playerToHead.z * playerToHead.z);
-                if (length > 0.0f) {
-                    playerToHead.x /= length;
-                    playerToHead.y /= length;
-                    playerToHead.z /= length;
-                }
+                // Calculate camera position directly in front of enemy face
+                // Use enemy's forward direction (based on rotation.y)
+                float enemyForwardX = std::sin(enemyTransform.rotation.y);
+                float enemyForwardZ = std::cos(enemyTransform.rotation.y);
 
-                // Slight left rotation offset (-30 degrees)
-                constexpr float angleOffset = -30.0f * 3.14159f / 180.0f;
-                float cosA = std::cos(angleOffset);
-                float sinA = std::sin(angleOffset);
-                Vector3 adjustedDir = {
-                    playerToHead.x * cosA - playerToHead.z * sinA,
-                    playerToHead.y,
-                    playerToHead.x * sinA + playerToHead.z * cosA
-                };
+                constexpr float camDist = 2.5f;
+                constexpr float heightOffset = -0.2f;
+                constexpr float sideOffset = 0.3f; // Slight side offset for better angle
 
-                constexpr float camDist = 3.0f;
-                constexpr float heightOffset = -0.4f;
                 Vector3 camPos = {
-                    enemyHeadPos.x - adjustedDir.x * camDist,
+                    enemyHeadPos.x + enemyForwardX * camDist - enemyForwardZ * sideOffset,
                     enemyHeadPos.y + heightOffset,
-                    enemyHeadPos.z - adjustedDir.z * camDist
+                    enemyHeadPos.z + enemyForwardZ * camDist + enemyForwardX * sideOffset
                 };
                 camera->SetTranslate(camPos);
 
+                // Make camera look at enemy head
                 Vector3 camToHead = {
                     enemyHeadPos.x - camPos.x,
                     enemyHeadPos.y - camPos.y,
                     enemyHeadPos.z - camPos.z
                 };
+                float length = std::sqrt(camToHead.x * camToHead.x +
+                                         camToHead.y * camToHead.y +
+                                         camToHead.z * camToHead.z);
+                if (length > 0.0f) {
+                    camToHead.x /= length;
+                    camToHead.y /= length;
+                    camToHead.z /= length;
+                }
+
                 float hDist = std::sqrt(camToHead.x * camToHead.x + camToHead.z * camToHead.z);
                 float rotY = std::atan2(camToHead.x, camToHead.z);
                 float rotX = -std::atan2(camToHead.y, hDist);
                 camera->SetRotate({rotX, rotY, 0.0f});
                 camera->Update();
 
-                // Spotlight on face
+                // Strong spotlight from camera position
                 if (lightManager) {
                     SpotLight jumpscareLight;
                     jumpscareLight.position = camPos;
                     jumpscareLight.direction = camToHead;
-                    jumpscareLight.color = {1.0f, 1.0f, 1.0f, 1.0f};
-                    jumpscareLight.intensity = 15.0f;
-                    jumpscareLight.innerCone = std::cos(45.0f * 3.14159f / 180.0f);
-                    jumpscareLight.outerCone = std::cos(60.0f * 3.14159f / 180.0f);
-                    jumpscareLight.attenuation = {1.0f, 0.1f, 0.01f};
+                    jumpscareLight.color = {1.0f, 0.95f, 0.9f, 1.0f}; // Slightly warm
+                    jumpscareLight.intensity = 40.0f; // Increased from 15.0
+                    jumpscareLight.innerCone = std::cos(35.0f * 3.14159f / 180.0f);
+                    jumpscareLight.outerCone = std::cos(50.0f * 3.14159f / 180.0f);
+                    jumpscareLight.attenuation = {1.0f, 0.05f, 0.005f};
                     lightManager->SetJumpscareLight(jumpscareLight);
                 }
             }

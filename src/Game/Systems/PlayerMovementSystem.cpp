@@ -10,10 +10,11 @@ namespace ECS {
 void PlayerMovementSystem::Update(World& world, float deltaTime) {
     Camera* camera = world.GetResource<Camera*>();
 
-    world.ForEach<PlayerTag, TransformComponent, PlayerMovementComponent, RotationSmoothingComponent>(
+    world.ForEach<PlayerTag, TransformComponent, PlayerMovementComponent, RotationSmoothingComponent, JumpscareVictimComponent>(
         [camera, deltaTime](Entity entity, PlayerTag&, TransformComponent& transform,
-                           PlayerMovementComponent& movement, RotationSmoothingComponent& rot) {
-            if (!camera || !movement.isMoving) return;
+                           PlayerMovementComponent& movement, RotationSmoothingComponent& rot,
+                           JumpscareVictimComponent& jumpscare) {
+            if (!camera || !movement.isMoving || jumpscare.isInJumpscare) return;
 
             float forward = movement.moveDirection.x; // W/S + stickY
             float right = movement.moveDirection.z;    // A/D + stickX

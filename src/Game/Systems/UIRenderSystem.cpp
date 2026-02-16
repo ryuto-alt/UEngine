@@ -11,6 +11,7 @@
 #include "UI/SettingsMenu.h"
 #include "ECS/Components/CameraComponents.h"
 #include "GameObject/FPSCamera.h"
+#include <algorithm>
 
 namespace ECS {
 
@@ -79,11 +80,33 @@ void UIRenderSystem::Update(World& world, float deltaTime) {
         }
     );
 
-    // Fade sprite (respawn effect)
+    // Fade sprite (respawn / damage / game over)
     Entity gameStateEntity = world.FindEntityWith<GameStateComponent>();
     if (gameStateEntity.IsValid()) {
+        auto& gameState = world.GetComponent<GameStateComponent>(gameStateEntity);
         auto& respawn = world.GetComponent<RespawnStateComponent>(gameStateEntity);
 
+        // Red overlay: damage flash or game over blood fade
+        float redAlpha = gameState.damageFlashAlpha;
+        if (gameState.gameOverFading) {
+            constexpr float kGameOverFadeDuration = 2.0f;
+            float goAlpha = gameState.gameOverFadeTimer / kGameOverFadeDuration;
+            if (goAlpha > 1.0f) goAlpha = 1.0f;
+            if (goAlpha > redAlpha) redAlpha = goAlpha;
+        }
+        if (redAlpha > 0.0f) {
+            world.ForEach<FadeSpriteComponent>(
+                [redAlpha, spriteCommon](Entity entity, FadeSpriteComponent& fade) {
+                    if (!fade.sprite) return;
+                    fade.sprite->setColor({0.5f, 0.0f, 0.0f, redAlpha});
+                    fade.sprite->Update();
+                    if (spriteCommon) spriteCommon->CommonDraw();
+                    fade.sprite->Draw();
+                }
+            );
+        }
+
+        // Black overlay: respawn fade (existing)
         if (respawn.fadeAlpha > 0.0f) {
             world.ForEach<FadeSpriteComponent>(
                 [&respawn, spriteCommon](Entity entity, FadeSpriteComponent& fade) {

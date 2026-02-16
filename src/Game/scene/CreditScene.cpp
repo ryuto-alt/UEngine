@@ -45,6 +45,20 @@ void CreditScene::Initialize() {
 void CreditScene::Update() {
     camera_->Update();
 
+    // PostProcess resize on window size change
+    {
+        static uint32_t prevW = 0, prevH = 0;
+        uint32_t curW = dxCommon_->GetCurrentWindowWidth();
+        uint32_t curH = dxCommon_->GetCurrentWindowHeight();
+        if (prevW != curW || prevH != curH) {
+            if (prevW != 0 && vignetteEffect_) {
+                vignetteEffect_->ResizeRenderTarget();
+            }
+            prevW = curW;
+            prevH = curH;
+        }
+    }
+
     constexpr float kDeltaTime = 1.0f / 60.0f;
     timer_ += kDeltaTime;
     phaseTimer_ += kDeltaTime;

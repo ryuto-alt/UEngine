@@ -76,6 +76,10 @@ struct EnemyJumpscareComponent {
     bool isJumpscaring = false;
     float timer = 0.0f;
     float duration = 0.0f;
+    Vector3 lockedEnemyPos{0.0f, 0.0f, 0.0f};
+    Vector3 lockedPlayerPos{0.0f, 0.0f, 0.0f};
+    Vector3 lockedCamPos{0.0f, 0.0f, 0.0f};
+    Vector3 lockedCamRot{0.0f, 0.0f, 0.0f};
 };
 
 struct StealthComponent {
@@ -83,7 +87,7 @@ struct StealthComponent {
     bool stealthActive = false;
     float outOfRangeTimer = 0.0f;
     float stealthAudioRange = 22.0f;
-    float stealthActivationTime = 10.0f;
+    float stealthActivationTime = 5.0f;
 };
 
 struct EnemyDebugComponent {

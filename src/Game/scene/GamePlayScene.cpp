@@ -551,6 +551,27 @@ void GamePlayScene::Update() {
     }
 #endif
 
+    // Game over fading: freeze all game logic, only update fade timer
+    if (m_gameStateEntity.IsValid()) {
+        auto& gameState = m_world->GetComponent<GameStateComponent>(m_gameStateEntity);
+        if (gameState.gameOverFading) {
+            // Stop BGM on first frame of game over
+            if (gameState.gameOverFadeTimer == 0.0f) {
+                UnoEngine* engine2 = UnoEngine::GetInstance();
+                engine2->StopAudio("chaseBGM");
+                if (!m_sceneData.audio.bgm.name.empty()) {
+                    engine2->StopAudio(m_sceneData.audio.bgm.name);
+                }
+            }
+            gameState.gameOverFadeTimer += deltaTime;
+            constexpr float kGameOverFadeDuration = 2.0f;
+            if (gameState.gameOverFadeTimer >= kGameOverFadeDuration) {
+                sceneManager_->ChangeScene("GameOver");
+            }
+            return; // Skip all game logic during game over fade
+        }
+    }
+
     // PostProcess resize on window size change
     {
         static uint32_t prevWidth = 0, prevHeight = 0;

@@ -11,15 +11,19 @@
 namespace ECS {
 
 void OrbCollectionSystem::Update(World& world, float deltaTime) {
+    // Skip orb collection during jumpscare
+    Entity gameStateEntity = world.FindEntityWith<GameStateComponent>();
+    if (gameStateEntity.IsValid()) {
+        auto& gameState = world.GetComponent<GameStateComponent>(gameStateEntity);
+        if (gameState.jumpscareStarted) return;
+    }
+
     // Find player position
     Entity playerEntity = world.FindEntityWith<PlayerTag>();
     if (!playerEntity.IsValid()) return;
 
     auto& playerTransform = world.GetComponent<TransformComponent>(playerEntity);
     constexpr float playerRadius = 0.5f;
-
-    // Find game state entity
-    Entity gameStateEntity = world.FindEntityWith<GameStateComponent>();
 
     int collectedThisFrame = 0;
 

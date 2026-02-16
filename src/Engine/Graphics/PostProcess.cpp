@@ -468,4 +468,11 @@ void PostProcess::ResizeRenderTarget() {
     renderTargetResource_.Reset();
     rtvDescriptorHeap_.Reset();
     CreateRenderTarget();
+
+    // Update PSX screen dimensions if applicable
+    if (effectType_ == EffectType::PSXRetro && paramsData_) {
+        currentPSXParams_.screenWidth = static_cast<float>(dxCommon_->GetCurrentWindowWidth());
+        currentPSXParams_.screenHeight = static_cast<float>(dxCommon_->GetCurrentWindowHeight());
+        memcpy(paramsData_, &currentPSXParams_, sizeof(PSXParams));
+    }
 }

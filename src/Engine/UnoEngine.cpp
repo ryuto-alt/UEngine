@@ -276,6 +276,9 @@ void UnoEngine::Finalize() {
         // シーンマネージャーの終了処理（オブジェクトやスプライトを解放）
         SceneManager::GetInstance()->Finalize();
 
+        // プリロード済みリソースの解放（D3D12デバイスが生きている間に）
+        ResourcePreloader::GetInstance()->ClearAll();
+
         // エフェクトマネージャの終了処理
         EffectManager3D::GetInstance()->Finalize();
 

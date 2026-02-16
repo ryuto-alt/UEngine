@@ -15,6 +15,12 @@ struct GameStateComponent {
     bool jumpscareStarted = false;
     bool allOrbsCollected = false;
     float endingFadeTimer = 0.0f;
+
+    // Damage system
+    float damageCooldownTimer = 0.0f;
+    float damageFlashAlpha = 0.0f;
+    bool gameOverFading = false;
+    float gameOverFadeTimer = 0.0f;
 };
 
 struct SettingsMenuComponent {

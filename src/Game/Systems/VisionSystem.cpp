@@ -82,28 +82,13 @@ void VisionSystem::Update(World& world, float deltaTime) {
                     float invLen = 1.0f / distanceToPlayer;
                     Vector3 toPlayerNorm = {toPlayer.x * invLen, 0.0f, toPlayer.z * invLen};
 
-                    // Facing direction (body rotation)
-                    Vector3 forward = {
-                        std::sin(rot.currentRotationY),
-                        0.0f,
-                        std::cos(rot.currentRotationY)
-                    };
+                    // Use waypoint direction as primary forward when moving —
+                    // body rotation lags significantly during turns (0.6 rad/s in chase),
+                    // so vision based purely on body rotation causes delayed detection.
+                    float minAngleDeg = 180.0f;
 
-                    float dot = toPlayerNorm.x * forward.x + toPlayerNorm.z * forward.z;
-                    dot = std::clamp(dot, -1.0f, 1.0f);
-                    float angleDeg = std::acos(dot) * (180.0f / 3.14159f);
-
-                    // Widen vision cone at corners (rotation lags behind movement)
-                    float effectiveAngle = vision.visionAngle;
-                    if (pathfinding.isAtCorner) {
-                        effectiveAngle = 130.0f;
-                    }
-
-                    // Also check movement direction: if enemy is actively moving,
-                    // use path direction as secondary vision check
-                    bool inVisionCone = (angleDeg <= effectiveAngle);
-
-                    if (!inVisionCone && pathfinding.currentSpeed > 0.5f &&
+                    // Waypoint direction (intended facing — accurate during turns)
+                    if (pathfinding.currentSpeed > 0.5f &&
                         pathfinding.waypointIndex < static_cast<int>(pathfinding.currentPath.size())) {
                         const Vector3& wp = pathfinding.currentPath[pathfinding.waypointIndex];
                         Vector3 moveDir = {wp.x - transform.position.x, 0.0f, wp.z - transform.position.z};
@@ -113,10 +98,20 @@ void VisionSystem::Update(World& world, float deltaTime) {
                             moveDir.z /= moveDirLen;
                             float moveDot = toPlayerNorm.x * moveDir.x + toPlayerNorm.z * moveDir.z;
                             moveDot = std::clamp(moveDot, -1.0f, 1.0f);
-                            float moveAngleDeg = std::acos(moveDot) * (180.0f / 3.14159f);
-                            inVisionCone = (moveAngleDeg <= vision.visionAngle);
+                            minAngleDeg = std::acos(moveDot) * (180.0f / 3.14159f);
                         }
                     }
+
+                    // Body rotation fallback (accurate when stationary or nearly aligned)
+                    {
+                        Vector3 bodyForward = {std::sin(rot.currentRotationY), 0.0f, std::cos(rot.currentRotationY)};
+                        float bodyDot = toPlayerNorm.x * bodyForward.x + toPlayerNorm.z * bodyForward.z;
+                        bodyDot = std::clamp(bodyDot, -1.0f, 1.0f);
+                        float bodyAngleDeg = std::acos(bodyDot) * (180.0f / 3.14159f);
+                        minAngleDeg = std::min(minAngleDeg, bodyAngleDeg);
+                    }
+
+                    bool inVisionCone = (minAngleDeg <= vision.visionAngle);
 
                     if (inVisionCone) {
                         // Wall check via NavMesh raycast

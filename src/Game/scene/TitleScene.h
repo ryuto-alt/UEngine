@@ -24,7 +24,27 @@ private:
     std::unique_ptr<Sprite> noiseSprite_;  // 砂嵐スプライト
     std::unique_ptr<PostProcess> noiseEffect_;
     std::unique_ptr<PostProcess> vignetteEffect_;
+    std::unique_ptr<PostProcess> vhsEffect_;
     float time_ = 0.0f;
+
+    // 色収差スプライト（タイトルテキスト用）
+    std::unique_ptr<Sprite> titleTextRedSprite_;
+    std::unique_ptr<Sprite> titleTextBlueSprite_;
+
+    // 色収差スプライト（はじめる用）
+    std::unique_ptr<Sprite> hazimeruRedSprite_;
+    std::unique_ptr<Sprite> hazimeruBlueSprite_;
+
+    // 色収差スプライト（おわる用）
+    std::unique_ptr<Sprite> owaruRedSprite_;
+    std::unique_ptr<Sprite> owaruBlueSprite_;
+
+    // 色収差アニメーション
+    float chromaticTimer_ = 0.0f;
+    float glitchCooldown_ = 0.0f;
+    float glitchDuration_ = 0.0f;
+    float glitchOffsetX_ = 0.0f;
+    float glitchOffsetY_ = 0.0f;
 
     // メニュー選択
     enum class MenuSelection {

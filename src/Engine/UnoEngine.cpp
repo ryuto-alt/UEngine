@@ -342,6 +342,9 @@ void UnoEngine::Run() {
             // 更新
             Update();
 
+            // デバッグUI
+            ShowDebug();
+
             // 描画
             Draw();
         });
@@ -540,6 +543,17 @@ void UnoEngine::ShowDebug() {
         ImGui::Text("S: %s", input_->PushKey(DIK_S) ? "押下中" : "未押下");
         ImGui::Text("D: %s", input_->PushKey(DIK_D) ? "押下中" : "未押下");
         ImGui::TreePop();
+    }
+
+    // シーン切り替え
+    ImGui::Separator();
+    ImGui::Text("シーン切り替え");
+    static const char* sceneNames[] = { "Logo", "Title", "Intro", "GamePlay", "Ending", "GameOver", "Credit", "GameClear" };
+    for (const char* name : sceneNames) {
+        ImGui::SameLine();
+        if (ImGui::Button(name)) {
+            SceneManager::GetInstance()->ChangeScene(name);
+        }
     }
 
     ImGui::End();

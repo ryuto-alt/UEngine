@@ -3,6 +3,7 @@
 #include "SceneManager.h"
 #include <cstdlib>
 #include <ctime>
+#include <random>
 #ifdef _DEBUG
 #include "imgui.h"
 #endif
@@ -17,6 +18,11 @@ void TitleScene::Initialize() {
     // ビネットエフェクト（2パス目）
     vignetteEffect_ = std::make_unique<PostProcess>();
     vignetteEffect_->Initialize(dxCommon_, srvManager_, PostProcess::EffectType::Horror);
+
+    // VHSエフェクト（3パス目）
+    vhsEffect_ = std::make_unique<PostProcess>();
+    vhsEffect_->Initialize(dxCommon_, srvManager_, PostProcess::EffectType::VHS);
+    vhsEffect_->SetVHSParams(0.0f, 0.15f, 0.08f, 0.3f, 1.2f, 0.4f, 0.7f, 0.3f);
 
     // タイトルスプライトの初期化（通常の色で）
     titleBgSprite_ = std::make_unique<Sprite>();
@@ -52,6 +58,39 @@ void TitleScene::Initialize() {
     ResourcePreloader::GetInstance()->PreloadAnimatedModelLightweight("human_walk", "Resources/Models/human", "walk.gltf", dxCommon_);
     ResourcePreloader::GetInstance()->PreloadAnimatedModelLightweight("human_sneak", "Resources/Models/human", "sneakWalk.gltf", dxCommon_);
 
+    // === 色収差スプライト（タイトルテキスト用） ===
+    titleTextRedSprite_ = std::make_unique<Sprite>();
+    titleTextRedSprite_->Initialize(spriteCommon_, "Resources/textures/Title/Title_moji.png");
+    titleTextBlueSprite_ = std::make_unique<Sprite>();
+    titleTextBlueSprite_->Initialize(spriteCommon_, "Resources/textures/Title/Title_moji.png");
+
+    // === 色収差スプライト（はじめる用） ===
+    hazimeruRedSprite_ = std::make_unique<Sprite>();
+    hazimeruRedSprite_->Initialize(spriteCommon_, "Resources/textures/Title/hazimeru.png");
+    hazimeruRedSprite_->SetPosition({640.0f, 500.0f});
+    hazimeruRedSprite_->SetAnchorPoint({0.5f, 0.5f});
+    hazimeruBlueSprite_ = std::make_unique<Sprite>();
+    hazimeruBlueSprite_->Initialize(spriteCommon_, "Resources/textures/Title/hazimeru.png");
+    hazimeruBlueSprite_->SetPosition({640.0f, 500.0f});
+    hazimeruBlueSprite_->SetAnchorPoint({0.5f, 0.5f});
+
+    // === 色収差スプライト（おわる用） ===
+    owaruRedSprite_ = std::make_unique<Sprite>();
+    owaruRedSprite_->Initialize(spriteCommon_, "Resources/textures/Title/owaru.png");
+    owaruRedSprite_->SetPosition({640.0f, 590.0f});
+    owaruRedSprite_->SetAnchorPoint({0.5f, 0.5f});
+    owaruBlueSprite_ = std::make_unique<Sprite>();
+    owaruBlueSprite_->Initialize(spriteCommon_, "Resources/textures/Title/owaru.png");
+    owaruBlueSprite_->SetPosition({640.0f, 590.0f});
+    owaruBlueSprite_->SetAnchorPoint({0.5f, 0.5f});
+
+    // 色収差アニメーション初期化
+    chromaticTimer_ = 0.0f;
+    glitchCooldown_ = 2.0f;
+    glitchDuration_ = 0.0f;
+    glitchOffsetX_ = 0.0f;
+    glitchOffsetY_ = 0.0f;
+
     // ランダム砂嵐の初期タイミングを設定
     srand(static_cast<unsigned int>(time(nullptr)));
     nextNoiseTime_ = kMinNoiseInterval + static_cast<float>(rand()) / RAND_MAX * (kMaxNoiseInterval - kMinNoiseInterval);
@@ -85,6 +124,7 @@ void TitleScene::Update() {
             if (prevW != 0) {
                 if (noiseEffect_) noiseEffect_->ResizeRenderTarget();
                 if (vignetteEffect_) vignetteEffect_->ResizeRenderTarget();
+                if (vhsEffect_) vhsEffect_->ResizeRenderTarget();
             }
             prevW = curW;
             prevH = curH;
@@ -227,6 +267,68 @@ void TitleScene::Update() {
     owaruSprite_->Update();
     noiseSprite_->Update();
 
+    // === 色収差アニメーション ===
+    chromaticTimer_ += deltaTime;
+
+    float baseOffset = std::sin(chromaticTimer_ * 2.5f) * 3.0f;
+
+    if (glitchDuration_ > 0.0f) {
+        glitchDuration_ -= deltaTime;
+    } else {
+        glitchOffsetX_ = 0.0f;
+        glitchOffsetY_ = 0.0f;
+        glitchCooldown_ -= deltaTime;
+        if (glitchCooldown_ <= 0.0f) {
+            static std::mt19937 rng(std::random_device{}());
+            std::uniform_real_distribution<float> durDist(0.05f, 0.15f);
+            std::uniform_real_distribution<float> coolDist(1.5f, 5.0f);
+            std::uniform_real_distribution<float> offsetDist(8.0f, 20.0f);
+            std::uniform_real_distribution<float> yOffsetDist(-5.0f, 5.0f);
+            glitchDuration_ = durDist(rng);
+            glitchCooldown_ = coolDist(rng);
+            glitchOffsetX_ = offsetDist(rng);
+            glitchOffsetY_ = yOffsetDist(rng);
+        }
+    }
+
+    float totalOffsetX = baseOffset + glitchOffsetX_;
+    float totalOffsetY = glitchOffsetY_;
+
+    // タイトルテキスト色収差（常時）
+    Vector2 titleTextPos = titleTextSprite_->GetPosition();
+    titleTextRedSprite_->SetPosition({titleTextPos.x - totalOffsetX, titleTextPos.y + totalOffsetY});
+    titleTextRedSprite_->setColor({1.0f, 0.0f, 0.0f, 0.6f});
+    titleTextRedSprite_->Update();
+    titleTextBlueSprite_->SetPosition({titleTextPos.x + totalOffsetX, titleTextPos.y - totalOffsetY});
+    titleTextBlueSprite_->setColor({0.0f, 0.0f, 1.0f, 0.6f});
+    titleTextBlueSprite_->Update();
+    titleTextSprite_->setColor({0.3f, 1.0f, 0.3f, 1.0f});
+
+    // メニュー色収差（選択中の項目のみ）
+    if (currentSelection_ == MenuSelection::Start) {
+        hazimeruRedSprite_->SetPosition({640.0f - totalOffsetX, 500.0f + totalOffsetY});
+        hazimeruRedSprite_->setColor({1.0f, 0.0f, 0.0f, 0.6f});
+        hazimeruRedSprite_->Update();
+        hazimeruBlueSprite_->SetPosition({640.0f + totalOffsetX, 500.0f - totalOffsetY});
+        hazimeruBlueSprite_->setColor({0.0f, 0.0f, 1.0f, 0.6f});
+        hazimeruBlueSprite_->Update();
+        owaruRedSprite_->setColor({0.0f, 0.0f, 0.0f, 0.0f});
+        owaruRedSprite_->Update();
+        owaruBlueSprite_->setColor({0.0f, 0.0f, 0.0f, 0.0f});
+        owaruBlueSprite_->Update();
+    } else {
+        owaruRedSprite_->SetPosition({640.0f - totalOffsetX, 590.0f + totalOffsetY});
+        owaruRedSprite_->setColor({1.0f, 0.0f, 0.0f, 0.6f});
+        owaruRedSprite_->Update();
+        owaruBlueSprite_->SetPosition({640.0f + totalOffsetX, 590.0f - totalOffsetY});
+        owaruBlueSprite_->setColor({0.0f, 0.0f, 1.0f, 0.6f});
+        owaruBlueSprite_->Update();
+        hazimeruRedSprite_->setColor({0.0f, 0.0f, 0.0f, 0.0f});
+        hazimeruRedSprite_->Update();
+        hazimeruBlueSprite_->setColor({0.0f, 0.0f, 0.0f, 0.0f});
+        hazimeruBlueSprite_->Update();
+    }
+
     // ノイズエフェクトのパラメータ更新
     time_ += 1.0f / 60.0f;
     noiseEffect_->SetTitleNoiseParams(
@@ -242,6 +344,11 @@ void TitleScene::Update() {
 
     // ビネットエフェクトのパラメータ更新
     vignetteEffect_->SetHorrorParams(time_, 0.0f, 0.0f, 0.0f, 0.8f);
+
+    // VHSエフェクトのパラメータ更新
+    if (vhsEffect_) {
+        vhsEffect_->SetVHSParams(time_, 0.15f, 0.08f, 0.3f, 1.2f, 0.4f, 0.7f, 0.3f);
+    }
 
     // フェードアウト中は入力を無視
     if (fadingOut_) {
@@ -293,6 +400,8 @@ void TitleScene::Draw() {
     noiseEffect_->PreDraw();
 
     spriteCommon_->CommonDraw();
+
+    // 背景
     titleBgSprite_->Draw();
     titleBg2Sprite_->Draw();
 
@@ -300,17 +409,31 @@ void TitleScene::Draw() {
         noiseSprite_->Draw();
     }
 
-    // チェーン: TitleNoise → Horror(ビネット) → Backbuffer
-    noiseEffect_->PostDrawTo(vignetteEffect_.get());
-    vignetteEffect_->PostDraw();
-
-    // エフェクト適用後、タイトル文字をバックバッファに直接描画
-    spriteCommon_->CommonDraw();
+    // タイトルテキスト（色収差: 赤→青→本体）
+    if (titleTextRedSprite_) titleTextRedSprite_->Draw();
+    if (titleTextBlueSprite_) titleTextBlueSprite_->Draw();
     titleTextSprite_->Draw();
+
+    // メニュー（色収差: 赤→青→本体）
+    if (hazimeruRedSprite_) hazimeruRedSprite_->Draw();
+    if (hazimeruBlueSprite_) hazimeruBlueSprite_->Draw();
     hazimeruSprite_->Draw();
+
+    if (owaruRedSprite_) owaruRedSprite_->Draw();
+    if (owaruBlueSprite_) owaruBlueSprite_->Draw();
     owaruSprite_->Draw();
 
-    // フェードアウト描画
+    // チェーン: TitleNoise → Horror(ビネット) → VHS → Backbuffer
+    if (vhsEffect_) {
+        noiseEffect_->PostDrawTo(vignetteEffect_.get());
+        vignetteEffect_->PostDrawTo(vhsEffect_.get());
+        vhsEffect_->PostDraw();
+    } else {
+        noiseEffect_->PostDrawTo(vignetteEffect_.get());
+        vignetteEffect_->PostDraw();
+    }
+
+    // フェードアウト描画（ポストプロセス外）
     if (fadingOut_ && fadeAlpha_ > 0.0f) {
         spriteCommon_->CommonDraw();
         fadeSprite_->Draw();
@@ -361,6 +484,14 @@ void TitleScene::Finalize() {
         fadeSprite_.reset();
     }
 
+    // 色収差スプライトの解放
+    titleTextRedSprite_.reset();
+    titleTextBlueSprite_.reset();
+    hazimeruRedSprite_.reset();
+    hazimeruBlueSprite_.reset();
+    owaruRedSprite_.reset();
+    owaruBlueSprite_.reset();
+
     if (noiseEffect_) {
         OutputDebugStringA("  Finalizing noiseEffect_\n");
         noiseEffect_->Finalize();
@@ -370,6 +501,11 @@ void TitleScene::Finalize() {
         OutputDebugStringA("  Finalizing vignetteEffect_\n");
         vignetteEffect_->Finalize();
         vignetteEffect_.reset();
+    }
+    if (vhsEffect_) {
+        OutputDebugStringA("  Finalizing vhsEffect_\n");
+        vhsEffect_->Finalize();
+        vhsEffect_.reset();
     }
 
     OutputDebugStringA("TitleScene::Finalize() completed\n");

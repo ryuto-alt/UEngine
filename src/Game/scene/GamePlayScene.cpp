@@ -705,6 +705,11 @@ void GamePlayScene::Finalize() {
     // Stop chase BGM (may still be playing if orbs collected during chase)
     engine->StopAudio("chaseBGM");
 
+    // Clear collision manager before destroying entities (prevents dangling pointers)
+    if (auto* colMgr = Collision::AABBCollisionManager::GetInstance()) {
+        colMgr->Clear();
+    }
+
     // Destroy all entities
     for (auto& entity : m_orbEntities) {
         m_world->DestroyEntity(entity);

@@ -17,6 +17,7 @@ struct PostProcessChainComponent {
 
 struct MinimapComponent {
     std::unique_ptr<Minimap> minimap;
+    std::unique_ptr<BitmapFont> ownedBitmapFont; // Minimap専用（Subtitle側と共有しない）
 };
 
 struct SubtitleUIComponent {

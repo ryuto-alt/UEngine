@@ -15,6 +15,15 @@ class UIRenderSystem;
 
 class GamePlayScene : public IScene {
 public:
+    // Continue時に保持するゲーム進行データ
+    struct GameProgress {
+        bool isResuming = false;
+        std::vector<bool> collectedOrbs;
+        bool stealthEnabled = false;
+        bool stealthTutorialTriggered = false;
+    };
+    static GameProgress s_gameProgress;
+
     GamePlayScene();
     ~GamePlayScene() override;
 

@@ -422,6 +422,9 @@
     <ClCompile Include="src\Game\Systems\StealthSystem.cpp">
       <Filter>src\Game\Systems</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Systems\AmbushWarpSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\Systems\OrbCollectionSystem.cpp">
       <Filter>src\Game\Systems</Filter>
     </ClCompile>
@@ -809,6 +812,9 @@
       <Filter>src\Game\Systems</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Systems\StealthSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\AmbushWarpSystem.h">
       <Filter>src\Game\Systems</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Systems\OrbCollectionSystem.h">

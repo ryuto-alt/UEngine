@@ -88,6 +88,23 @@ struct StealthComponent {
     float outOfRangeTimer = 0.0f;
     float stealthAudioRange = 22.0f;
     float stealthActivationTime = 5.0f;
+
+    // 復帰猶予（Continue後の安全時間）
+    bool isRevivalGrace = false;
+    float revivalGraceTimer = 0.0f;
+    static constexpr float kRevivalGraceDuration = 10.0f;
+};
+
+struct AmbushWarpComponent {
+    float safetyTimer = 0.0f;
+    float warpCooldownTimer = 0.0f;
+
+    static constexpr float kSafetyThreshold = 20.0f;
+    static constexpr float kWarpCooldown = 45.0f;
+    static constexpr float kMinEnemyDistance = 22.0f;
+    static constexpr float kWarpDistance = 12.0f;
+    static constexpr float kMinWarpDistance = 8.0f;
+    static constexpr float kRandomChancePerSec = 0.25f;
 };
 
 struct EnemyDebugComponent {

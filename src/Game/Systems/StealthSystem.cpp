@@ -4,6 +4,7 @@
 #include "ECS/Components/TransformComponents.h"
 #include "ECS/Components/PlayerComponents.h"
 #include "ECS/Components/EnemyComponents.h"
+#include "ECS/Components/GameStateComponents.h"
 #include "ECS/Components/AudioComponents.h"
 #include <cmath>
 
@@ -17,8 +18,37 @@ void StealthSystem::Update(World& world, float deltaTime) {
     auto& playerTransform = world.GetComponent<TransformComponent>(playerEntity);
 
     world.ForEach<EnemyTag, TransformComponent, StealthComponent, EnemyAIComponent>(
-        [deltaTime, &playerTransform](Entity entity, EnemyTag&, TransformComponent& transform,
+        [deltaTime, &playerTransform, &world](Entity entity, EnemyTag&, TransformComponent& transform,
                    StealthComponent& stealth, EnemyAIComponent& ai) {
+
+            // --- 復帰猶予処理 ---
+            if (stealth.isRevivalGrace) {
+                stealth.revivalGraceTimer += deltaTime;
+                if (stealth.revivalGraceTimer >= StealthComponent::kRevivalGraceDuration) {
+                    stealth.isRevivalGrace = false;
+
+                    // ステルスが有効なら即座にstealthActive化
+                    if (stealth.stealthEnabled) {
+                        stealth.stealthActive = true;
+                    }
+
+                    // StealthTutorial未表示ならStealthTutorialSystemに任せる
+                    // （stealthActive=trueを検知してセリフ→敵アクティブ化）
+                    bool tutorialTriggered = false;
+                    world.ForEach<StealthTutorialComponent>(
+                        [&tutorialTriggered](Entity e, StealthTutorialComponent& st) {
+                            tutorialTriggered = st.triggered;
+                        }
+                    );
+
+                    if (tutorialTriggered || !stealth.stealthEnabled) {
+                        // 2回目以降の死 or ステルス未有効：セリフなしで敵即アクティブ
+                        ai.isActive = true;
+                    }
+                    // else: StealthTutorialSystemがstealthActive検知→セリフ→敵アクティブ化
+                }
+                return; // 猶予中は通常ステルス処理をスキップ
+            }
 
             if (!ai.isActive) return;
             if (!stealth.stealthEnabled) return;

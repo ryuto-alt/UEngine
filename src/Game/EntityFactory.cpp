@@ -104,6 +104,7 @@ ECS::Entity CreateEnemyEntity(ECS::World& world, const Vector3& position,
     world.AddComponent(entity, ECS::StuckDetectionComponent{});
     world.AddComponent(entity, ECS::EnemyJumpscareComponent{});
     world.AddComponent(entity, ECS::StealthComponent{});
+    world.AddComponent(entity, ECS::AmbushWarpComponent{});
 
     // Animation & Rendering
     world.AddComponent(entity, ECS::AnimatedModelComponent{});

@@ -31,6 +31,7 @@
 #include "Systems/PathfindingSystem.h"
 #include "Systems/StuckDetectionSystem.h"
 #include "Systems/StealthSystem.h"
+#include "Systems/AmbushWarpSystem.h"
 #include "Systems/OrbCollectionSystem.h"
 #include "Systems/FloatingAnimationSystem.h"
 #include "Systems/SpotLightGlowSystem.h"
@@ -78,10 +79,15 @@
 using namespace ECS;
 
 #include <filesystem>
+#include <cmath>
+#include <string>
 
 #ifdef _DEBUG
 #include "imgui.h"
 #endif
+
+// static定義
+GamePlayScene::GameProgress GamePlayScene::s_gameProgress;
 
 GamePlayScene::GamePlayScene() = default;
 GamePlayScene::~GamePlayScene() = default;
@@ -403,9 +409,14 @@ void GamePlayScene::Initialize() {
     subtitleComp.bitmapFont = std::move(bitmapFont);
     subtitleComp.subtitleManager = std::move(subtitleManager);
 
-    // Set BitmapFont for minimap orb counter (shared pointer, owned by subtitleComp)
-    if (minimapComp.minimap && subtitleComp.bitmapFont) {
-        minimapComp.minimap->SetBitmapFont(subtitleComp.bitmapFont.get());
+    // Minimap専用BitmapFontを生成（Subtitle側と共有するとBeginDrawでスプライトが上書きされる）
+    {
+        auto minimapFont = std::make_unique<BitmapFont>();
+        minimapFont->Initialize(spriteCommon_, "Resources/font/Honoka-Shin-Maru-Gothic_R_16.fnt");
+        if (minimapComp.minimap) {
+            minimapComp.minimap->SetBitmapFont(minimapFont.get());
+        }
+        minimapComp.ownedBitmapFont = std::move(minimapFont);
     }
 
     auto& tutorial = m_world->GetComponent<TutorialComponent>(m_gameStateEntity);
@@ -430,9 +441,52 @@ void GamePlayScene::Initialize() {
         settingsComp.ownedSettingsMenu = std::move(settingsMenu);
     }
 
-    // Lock player movement during tutorial
-    auto& jumpscareVictim = m_world->GetComponent<JumpscareVictimComponent>(m_playerEntity);
-    jumpscareVictim.isInJumpscare = true;
+    // --- Continue復帰処理 ---
+    if (s_gameProgress.isResuming) {
+        // オーブ収集状態を復帰
+        for (size_t i = 0; i < m_orbEntities.size() && i < s_gameProgress.collectedOrbs.size(); ++i) {
+            if (s_gameProgress.collectedOrbs[i] && m_orbEntities[i].IsValid()) {
+                auto& orb = m_world->GetComponent<OrbComponent>(m_orbEntities[i]);
+                orb.isCollected = true;
+            }
+        }
+
+        // ステルス状態を復帰
+        m_world->ForEach<EnemyTag, StealthComponent>(
+            [](Entity e, EnemyTag&, StealthComponent& stealth) {
+                stealth.stealthEnabled = s_gameProgress.stealthEnabled;
+                // 復帰猶予を開始
+                stealth.isRevivalGrace = true;
+                stealth.revivalGraceTimer = 0.0f;
+            }
+        );
+
+        // ステルスチュートリアル状態を復帰
+        auto& stealthTut = m_world->GetComponent<StealthTutorialComponent>(m_gameStateEntity);
+        stealthTut.triggered = s_gameProgress.stealthTutorialTriggered;
+
+        // チュートリアル字幕をスキップ（復帰時は不要）
+        tutorial.isFinished = true;
+        subtitleComp.subtitleManager->SetSteps({});
+        subtitleComp.subtitleManager->Start(); // 空ステップで即完了
+
+        // 敵AIは猶予中は非アクティブ
+        m_world->ForEach<EnemyTag, EnemyAIComponent>(
+            [](Entity e, EnemyTag&, EnemyAIComponent& ai) {
+                ai.isActive = false;
+            }
+        );
+
+        // 移動ロック不要（チュートリアルスキップ済み）
+        auto& jumpscareVictim = m_world->GetComponent<JumpscareVictimComponent>(m_playerEntity);
+        jumpscareVictim.isInJumpscare = false;
+
+        s_gameProgress.isResuming = false;
+    } else {
+        // 通常開始：チュートリアル中は移動ロック
+        auto& jumpscareVictim = m_world->GetComponent<JumpscareVictimComponent>(m_playerEntity);
+        jumpscareVictim.isInJumpscare = true;
+    }
 
     // Orb collection audio
     AudioManager::GetInstance()->LoadMP3("orbGet", "Resources/Audio/get.mp3");
@@ -466,6 +520,7 @@ void GamePlayScene::RegisterSystems() {
     m_world->RegisterSystem(std::make_unique<ECS::PathfindingSystem>(), 230);
     m_world->RegisterSystem(std::make_unique<ECS::StuckDetectionSystem>(), 240);
     m_world->RegisterSystem(std::make_unique<ECS::StealthSystem>(), 250);
+    m_world->RegisterSystem(std::make_unique<ECS::AmbushWarpSystem>(), 260);
 
     // Gameplay (300-399)
     m_world->RegisterSystem(std::make_unique<ECS::OrbCollectionSystem>(), 300);
@@ -566,6 +621,28 @@ void GamePlayScene::Update() {
             gameState.gameOverFadeTimer += deltaTime;
             constexpr float kGameOverFadeDuration = 2.0f;
             if (gameState.gameOverFadeTimer >= kGameOverFadeDuration) {
+                // Continue用にゲーム進行を保存
+                s_gameProgress.isResuming = true;
+                s_gameProgress.collectedOrbs.clear();
+                for (auto& orbEntity : m_orbEntities) {
+                    if (orbEntity.IsValid() && m_world->HasComponent<OrbComponent>(orbEntity)) {
+                        auto& orb = m_world->GetComponent<OrbComponent>(orbEntity);
+                        s_gameProgress.collectedOrbs.push_back(orb.isCollected);
+                    } else {
+                        s_gameProgress.collectedOrbs.push_back(false);
+                    }
+                }
+                m_world->ForEach<EnemyTag, StealthComponent>(
+                    [](Entity e, EnemyTag&, StealthComponent& stealth) {
+                        s_gameProgress.stealthEnabled = stealth.stealthEnabled;
+                    }
+                );
+                m_world->ForEach<StealthTutorialComponent>(
+                    [](Entity e, StealthTutorialComponent& st) {
+                        s_gameProgress.stealthTutorialTriggered = st.triggered;
+                    }
+                );
+
                 sceneManager_->ChangeScene("GameOver");
             }
             return; // Skip all game logic during game over fade
@@ -692,6 +769,52 @@ void GamePlayScene::Draw() {
         ImGui::Checkbox("allOrbsCollected", &gameState.allOrbsCollected);
         ImGui::End();
     }
+
+    // Ambush Warp debug
+    m_world->ForEach<EnemyTag, TransformComponent, AmbushWarpComponent, EnemyAIComponent>(
+        [this](Entity entity, EnemyTag&, TransformComponent& enemyTransform,
+               AmbushWarpComponent& ambush, EnemyAIComponent& ai) {
+            ImGui::Begin("Ambush Warp Debug");
+
+            // Safety timer progress bar
+            float safetyRatio = ambush.safetyTimer / AmbushWarpComponent::kSafetyThreshold;
+            ImGui::ProgressBar(safetyRatio, ImVec2(-1, 0),
+                (std::to_string((int)ambush.safetyTimer) + "s / " +
+                 std::to_string((int)AmbushWarpComponent::kSafetyThreshold) + "s").c_str());
+            ImGui::Text("Safety Timer: %.1f / %.1f", ambush.safetyTimer, AmbushWarpComponent::kSafetyThreshold);
+            ImGui::Text("Cooldown: %.1f / %.1f", ambush.warpCooldownTimer, AmbushWarpComponent::kWarpCooldown);
+
+            // Enemy-player distance
+            Entity playerEntity = m_world->FindEntityWith<PlayerTag>();
+            if (playerEntity.IsValid()) {
+                auto& playerTransform = m_world->GetComponent<TransformComponent>(playerEntity);
+                float dx = enemyTransform.position.x - playerTransform.position.x;
+                float dy = enemyTransform.position.y - playerTransform.position.y;
+                float dz = enemyTransform.position.z - playerTransform.position.z;
+                float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
+                bool distOk = dist >= AmbushWarpComponent::kMinEnemyDistance;
+                ImGui::Text("Enemy Distance: %.1fm (need >= %.0fm) %s",
+                    dist, AmbushWarpComponent::kMinEnemyDistance, distOk ? "OK" : "TOO CLOSE");
+            }
+
+            // Condition flags
+            ImGui::Separator();
+            ImGui::Text("AI State: %s",
+                ai.isChasing ? "CHASING" : ai.isSearching ? "SEARCHING" : "PATROL/IDLE");
+            ImGui::Text("AI Active: %s", ai.isActive ? "Yes" : "No");
+
+            bool timerReady = ambush.safetyTimer >= AmbushWarpComponent::kSafetyThreshold;
+            bool cooldownReady = ambush.warpCooldownTimer <= 0.0f;
+            ImGui::TextColored(timerReady ? ImVec4(0,1,0,1) : ImVec4(1,0,0,1),
+                "Timer Ready: %s", timerReady ? "YES" : "NO");
+            ImGui::TextColored(cooldownReady ? ImVec4(0,1,0,1) : ImVec4(1,0,0,1),
+                "Cooldown Ready: %s", cooldownReady ? "YES" : "NO");
+            ImGui::TextColored(!ai.isChasing ? ImVec4(0,1,0,1) : ImVec4(1,0,0,1),
+                "Not Chasing: %s", !ai.isChasing ? "YES" : "NO");
+
+            ImGui::End();
+        }
+    );
 #endif
 }
 

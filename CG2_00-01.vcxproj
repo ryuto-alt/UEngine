@@ -177,6 +177,7 @@
     <ClCompile Include="src\Game\Systems\PathfindingSystem.cpp" />
     <ClCompile Include="src\Game\Systems\StuckDetectionSystem.cpp" />
     <ClCompile Include="src\Game\Systems\StealthSystem.cpp" />
+    <ClCompile Include="src\Game\Systems\AmbushWarpSystem.cpp" />
     <ClCompile Include="src\Game\Systems\OrbCollectionSystem.cpp" />
     <ClCompile Include="src\Game\Systems\FloatingAnimationSystem.cpp" />
     <ClCompile Include="src\Game\Systems\SpotLightGlowSystem.cpp" />
@@ -347,6 +348,7 @@
     <ClInclude Include="src\Game\Systems\PathfindingSystem.h" />
     <ClInclude Include="src\Game\Systems\StuckDetectionSystem.h" />
     <ClInclude Include="src\Game\Systems\StealthSystem.h" />
+    <ClInclude Include="src\Game\Systems\AmbushWarpSystem.h" />
     <ClInclude Include="src\Game\Systems\OrbCollectionSystem.h" />
     <ClInclude Include="src\Game\Systems\FloatingAnimationSystem.h" />
     <ClInclude Include="src\Game\Systems\SpotLightGlowSystem.h" />

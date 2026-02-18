@@ -16,6 +16,13 @@ public:
     SettingsMenu();
     ~SettingsMenu();
 
+    // シーンをまたいで設定を保持する静的ストレージ
+    struct SavedSettings {
+        float mouseSensitivity = 0.003f;
+        float masterVolume     = 0.25f;
+    };
+    static SavedSettings s_saved;
+
     void Initialize(SpriteCommon* spriteCommon, Input* input);
     void Update(float deltaTime);
     void Draw();

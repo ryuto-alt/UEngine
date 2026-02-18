@@ -14,6 +14,8 @@
 SettingsMenu::SettingsMenu() = default;
 SettingsMenu::~SettingsMenu() = default;
 
+SettingsMenu::SavedSettings SettingsMenu::s_saved;
+
 void SettingsMenu::Initialize(SpriteCommon* spriteCommon, Input* input) {
     spriteCommon_ = spriteCommon;
     input_ = input;
@@ -86,6 +88,11 @@ void SettingsMenu::Initialize(SpriteCommon* spriteCommon, Input* input) {
     if (winApp) {
         isFullscreen_ = winApp->IsFullscreen();
     }
+
+    // 保存済み設定を復元して即適用（シーン再生成後もリセットされない）
+    mouseSensitivity_ = s_saved.mouseSensitivity;
+    masterVolume_     = s_saved.masterVolume;
+    ApplySettings();
 }
 
 void SettingsMenu::Open() {
@@ -445,6 +452,10 @@ void SettingsMenu::ApplySettings() {
 
     // Master volume
     AudioManager::GetInstance()->SetMasterVolume(masterVolume_);
+
+    // シーンをまたいで設定を保持
+    s_saved.mouseSensitivity = mouseSensitivity_;
+    s_saved.masterVolume     = masterVolume_;
 }
 
 float SettingsMenu::GetMouseX() const {

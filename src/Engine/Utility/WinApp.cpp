@@ -57,8 +57,8 @@ void WinApp::Initialize()
 	windowedStyle_ = GetWindowLong(hwnd, GWL_STYLE);
 	GetWindowRect(hwnd, &windowedRect_);
 
-	// ボーダレスウィンドウスタイルに変更
-	SetWindowLong(hwnd, GWL_STYLE, WS_VISIBLE | WS_POPUP);
+	// ボーダレスウィンドウスタイルに変更（WS_VISIBLEはSetWindowPosのSWP_SHOWWINDOWで付与）
+	SetWindowLong(hwnd, GWL_STYLE, WS_POPUP);
 
 	// モニター情報を取得してフルスクリーンサイズに設定
 	HMONITOR hMonitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY);

@@ -1,6 +1,7 @@
 #include "TitleScene.h"
 #include "../../Engine/Resource/ResourcePreloader.h"
 #include "SceneManager.h"
+#include <cmath>
 #include <cstdlib>
 #include <ctime>
 #include <random>
@@ -22,7 +23,7 @@ void TitleScene::Initialize() {
     // VHSエフェクト（3パス目）
     vhsEffect_ = std::make_unique<PostProcess>();
     vhsEffect_->Initialize(dxCommon_, srvManager_, PostProcess::EffectType::VHS);
-    vhsEffect_->SetVHSParams(0.0f, 0.15f, 0.08f, 0.3f, 1.2f, 0.4f, 0.7f, 0.3f);
+    vhsEffect_->SetVHSParams(0.0f, 0.12f, 0.0f, 0.2f, 0.8f, 0.3f, 0.8f, 0.2f);
 
     // タイトルスプライトの初期化（通常の色で）
     titleBgSprite_ = std::make_unique<Sprite>();
@@ -30,6 +31,9 @@ void TitleScene::Initialize() {
 
     titleBg2Sprite_ = std::make_unique<Sprite>();
     titleBg2Sprite_->Initialize(spriteCommon_, "Resources/textures/Title/Title_bg2.png");
+
+    titleBgSprite_->setColor({0.4f, 0.4f, 0.4f, 1.0f});
+    titleBg2Sprite_->setColor({0.35f, 0.35f, 0.35f, 1.0f});
 
     titleTextSprite_ = std::make_unique<Sprite>();
     titleTextSprite_->Initialize(spriteCommon_, "Resources/textures/Title/Title_moji.png");
@@ -133,18 +137,9 @@ void TitleScene::Update() {
 
     float deltaTime = 1.0f / 60.0f;
 
-    // ESC key: toggle settings menu
-    if (input_->TriggerKey(DIK_ESCAPE) && settingsMenu_) {
-        if (settingsMenu_->IsOpen()) {
-            settingsMenu_->Close();
-        } else {
-            settingsMenu_->Open();
-        }
-    }
-
-    // 設定メニューが開いている間はシーン更新をスキップ
-    if (settingsMenu_ && settingsMenu_->IsOpen()) {
-        settingsMenu_->Update(deltaTime);
+    // ESCでゲーム終了
+    if (input_->TriggerKey(DIK_ESCAPE)) {
+        sceneManager_->RequestExit();
         return;
     }
 
@@ -241,22 +236,61 @@ void TitleScene::Update() {
         }
     }
 
-    // ノイズエフェクト（グリッチっぽい明滅） - 速度を遅く
-    float noiseFlicker = sinf(noiseTimer_ * 10.0f) * 0.5f + 0.5f; // 0.0 ~ 1.0
+    // === メニューグリッチ演出 ===
+    menuGlitchTimer_ += deltaTime;
 
-    // 選択状態に応じた視覚フィードバック
-    if (currentSelection_ == MenuSelection::Start || hazimeruHovered) {
-        // ノイズエフェクト：明滅のみ
-        float brightness = 0.7f + noiseFlicker * 0.3f; // 0.7 ~ 1.0
-        hazimeruSprite_->setColor({ brightness, brightness, brightness, 1.0f });
+    // Layer 1: 微細ジッター (常時±1.5px揺れ)
+    float jitterX = std::sin(menuGlitchTimer_ * 15.0f) * 1.5f;
+    float jitterY = std::cos(menuGlitchTimer_ * 11.0f) * 1.5f;
 
-        owaruSprite_->setColor({ 0.5f, 0.5f, 0.5f, 1.0f });
+    // Layer 2: アルファフリッカー (輝度変動 0.7~1.0 + まれに急降下)
+    float flicker = std::sin(menuGlitchTimer_ * 8.0f) * std::sin(menuGlitchTimer_ * 13.0f);
+    flicker = flicker * flicker; // 0.0~1.0
+    float brightness = 0.7f + flicker * 0.3f;
+    // まれに急降下 (sin積が低いタイミング)
+    float dip = std::sin(menuGlitchTimer_ * 3.7f);
+    if (dip > 0.92f) {
+        brightness = 0.4f;
+    }
+
+    // Layer 3: グリッチバースト (0.8~3秒間隔で大きなXオフセット)
+    if (menuGlitchBurstDuration_ > 0.0f) {
+        menuGlitchBurstDuration_ -= deltaTime;
     } else {
-        // ノイズエフェクト：明滅のみ
-        float brightness = 0.7f + noiseFlicker * 0.3f;
-        owaruSprite_->setColor({ brightness, brightness, brightness, 1.0f });
+        menuGlitchBurstOffsetX_ = 0.0f;
+        menuGlitchBurstOffsetY_ = 0.0f;
+        menuGlitchBurstCooldown_ -= deltaTime;
+        if (menuGlitchBurstCooldown_ <= 0.0f) {
+            static std::mt19937 menuRng(std::random_device{}());
+            std::uniform_real_distribution<float> burstDurDist(0.03f, 0.12f);
+            std::uniform_real_distribution<float> burstCoolDist(0.8f, 3.0f);
+            std::uniform_real_distribution<float> burstOffDist(15.0f, 35.0f);
+            std::uniform_real_distribution<float> burstYDist(-3.0f, 3.0f);
+            menuGlitchBurstDuration_ = burstDurDist(menuRng);
+            menuGlitchBurstCooldown_ = burstCoolDist(menuRng);
+            menuGlitchBurstOffsetX_ = burstOffDist(menuRng);
+            menuGlitchBurstOffsetY_ = burstYDist(menuRng);
+        }
+    }
 
-        hazimeruSprite_->setColor({ 0.5f, 0.5f, 0.5f, 1.0f });
+    bool isBursting = (menuGlitchBurstDuration_ > 0.0f);
+
+    // 選択中ボタンにグリッチ適用、非選択は暗い固定色
+    float selPosOffX = jitterX + menuGlitchBurstOffsetX_;
+    float selPosOffY = jitterY + menuGlitchBurstOffsetY_;
+
+    if (currentSelection_ == MenuSelection::Start || hazimeruHovered) {
+        hazimeruSprite_->SetPosition({640.0f + selPosOffX, 500.0f + selPosOffY});
+        hazimeruSprite_->setColor({brightness, brightness, brightness, 1.0f});
+
+        owaruSprite_->SetPosition({640.0f, 590.0f});
+        owaruSprite_->setColor({0.5f, 0.5f, 0.5f, 1.0f});
+    } else {
+        owaruSprite_->SetPosition({640.0f + selPosOffX, 590.0f + selPosOffY});
+        owaruSprite_->setColor({brightness, brightness, brightness, 1.0f});
+
+        hazimeruSprite_->SetPosition({640.0f, 500.0f});
+        hazimeruSprite_->setColor({0.5f, 0.5f, 0.5f, 1.0f});
     }
 
     // スプライトの更新
@@ -297,19 +331,25 @@ void TitleScene::Update() {
     // タイトルテキスト色収差（常時）
     Vector2 titleTextPos = titleTextSprite_->GetPosition();
     titleTextRedSprite_->SetPosition({titleTextPos.x - totalOffsetX, titleTextPos.y + totalOffsetY});
-    titleTextRedSprite_->setColor({1.0f, 0.0f, 0.0f, 0.6f});
+    titleTextRedSprite_->setColor({1.0f, 0.2f, 0.0f, 0.7f});
     titleTextRedSprite_->Update();
     titleTextBlueSprite_->SetPosition({titleTextPos.x + totalOffsetX, titleTextPos.y - totalOffsetY});
-    titleTextBlueSprite_->setColor({0.0f, 0.0f, 1.0f, 0.6f});
+    titleTextBlueSprite_->setColor({0.0f, 0.4f, 0.8f, 0.35f});
     titleTextBlueSprite_->Update();
-    titleTextSprite_->setColor({0.3f, 1.0f, 0.3f, 1.0f});
+    titleTextSprite_->setColor({1.0f, 0.08f, 0.05f, 1.0f});
 
-    // メニュー色収差（選択中の項目のみ）
+    // メニュー色収差（選択中の項目のみ、バースト中は増幅）
+    float menuChromaticMul = isBursting ? 2.5f : 1.0f;
+    float menuOffX = totalOffsetX * menuChromaticMul;
+    float menuOffY = totalOffsetY * menuChromaticMul;
+
     if (currentSelection_ == MenuSelection::Start) {
-        hazimeruRedSprite_->SetPosition({640.0f - totalOffsetX, 500.0f + totalOffsetY});
+        float bx = 640.0f + selPosOffX;
+        float by = 500.0f + selPosOffY;
+        hazimeruRedSprite_->SetPosition({bx - menuOffX, by + menuOffY});
         hazimeruRedSprite_->setColor({1.0f, 0.0f, 0.0f, 0.6f});
         hazimeruRedSprite_->Update();
-        hazimeruBlueSprite_->SetPosition({640.0f + totalOffsetX, 500.0f - totalOffsetY});
+        hazimeruBlueSprite_->SetPosition({bx + menuOffX, by - menuOffY});
         hazimeruBlueSprite_->setColor({0.0f, 0.0f, 1.0f, 0.6f});
         hazimeruBlueSprite_->Update();
         owaruRedSprite_->setColor({0.0f, 0.0f, 0.0f, 0.0f});
@@ -317,10 +357,12 @@ void TitleScene::Update() {
         owaruBlueSprite_->setColor({0.0f, 0.0f, 0.0f, 0.0f});
         owaruBlueSprite_->Update();
     } else {
-        owaruRedSprite_->SetPosition({640.0f - totalOffsetX, 590.0f + totalOffsetY});
+        float bx = 640.0f + selPosOffX;
+        float by = 590.0f + selPosOffY;
+        owaruRedSprite_->SetPosition({bx - menuOffX, by + menuOffY});
         owaruRedSprite_->setColor({1.0f, 0.0f, 0.0f, 0.6f});
         owaruRedSprite_->Update();
-        owaruBlueSprite_->SetPosition({640.0f + totalOffsetX, 590.0f - totalOffsetY});
+        owaruBlueSprite_->SetPosition({bx + menuOffX, by - menuOffY});
         owaruBlueSprite_->setColor({0.0f, 0.0f, 1.0f, 0.6f});
         owaruBlueSprite_->Update();
         hazimeruRedSprite_->setColor({0.0f, 0.0f, 0.0f, 0.0f});
@@ -333,13 +375,13 @@ void TitleScene::Update() {
     time_ += 1.0f / 60.0f;
     noiseEffect_->SetTitleNoiseParams(
         time_,
-        0.06f,  // grainIntensity
-        0.08f,  // scanlineIntensity
-        400.0f, // scanlineCount
-        0.8f,   // glitchIntensity
-        0.15f,  // glitchFrequency
-        0.01f,  // chromaticStrength
-        0.7f    // vignetteIntensity
+        0.04f,   // grainIntensity
+        0.10f,   // scanlineIntensity
+        350.0f,  // scanlineCount
+        0.6f,    // glitchIntensity
+        0.12f,   // glitchFrequency
+        0.015f,  // chromaticStrength
+        0.8f     // vignetteIntensity
     );
 
     // ビネットエフェクトのパラメータ更新
@@ -347,7 +389,7 @@ void TitleScene::Update() {
 
     // VHSエフェクトのパラメータ更新
     if (vhsEffect_) {
-        vhsEffect_->SetVHSParams(time_, 0.15f, 0.08f, 0.3f, 1.2f, 0.4f, 0.7f, 0.3f);
+        vhsEffect_->SetVHSParams(time_, 0.12f, 0.0f, 0.2f, 0.8f, 0.3f, 0.8f, 0.2f);
     }
 
     // フェードアウト中は入力を無視

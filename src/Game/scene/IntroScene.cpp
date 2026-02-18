@@ -152,13 +152,13 @@ void IntroScene::Update() {
     // VHSエフェクト
     vignetteEffect_->SetVHSParams(
         timer_,
-        0.15f, // scanlineIntensity
-        0.08f, // noiseIntensity
-        0.3f,  // trackingError
-        0.8f,  // chromaticAberration
-        0.3f,  // colorBleed
-        0.3f,  // sharpness
-        0.15f  // tapeCrease
+        0.10f, // scanlineIntensity
+        0.0f,  // noiseIntensity
+        0.15f, // trackingError
+        0.4f,  // chromaticAberration
+        0.2f,  // colorBleed
+        0.85f, // sharpness
+        0.08f  // tapeCrease
     );
 }
 

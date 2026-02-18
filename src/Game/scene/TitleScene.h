@@ -78,6 +78,13 @@ private:
     static constexpr float kFadeOutDuration = 1.5f;
     static constexpr float kBgmFadeOutDuration = 1.5f;
 
+    // メニューグリッチ状態
+    float menuGlitchTimer_ = 0.0f;
+    float menuGlitchBurstCooldown_ = 1.5f;
+    float menuGlitchBurstDuration_ = 0.0f;
+    float menuGlitchBurstOffsetX_ = 0.0f;
+    float menuGlitchBurstOffsetY_ = 0.0f;
+
     // 設定メニュー
     std::unique_ptr<SettingsMenu> settingsMenu_;
 };

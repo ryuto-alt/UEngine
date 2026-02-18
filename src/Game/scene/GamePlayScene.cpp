@@ -392,7 +392,7 @@ void GamePlayScene::Initialize() {
 
     // Subtitle/Tutorial
     auto bitmapFont = std::make_unique<BitmapFont>();
-    bitmapFont->Initialize(spriteCommon_, "Resources/font/Honoka-Shin-Maru-Gothic_R_16.fnt");
+    bitmapFont->Initialize(spriteCommon_, "Resources/fonts/honoka_gothic_16.fnt");
     auto subtitleManager = std::make_unique<SubtitleManager>();
     subtitleManager->Initialize(spriteCommon_, bitmapFont.get());
     subtitleManager->SetSteps({
@@ -412,7 +412,7 @@ void GamePlayScene::Initialize() {
     // Minimap専用BitmapFontを生成（Subtitle側と共有するとBeginDrawでスプライトが上書きされる）
     {
         auto minimapFont = std::make_unique<BitmapFont>();
-        minimapFont->Initialize(spriteCommon_, "Resources/font/Honoka-Shin-Maru-Gothic_R_16.fnt");
+        minimapFont->Initialize(spriteCommon_, "Resources/fonts/honoka_gothic_16.fnt");
         if (minimapComp.minimap) {
             minimapComp.minimap->SetBitmapFont(minimapFont.get());
         }

@@ -79,7 +79,7 @@ void SettingsMenu::Initialize(SpriteCommon* spriteCommon, Input* input) {
 
     // BitmapFont (おそろしげ明朝)
     bitmapFont_ = std::make_unique<BitmapFont>();
-    bitmapFont_->Initialize(spriteCommon_, "Resources/font/osoro.fnt");
+    bitmapFont_->Initialize(spriteCommon_, "Resources/fonts/osoro.fnt");
 
     // Read current fullscreen state
     auto* winApp = UnoEngine::GetInstance()->GetWinApp();

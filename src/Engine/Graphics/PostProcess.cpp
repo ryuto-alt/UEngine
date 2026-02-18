@@ -72,6 +72,15 @@ void PostProcess::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager, Ef
         currentVHSParams_.tapeCrease = 0.5f;
         memcpy(paramsData_, &currentVHSParams_, sizeof(VHSParams));
         break;
+    case EffectType::CRT:
+        currentCRTParams_.cornerRadius = 0.06f;
+        currentCRTParams_.curvature = 0.08f;
+        currentCRTParams_.vignetteStrength = 0.3f;
+        currentCRTParams_.edgeSoftness = 0.008f;
+        currentCRTParams_.screenAspect = 16.0f / 9.0f;
+        currentCRTParams_.targetAspect = 4.0f / 3.0f;
+        memcpy(paramsData_, &currentCRTParams_, sizeof(CRTParams));
+        break;
     }
 }
 
@@ -188,6 +197,7 @@ void PostProcess::CreatePipeline() {
     case EffectType::TitleNoise: psShaderPath = L"Resources/shaders/TitleNoise.PS.hlsl"; break;
     case EffectType::PSXRetro:   psShaderPath = L"Resources/shaders/PSXEffect.PS.hlsl"; break;
     case EffectType::VHS:        psShaderPath = L"Resources/shaders/VHS.PS.hlsl"; break;
+    case EffectType::CRT:        psShaderPath = L"Resources/shaders/CRT.PS.hlsl"; break;
     }
     Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = dxCommon_->CompileShader(psShaderPath, L"ps_6_0");
 
@@ -461,6 +471,20 @@ void PostProcess::SetVHSParams(float time, float scanline, float noise, float tr
 
     if (paramsData_) {
         memcpy(paramsData_, &currentVHSParams_, sizeof(VHSParams));
+    }
+}
+
+void PostProcess::SetCRTParams(float cornerRadius, float curvature, float vignette,
+                               float edgeSoftness, float screenAspect, float targetAspect) {
+    currentCRTParams_.cornerRadius = cornerRadius;
+    currentCRTParams_.curvature = curvature;
+    currentCRTParams_.vignetteStrength = vignette;
+    currentCRTParams_.edgeSoftness = edgeSoftness;
+    currentCRTParams_.screenAspect = screenAspect;
+    currentCRTParams_.targetAspect = targetAspect;
+
+    if (paramsData_) {
+        memcpy(paramsData_, &currentCRTParams_, sizeof(CRTParams));
     }
 }
 

@@ -8,6 +8,9 @@ void IntroScene::Initialize() {
     vignetteEffect_ = std::make_unique<PostProcess>();
     vignetteEffect_->Initialize(dxCommon_, srvManager_, PostProcess::EffectType::VHS);
 
+    crtEffect_ = std::make_unique<PostProcess>();
+    crtEffect_->Initialize(dxCommon_, srvManager_, PostProcess::EffectType::CRT);
+
     bgSprite_ = std::make_unique<Sprite>();
     bgSprite_->Initialize(spriteCommon_, "Resources/textures/Intro/intro_bg.png");
     bgSprite_->SetPosition({0.0f, 0.0f});
@@ -51,8 +54,9 @@ void IntroScene::Update() {
         uint32_t curW = dxCommon_->GetCurrentWindowWidth();
         uint32_t curH = dxCommon_->GetCurrentWindowHeight();
         if (prevW != curW || prevH != curH) {
-            if (prevW != 0 && vignetteEffect_) {
-                vignetteEffect_->ResizeRenderTarget();
+            if (prevW != 0) {
+                if (vignetteEffect_) vignetteEffect_->ResizeRenderTarget();
+                if (crtEffect_) crtEffect_->ResizeRenderTarget();
             }
             prevW = curW;
             prevH = curH;
@@ -160,22 +164,37 @@ void IntroScene::Update() {
         0.85f, // sharpness
         0.08f  // tapeCrease
     );
+
+    // CRTブラウン管エフェクト
+    float aspect = static_cast<float>(dxCommon_->GetCurrentWindowWidth())
+                 / static_cast<float>(dxCommon_->GetCurrentWindowHeight());
+    crtEffect_->SetCRTParams(
+        0.06f,        // cornerRadius
+        0.08f,        // curvature (barrel distortion)
+        0.30f,        // vignetteStrength
+        0.008f,       // edgeSoftness
+        aspect,       // screenAspect (actual window)
+        4.0f / 3.0f   // targetAspect (CRT 4:3)
+    );
 }
 
 void IntroScene::Draw() {
+    // Pass 1: Scene content -> VHS RT
     vignetteEffect_->PreDraw();
 
     spriteCommon_->CommonDraw();
     bgSprite_->Draw();
     textSprite_->Draw();
 
-    // フェードオーバーレイ
     if (fadeAlpha_ > 0.0f) {
         spriteCommon_->CommonDraw();
         fadeSprite_->Draw();
     }
 
-    vignetteEffect_->PostDraw();
+    // Pass 2: VHS RT -> CRT RT (apply VHS shader)
+    vignetteEffect_->PostDrawTo(crtEffect_.get());
+    // Pass 3: CRT RT -> backbuffer (apply CRT shader)
+    crtEffect_->PostDraw();
 
     // 設定メニュー描画（最前面）
     if (settingsMenu_ && settingsMenu_->IsOpen()) {
@@ -191,6 +210,10 @@ void IntroScene::Finalize() {
     bgSprite_.reset();
     textSprite_.reset();
     fadeSprite_.reset();
+    if (crtEffect_) {
+        crtEffect_->Finalize();
+        crtEffect_.reset();
+    }
     if (vignetteEffect_) {
         vignetteEffect_->Finalize();
         vignetteEffect_.reset();

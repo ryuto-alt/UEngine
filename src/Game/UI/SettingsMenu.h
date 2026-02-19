@@ -19,7 +19,7 @@ public:
     // シーンをまたいで設定を保持する静的ストレージ
     struct SavedSettings {
         float mouseSensitivity = 0.003f;
-        float masterVolume     = 0.25f;
+        float masterVolume     = 1.0f;
     };
     static SavedSettings s_saved;
 
@@ -64,7 +64,7 @@ private:
 
     // Settings values
     float mouseSensitivity_ = 0.003f;   // 0.001 ~ 0.01
-    float masterVolume_ = 0.25f;        // 0.0 ~ 1.0
+    float masterVolume_ = 1.0f;        // 0.0 ~ 1.0 (実際のXAudio2音量は x2倍)
     bool isFullscreen_ = false;
 
     // Slider interaction state

@@ -450,8 +450,8 @@ void SettingsMenu::ApplySettings() {
         fpsCamera_->SetMouseSensitivity(mouseSensitivity_);
     }
 
-    // Master volume
-    AudioManager::GetInstance()->SetMasterVolume(masterVolume_);
+    // Master volume (スライダー1.0 = XAudio2 2.0倍でかなり大音量)
+    AudioManager::GetInstance()->SetMasterVolume(masterVolume_ * 2.0f);
 
     // シーンをまたいで設定を保持
     s_saved.mouseSensitivity = mouseSensitivity_;

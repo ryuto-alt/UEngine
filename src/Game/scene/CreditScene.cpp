@@ -10,7 +10,7 @@ void CreditScene::Initialize() {
 
     // Black background
     bgSprite_ = std::make_unique<Sprite>();
-    bgSprite_->Initialize(spriteCommon_, "Resources/textures/white1x1.png");
+    bgSprite_->Initialize(spriteCommon_, "Resources/textures/common/white1x1.png");
     bgSprite_->SetPosition({0.0f, 0.0f});
     bgSprite_->SetSize({1280.0f, 720.0f});
     bgSprite_->setColor({0.0f, 0.0f, 0.0f, 1.0f});
@@ -22,7 +22,7 @@ void CreditScene::Initialize() {
 
     // Fade overlay
     fadeSprite_ = std::make_unique<Sprite>();
-    fadeSprite_->Initialize(spriteCommon_, "Resources/textures/white1x1.png");
+    fadeSprite_->Initialize(spriteCommon_, "Resources/textures/common/white1x1.png");
     fadeSprite_->SetPosition({0.0f, 0.0f});
     fadeSprite_->SetSize({1280.0f, 720.0f});
     fadeSprite_->setColor({0.0f, 0.0f, 0.0f, 1.0f});
@@ -35,7 +35,7 @@ void CreditScene::Initialize() {
 
     // Load and play credit BGM
     auto* audio = AudioManager::GetInstance();
-    bgmLoaded_ = audio->LoadMP3("creditBGM", "Resources/Audio/song/credit.mp3");
+    bgmLoaded_ = audio->LoadMP3("creditBGM", "Resources/audio/bgm/credit.mp3");
     if (bgmLoaded_) {
         audio->SetVolume("creditBGM", 0.15f);
         audio->Play("creditBGM", false);

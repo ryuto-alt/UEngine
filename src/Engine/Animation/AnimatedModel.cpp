@@ -34,7 +34,7 @@ void AnimatedModel::LoadFromFile(const std::string& directoryPath, const std::st
         ModelData& modelDataInternal2 = GetModelDataInternal();
         if (modelDataInternal2.material.textureFilePath.empty()) {
             OutputDebugStringA("AnimatedModel: No texture path found, setting default values\n");
-            modelDataInternal2.material.textureFilePath = "Resources/textures/white1x1.png";
+            modelDataInternal2.material.textureFilePath = "Resources/textures/common/white1x1.png";
             modelDataInternal2.material.diffuse = { 1.0f, 1.0f, 1.0f, 1.0f };
             OutputDebugStringA(("AnimatedModel: Set default texture: " + modelDataInternal2.material.textureFilePath + "\n").c_str());
         }
@@ -46,7 +46,7 @@ void AnimatedModel::LoadFromFile(const std::string& directoryPath, const std::st
     ModelData& modelDataInternal = GetModelDataInternal();
     if (modelDataInternal.material.textureFilePath.empty()) {
         OutputDebugStringA("AnimatedModel: No texture found after loading, setting default texture\n");
-        modelDataInternal.material.textureFilePath = "Resources/textures/white1x1.png";
+        modelDataInternal.material.textureFilePath = "Resources/textures/common/white1x1.png";
         modelDataInternal.material.diffuse = { 1.0f, 1.0f, 1.0f, 1.0f };
         TextureManager::GetInstance()->LoadTexture(modelDataInternal.material.textureFilePath);
         OutputDebugStringA(("AnimatedModel: Set default texture: " + modelDataInternal.material.textureFilePath + "\n").c_str());

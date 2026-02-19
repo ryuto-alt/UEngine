@@ -22,7 +22,7 @@ void JumpscareSystem::Update(World& world, float deltaTime) {
 
     // Load damage SE once
     if (!damageSoundLoaded) {
-        UnoEngine::GetInstance()->LoadAudio("damageSE", "Resources/Audio/se/damage.mp3");
+        UnoEngine::GetInstance()->LoadAudio("damageSE", "Resources/audio/se/damage.mp3");
         damageSoundLoaded = true;
     }
 

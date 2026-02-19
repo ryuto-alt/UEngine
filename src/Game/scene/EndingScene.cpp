@@ -10,14 +10,14 @@ void EndingScene::Initialize() {
 
     // Black background
     bgSprite_ = std::make_unique<Sprite>();
-    bgSprite_->Initialize(spriteCommon_, "Resources/textures/white1x1.png");
+    bgSprite_->Initialize(spriteCommon_, "Resources/textures/common/white1x1.png");
     bgSprite_->SetPosition({0.0f, 0.0f});
     bgSprite_->SetSize({1280.0f, 720.0f});
     bgSprite_->setColor({0.0f, 0.0f, 0.0f, 1.0f});
 
     // Asa image — darkened background, stays visible during text scroll
     asaSprite_ = std::make_unique<Sprite>();
-    asaSprite_->Initialize(spriteCommon_, "Resources/textures/Ending/asa.png");
+    asaSprite_->Initialize(spriteCommon_, "Resources/textures/ending/morning.png");
     asaSprite_->SetPosition({0.0f, 0.0f});
     asaSprite_->SetSize({1280.0f, 720.0f});
     asaSprite_->setColor({0.18f, 0.18f, 0.2f, 1.0f});
@@ -29,7 +29,7 @@ void EndingScene::Initialize() {
 
     // Full-screen fade sprite (black overlay)
     fadeSprite_ = std::make_unique<Sprite>();
-    fadeSprite_->Initialize(spriteCommon_, "Resources/textures/white1x1.png");
+    fadeSprite_->Initialize(spriteCommon_, "Resources/textures/common/white1x1.png");
     fadeSprite_->SetPosition({0.0f, 0.0f});
     fadeSprite_->SetSize({1280.0f, 720.0f});
     fadeSprite_->setColor({0.0f, 0.0f, 0.0f, 1.0f});
@@ -43,9 +43,9 @@ void EndingScene::Initialize() {
 
     // Load audio
     auto* audio = AudioManager::GetInstance();
-    audio->LoadMP3("endingBell", "Resources/Audio/mezamasi/bell.mp3");
-    audio->LoadMP3("endingStop", "Resources/Audio/mezamasi/stop.mp3");
-    audio->LoadMP3("endingBGM", "Resources/Audio/song/ep.mp3");
+    audio->LoadMP3("endingBell", "Resources/audio/se/alarm_bell.mp3");
+    audio->LoadMP3("endingStop", "Resources/audio/se/alarm_stop.mp3");
+    audio->LoadMP3("endingBGM", "Resources/audio/bgm/ending.mp3");
 
     // Start bell immediately
     phase_ = Phase::Bell;

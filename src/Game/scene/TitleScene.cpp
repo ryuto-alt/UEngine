@@ -36,17 +36,17 @@ void TitleScene::Initialize() {
     titleBg2Sprite_->setColor({0.35f, 0.35f, 0.35f, 1.0f});
 
     titleTextSprite_ = std::make_unique<Sprite>();
-    titleTextSprite_->Initialize(spriteCommon_, "Resources/textures/Title/Title_moji.png");
+    titleTextSprite_->Initialize(spriteCommon_, "Resources/textures/title/title_text.png");
 
     hazimeruSprite_ = std::make_unique<Sprite>();
-    hazimeruSprite_->Initialize(spriteCommon_, "Resources/textures/Title/hazimeru.png");
+    hazimeruSprite_->Initialize(spriteCommon_, "Resources/textures/title/btn_start.png");
     hazimeruOriginalSize_ = hazimeruSprite_->GetSize();
     // Title_bg2の上部黒枠に配置
     hazimeruSprite_->SetPosition({ 640.0f, 500.0f });
     hazimeruSprite_->SetAnchorPoint({ 0.5f, 0.5f }); // 中心を基準に
 
     owaruSprite_ = std::make_unique<Sprite>();
-    owaruSprite_->Initialize(spriteCommon_, "Resources/textures/Title/owaru.png");
+    owaruSprite_->Initialize(spriteCommon_, "Resources/textures/title/btn_quit.png");
     owaruOriginalSize_ = owaruSprite_->GetSize();
     // Title_bg2の下部黒枠に配置
     owaruSprite_->SetPosition({ 640.0f, 590.0f });
@@ -54,37 +54,37 @@ void TitleScene::Initialize() {
 
     // 砂嵐スプライトの初期化（画面全体を覆う）
     noiseSprite_ = std::make_unique<Sprite>();
-    noiseSprite_->Initialize(spriteCommon_, "Resources/textures/Title/noize.png");
+    noiseSprite_->Initialize(spriteCommon_, "Resources/textures/title/noise.png");
     noiseSprite_->SetPosition({ 0.0f, 0.0f });
     noiseSprite_->SetSize({ 1280.0f, 720.0f });
     noiseSprite_->setColor({ 1.0f, 1.0f, 1.0f, 0.0f }); // 初期は透明
 
-    ResourcePreloader::GetInstance()->PreloadAnimatedModelLightweight("human_walk", "Resources/Models/human", "walk.gltf", dxCommon_);
-    ResourcePreloader::GetInstance()->PreloadAnimatedModelLightweight("human_sneak", "Resources/Models/human", "sneakWalk.gltf", dxCommon_);
+    ResourcePreloader::GetInstance()->PreloadAnimatedModelLightweight("human_walk", "Resources/models/player", "walk.gltf", dxCommon_);
+    ResourcePreloader::GetInstance()->PreloadAnimatedModelLightweight("human_sneak", "Resources/models/player", "sneak_walk.gltf", dxCommon_);
 
     // === 色収差スプライト（タイトルテキスト用） ===
     titleTextRedSprite_ = std::make_unique<Sprite>();
-    titleTextRedSprite_->Initialize(spriteCommon_, "Resources/textures/Title/Title_moji.png");
+    titleTextRedSprite_->Initialize(spriteCommon_, "Resources/textures/title/title_text.png");
     titleTextBlueSprite_ = std::make_unique<Sprite>();
-    titleTextBlueSprite_->Initialize(spriteCommon_, "Resources/textures/Title/Title_moji.png");
+    titleTextBlueSprite_->Initialize(spriteCommon_, "Resources/textures/title/title_text.png");
 
     // === 色収差スプライト（はじめる用） ===
     hazimeruRedSprite_ = std::make_unique<Sprite>();
-    hazimeruRedSprite_->Initialize(spriteCommon_, "Resources/textures/Title/hazimeru.png");
+    hazimeruRedSprite_->Initialize(spriteCommon_, "Resources/textures/title/btn_start.png");
     hazimeruRedSprite_->SetPosition({640.0f, 500.0f});
     hazimeruRedSprite_->SetAnchorPoint({0.5f, 0.5f});
     hazimeruBlueSprite_ = std::make_unique<Sprite>();
-    hazimeruBlueSprite_->Initialize(spriteCommon_, "Resources/textures/Title/hazimeru.png");
+    hazimeruBlueSprite_->Initialize(spriteCommon_, "Resources/textures/title/btn_start.png");
     hazimeruBlueSprite_->SetPosition({640.0f, 500.0f});
     hazimeruBlueSprite_->SetAnchorPoint({0.5f, 0.5f});
 
     // === 色収差スプライト（おわる用） ===
     owaruRedSprite_ = std::make_unique<Sprite>();
-    owaruRedSprite_->Initialize(spriteCommon_, "Resources/textures/Title/owaru.png");
+    owaruRedSprite_->Initialize(spriteCommon_, "Resources/textures/title/btn_quit.png");
     owaruRedSprite_->SetPosition({640.0f, 590.0f});
     owaruRedSprite_->SetAnchorPoint({0.5f, 0.5f});
     owaruBlueSprite_ = std::make_unique<Sprite>();
-    owaruBlueSprite_->Initialize(spriteCommon_, "Resources/textures/Title/owaru.png");
+    owaruBlueSprite_->Initialize(spriteCommon_, "Resources/textures/title/btn_quit.png");
     owaruBlueSprite_->SetPosition({640.0f, 590.0f});
     owaruBlueSprite_->SetAnchorPoint({0.5f, 0.5f});
 
@@ -101,13 +101,13 @@ void TitleScene::Initialize() {
 
     // フェードスプライト（黒オーバーレイ）
     fadeSprite_ = std::make_unique<Sprite>();
-    fadeSprite_->Initialize(spriteCommon_, "Resources/textures/white1x1.png");
+    fadeSprite_->Initialize(spriteCommon_, "Resources/textures/common/white1x1.png");
     fadeSprite_->SetPosition({0.0f, 0.0f});
     fadeSprite_->SetSize({1280.0f, 720.0f});
     fadeSprite_->setColor({0.0f, 0.0f, 0.0f, 0.0f});
 
     // タイトルBGMの読み込みと再生
-    AudioManager::GetInstance()->LoadMP3("titleBGM", "Resources/Audio/title.mp3");
+    AudioManager::GetInstance()->LoadMP3("titleBGM", "Resources/audio/bgm/title.mp3");
     AudioManager::GetInstance()->SetVolume("titleBGM", 0.075f);
     AudioManager::GetInstance()->Play("titleBGM", true);
 

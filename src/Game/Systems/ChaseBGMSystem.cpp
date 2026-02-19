@@ -16,7 +16,7 @@ void ChaseBGMSystem::Update(World& world, float deltaTime) {
 
             // First-time load
             if (!bgm.loaded) {
-                engine->LoadAudio("chaseBGM", "Resources/Audio/chaseBGM.mp3");
+                engine->LoadAudio("chaseBGM", "Resources/audio/bgm/chase.mp3");
                 bgm.loaded = true;
             }
 

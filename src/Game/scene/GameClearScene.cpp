@@ -15,14 +15,14 @@ void GameClearScene::Initialize() {
 
 	// 黒背景スプライトの初期化
 	blackBgSprite_ = std::make_unique<Sprite>();
-	blackBgSprite_->Initialize(spriteCommon_, "Resources/textures/white1x1.png");
+	blackBgSprite_->Initialize(spriteCommon_, "Resources/textures/common/white1x1.png");
 	blackBgSprite_->SetPosition({ 0.0f, 0.0f });
 	blackBgSprite_->SetSize({ 1280.0f, 720.0f });
 	blackBgSprite_->setColor({ 0.0f, 0.0f, 0.0f, 1.0f });  // 黒色
 
 	// タイトル画像スプライトの初期化
 	titleImageSprite_ = std::make_unique<Sprite>();
-	titleImageSprite_->Initialize(spriteCommon_, "Resources/textures/Title/Title_moji.png");
+	titleImageSprite_->Initialize(spriteCommon_, "Resources/textures/title/title_text.png");
 	titleImageSprite_->SetAnchorPoint({ 0.5f, 0.5f });  // 中心基準
 
 	// ロゴ画像スプライトの初期化

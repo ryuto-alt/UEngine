@@ -45,70 +45,70 @@ void GameOverScene::Initialize() {
 
     // === 背景レイヤー ===
     backgroundSprite_ = std::make_unique<Sprite>();
-    backgroundSprite_->Initialize(spriteCommon_, "Resources/textures/GameOver/gameover_bg.png");
+    backgroundSprite_->Initialize(spriteCommon_, "Resources/textures/game_over/gameover_bg.png");
     backgroundSprite_->SetPosition({640.0f, 360.0f});
     backgroundSprite_->SetAnchorPoint({0.5f, 0.5f});
 
     // 血のオーバーレイ（上部から垂れる血）
     bloodOverlaySprite_ = std::make_unique<Sprite>();
-    bloodOverlaySprite_->Initialize(spriteCommon_, "Resources/textures/GameOver/blood_overlay.png");
+    bloodOverlaySprite_->Initialize(spriteCommon_, "Resources/textures/game_over/blood_overlay.png");
     bloodOverlaySprite_->SetPosition({640.0f, 0.0f});
     bloodOverlaySprite_->SetAnchorPoint({0.5f, 0.0f});
 
     // === テキストレイヤー ===
     gameOverTextSprite_ = std::make_unique<Sprite>();
-    gameOverTextSprite_->Initialize(spriteCommon_, "Resources/textures/GameOver/gameover_text.png");
+    gameOverTextSprite_->Initialize(spriteCommon_, "Resources/textures/game_over/gameover_text.png");
     gameOverTextSprite_->SetPosition({640.0f, 220.0f});
     gameOverTextSprite_->SetAnchorPoint({0.5f, 0.5f});
 
     // === メニューボタン ===
     continueSprite_ = std::make_unique<Sprite>();
-    continueSprite_->Initialize(spriteCommon_, "Resources/textures/GameOver/continue_btn.png");
+    continueSprite_->Initialize(spriteCommon_, "Resources/textures/game_over/continue_btn.png");
     continueOriginalSize_ = continueSprite_->GetSize();
     continueSprite_->SetPosition({640.0f, 460.0f});
     continueSprite_->SetAnchorPoint({0.5f, 0.5f});
 
     quitSprite_ = std::make_unique<Sprite>();
-    quitSprite_->Initialize(spriteCommon_, "Resources/textures/GameOver/quit_btn.png");
+    quitSprite_->Initialize(spriteCommon_, "Resources/textures/game_over/quit_btn.png");
     quitOriginalSize_ = quitSprite_->GetSize();
     quitSprite_->SetPosition({640.0f, 540.0f});
     quitSprite_->SetAnchorPoint({0.5f, 0.5f});
 
     // セレクター（選択矢印）
     selectorSprite_ = std::make_unique<Sprite>();
-    selectorSprite_->Initialize(spriteCommon_, "Resources/textures/GameOver/selector.png");
+    selectorSprite_->Initialize(spriteCommon_, "Resources/textures/game_over/selector.png");
     selectorSprite_->SetAnchorPoint({0.5f, 0.5f});
 
     // === 色収差スプライト（GAME OVER用） ===
     gameOverRedSprite_ = std::make_unique<Sprite>();
-    gameOverRedSprite_->Initialize(spriteCommon_, "Resources/textures/GameOver/gameover_text.png");
+    gameOverRedSprite_->Initialize(spriteCommon_, "Resources/textures/game_over/gameover_text.png");
     gameOverRedSprite_->SetPosition({640.0f, 220.0f});
     gameOverRedSprite_->SetAnchorPoint({0.5f, 0.5f});
 
     gameOverBlueSprite_ = std::make_unique<Sprite>();
-    gameOverBlueSprite_->Initialize(spriteCommon_, "Resources/textures/GameOver/gameover_text.png");
+    gameOverBlueSprite_->Initialize(spriteCommon_, "Resources/textures/game_over/gameover_text.png");
     gameOverBlueSprite_->SetPosition({640.0f, 220.0f});
     gameOverBlueSprite_->SetAnchorPoint({0.5f, 0.5f});
 
     // === 色収差スプライト（Continue用） ===
     continueRedSprite_ = std::make_unique<Sprite>();
-    continueRedSprite_->Initialize(spriteCommon_, "Resources/textures/GameOver/continue_btn.png");
+    continueRedSprite_->Initialize(spriteCommon_, "Resources/textures/game_over/continue_btn.png");
     continueRedSprite_->SetPosition({640.0f, 460.0f});
     continueRedSprite_->SetAnchorPoint({0.5f, 0.5f});
 
     continueBlueSprite_ = std::make_unique<Sprite>();
-    continueBlueSprite_->Initialize(spriteCommon_, "Resources/textures/GameOver/continue_btn.png");
+    continueBlueSprite_->Initialize(spriteCommon_, "Resources/textures/game_over/continue_btn.png");
     continueBlueSprite_->SetPosition({640.0f, 460.0f});
     continueBlueSprite_->SetAnchorPoint({0.5f, 0.5f});
 
     // === 色収差スプライト（Quit用） ===
     quitRedSprite_ = std::make_unique<Sprite>();
-    quitRedSprite_->Initialize(spriteCommon_, "Resources/textures/GameOver/quit_btn.png");
+    quitRedSprite_->Initialize(spriteCommon_, "Resources/textures/game_over/quit_btn.png");
     quitRedSprite_->SetPosition({640.0f, 540.0f});
     quitRedSprite_->SetAnchorPoint({0.5f, 0.5f});
 
     quitBlueSprite_ = std::make_unique<Sprite>();
-    quitBlueSprite_->Initialize(spriteCommon_, "Resources/textures/GameOver/quit_btn.png");
+    quitBlueSprite_->Initialize(spriteCommon_, "Resources/textures/game_over/quit_btn.png");
     quitBlueSprite_->SetPosition({640.0f, 540.0f});
     quitBlueSprite_->SetAnchorPoint({0.5f, 0.5f});
 

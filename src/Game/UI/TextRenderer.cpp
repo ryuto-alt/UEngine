@@ -26,7 +26,7 @@ void TextRenderer::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager) {
     textSpritesPool_.reserve(MAX_TEXT_SPRITES);
     for (int i = 0; i < MAX_TEXT_SPRITES; ++i) {
         auto sprite = std::make_unique<Sprite>();
-        sprite->Initialize(spriteCommon_.get(), "Resources/Models/Enemy/Enemy_Run/default_baseColor.png");
+        sprite->Initialize(spriteCommon_.get(), "");
         textSpritesPool_.push_back(std::move(sprite));
     }
 }

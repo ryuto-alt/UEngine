@@ -20,7 +20,7 @@ void SettingsMenu::Initialize(SpriteCommon* spriteCommon, Input* input) {
     spriteCommon_ = spriteCommon;
     input_ = input;
 
-    const std::string uiPath = "Resources/textures/UI/";
+    const std::string uiPath = "Resources/textures/ui/";
 
     // Background overlay
     bgSprite_ = std::make_unique<Sprite>();

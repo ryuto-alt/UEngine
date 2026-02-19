@@ -22,7 +22,7 @@ void IntroScene::Initialize() {
 
     // フェードスプライト（黒オーバーレイ）
     fadeSprite_ = std::make_unique<Sprite>();
-    fadeSprite_->Initialize(spriteCommon_, "Resources/textures/white1x1.png");
+    fadeSprite_->Initialize(spriteCommon_, "Resources/textures/common/white1x1.png");
     fadeSprite_->SetPosition({0.0f, 0.0f});
     fadeSprite_->SetSize({1280.0f, 720.0f});
     fadeSprite_->setColor({0.0f, 0.0f, 0.0f, 1.0f});
@@ -35,7 +35,7 @@ void IntroScene::Initialize() {
 
     // op.mp3の読み込みと再生（フェードイン中に開始）
     auto* audio = AudioManager::GetInstance();
-    audio->LoadMP3("introBGM", "Resources/Audio/song/op.mp3");
+    audio->LoadMP3("introBGM", "Resources/audio/bgm/opening.mp3");
     audio->SetVolume("introBGM", 0.0f);
     audio->Play("introBGM", false);
 

@@ -40,7 +40,7 @@ void ShowJumpscare() {
     Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
 
     // GIF画像を読み込み
-    Gdiplus::Image* gifImage = new Gdiplus::Image(L"Resources/textures/gameover.gif");
+    Gdiplus::Image* gifImage = new Gdiplus::Image(L"Resources/textures/game_over/gameover.gif");
 
     if (gifImage->GetLastStatus() != Gdiplus::Ok) {
         delete gifImage;
@@ -86,7 +86,7 @@ void ShowJumpscare() {
     wchar_t currentDir[MAX_PATH];
     GetCurrentDirectoryW(MAX_PATH, currentDir);
     wchar_t audioPath[MAX_PATH];
-    swprintf_s(audioPath, L"%s\\Resources\\Audio\\gameover.mp3", currentDir);
+    swprintf_s(audioPath, L"%s\\Resources\\audio\\se\\gameover.mp3", currentDir);
 
     wchar_t mciCommand[512];
     swprintf_s(mciCommand, L"open \"%s\" type mpegvideo alias jumpscareAudio", audioPath);

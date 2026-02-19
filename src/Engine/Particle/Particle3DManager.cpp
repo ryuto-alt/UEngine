@@ -57,7 +57,7 @@ void Particle3DManager::CreateParticle3DGroup(const std::string& name, const std
     
     // モデルファイルの読み込み（Resources/particle/から読み込み）
     try {
-        group.model->LoadFromObj("Resources/particle", modelFilePath);
+        group.model->LoadFromObj("Resources/particles", modelFilePath);
         OutputDebugStringA(("Particle3DManager: Model loaded successfully - " + modelFilePath + "\n").c_str());
     }
     catch (const std::exception& e) {

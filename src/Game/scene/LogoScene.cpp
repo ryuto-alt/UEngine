@@ -11,7 +11,7 @@ void LogoScene::Initialize() {
     camera_->SetTranslate({0.0f, 0.0f, -10.0f});
 
     // ロゴサウンドの読み込み（再生は1.5秒後）
-    AudioManager::GetInstance()->LoadMP3("logoSound", "Resources/Audio/logosound.mp3");
+    AudioManager::GetInstance()->LoadMP3("logoSound", "Resources/audio/se/logo.mp3");
     AudioManager::GetInstance()->SetVolume("logoSound", 0.125f);
 
     // ロゴスプライトの初期化
@@ -30,7 +30,7 @@ void LogoScene::Initialize() {
     // 警告スプライトの初期化
     warningSprite_ = std::make_unique<Sprite>();
     OutputDebugStringA("LogoScene: Loading warning_red01.png\n");
-    warningSprite_->Initialize(spriteCommon_, "Resources/textures/warning/warning_red01.png");
+    warningSprite_->Initialize(spriteCommon_, "Resources/textures/logo/warning.png");
     OutputDebugStringA("LogoScene: Warning loaded successfully\n");
 
     // 画面中央に配置

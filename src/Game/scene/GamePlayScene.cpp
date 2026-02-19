@@ -112,7 +112,7 @@ void GamePlayScene::Initialize() {
     float fisheyeStrength = 2.58f;
     float fisheyeRadius = 1.5f;
 
-    m_sceneData = configurator.LoadSceneFromJSON("Resources/Scenes/gameplay_scene.json");
+    m_sceneData = configurator.LoadSceneFromJSON("Resources/scenes/gameplay.json");
     configurator.ApplySceneData(
         m_sceneData, dxCommon_, srvManager_, camera_,
         sceneObjects, skybox, lightManager,
@@ -162,13 +162,13 @@ void GamePlayScene::Initialize() {
         if (preloaded) {
             playerModel = std::move(preloaded);
         } else {
-            playerModel->LoadFromFile("Resources/Models/human", "walk.gltf");
+            playerModel->LoadFromFile("Resources/models/player", "walk.gltf");
         }
 
         // Register named animations
         Animation walkAnim = playerModel->GetAnimationPlayer().GetAnimation();
         playerModel->AddAnimation("walk", walkAnim);
-        Animation sneakWalkAnim = engine->LoadAnim("Resources/Models/human", "sneakWalk.gltf");
+        Animation sneakWalkAnim = engine->LoadAnim("Resources/models/player", "sneak_walk.gltf");
         playerModel->AddAnimation("sneakWalk", sneakWalkAnim);
         playerModel->ChangeAnimation("walk");
         playerModel->PlayAnimation();
@@ -219,14 +219,14 @@ void GamePlayScene::Initialize() {
 
         // Load enemy model directly
         auto enemyModel = engine->CreateAnim();
-        enemyModel->LoadFromFile("Resources/Models/Enemy/Enemy_Walk", "Enemy_Walk.gltf");
+        enemyModel->LoadFromFile("Resources/models/enemy/walk", "enemy_walk.gltf");
 
         // Register named animations
         Animation walkAnim = enemyModel->GetAnimationPlayer().GetAnimation();
         enemyModel->AddAnimation("Walk", walkAnim);
-        Animation runAnim = engine->LoadAnim("Resources/Models/Enemy/Enemy_Run", "Enemy_Run.gltf");
+        Animation runAnim = engine->LoadAnim("Resources/models/enemy/run", "enemy_run.gltf");
         enemyModel->AddAnimation("Run", runAnim);
-        Animation jumpscareAnim = engine->LoadAnim("Resources/Models/Enemy/Enemy_Jumpscare", "Enemy_Jumpscare.gltf");
+        Animation jumpscareAnim = engine->LoadAnim("Resources/models/enemy/jumpscare", "enemy_jumpscare.gltf");
         enemyModel->AddAnimation("Jumpscare", jumpscareAnim);
         float jumpscareDuration = jumpscareAnim.duration;
         enemyModel->ChangeAnimation("Walk");
@@ -278,12 +278,12 @@ void GamePlayScene::Initialize() {
         // Initialize enemy audio sources
         auto& footstepAudio = m_world->GetComponent<EnemyFootstepAudioComponent>(m_enemyEntity);
         footstepAudio.footstepSource1 = std::make_unique<SpatialAudioSource>();
-        footstepAudio.footstepSource1->Initialize("Resources/Audio/Enemy_feet.mp3", enemyPos);
+        footstepAudio.footstepSource1->Initialize("Resources/audio/se/enemy_footstep_1.mp3", enemyPos);
         footstepAudio.footstepSource1->SetVolume(0.6f);
         footstepAudio.footstepSource1->SetMaxDistance(22.0f);
         footstepAudio.footstepSource1->SetMinDistance(1.0f);
         footstepAudio.footstepSource2 = std::make_unique<SpatialAudioSource>();
-        footstepAudio.footstepSource2->Initialize("Resources/Audio/Enemy_feet2.mp3", enemyPos);
+        footstepAudio.footstepSource2->Initialize("Resources/audio/se/enemy_footstep_2.mp3", enemyPos);
         footstepAudio.footstepSource2->SetVolume(0.6f);
         footstepAudio.footstepSource2->SetMaxDistance(22.0f);
         footstepAudio.footstepSource2->SetMinDistance(1.0f);
@@ -297,7 +297,7 @@ void GamePlayScene::Initialize() {
 
         auto& bark = m_world->GetComponent<BarkSoundComponent>(m_enemyEntity);
         bark.source = std::make_unique<SpatialAudioSource>();
-        bark.source->Initialize("Resources/Audio/enemy_bark.mp3", enemyPos);
+        bark.source->Initialize("Resources/audio/se/enemy_bark.mp3", enemyPos);
         bark.source->SetVolume(0.375f);
         bark.source->SetMaxDistance(35.0f);
         bark.source->SetMinDistance(1.0f);
@@ -322,7 +322,7 @@ void GamePlayScene::Initialize() {
 
             // Load orb model
             auto orbModel = engine->CreateAnim();
-            orbModel->LoadFromFile("Resources/Models/orb", "orbtest.gltf");
+            orbModel->LoadFromFile("Resources/models/orb", "orb.gltf");
             auto orbObj = engine->CreateObj3();
             orbObj->SetModel(static_cast<Model*>(orbModel.get()));
             orbObj->SetAnimatedModel(orbModel.get());
@@ -380,7 +380,7 @@ void GamePlayScene::Initialize() {
 
     // Fade sprite
     auto fadeSprite = std::make_unique<Sprite>();
-    fadeSprite->Initialize(spriteCommon_, "Resources/textures/white1x1.png");
+    fadeSprite->Initialize(spriteCommon_, "Resources/textures/common/white1x1.png");
     fadeSprite->SetPosition({0.0f, 0.0f});
     fadeSprite->SetSize({1280.0f, 720.0f});
     fadeSprite->setColor({0.0f, 0.0f, 0.0f, 0.0f});
@@ -489,7 +489,7 @@ void GamePlayScene::Initialize() {
     }
 
     // Orb collection audio
-    AudioManager::GetInstance()->LoadMP3("orbGet", "Resources/Audio/get.mp3");
+    AudioManager::GetInstance()->LoadMP3("orbGet", "Resources/audio/se/orb_collect.mp3");
     AudioManager::GetInstance()->SetVolume("orbGet", 0.125f);
 
     // Register all update systems

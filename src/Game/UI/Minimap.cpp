@@ -29,7 +29,7 @@ void Minimap::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager,
     spriteCommon_ = std::make_unique<SpriteCommon>();
     spriteCommon_->Initialize(dxCommon_);
 
-    const std::string whiteTex = "Resources/textures/white1x1.png";
+    const std::string whiteTex = "Resources/textures/common/white1x1.png";
 
     // Check if NavMesh map texture exists
     hasNavMeshMap_ = !mapTexturePath.empty() && std::filesystem::exists(mapTexturePath);

@@ -112,7 +112,7 @@ void FPSCamera::UpdateCameraShake(bool isMoving, bool isRunning, float deltaTime
 
     // 足音の読み込み（初回のみ）
     if (!footSoundLoaded_ && engine) {
-        engine->LoadAudio("footstep", "Resources/Audio/footsound.mp3");
+        engine->LoadAudio("footstep", "Resources/audio/se/player_footstep.mp3");
         footSoundLoaded_ = true;
     }
 

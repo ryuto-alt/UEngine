@@ -11,7 +11,7 @@ void SubtitleManager::Initialize(SpriteCommon* spriteCommon, BitmapFont* font) {
 
 	// 字幕背景の半透明帯
 	m_bgSprite = std::make_unique<Sprite>();
-	m_bgSprite->Initialize(m_spriteCommon, "Resources/textures/white1x1.png");
+	m_bgSprite->Initialize(m_spriteCommon, "Resources/textures/common/white1x1.png");
 }
 
 void SubtitleManager::SetSteps(std::vector<Step> steps) {

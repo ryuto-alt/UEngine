@@ -523,11 +523,6 @@ void TitleScene::Draw() {
         noiseSprite_->Draw();
     }
 
-    // タイトルテキスト（色収差: 赤→青→本体）
-    if (titleTextRedSprite_) titleTextRedSprite_->Draw();
-    if (titleTextBlueSprite_) titleTextBlueSprite_->Draw();
-    titleTextSprite_->Draw();
-
     // チェーン: TitleNoise → Horror(ビネット) → VHS → CRT → Backbuffer
     // ※ボタンはPostProcess外に描画済みなのでVHS復活OK
     if (vhsEffect_ && crtEffect_) {
@@ -544,8 +539,13 @@ void TitleScene::Draw() {
         vignetteEffect_->PostDraw();
     }
 
-    // ===== ポストプロセス外: メニューボタンをクリアな状態で描画 =====
+    // ===== ポストプロセス外: タイトルテキスト・メニューボタンをクリアな状態で描画 =====
     spriteCommon_->CommonDraw();
+
+    // タイトルテキスト（色収差: 赤→青→本体）
+    if (titleTextRedSprite_) titleTextRedSprite_->Draw();
+    if (titleTextBlueSprite_) titleTextBlueSprite_->Draw();
+    titleTextSprite_->Draw();
 
     // メニュー（色収差: 赤→青→本体）
     if (hazimeruRedSprite_) hazimeruRedSprite_->Draw();

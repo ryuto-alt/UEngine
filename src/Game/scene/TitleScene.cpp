@@ -45,16 +45,20 @@ void TitleScene::Initialize() {
     hazimeruSprite_ = std::make_unique<Sprite>();
     hazimeruSprite_->Initialize(spriteCommon_, "Resources/textures/title/btn_start.png");
     hazimeruOriginalSize_ = hazimeruSprite_->GetSize();
-    // Title_bg2の上部黒枠に配置
-    hazimeruSprite_->SetPosition({ 640.0f, 500.0f });
-    hazimeruSprite_->SetAnchorPoint({ 0.5f, 0.5f }); // 中心を基準に
+    hazimeruSprite_->SetPosition({ 640.0f, 480.0f });
+    hazimeruSprite_->SetAnchorPoint({ 0.5f, 0.5f });
+
+    setteiSprite_ = std::make_unique<Sprite>();
+    setteiSprite_->Initialize(spriteCommon_, "Resources/textures/title/btn_settings.png");
+    setteiOriginalSize_ = setteiSprite_->GetSize();
+    setteiSprite_->SetPosition({ 640.0f, 545.0f });
+    setteiSprite_->SetAnchorPoint({ 0.5f, 0.5f });
 
     owaruSprite_ = std::make_unique<Sprite>();
     owaruSprite_->Initialize(spriteCommon_, "Resources/textures/title/btn_quit.png");
     owaruOriginalSize_ = owaruSprite_->GetSize();
-    // Title_bg2の下部黒枠に配置
-    owaruSprite_->SetPosition({ 640.0f, 590.0f });
-    owaruSprite_->SetAnchorPoint({ 0.5f, 0.5f }); // 中心を基準に
+    owaruSprite_->SetPosition({ 640.0f, 610.0f });
+    owaruSprite_->SetAnchorPoint({ 0.5f, 0.5f });
 
     // 砂嵐スプライトの初期化（画面全体を覆う）
     noiseSprite_ = std::make_unique<Sprite>();
@@ -75,21 +79,31 @@ void TitleScene::Initialize() {
     // === 色収差スプライト（はじめる用） ===
     hazimeruRedSprite_ = std::make_unique<Sprite>();
     hazimeruRedSprite_->Initialize(spriteCommon_, "Resources/textures/title/btn_start.png");
-    hazimeruRedSprite_->SetPosition({640.0f, 500.0f});
+    hazimeruRedSprite_->SetPosition({640.0f, 480.0f});
     hazimeruRedSprite_->SetAnchorPoint({0.5f, 0.5f});
     hazimeruBlueSprite_ = std::make_unique<Sprite>();
     hazimeruBlueSprite_->Initialize(spriteCommon_, "Resources/textures/title/btn_start.png");
-    hazimeruBlueSprite_->SetPosition({640.0f, 500.0f});
+    hazimeruBlueSprite_->SetPosition({640.0f, 480.0f});
     hazimeruBlueSprite_->SetAnchorPoint({0.5f, 0.5f});
+
+    // === 色収差スプライト（設定用） ===
+    setteiRedSprite_ = std::make_unique<Sprite>();
+    setteiRedSprite_->Initialize(spriteCommon_, "Resources/textures/title/btn_settings.png");
+    setteiRedSprite_->SetPosition({640.0f, 545.0f});
+    setteiRedSprite_->SetAnchorPoint({0.5f, 0.5f});
+    setteiBlueSprite_ = std::make_unique<Sprite>();
+    setteiBlueSprite_->Initialize(spriteCommon_, "Resources/textures/title/btn_settings.png");
+    setteiBlueSprite_->SetPosition({640.0f, 545.0f});
+    setteiBlueSprite_->SetAnchorPoint({0.5f, 0.5f});
 
     // === 色収差スプライト（おわる用） ===
     owaruRedSprite_ = std::make_unique<Sprite>();
     owaruRedSprite_->Initialize(spriteCommon_, "Resources/textures/title/btn_quit.png");
-    owaruRedSprite_->SetPosition({640.0f, 590.0f});
+    owaruRedSprite_->SetPosition({640.0f, 610.0f});
     owaruRedSprite_->SetAnchorPoint({0.5f, 0.5f});
     owaruBlueSprite_ = std::make_unique<Sprite>();
     owaruBlueSprite_->Initialize(spriteCommon_, "Resources/textures/title/btn_quit.png");
-    owaruBlueSprite_->SetPosition({640.0f, 590.0f});
+    owaruBlueSprite_->SetPosition({640.0f, 610.0f});
     owaruBlueSprite_->SetAnchorPoint({0.5f, 0.5f});
 
     // 色収差アニメーション初期化
@@ -147,6 +161,15 @@ void TitleScene::Update() {
 
     float deltaTime = 1.0f / 60.0f;
 
+    // 設定メニューが開いている間はゲーム操作をスキップ
+    if (settingsMenu_ && settingsMenu_->IsOpen()) {
+        if (input_->TriggerKey(DIK_ESCAPE)) {
+            settingsMenu_->Close();
+        }
+        settingsMenu_->Update(deltaTime);
+        return;
+    }
+
     // ESCでゲーム終了
     if (input_->TriggerKey(DIK_ESCAPE)) {
         sceneManager_->RequestExit();
@@ -198,24 +221,28 @@ void TitleScene::Update() {
 
     // W/上矢印キーでメニュー選択を上に
     if (input_->TriggerKey(DIK_W) || input_->TriggerKey(DIK_UP)) {
-        currentSelection_ = MenuSelection::Start;
+        int sel = static_cast<int>(currentSelection_) - 1;
+        if (sel < 0) sel = 2;
+        currentSelection_ = static_cast<MenuSelection>(sel);
         keyPressed = true;
     }
     // S/下矢印キーでメニュー選択を下に
     if (input_->TriggerKey(DIK_S) || input_->TriggerKey(DIK_DOWN)) {
-        currentSelection_ = MenuSelection::Exit;
+        int sel = static_cast<int>(currentSelection_) + 1;
+        if (sel > 2) sel = 0;
+        currentSelection_ = static_cast<MenuSelection>(sel);
         keyPressed = true;
     }
 
     // マウスでホバー検知（キーが押されていない時のみ）
     bool hazimeruHovered = false;
+    bool setteiHovered = false;
     bool owaruHovered = false;
     if (!keyPressed) {
         POINT cursorPos;
         GetCursorPos(&cursorPos);
         HWND hwnd = FindWindowW(L"CG2WindowClass", nullptr);
         ScreenToClient(hwnd, &cursorPos);
-        // クライアント座標を論理座標(1280x720)にスケーリング
         RECT rc;
         GetClientRect(hwnd, &rc);
         float clientW = static_cast<float>(rc.right - rc.left);
@@ -225,20 +252,30 @@ void TitleScene::Update() {
             static_cast<float>(cursorPos.y) * (static_cast<float>(WinApp::kClientHeight) / clientH)
         };
 
-        // アンカーポイントを考慮した判定範囲を計算
+        // はじめる
         Vector2 hazimeruPos = hazimeruSprite_->GetPosition();
         Vector2 hazimeruMin = { hazimeruPos.x - hazimeruOriginalSize_.x * 0.5f, hazimeruPos.y - hazimeruOriginalSize_.y * 0.5f };
         Vector2 hazimeruMax = { hazimeruPos.x + hazimeruOriginalSize_.x * 0.5f, hazimeruPos.y + hazimeruOriginalSize_.y * 0.5f };
-
-        Vector2 owaruPos = owaruSprite_->GetPosition();
-        Vector2 owaruMin = { owaruPos.x - owaruOriginalSize_.x * 0.5f, owaruPos.y - owaruOriginalSize_.y * 0.5f };
-        Vector2 owaruMax = { owaruPos.x + owaruOriginalSize_.x * 0.5f, owaruPos.y + owaruOriginalSize_.y * 0.5f };
-
         if (mousePos.x >= hazimeruMin.x && mousePos.x <= hazimeruMax.x &&
             mousePos.y >= hazimeruMin.y && mousePos.y <= hazimeruMax.y) {
             hazimeruHovered = true;
             currentSelection_ = MenuSelection::Start;
         }
+
+        // 設定
+        Vector2 setteiPos = setteiSprite_->GetPosition();
+        Vector2 setteiMin = { setteiPos.x - setteiOriginalSize_.x * 0.5f, setteiPos.y - setteiOriginalSize_.y * 0.5f };
+        Vector2 setteiMax = { setteiPos.x + setteiOriginalSize_.x * 0.5f, setteiPos.y + setteiOriginalSize_.y * 0.5f };
+        if (mousePos.x >= setteiMin.x && mousePos.x <= setteiMax.x &&
+            mousePos.y >= setteiMin.y && mousePos.y <= setteiMax.y) {
+            setteiHovered = true;
+            currentSelection_ = MenuSelection::Settings;
+        }
+
+        // おわる
+        Vector2 owaruPos = owaruSprite_->GetPosition();
+        Vector2 owaruMin = { owaruPos.x - owaruOriginalSize_.x * 0.5f, owaruPos.y - owaruOriginalSize_.y * 0.5f };
+        Vector2 owaruMax = { owaruPos.x + owaruOriginalSize_.x * 0.5f, owaruPos.y + owaruOriginalSize_.y * 0.5f };
         if (mousePos.x >= owaruMin.x && mousePos.x <= owaruMax.x &&
             mousePos.y >= owaruMin.y && mousePos.y <= owaruMax.y) {
             owaruHovered = true;
@@ -289,18 +326,24 @@ void TitleScene::Update() {
     float selPosOffX = jitterX + menuGlitchBurstOffsetX_;
     float selPosOffY = jitterY + menuGlitchBurstOffsetY_;
 
-    if (currentSelection_ == MenuSelection::Start || hazimeruHovered) {
-        hazimeruSprite_->SetPosition({640.0f + selPosOffX, 500.0f + selPosOffY});
+    // 全ボタンをデフォルト（非選択）状態にリセット
+    hazimeruSprite_->SetPosition({640.0f, 480.0f});
+    hazimeruSprite_->setColor({0.5f, 0.5f, 0.5f, 1.0f});
+    setteiSprite_->SetPosition({640.0f, 545.0f});
+    setteiSprite_->setColor({0.5f, 0.5f, 0.5f, 1.0f});
+    owaruSprite_->SetPosition({640.0f, 610.0f});
+    owaruSprite_->setColor({0.5f, 0.5f, 0.5f, 1.0f});
+
+    // 選択中のボタンだけグリッチ適用
+    if (currentSelection_ == MenuSelection::Start) {
+        hazimeruSprite_->SetPosition({640.0f + selPosOffX, 480.0f + selPosOffY});
         hazimeruSprite_->setColor({brightness, brightness, brightness, 1.0f});
-
-        owaruSprite_->SetPosition({640.0f, 590.0f});
-        owaruSprite_->setColor({0.5f, 0.5f, 0.5f, 1.0f});
+    } else if (currentSelection_ == MenuSelection::Settings) {
+        setteiSprite_->SetPosition({640.0f + selPosOffX, 545.0f + selPosOffY});
+        setteiSprite_->setColor({brightness, brightness, brightness, 1.0f});
     } else {
-        owaruSprite_->SetPosition({640.0f + selPosOffX, 590.0f + selPosOffY});
+        owaruSprite_->SetPosition({640.0f + selPosOffX, 610.0f + selPosOffY});
         owaruSprite_->setColor({brightness, brightness, brightness, 1.0f});
-
-        hazimeruSprite_->SetPosition({640.0f, 500.0f});
-        hazimeruSprite_->setColor({0.5f, 0.5f, 0.5f, 1.0f});
     }
 
     // スプライトの更新
@@ -308,6 +351,7 @@ void TitleScene::Update() {
     titleBg2Sprite_->Update();
     titleTextSprite_->Update();
     hazimeruSprite_->Update();
+    setteiSprite_->Update();
     owaruSprite_->Update();
     noiseSprite_->Update();
 
@@ -353,32 +397,32 @@ void TitleScene::Update() {
     float menuOffX = totalOffsetX * menuChromaticMul;
     float menuOffY = totalOffsetY * menuChromaticMul;
 
+    // 全色収差スプライトを非表示にリセット
+    auto hideChromatic = [](Sprite* r, Sprite* b) {
+        r->setColor({0.0f, 0.0f, 0.0f, 0.0f}); r->Update();
+        b->setColor({0.0f, 0.0f, 0.0f, 0.0f}); b->Update();
+    };
+    hideChromatic(hazimeruRedSprite_.get(), hazimeruBlueSprite_.get());
+    hideChromatic(setteiRedSprite_.get(), setteiBlueSprite_.get());
+    hideChromatic(owaruRedSprite_.get(), owaruBlueSprite_.get());
+
+    // 選択中のボタンのみ色収差を適用
+    auto applyChromatic = [&](Sprite* r, Sprite* b, float bx, float by) {
+        r->SetPosition({bx - menuOffX, by + menuOffY});
+        r->setColor({1.0f, 0.0f, 0.0f, 0.6f}); r->Update();
+        b->SetPosition({bx + menuOffX, by - menuOffY});
+        b->setColor({0.0f, 0.0f, 1.0f, 0.6f}); b->Update();
+    };
+
     if (currentSelection_ == MenuSelection::Start) {
-        float bx = 640.0f + selPosOffX;
-        float by = 500.0f + selPosOffY;
-        hazimeruRedSprite_->SetPosition({bx - menuOffX, by + menuOffY});
-        hazimeruRedSprite_->setColor({1.0f, 0.0f, 0.0f, 0.6f});
-        hazimeruRedSprite_->Update();
-        hazimeruBlueSprite_->SetPosition({bx + menuOffX, by - menuOffY});
-        hazimeruBlueSprite_->setColor({0.0f, 0.0f, 1.0f, 0.6f});
-        hazimeruBlueSprite_->Update();
-        owaruRedSprite_->setColor({0.0f, 0.0f, 0.0f, 0.0f});
-        owaruRedSprite_->Update();
-        owaruBlueSprite_->setColor({0.0f, 0.0f, 0.0f, 0.0f});
-        owaruBlueSprite_->Update();
+        applyChromatic(hazimeruRedSprite_.get(), hazimeruBlueSprite_.get(),
+                        640.0f + selPosOffX, 480.0f + selPosOffY);
+    } else if (currentSelection_ == MenuSelection::Settings) {
+        applyChromatic(setteiRedSprite_.get(), setteiBlueSprite_.get(),
+                        640.0f + selPosOffX, 545.0f + selPosOffY);
     } else {
-        float bx = 640.0f + selPosOffX;
-        float by = 590.0f + selPosOffY;
-        owaruRedSprite_->SetPosition({bx - menuOffX, by + menuOffY});
-        owaruRedSprite_->setColor({1.0f, 0.0f, 0.0f, 0.6f});
-        owaruRedSprite_->Update();
-        owaruBlueSprite_->SetPosition({bx + menuOffX, by - menuOffY});
-        owaruBlueSprite_->setColor({0.0f, 0.0f, 1.0f, 0.6f});
-        owaruBlueSprite_->Update();
-        hazimeruRedSprite_->setColor({0.0f, 0.0f, 0.0f, 0.0f});
-        hazimeruRedSprite_->Update();
-        hazimeruBlueSprite_->setColor({0.0f, 0.0f, 0.0f, 0.0f});
-        hazimeruBlueSprite_->Update();
+        applyChromatic(owaruRedSprite_.get(), owaruBlueSprite_.get(),
+                        640.0f + selPosOffX, 610.0f + selPosOffY);
     }
 
     // ノイズエフェクトのパラメータ更新
@@ -431,15 +475,15 @@ void TitleScene::Update() {
     }
 
     // マウスクリックで決定
-    DIMOUSESTATE mouseState;
-    if (SUCCEEDED(input_->GetMouseState(&mouseState))) {
-        if (mouseState.rgbButtons[0] & 0x80) {
-            if (hazimeruHovered) {
-                fadingOut_ = true;
-            }
-            if (owaruHovered) {
-                sceneManager_->RequestExit();
-            }
+    if (input_->IsMouseButtonTriggered(0)) {
+        if (hazimeruHovered) {
+            fadingOut_ = true;
+        }
+        if (setteiHovered && settingsMenu_) {
+            settingsMenu_->Open();
+        }
+        if (owaruHovered) {
+            sceneManager_->RequestExit();
         }
     }
 
@@ -447,6 +491,8 @@ void TitleScene::Update() {
     if (input_->TriggerKey(DIK_SPACE) || input_->TriggerKey(DIK_RETURN)) {
         if (currentSelection_ == MenuSelection::Start) {
             fadingOut_ = true;
+        } else if (currentSelection_ == MenuSelection::Settings) {
+            if (settingsMenu_) settingsMenu_->Open();
         } else {
             sceneManager_->RequestExit();
         }
@@ -473,29 +519,32 @@ void TitleScene::Draw() {
     if (titleTextBlueSprite_) titleTextBlueSprite_->Draw();
     titleTextSprite_->Draw();
 
+    // チェーン: TitleNoise → Horror(ビネット) → CRT → Backbuffer
+    // ※VHSノイズはメニューが見づらくなるためスキップ
+    if (crtEffect_) {
+        noiseEffect_->PostDrawTo(vignetteEffect_.get());
+        vignetteEffect_->PostDrawTo(crtEffect_.get());
+        crtEffect_->PostDraw();
+    } else {
+        noiseEffect_->PostDrawTo(vignetteEffect_.get());
+        vignetteEffect_->PostDraw();
+    }
+
+    // ===== ポストプロセス外: メニューボタンをクリアな状態で描画 =====
+    spriteCommon_->CommonDraw();
+
     // メニュー（色収差: 赤→青→本体）
     if (hazimeruRedSprite_) hazimeruRedSprite_->Draw();
     if (hazimeruBlueSprite_) hazimeruBlueSprite_->Draw();
     hazimeruSprite_->Draw();
 
+    if (setteiRedSprite_) setteiRedSprite_->Draw();
+    if (setteiBlueSprite_) setteiBlueSprite_->Draw();
+    if (setteiSprite_) setteiSprite_->Draw();
+
     if (owaruRedSprite_) owaruRedSprite_->Draw();
     if (owaruBlueSprite_) owaruBlueSprite_->Draw();
     owaruSprite_->Draw();
-
-    // チェーン: TitleNoise → Horror(ビネット) → VHS → CRT → Backbuffer
-    if (vhsEffect_ && crtEffect_) {
-        noiseEffect_->PostDrawTo(vignetteEffect_.get());
-        vignetteEffect_->PostDrawTo(vhsEffect_.get());
-        vhsEffect_->PostDrawTo(crtEffect_.get());
-        crtEffect_->PostDraw();
-    } else if (vhsEffect_) {
-        noiseEffect_->PostDrawTo(vignetteEffect_.get());
-        vignetteEffect_->PostDrawTo(vhsEffect_.get());
-        vhsEffect_->PostDraw();
-    } else {
-        noiseEffect_->PostDrawTo(vignetteEffect_.get());
-        vignetteEffect_->PostDraw();
-    }
 
     // フェードアウト描画（ポストプロセス外）
     if (fadingOut_ && fadeAlpha_ > 0.0f) {
@@ -538,6 +587,9 @@ void TitleScene::Finalize() {
     if (hazimeruSprite_) {
         hazimeruSprite_.reset();
     }
+    if (setteiSprite_) {
+        setteiSprite_.reset();
+    }
     if (owaruSprite_) {
         owaruSprite_.reset();
     }
@@ -553,6 +605,8 @@ void TitleScene::Finalize() {
     titleTextBlueSprite_.reset();
     hazimeruRedSprite_.reset();
     hazimeruBlueSprite_.reset();
+    setteiRedSprite_.reset();
+    setteiBlueSprite_.reset();
     owaruRedSprite_.reset();
     owaruBlueSprite_.reset();
 

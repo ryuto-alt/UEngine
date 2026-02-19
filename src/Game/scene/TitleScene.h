@@ -40,6 +40,12 @@ private:
     std::unique_ptr<Sprite> owaruRedSprite_;
     std::unique_ptr<Sprite> owaruBlueSprite_;
 
+    // 設定ボタン
+    std::unique_ptr<Sprite> setteiSprite_;
+    std::unique_ptr<Sprite> setteiRedSprite_;
+    std::unique_ptr<Sprite> setteiBlueSprite_;
+    Vector2 setteiOriginalSize_;
+
     // 色収差アニメーション
     float chromaticTimer_ = 0.0f;
     float glitchCooldown_ = 0.0f;
@@ -49,8 +55,9 @@ private:
 
     // メニュー選択
     enum class MenuSelection {
-        Start = 0,  // はじめる
-        Exit = 1    // おわる
+        Start = 0,     // はじめる
+        Settings = 1,  // 設定
+        Exit = 2       // おわる
     };
     MenuSelection currentSelection_ = MenuSelection::Start;
     bool CheckMouseHover(const Vector2& mousePos, const Vector2& spritePos, const Vector2& spriteSize);

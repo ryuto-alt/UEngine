@@ -35,7 +35,7 @@ private:
     float fadeAlpha_ = 1.0f;
     float bgmVolume_ = 0.0f;
 
-    static constexpr float kScrollSpeed = 30.0f;
+    static constexpr float kScrollSpeed = 20.0f;
     static constexpr float kTextHeight = 3000.0f;
     static constexpr float kStartY = 720.0f;
     static constexpr float kEndY = -kTextHeight;

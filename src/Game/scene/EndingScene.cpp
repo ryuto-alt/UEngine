@@ -198,30 +198,31 @@ void EndingScene::Update() {
 }
 
 void EndingScene::Draw() {
+    // 背景・朝画像のみVHS+CRT適用（テキストはノイズなしで描画するため除外）
     vhsEffect_->PreDraw();
-
     spriteCommon_->CommonDraw();
     bgSprite_->Draw();
-
     bool asaVisible = (phase_ == Phase::AsaFadeIn || phase_ == Phase::Scrolling || phase_ == Phase::FadeOut);
     if (asaVisible) {
         asaSprite_->Draw();
     }
-
-    if (phase_ == Phase::Scrolling || phase_ == Phase::FadeOut) {
-        textSprite_->Draw();
-    }
-
-    if (fadeAlpha_ > 0.0f) {
-        spriteCommon_->CommonDraw();
-        fadeSprite_->Draw();
-    }
-
     if (crtEffect_) {
         vhsEffect_->PostDrawTo(crtEffect_.get());
         crtEffect_->PostDraw();
     } else {
         vhsEffect_->PostDraw();
+    }
+
+    // テキストはPostProcess外（ノイズなし、読みやすく）
+    if (phase_ == Phase::Scrolling || phase_ == Phase::FadeOut) {
+        spriteCommon_->CommonDraw();
+        textSprite_->Draw();
+    }
+
+    // フェードオーバーレイ（最前面）
+    if (fadeAlpha_ > 0.0f) {
+        spriteCommon_->CommonDraw();
+        fadeSprite_->Draw();
     }
 
     // 設定メニュー描画（最前面）

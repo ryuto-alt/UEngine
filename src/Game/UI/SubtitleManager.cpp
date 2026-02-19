@@ -113,11 +113,13 @@ void SubtitleManager::Draw() {
 		float textX = (screenW - textWidth) * 0.5f;
 		float textY = screenH - bottomMargin - textHeight;
 
-		// 背景帯
+		// 背景帯（4:3コンテンツ幅960pxに合わせて中央配置）
+		constexpr float kBgW = 960.0f;
+		constexpr float kBgX = (1280.0f - kBgW) * 0.5f; // 160px
 		if (m_bgSprite && m_spriteCommon) {
 			m_spriteCommon->CommonDraw();
-			m_bgSprite->SetPosition({0.0f, textY - bgPadding});
-			m_bgSprite->SetSize({screenW, textHeight + bgPadding * 2.0f});
+			m_bgSprite->SetPosition({kBgX, textY - bgPadding});
+			m_bgSprite->SetSize({kBgW, textHeight + bgPadding * 2.0f});
 			m_bgSprite->setColor({0.0f, 0.0f, 0.0f, 0.6f});
 			m_bgSprite->Update();
 			m_bgSprite->Draw();

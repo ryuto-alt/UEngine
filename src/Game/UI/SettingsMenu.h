@@ -87,7 +87,8 @@ private:
     static constexpr float PANEL_W = 700.0f;
     static constexpr float PANEL_H = 630.0f;
 
-    static constexpr float SLIDER_X = 340.0f;
+    // パネル中央(640)を基準に16:9で整合した配置
+    static constexpr float SLIDER_X = 440.0f;  // PANEL_X + (PANEL_W - SLIDER_W) / 2
     static constexpr float SLIDER_W = 400.0f;
     static constexpr float SLIDER_H = 8.0f;
     static constexpr float KNOB_SIZE = 24.0f;
@@ -98,8 +99,8 @@ private:
     static constexpr float BUTTON_W = 180.0f;
     static constexpr float BUTTON_H = 44.0f;
     static constexpr float BUTTON_Y = 490.0f;
-    static constexpr float BUTTON1_X = 400.0f;
-    static constexpr float BUTTON2_X = 620.0f;
+    static constexpr float BUTTON1_X = 440.0f;  // 640 - (400 / 2)
+    static constexpr float BUTTON2_X = 660.0f;  // BUTTON1_X + BUTTON_W + 40
 
     // Exit button (centered with window mode button group)
     static constexpr float EXIT_BUTTON_X = (BUTTON1_X + BUTTON2_X + BUTTON_W) * 0.5f - BUTTON_W * 0.5f;

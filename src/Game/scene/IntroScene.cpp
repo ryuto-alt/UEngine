@@ -179,22 +179,22 @@ void IntroScene::Update() {
 }
 
 void IntroScene::Draw() {
-    // Pass 1: Scene content -> VHS RT
+    // 背景のみVHS+CRT適用（テキストはノイズなしで描画するため除外）
     vignetteEffect_->PreDraw();
-
     spriteCommon_->CommonDraw();
     bgSprite_->Draw();
+    vignetteEffect_->PostDrawTo(crtEffect_.get());
+    crtEffect_->PostDraw();
+
+    // テキストはPostProcess外（ノイズなし、読みやすく）
+    spriteCommon_->CommonDraw();
     textSprite_->Draw();
 
+    // フェードオーバーレイ（最前面）
     if (fadeAlpha_ > 0.0f) {
         spriteCommon_->CommonDraw();
         fadeSprite_->Draw();
     }
-
-    // Pass 2: VHS RT -> CRT RT (apply VHS shader)
-    vignetteEffect_->PostDrawTo(crtEffect_.get());
-    // Pass 3: CRT RT -> backbuffer (apply CRT shader)
-    crtEffect_->PostDraw();
 
     // 設定メニュー描画（最前面）
     if (settingsMenu_ && settingsMenu_->IsOpen()) {

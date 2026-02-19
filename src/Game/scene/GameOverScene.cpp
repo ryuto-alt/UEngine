@@ -21,6 +21,10 @@ void GameOverScene::Initialize() {
     // VHSエフェクトの初期化
     vhsEffect_ = std::make_unique<PostProcess>();
     vhsEffect_->Initialize(dxCommon_, srvManager_, PostProcess::EffectType::VHS);
+
+    // CRTブラウン管エフェクトの初期化
+    crtEffect_ = std::make_unique<PostProcess>();
+    crtEffect_->Initialize(dxCommon_, srvManager_, PostProcess::EffectType::CRT);
     vhsEffect_->SetVHSParams(
         0.0f,   // time
         0.15f,  // scanlineIntensity
@@ -143,6 +147,7 @@ void GameOverScene::Update() {
             if (prevW != 0) {
                 if (horrorEffect_) horrorEffect_->ResizeRenderTarget();
                 if (vhsEffect_) vhsEffect_->ResizeRenderTarget();
+                if (crtEffect_) crtEffect_->ResizeRenderTarget();
             }
             prevW = curW;
             prevH = curH;
@@ -203,6 +208,13 @@ void GameOverScene::Update() {
             0.7f,   // sharpness
             0.3f    // tapeCrease
         );
+    }
+
+    // CRTブラウン管エフェクトのパラメータ更新
+    if (crtEffect_) {
+        float aspect = static_cast<float>(dxCommon_->GetCurrentWindowWidth())
+                     / static_cast<float>(dxCommon_->GetCurrentWindowHeight());
+        crtEffect_->SetCRTParams(0.06f, 0.08f, 0.30f, 0.008f, aspect, 4.0f / 3.0f);
     }
 
     // === 色収差アニメーション ===
@@ -433,8 +445,12 @@ void GameOverScene::Draw() {
     // 5. セレクター矢印
     if (selectorSprite_) selectorSprite_->Draw();
 
-    // ホラー→VHSチェーン描画
-    if (horrorEffect_ && vhsEffect_) {
+    // ホラー→VHS→CRTチェーン描画
+    if (horrorEffect_ && vhsEffect_ && crtEffect_) {
+        horrorEffect_->PostDrawTo(vhsEffect_.get());
+        vhsEffect_->PostDrawTo(crtEffect_.get());
+        crtEffect_->PostDraw();
+    } else if (horrorEffect_ && vhsEffect_) {
         horrorEffect_->PostDrawTo(vhsEffect_.get());
         vhsEffect_->PostDraw();
     } else if (horrorEffect_) {
@@ -456,6 +472,10 @@ void GameOverScene::Finalize() {
     if (vhsEffect_) {
         vhsEffect_->Finalize();
         vhsEffect_.reset();
+    }
+    if (crtEffect_) {
+        crtEffect_->Finalize();
+        crtEffect_.reset();
     }
 
     backgroundSprite_.reset();

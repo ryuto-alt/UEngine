@@ -20,6 +20,7 @@ private:
     std::unique_ptr<Sprite> creditTextSprite_;
     std::unique_ptr<Sprite> fadeSprite_;
     std::unique_ptr<PostProcess> vignetteEffect_;
+    std::unique_ptr<PostProcess> crtEffect_;
 
     float scrollY_ = 0.0f;
     float timer_ = 0.0f;

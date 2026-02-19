@@ -25,6 +25,10 @@ void TitleScene::Initialize() {
     vhsEffect_->Initialize(dxCommon_, srvManager_, PostProcess::EffectType::VHS);
     vhsEffect_->SetVHSParams(0.0f, 0.12f, 0.0f, 0.2f, 0.8f, 0.3f, 0.8f, 0.2f);
 
+    // CRTブラウン管エフェクト（4パス目: 4:3アスペクト比）
+    crtEffect_ = std::make_unique<PostProcess>();
+    crtEffect_->Initialize(dxCommon_, srvManager_, PostProcess::EffectType::CRT);
+
     // タイトルスプライトの初期化（通常の色で）
     titleBgSprite_ = std::make_unique<Sprite>();
     titleBgSprite_->Initialize(spriteCommon_, "Resources/textures/Title/Title_bg.png");
@@ -134,6 +138,7 @@ void TitleScene::Update() {
                 if (noiseEffect_) noiseEffect_->ResizeRenderTarget();
                 if (vignetteEffect_) vignetteEffect_->ResizeRenderTarget();
                 if (vhsEffect_) vhsEffect_->ResizeRenderTarget();
+                if (crtEffect_) crtEffect_->ResizeRenderTarget();
             }
             prevW = curW;
             prevH = curH;
@@ -397,6 +402,13 @@ void TitleScene::Update() {
         vhsEffect_->SetVHSParams(time_, 0.12f, 0.0f, 0.2f, 0.8f, 0.3f, 0.8f, 0.2f);
     }
 
+    // CRTブラウン管エフェクトのパラメータ更新
+    if (crtEffect_) {
+        float aspect = static_cast<float>(dxCommon_->GetCurrentWindowWidth())
+                     / static_cast<float>(dxCommon_->GetCurrentWindowHeight());
+        crtEffect_->SetCRTParams(0.06f, 0.08f, 0.30f, 0.008f, aspect, 4.0f / 3.0f);
+    }
+
     // フェードアウト中は入力を無視
     if (fadingOut_) {
         constexpr float kDeltaTime = 1.0f / 60.0f;
@@ -470,8 +482,13 @@ void TitleScene::Draw() {
     if (owaruBlueSprite_) owaruBlueSprite_->Draw();
     owaruSprite_->Draw();
 
-    // チェーン: TitleNoise → Horror(ビネット) → VHS → Backbuffer
-    if (vhsEffect_) {
+    // チェーン: TitleNoise → Horror(ビネット) → VHS → CRT → Backbuffer
+    if (vhsEffect_ && crtEffect_) {
+        noiseEffect_->PostDrawTo(vignetteEffect_.get());
+        vignetteEffect_->PostDrawTo(vhsEffect_.get());
+        vhsEffect_->PostDrawTo(crtEffect_.get());
+        crtEffect_->PostDraw();
+    } else if (vhsEffect_) {
         noiseEffect_->PostDrawTo(vignetteEffect_.get());
         vignetteEffect_->PostDrawTo(vhsEffect_.get());
         vhsEffect_->PostDraw();
@@ -553,6 +570,11 @@ void TitleScene::Finalize() {
         OutputDebugStringA("  Finalizing vhsEffect_\n");
         vhsEffect_->Finalize();
         vhsEffect_.reset();
+    }
+    if (crtEffect_) {
+        OutputDebugStringA("  Finalizing crtEffect_\n");
+        crtEffect_->Finalize();
+        crtEffect_.reset();
     }
 
     OutputDebugStringA("TitleScene::Finalize() completed\n");

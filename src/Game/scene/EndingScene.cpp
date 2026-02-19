@@ -8,6 +8,9 @@ void EndingScene::Initialize() {
     vhsEffect_ = std::make_unique<PostProcess>();
     vhsEffect_->Initialize(dxCommon_, srvManager_, PostProcess::EffectType::VHS);
 
+    crtEffect_ = std::make_unique<PostProcess>();
+    crtEffect_->Initialize(dxCommon_, srvManager_, PostProcess::EffectType::CRT);
+
     // Black background
     bgSprite_ = std::make_unique<Sprite>();
     bgSprite_->Initialize(spriteCommon_, "Resources/textures/common/white1x1.png");
@@ -67,8 +70,9 @@ void EndingScene::Update() {
         uint32_t curW = dxCommon_->GetCurrentWindowWidth();
         uint32_t curH = dxCommon_->GetCurrentWindowHeight();
         if (prevW != curW || prevH != curH) {
-            if (prevW != 0 && vhsEffect_) {
-                vhsEffect_->ResizeRenderTarget();
+            if (prevW != 0) {
+                if (vhsEffect_) vhsEffect_->ResizeRenderTarget();
+                if (crtEffect_) crtEffect_->ResizeRenderTarget();
             }
             prevW = curW;
             prevH = curH;
@@ -184,6 +188,13 @@ void EndingScene::Update() {
             0.08f, 0.0f, 0.1f, 0.3f, 0.15f, 0.7f, 0.05f
         );
     }
+
+    // CRTブラウン管エフェクトのパラメータ更新
+    if (crtEffect_) {
+        float aspect = static_cast<float>(dxCommon_->GetCurrentWindowWidth())
+                     / static_cast<float>(dxCommon_->GetCurrentWindowHeight());
+        crtEffect_->SetCRTParams(0.06f, 0.08f, 0.30f, 0.008f, aspect, 4.0f / 3.0f);
+    }
 }
 
 void EndingScene::Draw() {
@@ -206,7 +217,12 @@ void EndingScene::Draw() {
         fadeSprite_->Draw();
     }
 
-    vhsEffect_->PostDraw();
+    if (crtEffect_) {
+        vhsEffect_->PostDrawTo(crtEffect_.get());
+        crtEffect_->PostDraw();
+    } else {
+        vhsEffect_->PostDraw();
+    }
 
     // 設定メニュー描画（最前面）
     if (settingsMenu_ && settingsMenu_->IsOpen()) {
@@ -228,5 +244,9 @@ void EndingScene::Finalize() {
     if (vhsEffect_) {
         vhsEffect_->Finalize();
         vhsEffect_.reset();
+    }
+    if (crtEffect_) {
+        crtEffect_->Finalize();
+        crtEffect_.reset();
     }
 }

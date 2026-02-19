@@ -21,6 +21,7 @@ private:
     std::unique_ptr<Sprite> textSprite_;
     std::unique_ptr<Sprite> fadeSprite_;
     std::unique_ptr<PostProcess> vhsEffect_;
+    std::unique_ptr<PostProcess> crtEffect_;
 
     float scrollY_ = 0.0f;
     float timer_ = 0.0f;

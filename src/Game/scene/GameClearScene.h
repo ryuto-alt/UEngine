@@ -1,6 +1,7 @@
 #pragma once
 #include "IScene.h"
 #include "Sprite.h"
+#include "PostProcess.h"
 #include "../UI/SettingsMenu.h"
 #include <memory>
 #include <vector>
@@ -41,6 +42,9 @@ private:
 
     void InitializeCredits();
     void DrawCredits();
+
+    std::unique_ptr<PostProcess> crtEffect_;
+    float crtTimer_ = 0.0f;
 
     // 設定メニュー
     std::unique_ptr<SettingsMenu> settingsMenu_;

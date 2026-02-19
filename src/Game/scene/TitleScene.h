@@ -25,6 +25,7 @@ private:
     std::unique_ptr<PostProcess> noiseEffect_;
     std::unique_ptr<PostProcess> vignetteEffect_;
     std::unique_ptr<PostProcess> vhsEffect_;
+    std::unique_ptr<PostProcess> crtEffect_;
     float time_ = 0.0f;
 
     // 色収差スプライト（タイトルテキスト用）

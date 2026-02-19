@@ -46,6 +46,11 @@ void LogoScene::Initialize() {
     fadeState_ = FadeState::Wait;
     soundPlayed_ = false;
 
+    // CRTブラウン管エフェクトの初期化
+    crtEffect_ = std::make_unique<PostProcess>();
+    crtEffect_->Initialize(dxCommon_, srvManager_, PostProcess::EffectType::CRT);
+    crtTimer_ = 0.0f;
+
     // 設定メニューの初期化
     settingsMenu_ = std::make_unique<SettingsMenu>();
     settingsMenu_->Initialize(spriteCommon_, input_);
@@ -57,6 +62,26 @@ void LogoScene::Update() {
     camera_->Update();
 
     float deltaTime = 1.0f / 60.0f;
+    crtTimer_ += deltaTime;
+
+    // PostProcess resize on window size change
+    {
+        static uint32_t prevW = 0, prevH = 0;
+        uint32_t curW = dxCommon_->GetCurrentWindowWidth();
+        uint32_t curH = dxCommon_->GetCurrentWindowHeight();
+        if (prevW != curW || prevH != curH) {
+            if (prevW != 0 && crtEffect_) crtEffect_->ResizeRenderTarget();
+            prevW = curW;
+            prevH = curH;
+        }
+    }
+
+    // CRTブラウン管エフェクトのパラメータ更新
+    if (crtEffect_) {
+        float aspect = static_cast<float>(dxCommon_->GetCurrentWindowWidth())
+                     / static_cast<float>(dxCommon_->GetCurrentWindowHeight());
+        crtEffect_->SetCRTParams(0.06f, 0.08f, 0.30f, 0.008f, aspect, 4.0f / 3.0f);
+    }
 
     // ESC key: toggle settings menu
     if (input_->TriggerKey(DIK_ESCAPE) && settingsMenu_) {
@@ -190,6 +215,8 @@ void LogoScene::Update() {
 }
 
 void LogoScene::Draw() {
+    if (crtEffect_) crtEffect_->PreDraw();
+
     // スプライト共通描画設定
     spriteCommon_->CommonDraw();
 
@@ -207,6 +234,8 @@ void LogoScene::Draw() {
         warningSprite_->Draw();
     }
 
+    if (crtEffect_) crtEffect_->PostDraw();
+
     // 設定メニュー描画（最前面）
     if (settingsMenu_ && settingsMenu_->IsOpen()) {
         settingsMenu_->Draw();
@@ -215,6 +244,11 @@ void LogoScene::Draw() {
 
 void LogoScene::Finalize() {
     settingsMenu_.reset();
+
+    if (crtEffect_) {
+        crtEffect_->Finalize();
+        crtEffect_.reset();
+    }
 
     // ロゴサウンドの停止
     AudioManager::GetInstance()->Stop("logoSound");

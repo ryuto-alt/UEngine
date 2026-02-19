@@ -43,6 +43,7 @@ private:
     // ポストプロセスエフェクト
     std::unique_ptr<PostProcess> horrorEffect_;
     std::unique_ptr<PostProcess> vhsEffect_;
+    std::unique_ptr<PostProcess> crtEffect_;
     float time_ = 0.0f;
 
     // 色収差アニメーション

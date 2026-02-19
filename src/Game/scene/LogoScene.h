@@ -1,6 +1,7 @@
 #pragma once
 #include "IScene.h"
 #include "Sprite.h"
+#include "PostProcess.h"
 #include "../UI/SettingsMenu.h"
 #include <memory>
 
@@ -43,6 +44,9 @@ private:
     const float kWarningDisplayDuration = 5.0f;    // 警告表示時間
 
     bool soundPlayed_ = false;  // サウンド再生フラグ
+
+    std::unique_ptr<PostProcess> crtEffect_;
+    float crtTimer_ = 0.0f;
 
     // 設定メニュー
     std::unique_ptr<SettingsMenu> settingsMenu_;

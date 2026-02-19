@@ -370,6 +370,14 @@ void GamePlayScene::Initialize() {
         ppChain.horrorEffect = std::move(horrorEffect);
         ppChain.fisheyeStrength = fisheyeStrength;
         ppChain.fisheyeRadius = fisheyeRadius;
+
+        // CRTブラウン管エフェクト（4:3アスペクト比）
+        auto crtEffect = std::make_unique<PostProcess>();
+        crtEffect->Initialize(dxCommon_, srvManager_, PostProcess::EffectType::CRT);
+        float aspect = static_cast<float>(dxCommon_->GetCurrentWindowWidth())
+                     / static_cast<float>(dxCommon_->GetCurrentWindowHeight());
+        crtEffect->SetCRTParams(0.06f, 0.08f, 0.30f, 0.008f, aspect, 4.0f / 3.0f);
+        ppChain.crtEffect = std::move(crtEffect);
     }
 
     // Minimap
@@ -498,6 +506,12 @@ void GamePlayScene::Initialize() {
     // Create render systems (called separately in Draw)
     m_renderSystem = std::make_unique<ECS::RenderSystem>();
     m_uiRenderSystem = std::make_unique<ECS::UIRenderSystem>();
+
+    // ゲームシーン開始時にマウスカーソルを非表示・中央固定
+    if (input_) {
+        input_->SetMouseCursor(false);
+        input_->ResetMouseCenter();
+    }
 }
 
 void GamePlayScene::RegisterSystems() {
@@ -660,12 +674,26 @@ void GamePlayScene::Update() {
                     [](ECS::Entity entity, PostProcessChainComponent& pp) {
                         if (pp.psxEffect) pp.psxEffect->ResizeRenderTarget();
                         if (pp.horrorEffect) pp.horrorEffect->ResizeRenderTarget();
+                        if (pp.crtEffect) pp.crtEffect->ResizeRenderTarget();
                     }
                 );
             }
             prevWidth = curWidth;
             prevHeight = curHeight;
         }
+    }
+
+    // CRTエフェクトのパラメータを毎フレーム更新
+    {
+        float aspect = static_cast<float>(dxCommon_->GetCurrentWindowWidth())
+                     / static_cast<float>(dxCommon_->GetCurrentWindowHeight());
+        m_world->ForEach<PostProcessChainComponent>(
+            [aspect](ECS::Entity entity, PostProcessChainComponent& pp) {
+                if (pp.crtEffect) {
+                    pp.crtEffect->SetCRTParams(0.06f, 0.08f, 0.30f, 0.008f, aspect, 4.0f / 3.0f);
+                }
+            }
+        );
     }
 
     // All game logic via ECS
@@ -819,6 +847,11 @@ void GamePlayScene::Draw() {
 }
 
 void GamePlayScene::Finalize() {
+    // ゲームシーン終了時にマウスカーソルを復元
+    if (input_) {
+        input_->SetMouseCursor(true);
+    }
+
     UnoEngine* engine = UnoEngine::GetInstance();
 
     // Stop BGM

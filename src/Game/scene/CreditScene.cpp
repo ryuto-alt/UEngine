@@ -8,6 +8,9 @@ void CreditScene::Initialize() {
     vignetteEffect_ = std::make_unique<PostProcess>();
     vignetteEffect_->Initialize(dxCommon_, srvManager_, PostProcess::EffectType::Horror);
 
+    crtEffect_ = std::make_unique<PostProcess>();
+    crtEffect_->Initialize(dxCommon_, srvManager_, PostProcess::EffectType::CRT);
+
     // Black background
     bgSprite_ = std::make_unique<Sprite>();
     bgSprite_->Initialize(spriteCommon_, "Resources/textures/common/white1x1.png");
@@ -51,8 +54,9 @@ void CreditScene::Update() {
         uint32_t curW = dxCommon_->GetCurrentWindowWidth();
         uint32_t curH = dxCommon_->GetCurrentWindowHeight();
         if (prevW != curW || prevH != curH) {
-            if (prevW != 0 && vignetteEffect_) {
-                vignetteEffect_->ResizeRenderTarget();
+            if (prevW != 0) {
+                if (vignetteEffect_) vignetteEffect_->ResizeRenderTarget();
+                if (crtEffect_) crtEffect_->ResizeRenderTarget();
             }
             prevW = curW;
             prevH = curH;
@@ -121,6 +125,13 @@ void CreditScene::Update() {
 
     // Vignette effect only (no noise, no distortion, no blood)
     vignetteEffect_->SetHorrorParams(timer_, 0.0f, 0.0f, 0.0f, 0.8f);
+
+    // CRTブラウン管エフェクトのパラメータ更新
+    if (crtEffect_) {
+        float aspect = static_cast<float>(dxCommon_->GetCurrentWindowWidth())
+                     / static_cast<float>(dxCommon_->GetCurrentWindowHeight());
+        crtEffect_->SetCRTParams(0.06f, 0.08f, 0.30f, 0.008f, aspect, 4.0f / 3.0f);
+    }
 }
 
 void CreditScene::Draw() {
@@ -136,7 +147,12 @@ void CreditScene::Draw() {
         fadeSprite_->Draw();
     }
 
-    vignetteEffect_->PostDraw();
+    if (crtEffect_) {
+        vignetteEffect_->PostDrawTo(crtEffect_.get());
+        crtEffect_->PostDraw();
+    } else {
+        vignetteEffect_->PostDraw();
+    }
 }
 
 void CreditScene::Finalize() {
@@ -149,5 +165,9 @@ void CreditScene::Finalize() {
     if (vignetteEffect_) {
         vignetteEffect_->Finalize();
         vignetteEffect_.reset();
+    }
+    if (crtEffect_) {
+        crtEffect_->Finalize();
+        crtEffect_.reset();
     }
 }

@@ -218,13 +218,17 @@ void RenderSystem::Update(World& world, float deltaTime) {
     );
 #endif
 
-    // Post-process chain: PSX → Horror → Backbuffer
+    // Post-process chain: PSX → Horror → CRT → Backbuffer
     if (ppChain) {
-        if (ppChain->psxEffect && ppChain->horrorEffect) {
-            if (ppChain->horrorEffect) {
-                ppChain->horrorEffect->SetFisheyeStrength(ppChain->fisheyeStrength);
-                ppChain->horrorEffect->SetFisheyeRadius(ppChain->fisheyeRadius);
-            }
+        if (ppChain->psxEffect && ppChain->horrorEffect && ppChain->crtEffect) {
+            ppChain->horrorEffect->SetFisheyeStrength(ppChain->fisheyeStrength);
+            ppChain->horrorEffect->SetFisheyeRadius(ppChain->fisheyeRadius);
+            ppChain->psxEffect->PostDrawTo(ppChain->horrorEffect.get());
+            ppChain->horrorEffect->PostDrawTo(ppChain->crtEffect.get());
+            ppChain->crtEffect->PostDraw();
+        } else if (ppChain->psxEffect && ppChain->horrorEffect) {
+            ppChain->horrorEffect->SetFisheyeStrength(ppChain->fisheyeStrength);
+            ppChain->horrorEffect->SetFisheyeRadius(ppChain->fisheyeRadius);
             ppChain->psxEffect->PostDrawTo(ppChain->horrorEffect.get());
             ppChain->horrorEffect->PostDraw();
         } else if (ppChain->psxEffect) {

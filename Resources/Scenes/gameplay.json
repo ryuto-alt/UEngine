@@ -25,7 +25,7 @@
       "name": "stagebgm",
       "path": "Resources/audio/bgm/stage.mp3",
       "loop": true,
-      "volume": 0.025
+      "volume": 0.0375
     }
   },
   "player": {

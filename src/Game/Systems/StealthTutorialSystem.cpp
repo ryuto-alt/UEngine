@@ -79,10 +79,10 @@ void StealthTutorialSystem::Update(World& world, float deltaTime) {
 
                 // Start subtitle sequence
                 subtitle.subtitleManager->SetSteps({
-                    {L"おかしい...さっきから足音が聞こえない...", 2.5f, 0.06f},
-                    {L"奴の気配がまるでしない...", 2.0f, 0.06f},
-                    {L"嫌な予感がする", 2.0f, 0.06f},
-                    {L"早くオーブを集めて夢から出よう", 2.0f, 0.06f},
+                    {L"……静かだ。足音が聞こえない。", 2.5f, 0.06f},
+                    {L"奴の気配が──消えた？", 2.0f, 0.06f},
+                    {L"……嫌な予感がする。急がないと。", 2.5f, 0.06f},
+                    {L"早く光を集めて──この夢から抜け出すんだ。", 2.5f, 0.06f},
                 });
                 subtitle.subtitleManager->Start();
                 return;

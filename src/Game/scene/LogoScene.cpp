@@ -80,7 +80,7 @@ void LogoScene::Update() {
     if (crtEffect_) {
         float aspect = static_cast<float>(dxCommon_->GetCurrentWindowWidth())
                      / static_cast<float>(dxCommon_->GetCurrentWindowHeight());
-        crtEffect_->SetCRTParams(0.06f, 0.08f, 0.30f, 0.008f, aspect, 4.0f / 3.0f);
+        crtEffect_->SetCRTParams(0.06f, 0.08f, 0.30f, 0.008f, aspect, 16.0f / 9.0f);
     }
 
     // ESC key: toggle settings menu

@@ -71,6 +71,8 @@ private:
     const float kMinNoiseInterval = 8.0f;     // 最小間隔
     const float kMaxNoiseInterval = 20.0f;    // 最大間隔
 
+    bool bgmStarted_ = false;            // BGM再生開始フラグ（画面表示後に再生）
+
     // フェードアウト（Introへの遷移用）
     std::unique_ptr<Sprite> fadeSprite_;
     bool fadingOut_ = false;

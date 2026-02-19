@@ -106,10 +106,9 @@ void TitleScene::Initialize() {
     fadeSprite_->SetSize({1280.0f, 720.0f});
     fadeSprite_->setColor({0.0f, 0.0f, 0.0f, 0.0f});
 
-    // タイトルBGMの読み込みと再生
+    // タイトルBGMの読み込み（再生は画面表示後にUpdate()で開始）
     AudioManager::GetInstance()->LoadMP3("titleBGM", "Resources/audio/bgm/title.mp3");
     AudioManager::GetInstance()->SetVolume("titleBGM", 0.075f);
-    AudioManager::GetInstance()->Play("titleBGM", true);
 
     // 設定メニューの初期化
     settingsMenu_ = std::make_unique<SettingsMenu>();
@@ -117,6 +116,12 @@ void TitleScene::Initialize() {
 }
 
 void TitleScene::Update() {
+    // 画面が表示されてから初回のUpdateでBGM再生開始
+    if (!bgmStarted_) {
+        AudioManager::GetInstance()->Play("titleBGM", true);
+        bgmStarted_ = true;
+    }
+
     camera_->Update();
 
     // PostProcess resize on window size change

@@ -33,6 +33,7 @@ private:
     float timer_ = 0.0f;
     float phaseTimer_ = 0.0f;
     float fadeAlpha_ = 1.0f;
+    float bgAlpha_ = 0.0f;   // 背景フェードイン用（中盤から徐々に表示）
     float bgmVolume_ = 0.0f;
 
     static constexpr float kScrollSpeed = 20.0f;

@@ -148,6 +148,17 @@ void IntroScene::Update() {
 
     // スプライト更新
     textSprite_->SetPosition({640.0f, scrollY_});
+
+    // 背景フェードイン: テキスト中盤(-1140)から終了200前(-2800)にかけてalpha 0→1
+    if (phase_ == Phase::Scrolling || phase_ == Phase::FadeOut) {
+        constexpr float kBgFadeStartY = kStartY - (kStartY - kEndY) * 0.5f; // -1140
+        constexpr float kBgFadeEndY   = kEndY + 200.0f;                      // -2800
+        float t = (kBgFadeStartY - scrollY_) / (kBgFadeStartY - kBgFadeEndY);
+        bgAlpha_ = (t < 0.0f) ? 0.0f : (t > 1.0f) ? 1.0f : t;
+    } else {
+        bgAlpha_ = 0.0f;
+    }
+    bgSprite_->setColor({1.0f, 1.0f, 1.0f, bgAlpha_});
     bgSprite_->Update();
     textSprite_->Update();
     fadeSprite_->setColor({0.0f, 0.0f, 0.0f, fadeAlpha_});

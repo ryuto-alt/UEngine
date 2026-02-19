@@ -425,32 +425,41 @@ void TitleScene::Update() {
                         640.0f + selPosOffX, 610.0f + selPosOffY);
     }
 
-    // ノイズエフェクトのパラメータ更新
+    // ノイズエフェクトのパラメータ更新（強め）
     time_ += 1.0f / 60.0f;
     noiseEffect_->SetTitleNoiseParams(
         time_,
-        0.04f,   // grainIntensity
-        0.10f,   // scanlineIntensity
-        350.0f,  // scanlineCount
-        0.6f,    // glitchIntensity
-        0.12f,   // glitchFrequency
-        0.015f,  // chromaticStrength
-        0.8f     // vignetteIntensity
+        0.14f,   // grainIntensity  (0.04 → 0.14: ざらつき大幅増)
+        0.28f,   // scanlineIntensity (0.10 → 0.28: 走査線強め)
+        240.0f,  // scanlineCount (350 → 240: 線を太く粗く)
+        1.2f,    // glitchIntensity (0.6 → 1.2: グリッチ2倍)
+        0.28f,   // glitchFrequency (0.12 → 0.28: 頻度増)
+        0.04f,   // chromaticStrength (0.015 → 0.04: 色ズレ強め)
+        1.0f     // vignetteIntensity (0.8 → 1.0: 周辺暗化最大)
     );
 
     // ビネットエフェクトのパラメータ更新
-    vignetteEffect_->SetHorrorParams(time_, 0.0f, 0.0f, 0.0f, 0.8f);
+    vignetteEffect_->SetHorrorParams(time_, 0.0f, 0.0f, 0.0f, 1.2f);
 
-    // VHSエフェクトのパラメータ更新
+    // VHSエフェクトのパラメータ更新（大幅強化）
     if (vhsEffect_) {
-        vhsEffect_->SetVHSParams(time_, 0.12f, 0.0f, 0.2f, 0.8f, 0.3f, 0.8f, 0.2f);
+        vhsEffect_->SetVHSParams(
+            time_,
+            0.38f,  // scanlineIntensity (0.12 → 0.38)
+            0.18f,  // noiseIntensity    (0.00 → 0.18: ノイズ追加)
+            0.50f,  // trackingError     (0.20 → 0.50: トラッキングずれ大)
+            1.6f,   // chromaticAberration (0.8 → 1.6: 色収差2倍)
+            0.65f,  // colorBleed        (0.3 → 0.65: 色にじみ強め)
+            0.35f,  // sharpness         (0.8 → 0.35: 画質劣化・ぼかし)
+            0.55f   // tapeCrease        (0.2 → 0.55: テープ折れ目強め)
+        );
     }
 
-    // CRTブラウン管エフェクトのパラメータ更新
+    // CRTブラウン管エフェクトのパラメータ更新（歪み・暗化強め）
     if (crtEffect_) {
         float aspect = static_cast<float>(dxCommon_->GetCurrentWindowWidth())
                      / static_cast<float>(dxCommon_->GetCurrentWindowHeight());
-        crtEffect_->SetCRTParams(0.06f, 0.08f, 0.30f, 0.008f, aspect, 4.0f / 3.0f);
+        crtEffect_->SetCRTParams(0.08f, 0.15f, 0.45f, 0.012f, aspect, 4.0f / 3.0f);
     }
 
     // フェードアウト中は入力を無視
@@ -519,9 +528,14 @@ void TitleScene::Draw() {
     if (titleTextBlueSprite_) titleTextBlueSprite_->Draw();
     titleTextSprite_->Draw();
 
-    // チェーン: TitleNoise → Horror(ビネット) → CRT → Backbuffer
-    // ※VHSノイズはメニューが見づらくなるためスキップ
-    if (crtEffect_) {
+    // チェーン: TitleNoise → Horror(ビネット) → VHS → CRT → Backbuffer
+    // ※ボタンはPostProcess外に描画済みなのでVHS復活OK
+    if (vhsEffect_ && crtEffect_) {
+        noiseEffect_->PostDrawTo(vignetteEffect_.get());
+        vignetteEffect_->PostDrawTo(vhsEffect_.get());
+        vhsEffect_->PostDrawTo(crtEffect_.get());
+        crtEffect_->PostDraw();
+    } else if (crtEffect_) {
         noiseEffect_->PostDrawTo(vignetteEffect_.get());
         vignetteEffect_->PostDrawTo(crtEffect_.get());
         crtEffect_->PostDraw();

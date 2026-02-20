@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="リソース ファイル">
@@ -99,6 +99,30 @@
     <Filter Include="src\engine\Graphics\PostProcess">
       <UniqueIdentifier>{c6d7e8f9-a0b1-2345-6789-0abcdef12345}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\Game\UI">
+      <UniqueIdentifier>{d7e8f9a0-b1c2-3456-7890-abcdef123456}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Game\Utils">
+      <UniqueIdentifier>{e8f9a0b1-c2d3-4567-8901-bcdef1234567}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{f9a0b1c2-d3e4-5678-9012-cdef12345678}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\Object3d">
+      <UniqueIdentifier>{a0b1c2d3-e4f5-6789-0123-def123456789}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\Particle">
+      <UniqueIdentifier>{b1c2d3e4-f5a6-7890-1234-ef1234567890}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\Skybox">
+      <UniqueIdentifier>{c2d3e4f5-a6b7-8901-2345-f12345678901}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\PostProcess">
+      <UniqueIdentifier>{d3e4f5a6-b7c8-9012-3456-123456789012}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\Line">
+      <UniqueIdentifier>{e4f5a6b7-c8d9-0123-4567-234567890123}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="externals\imgui\imgui.cpp">
@@ -146,6 +170,21 @@
     <ClCompile Include="src\Engine\Graphics\TextureManager.cpp">
       <Filter>src\engine\Graphics</Filter>
     </ClCompile>
+    <ClCompile Include="src\Engine\Graphics\LineRenderer.cpp">
+      <Filter>src\engine\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\Graphics\CullingSystem.cpp">
+      <Filter>src\engine\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\Graphics\Skybox.cpp">
+      <Filter>src\engine\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\Graphics\InstancedRenderer.cpp">
+      <Filter>src\engine\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\Graphics\PostProcess.cpp">
+      <Filter>src\engine\Graphics\PostProcess</Filter>
+    </ClCompile>
     <ClCompile Include="src\Engine\Input\Input.cpp">
       <Filter>src\engine\Input</Filter>
     </ClCompile>
@@ -161,47 +200,17 @@
     <ClCompile Include="src\Engine\Utility\WinApp.cpp">
       <Filter>src\engine\Utility</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\main.cpp">
-      <Filter>src\Game</Filter>
-    </ClCompile>
     <ClCompile Include="src\Engine\Camera\Camera.cpp">
       <Filter>src\engine\Camera</Filter>
     </ClCompile>
-    <ClCompile Include="src\Engine\Graphics\SRVManager.cpp">
-      <Filter>src\engine\Graphics</Filter>
+    <ClCompile Include="src\Engine\Camera\Frustum.cpp">
+      <Filter>src\engine\Camera</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\Particle\ParticleManager.cpp">
       <Filter>src\engine\Particle</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\Particle\ParticleEmitter.cpp">
       <Filter>src\engine\Particle</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Engine\Audio\AudioManager.cpp">
-      <Filter>src\engine\Audio</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Engine\Audio\AudioSource.cpp">
-      <Filter>src\engine\Audio</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Engine\Audio\Mp3File.cpp">
-      <Filter>src\engine\Audio</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Engine\Audio\WaveFile.cpp">
-      <Filter>src\engine\Audio</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Engine\Core\Framework.cpp">
-      <Filter>src\engine\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\scene\GamePlayScene.cpp">
-      <Filter>src\Game\scene</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\scene\TitleScene.cpp">
-      <Filter>src\Game\scene</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\scene\SceneManager.cpp">
-      <Filter>src\Game\SceneConfig</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Engine\UnoEngine.cpp">
-      <Filter>src\engine</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\Particle\EffectManager3D.cpp">
       <Filter>src\engine\Particle</Filter>
@@ -218,6 +227,27 @@
     <ClCompile Include="src\Engine\Particle\Particle3DManager.cpp">
       <Filter>src\engine\Particle</Filter>
     </ClCompile>
+    <ClCompile Include="src\Engine\Audio\AudioManager.cpp">
+      <Filter>src\engine\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\Audio\AudioSource.cpp">
+      <Filter>src\engine\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\Audio\Mp3File.cpp">
+      <Filter>src\engine\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\Audio\WaveFile.cpp">
+      <Filter>src\engine\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\Audio\SpatialAudioListener.cpp">
+      <Filter>src\engine\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\Audio\SpatialAudioSource.cpp">
+      <Filter>src\engine\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\Core\Framework.cpp">
+      <Filter>src\engine\Core</Filter>
+    </ClCompile>
     <ClCompile Include="src\Engine\Animation\AnimatedModel.cpp">
       <Filter>src\engine\Animation</Filter>
     </ClCompile>
@@ -233,47 +263,62 @@
     <ClCompile Include="src\Engine\Resource\ResourcePreloader.cpp">
       <Filter>src\engine\Resource</Filter>
     </ClCompile>
-    <ClCompile Include="src\Engine\Audio\SpatialAudioListener.cpp">
-      <Filter>src\engine\Audio</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Engine\Audio\SpatialAudioSource.cpp">
-      <Filter>src\engine\Audio</Filter>
-    </ClCompile>
     <ClCompile Include="src\Engine\Collision\AABBCollision.cpp">
       <Filter>src\engine\Collision</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\Collision\CollisionHelper.cpp">
       <Filter>src\engine\Collision</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\Core\MyGame.cpp">
-      <Filter>src\Game</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\Manager\LightManager.cpp">
-      <Filter>src\Game\Light</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Engine\Graphics\Skybox.cpp">
-      <Filter>src\engine\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Engine\Graphics\PostProcess.cpp">
-      <Filter>src\engine\Graphics\PostProcess</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\GameObject\FPSCamera.cpp">
-      <Filter>src\Game\GameObject</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\scene\LogoScene.cpp">
-      <Filter>src\Game\scene</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Engine\Camera\Frustum.cpp">
-      <Filter>src\engine\Camera</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Engine\Graphics\InstancedRenderer.cpp">
-      <Filter>src\engine\Graphics</Filter>
-    </ClCompile>
     <ClCompile Include="src\Engine\Scene\SceneLoader.cpp">
       <Filter>src\engine\Scene</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\Scene\SceneConfigurator.cpp">
       <Filter>src\engine\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\Graphics\SRVManager.cpp">
+      <Filter>src\engine\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\StepTimer.cpp">
+      <Filter>src\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\UnoEngine.cpp">
+      <Filter>src\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\main.cpp">
+      <Filter>src\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Core\MyGame.cpp">
+      <Filter>src\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\scene\GamePlayScene.cpp">
+      <Filter>src\Game\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\scene\TitleScene.cpp">
+      <Filter>src\Game\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\scene\LogoScene.cpp">
+      <Filter>src\Game\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\scene\GameOverScene.cpp">
+      <Filter>src\Game\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\scene\GameClearScene.cpp">
+      <Filter>src\Game\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\scene\IntroScene.cpp">
+      <Filter>src\Game\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\scene\CreditScene.cpp">
+      <Filter>src\Game\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\scene\EndingScene.cpp">
+      <Filter>src\Game\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\scene\SceneManager.cpp">
+      <Filter>src\Game\SceneConfig</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Manager\LightManager.cpp">
+      <Filter>src\Game\Light</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Manager\NavMeshManager.cpp">
       <Filter>src\Game\Manager</Filter>
@@ -287,95 +332,26 @@
     <ClCompile Include="src\Game\NavMesh\NavMeshHelper.cpp">
       <Filter>src\Game\NavMesh</Filter>
     </ClCompile>
-    <ClCompile Include="externals\recastnavigation\Recast\Source\Recast.cpp">
-      <Filter>externals\recastnavigation\Recast</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\recastnavigation\Recast\Source\RecastAlloc.cpp">
-      <Filter>externals\recastnavigation\Recast</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\recastnavigation\Recast\Source\RecastArea.cpp">
-      <Filter>externals\recastnavigation\Recast</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\recastnavigation\Recast\Source\RecastAssert.cpp">
-      <Filter>externals\recastnavigation\Recast</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\recastnavigation\Recast\Source\RecastContour.cpp">
-      <Filter>externals\recastnavigation\Recast</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\recastnavigation\Recast\Source\RecastFilter.cpp">
-      <Filter>externals\recastnavigation\Recast</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\recastnavigation\Recast\Source\RecastLayers.cpp">
-      <Filter>externals\recastnavigation\Recast</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\recastnavigation\Recast\Source\RecastMesh.cpp">
-      <Filter>externals\recastnavigation\Recast</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\recastnavigation\Recast\Source\RecastMeshDetail.cpp">
-      <Filter>externals\recastnavigation\Recast</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\recastnavigation\Recast\Source\RecastRasterization.cpp">
-      <Filter>externals\recastnavigation\Recast</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\recastnavigation\Recast\Source\RecastRegion.cpp">
-      <Filter>externals\recastnavigation\Recast</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\recastnavigation\Detour\Source\DetourAlloc.cpp">
-      <Filter>externals\recastnavigation\Detour</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\recastnavigation\Detour\Source\DetourAssert.cpp">
-      <Filter>externals\recastnavigation\Detour</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\recastnavigation\Detour\Source\DetourCommon.cpp">
-      <Filter>externals\recastnavigation\Detour</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\recastnavigation\Detour\Source\DetourNavMesh.cpp">
-      <Filter>externals\recastnavigation\Detour</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\recastnavigation\Detour\Source\DetourNavMeshBuilder.cpp">
-      <Filter>externals\recastnavigation\Detour</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\recastnavigation\Detour\Source\DetourNavMeshQuery.cpp">
-      <Filter>externals\recastnavigation\Detour</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\recastnavigation\Detour\Source\DetourNode.cpp">
-      <Filter>externals\recastnavigation\Detour</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Engine\Graphics\LineRenderer.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Engine\Graphics\CullingSystem.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Engine\StepTimer.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\scene\GameOverScene.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\scene\CreditScene.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\scene\EndingScene.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\Utils\JsonLoader.cpp">
-      <Filter>src</Filter>
+    <ClCompile Include="src\Game\GameObject\FPSCamera.cpp">
+      <Filter>src\Game\GameObject</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\UI\Minimap.cpp">
-      <Filter>src</Filter>
+      <Filter>src\Game\UI</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\UI\MinimapGenerator.cpp">
-      <Filter>src</Filter>
+      <Filter>src\Game\UI</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\UI\BitmapFont.cpp">
-      <Filter>src</Filter>
+      <Filter>src\Game\UI</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\UI\SubtitleManager.cpp">
-      <Filter>src</Filter>
+      <Filter>src\Game\UI</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\UI\SettingsMenu.cpp">
-      <Filter>src</Filter>
+      <Filter>src\Game\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Utils\JsonLoader.cpp">
+      <Filter>src\Game\Utils</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\EntityFactory.cpp">
       <Filter>src\Game\Systems</Filter>
@@ -497,6 +473,60 @@
     <ClCompile Include="src\Game\Systems\UIRenderSystem.cpp">
       <Filter>src\Game\Systems</Filter>
     </ClCompile>
+    <ClCompile Include="externals\recastnavigation\Recast\Source\Recast.cpp">
+      <Filter>externals\recastnavigation\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="externals\recastnavigation\Recast\Source\RecastAlloc.cpp">
+      <Filter>externals\recastnavigation\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="externals\recastnavigation\Recast\Source\RecastArea.cpp">
+      <Filter>externals\recastnavigation\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="externals\recastnavigation\Recast\Source\RecastAssert.cpp">
+      <Filter>externals\recastnavigation\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="externals\recastnavigation\Recast\Source\RecastContour.cpp">
+      <Filter>externals\recastnavigation\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="externals\recastnavigation\Recast\Source\RecastFilter.cpp">
+      <Filter>externals\recastnavigation\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="externals\recastnavigation\Recast\Source\RecastLayers.cpp">
+      <Filter>externals\recastnavigation\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="externals\recastnavigation\Recast\Source\RecastMesh.cpp">
+      <Filter>externals\recastnavigation\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="externals\recastnavigation\Recast\Source\RecastMeshDetail.cpp">
+      <Filter>externals\recastnavigation\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="externals\recastnavigation\Recast\Source\RecastRasterization.cpp">
+      <Filter>externals\recastnavigation\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="externals\recastnavigation\Recast\Source\RecastRegion.cpp">
+      <Filter>externals\recastnavigation\Recast</Filter>
+    </ClCompile>
+    <ClCompile Include="externals\recastnavigation\Detour\Source\DetourAlloc.cpp">
+      <Filter>externals\recastnavigation\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="externals\recastnavigation\Detour\Source\DetourAssert.cpp">
+      <Filter>externals\recastnavigation\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="externals\recastnavigation\Detour\Source\DetourCommon.cpp">
+      <Filter>externals\recastnavigation\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="externals\recastnavigation\Detour\Source\DetourNavMesh.cpp">
+      <Filter>externals\recastnavigation\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="externals\recastnavigation\Detour\Source\DetourNavMeshBuilder.cpp">
+      <Filter>externals\recastnavigation\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="externals\recastnavigation\Detour\Source\DetourNavMeshQuery.cpp">
+      <Filter>externals\recastnavigation\Detour</Filter>
+    </ClCompile>
+    <ClCompile Include="externals\recastnavigation\Detour\Source\DetourNode.cpp">
+      <Filter>externals\recastnavigation\Detour</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="externals\imgui\imconfig.h">
@@ -550,6 +580,24 @@
     <ClInclude Include="src\Engine\Graphics\TextureManager.h">
       <Filter>src\engine\Graphics</Filter>
     </ClInclude>
+    <ClInclude Include="src\Engine\Graphics\SRVManager.h">
+      <Filter>src\engine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Graphics\LineRenderer.h">
+      <Filter>src\engine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Graphics\CullingSystem.h">
+      <Filter>src\engine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Graphics\Skybox.h">
+      <Filter>src\engine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Graphics\InstancedRenderer.h">
+      <Filter>src\engine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Graphics\PostProcess.h">
+      <Filter>src\engine\Graphics\PostProcess</Filter>
+    </ClInclude>
     <ClInclude Include="src\Engine\Input\Input.h">
       <Filter>src\engine\Input</Filter>
     </ClInclude>
@@ -568,47 +616,14 @@
     <ClInclude Include="src\Engine\Camera\Camera.h">
       <Filter>src\engine\Camera</Filter>
     </ClInclude>
-    <ClInclude Include="src\Engine\Graphics\SRVManager.h">
-      <Filter>src\engine\Graphics</Filter>
+    <ClInclude Include="src\Engine\Camera\Frustum.h">
+      <Filter>src\engine\Camera</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Particle\ParticleManager.h">
       <Filter>src\engine\Particle</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Particle\ParticleEmitter.h">
       <Filter>src\engine\Particle</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Engine\Audio\AudioManager.h">
-      <Filter>src\engine\Audio</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Engine\Audio\AudioSource.h">
-      <Filter>src\engine\Audio</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Engine\Audio\Mp3File.h">
-      <Filter>src\engine\Audio</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Engine\Audio\WaveFile.h">
-      <Filter>src\engine\Audio</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Engine\Core\Framework.h">
-      <Filter>src\engine\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\scene\GamePlayScene.h">
-      <Filter>src\Game\scene</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\scene\TitleScene.h">
-      <Filter>src\Game\scene</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\scene\IScene.h">
-      <Filter>src\Game\SceneConfig</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\scene\SceneManager.h">
-      <Filter>src\Game\SceneConfig</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Engine\UnoEngine.h">
-      <Filter>src\engine</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Engine\Collision\CollisionPrimitive.h">
-      <Filter>src\engine\Collision</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Particle\EffectManager3D.h">
       <Filter>src\engine\Particle</Filter>
@@ -624,6 +639,27 @@
     </ClInclude>
     <ClInclude Include="src\Engine\Particle\Particle3DManager.h">
       <Filter>src\engine\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Audio\AudioManager.h">
+      <Filter>src\engine\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Audio\AudioSource.h">
+      <Filter>src\engine\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Audio\Mp3File.h">
+      <Filter>src\engine\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Audio\WaveFile.h">
+      <Filter>src\engine\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Audio\SpatialAudioListener.h">
+      <Filter>src\engine\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Audio\SpatialAudioSource.h">
+      <Filter>src\engine\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Core\Framework.h">
+      <Filter>src\engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Animation\AnimatedModel.h">
       <Filter>src\engine\Animation</Filter>
@@ -643,44 +679,14 @@
     <ClInclude Include="src\Engine\Resource\ResourcePreloader.h">
       <Filter>src\engine\Resource</Filter>
     </ClInclude>
-    <ClInclude Include="src\Engine\Audio\SpatialAudioListener.h">
-      <Filter>src\engine\Audio</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Engine\Audio\SpatialAudioSource.h">
-      <Filter>src\engine\Audio</Filter>
-    </ClInclude>
     <ClInclude Include="src\Engine\Collision\AABBCollision.h">
       <Filter>src\engine\Collision</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Collision\CollisionHelper.h">
       <Filter>src\engine\Collision</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\Core\MyGame.h">
-      <Filter>src\Game</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\Manager\LightManager.h">
-      <Filter>src\Game\Light</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Engine\Graphics\Skybox.h">
-      <Filter>src\engine\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Engine\Graphics\PostProcess.h">
-      <Filter>src\engine\Graphics\PostProcess</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\scene\LogoScene.h">
-      <Filter>src\Game\scene</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Engine\Camera\Frustum.h">
-      <Filter>src\engine\Camera</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Engine\Graphics\InstancedRenderer.h">
-      <Filter>src\engine\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\GameObject\EnemyAIConfig.h">
-      <Filter>src\Game\GameObject</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\GameObject\FPSCamera.h">
-      <Filter>src\Game\GameObject</Filter>
+    <ClInclude Include="src\Engine\Collision\CollisionPrimitive.h">
+      <Filter>src\engine\Collision</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Scene\SceneLoader.h">
       <Filter>src\engine\Scene</Filter>
@@ -688,30 +694,12 @@
     <ClInclude Include="src\Engine\Scene\SceneConfigurator.h">
       <Filter>src\engine\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\Manager\NavMeshManager.h">
-      <Filter>src\Game\Manager</Filter>
+    <ClInclude Include="src\Engine\StepTimer.h">
+      <Filter>src\engine</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\NavMesh\NavMesh.h">
-      <Filter>src\Game\NavMesh</Filter>
+    <ClInclude Include="src\Engine\UnoEngine.h">
+      <Filter>src\engine</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\NavMesh\NavMeshBuilder.h">
-      <Filter>src\Game\NavMesh</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\NavMesh\NavMeshHelper.h">
-      <Filter>src\Game\NavMesh</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Engine\Graphics\LineRenderer.h" />
-    <ClInclude Include="src\Engine\Graphics\CullingSystem.h" />
-    <ClInclude Include="src\Engine\StepTimer.h" />
-    <ClInclude Include="src\Game\scene\GameOverScene.h" />
-    <ClInclude Include="src\Game\scene\CreditScene.h" />
-    <ClInclude Include="src\Game\scene\EndingScene.h" />
-    <ClInclude Include="src\Game\Utils\JsonLoader.h" />
-    <ClInclude Include="src\Game\UI\Minimap.h" />
-    <ClInclude Include="src\Game\UI\MinimapGenerator.h" />
-    <ClInclude Include="src\Game\UI\BitmapFont.h" />
-    <ClInclude Include="src\Game\UI\SubtitleManager.h" />
-    <ClInclude Include="src\Game\UI\SettingsMenu.h" />
     <ClInclude Include="src\Engine\ECS\Entity.h">
       <Filter>src\engine\ECS</Filter>
     </ClInclude>
@@ -768,6 +756,78 @@
     </ClInclude>
     <ClInclude Include="src\Engine\ECS\Components\PostProcessComponents.h">
       <Filter>src\engine\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Core\MyGame.h">
+      <Filter>src\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\scene\GamePlayScene.h">
+      <Filter>src\Game\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\scene\TitleScene.h">
+      <Filter>src\Game\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\scene\LogoScene.h">
+      <Filter>src\Game\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\scene\GameOverScene.h">
+      <Filter>src\Game\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\scene\GameClearScene.h">
+      <Filter>src\Game\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\scene\IntroScene.h">
+      <Filter>src\Game\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\scene\CreditScene.h">
+      <Filter>src\Game\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\scene\EndingScene.h">
+      <Filter>src\Game\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\scene\IScene.h">
+      <Filter>src\Game\SceneConfig</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\scene\SceneManager.h">
+      <Filter>src\Game\SceneConfig</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Manager\LightManager.h">
+      <Filter>src\Game\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Manager\NavMeshManager.h">
+      <Filter>src\Game\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\NavMesh\NavMesh.h">
+      <Filter>src\Game\NavMesh</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\NavMesh\NavMeshBuilder.h">
+      <Filter>src\Game\NavMesh</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\NavMesh\NavMeshHelper.h">
+      <Filter>src\Game\NavMesh</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\GameObject\EnemyAIConfig.h">
+      <Filter>src\Game\GameObject</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\GameObject\FPSCamera.h">
+      <Filter>src\Game\GameObject</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\UI\Minimap.h">
+      <Filter>src\Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\UI\MinimapGenerator.h">
+      <Filter>src\Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\UI\BitmapFont.h">
+      <Filter>src\Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\UI\SubtitleManager.h">
+      <Filter>src\Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\UI\SettingsMenu.h">
+      <Filter>src\Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Utils\JsonLoader.h">
+      <Filter>src\Game\Utils</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\EntityFactory.h">
       <Filter>src\Game\Systems</Filter>
@@ -897,51 +957,87 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\shaders\Object3d.hlsli">
-      <Filter>リソース ファイル</Filter>
-    </None>
-    <None Include="Resources\shaders\Particle.hlsli">
-      <Filter>リソース ファイル</Filter>
+      <Filter>shaders\Object3d</Filter>
     </None>
     <None Include="Resources\shaders\PBRObject3d.hlsli">
-      <Filter>リソース ファイル</Filter>
+      <Filter>shaders\Object3d</Filter>
+    </None>
+    <None Include="Resources\shaders\Particle.hlsli">
+      <Filter>shaders\Particle</Filter>
     </None>
     <None Include="Resources\shaders\Skybox.hlsli">
-      <Filter>リソース ファイル</Filter>
+      <Filter>shaders\Skybox</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Resources\shaders\Object3d.PS.hlsl">
-      <Filter>リソース ファイル</Filter>
-    </FxCompile>
     <FxCompile Include="Resources\shaders\Object3d.VS.hlsl">
-      <Filter>リソース ファイル</Filter>
+      <Filter>shaders\Object3d</Filter>
     </FxCompile>
-    <FxCompile Include="Resources\shaders\Particle.VS.hlsl">
-      <Filter>リソース ファイル</Filter>
-    </FxCompile>
-    <FxCompile Include="Resources\shaders\Particle.PS.hlsl">
-      <Filter>リソース ファイル</Filter>
-    </FxCompile>
-    <FxCompile Include="Resources\shaders\SkinningObject3d.VS.hlsl">
-      <Filter>リソース ファイル</Filter>
-    </FxCompile>
-    <FxCompile Include="Resources\shaders\PBRObject3d.PS.hlsl">
-      <Filter>リソース ファイル</Filter>
+    <FxCompile Include="Resources\shaders\Object3d.PS.hlsl">
+      <Filter>shaders\Object3d</Filter>
     </FxCompile>
     <FxCompile Include="Resources\shaders\PBRObject3d.VS.hlsl">
-      <Filter>リソース ファイル</Filter>
+      <Filter>shaders\Object3d</Filter>
     </FxCompile>
-    <FxCompile Include="Resources\shaders\Skybox.PS.hlsl">
-      <Filter>リソース ファイル</Filter>
+    <FxCompile Include="Resources\shaders\PBRObject3d.PS.hlsl">
+      <Filter>shaders\Object3d</Filter>
     </FxCompile>
-    <FxCompile Include="Resources\shaders\Skybox.VS.hlsl">
-      <Filter>リソース ファイル</Filter>
+    <FxCompile Include="Resources\shaders\SkinningObject3d.VS.hlsl">
+      <Filter>shaders\Object3d</Filter>
     </FxCompile>
-    <FxCompile Include="Resources\shaders\Horror.PS.hlsl">
-      <Filter>リソース ファイル</Filter>
+    <FxCompile Include="Resources\shaders\PBRSkinningObject3d.VS.hlsl">
+      <Filter>shaders\Object3d</Filter>
     </FxCompile>
     <FxCompile Include="Resources\shaders\PBRInstancedObject3d.VS.hlsl">
-      <Filter>リソース ファイル</Filter>
+      <Filter>shaders\Object3d</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\shaders\FastPBRObject3d.VS.hlsl">
+      <Filter>shaders\Object3d</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\shaders\FastPBRObject3d.PS.hlsl">
+      <Filter>shaders\Object3d</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\shaders\FastInstancedObject3d.PS.hlsl">
+      <Filter>shaders\Object3d</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\shaders\Particle.VS.hlsl">
+      <Filter>shaders\Particle</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\shaders\Particle.PS.hlsl">
+      <Filter>shaders\Particle</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\shaders\Skybox.VS.hlsl">
+      <Filter>shaders\Skybox</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\shaders\Skybox.PS.hlsl">
+      <Filter>shaders\Skybox</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\shaders\Line.VS.hlsl">
+      <Filter>shaders\Line</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\shaders\Line.PS.hlsl">
+      <Filter>shaders\Line</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\shaders\Fullscreen.VS.hlsl">
+      <Filter>shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\shaders\Horror.PS.hlsl">
+      <Filter>shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\shaders\HorrorOverlay.PS.hlsl">
+      <Filter>shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\shaders\VHS.PS.hlsl">
+      <Filter>shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\shaders\CRT.PS.hlsl">
+      <Filter>shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\shaders\PSXEffect.PS.hlsl">
+      <Filter>shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\shaders\TitleNoise.PS.hlsl">
+      <Filter>shaders\PostProcess</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

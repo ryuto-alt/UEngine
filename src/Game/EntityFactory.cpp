@@ -66,6 +66,12 @@ ECS::Entity CreatePlayerEntity(ECS::World& world, const Vector3& position, Camer
     // Audio listener
     world.AddComponent(entity, ECS::AudioListenerComponent{});
 
+    // Enemy sense ability (Q key)
+    world.AddComponent(entity, ECS::EnemySenseComponent{});
+
+    // Sprint ability (E key)
+    world.AddComponent(entity, ECS::SprintComponent{});
+
     return entity;
 }
 

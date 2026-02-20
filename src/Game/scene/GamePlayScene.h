@@ -8,6 +8,9 @@
 #include <vector>
 #include <string>
 
+class AnimatedModel;
+class Object3d;
+
 namespace ECS {
 class RenderSystem;
 class UIRenderSystem;
@@ -56,4 +59,13 @@ private:
     bool m_showNavMeshDebug = false;
     void AddNavMeshLog(const std::string& message);
     void ClearNavMeshLogs();
+
+#ifdef _DEBUG
+    // Enemy2 preview (debug only)
+    std::unique_ptr<AnimatedModel> m_enemy2AnimModel;
+    std::unique_ptr<Object3d>      m_enemy2Obj;
+    bool m_debugFreezeMainEnemy = false;
+    int  m_enemy2AnimIndex      = 0;  // 0=walk, 1=run
+    bool m_showEnemy2           = true;
+#endif
 };

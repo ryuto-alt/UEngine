@@ -32,6 +32,8 @@ public:
     // 描画処理
     void Draw();
     void Draw(Camera* camera, int* visibleMeshCount = nullptr, int* culledMeshCount = nullptr);
+    // X-ray描画（深度テストOFF、壁越し輪郭表示用）alpha=フェードアルファ(0~1)
+    void DrawXRay(float alpha);
 
     // カメラ関連のメソッド
     void SetCamera(Camera* camera);
@@ -141,6 +143,11 @@ private:
     // スポットライトデータ
     SpotLight* spotLightData_;
     
+    // X-rayカラーリソース（壁越し輪郭用）
+    Microsoft::WRL::ComPtr<ID3D12Resource> xrayColorResource_;
+    struct XRayData { Vector4 color; };
+    XRayData* xrayColorData_ = nullptr;
+
     // カメラデータリソース
     Microsoft::WRL::ComPtr<ID3D12Resource> cameraResource_;
     // カメラデータ

@@ -18,14 +18,15 @@ void CameraShakeSystem::Update(World& world, float deltaTime) {
 
     UnoEngine* engine = UnoEngine::GetInstance();
 
-    world.ForEach<PlayerTag, PlayerMovementComponent, FPSCameraComponent, CameraShakeComponent>(
+    world.ForEach<PlayerTag, PlayerMovementComponent, SprintComponent, FPSCameraComponent, CameraShakeComponent>(
         [engine, deltaTime](Entity entity, PlayerTag&, PlayerMovementComponent& movement,
-                           FPSCameraComponent& fpsCam, CameraShakeComponent& shake) {
+                           SprintComponent& sprint, FPSCameraComponent& fpsCam,
+                           CameraShakeComponent& shake) {
 
             if (!fpsCam.fpsCamera || !fpsCam.isFPSMode) return;
 
             fpsCam.fpsCamera->UpdateCameraShake(
-                movement.isMoving, movement.isRunning,
+                movement.isMoving, movement.isRunning, sprint.isSprinting,
                 deltaTime, engine
             );
         }

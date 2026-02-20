@@ -473,6 +473,12 @@
     <ClCompile Include="src\Game\Systems\UIRenderSystem.cpp">
       <Filter>src\Game\Systems</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Systems\EnemySenseSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Systems\SprintSystem.cpp">
+      <Filter>src\Game\Systems</Filter>
+    </ClCompile>
     <ClCompile Include="externals\recastnavigation\Recast\Source\Recast.cpp">
       <Filter>externals\recastnavigation\Recast</Filter>
     </ClCompile>
@@ -949,6 +955,12 @@
     <ClInclude Include="src\Game\Systems\UIRenderSystem.h">
       <Filter>src\Game\Systems</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\Systems\EnemySenseSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Systems\SprintSystem.h">
+      <Filter>src\Game\Systems</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt">
@@ -1037,6 +1049,12 @@
       <Filter>shaders\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Resources\shaders\TitleNoise.PS.hlsl">
+      <Filter>shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\shaders\SpeedEffect.PS.hlsl">
+      <Filter>shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\shaders\XRay.PS.hlsl">
       <Filter>shaders\PostProcess</Filter>
     </FxCompile>
   </ItemGroup>

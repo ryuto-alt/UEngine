@@ -12,6 +12,7 @@ struct PostProcessChainComponent {
     std::unique_ptr<PostProcess> psxEffect;
     std::unique_ptr<PostProcess> horrorEffect;
     std::unique_ptr<PostProcess> crtEffect;
+    std::unique_ptr<PostProcess> sprintEffect;  // Speed effect (final pass)
     float fisheyeStrength = 2.58f;
     float fisheyeRadius = 1.5f;
 };

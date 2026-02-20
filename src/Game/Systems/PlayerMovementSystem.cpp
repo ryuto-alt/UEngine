@@ -46,6 +46,8 @@ void PlayerMovementSystem::Update(World& world, float deltaTime) {
                 float currentSpeed = movement.moveSpeed;
                 if (movement.isSneaking) {
                     currentSpeed *= movement.sneakSpeedMultiplier;
+                } else if (movement.isSprinting) {
+                    currentSpeed *= SprintComponent::kSpeedMultiplier;
                 } else if (movement.isRunning) {
                     currentSpeed *= movement.runSpeedMultiplier;
                 }

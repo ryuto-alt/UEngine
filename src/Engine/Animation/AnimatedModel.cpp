@@ -114,9 +114,11 @@ void AnimatedModel::Update(float deltaTime) {
         targetPlayer_.Update(deltaTime);
         
         blendElapsedTime_ += deltaTime;
-        blendProgress_ = std::min(blendElapsedTime_ / blendDuration_, 1.0f);
+        float rawT = std::min(blendElapsedTime_ / blendDuration_, 1.0f);
+        // Smoothstep easing: avoids harsh intermediate poses that cause tumbling
+        blendProgress_ = rawT * rawT * (3.0f - 2.0f * rawT);
         
-        if (blendProgress_ >= 1.0f) {
+        if (rawT >= 1.0f) {
             animationPlayer_ = targetPlayer_;
             currentAnimationName_ = targetAnimationName_;
             
@@ -188,13 +190,22 @@ void AnimatedModel::ChangeAnimation(const std::string& name) {
 void AnimatedModel::TransitionToAnimation(const std::string& name, float transitionDuration) {
     auto it = animations_.find(name);
     if (it != animations_.end() && currentAnimationName_ != name) {
-        // ブレンド開始
         targetAnimationName_ = name;
         targetPlayer_.SetAnimation(it->second);
-        targetPlayer_.SetLoop(true); // 常にループ（後で改善）
+        targetPlayer_.SetLoop(true);
         targetPlayer_.Play();
-        targetPlayer_.SetTime(0.0f); // 新しいアニメーションは最初から
-        
+
+        // Phase matching: start target at the same cycle percentage as current
+        // Prevents tumbling from mismatched walk/run phases
+        float currentDuration = animationPlayer_.GetDuration();
+        float targetDuration  = targetPlayer_.GetDuration();
+        if (currentDuration > 0.0f && targetDuration > 0.0f) {
+            float phase = animationPlayer_.GetTime() / currentDuration;
+            targetPlayer_.SetTime(phase * targetDuration);
+        } else {
+            targetPlayer_.SetTime(0.0f);
+        }
+
         isBlending_ = true;
         blendDuration_ = transitionDuration;
         blendElapsedTime_ = 0.0f;

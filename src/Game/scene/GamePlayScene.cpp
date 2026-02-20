@@ -19,6 +19,8 @@
 // Systems
 #include "Systems/InputSystem.h"
 #include "Systems/DebugInputSystem.h"
+#include "Systems/EnemySenseSystem.h"
+#include "Systems/SprintSystem.h"
 #include "Systems/PlayerMovementSystem.h"
 #include "Systems/GravitySystem.h"
 #include "Systems/GroundCollisionSystem.h"
@@ -80,6 +82,8 @@ using namespace ECS;
 
 #include <filesystem>
 #include <cmath>
+#include <fstream>
+#include <set>
 #include <string>
 
 #ifdef _DEBUG
@@ -378,6 +382,14 @@ void GamePlayScene::Initialize() {
                      / static_cast<float>(dxCommon_->GetCurrentWindowHeight());
         crtEffect->SetCRTParams(0.06f, 0.08f, 0.30f, 0.008f, aspect, 4.0f / 3.0f);
         ppChain.crtEffect = std::move(crtEffect);
+
+        // Sprint speed effect (final pass)
+        auto sprintEffect = std::make_unique<PostProcess>();
+        sprintEffect->Initialize(dxCommon_, srvManager_, PostProcess::EffectType::Sprint);
+        float screenAspect = static_cast<float>(dxCommon_->GetCurrentWindowWidth())
+                           / static_cast<float>(dxCommon_->GetCurrentWindowHeight());
+        sprintEffect->SetSprintParams(0.0f, 0.0f, screenAspect, 4.0f / 3.0f);
+        ppChain.sprintEffect = std::move(sprintEffect);
     }
 
     // Minimap
@@ -507,6 +519,103 @@ void GamePlayScene::Initialize() {
     m_renderSystem = std::make_unique<ECS::RenderSystem>();
     m_uiRenderSystem = std::make_unique<ECS::UIRenderSystem>();
 
+#ifdef _DEBUG
+    // --- Enemy2 preview: load walk + run animations ---
+    {
+        m_enemy2AnimModel = engine->CreateAnim();
+        // LoadFromFile loads skeleton/mesh only for GLTF (no animation extraction)
+        m_enemy2AnimModel->LoadFromFile("Resources/models/enemy2/enemy2_walk", "enemy2_walk.gltf");
+
+        // Load both animations via engine->LoadAnim (same loader = same coordinate system)
+        Animation e2Walk = engine->LoadAnim("Resources/models/enemy2/enemy2_walk", "enemy2_walk.gltf");
+        Animation e2Run  = engine->LoadAnim("Resources/models/enemy2/enemy2_run",  "enemy2_run.gltf");
+
+        // Strip animation channels for nodes NOT in skeleton (prevents root node orientation mismatch)
+        {
+            auto& skeleton = m_enemy2AnimModel->GetSkeleton();
+            std::set<std::string> jointNames;
+            for (const auto& j : skeleton.joints) jointNames.insert(j.name);
+
+            auto stripNonSkeleton = [&jointNames](Animation& anim, const char* label) {
+                for (auto it = anim.nodeAnimations.begin(); it != anim.nodeAnimations.end(); ) {
+                    if (jointNames.count(it->first) == 0) {
+                        OutputDebugStringA(("Stripped non-skeleton channel from " +
+                            std::string(label) + ": " + it->first + "\n").c_str());
+                        it = anim.nodeAnimations.erase(it);
+                    } else {
+                        ++it;
+                    }
+                }
+            };
+            stripNonSkeleton(e2Walk, "walk");
+            stripNonSkeleton(e2Run,  "run");
+        }
+
+        m_enemy2AnimModel->AddAnimation("walk", e2Walk);
+        m_enemy2AnimModel->AddAnimation("run",  e2Run);
+        m_enemy2AnimModel->ChangeAnimation("walk");
+        m_enemy2AnimModel->PlayAnimation();
+
+        // Dump full animation debug to file
+        {
+            std::ofstream logFile("C:\\Users\\Unoryuto\\Pictures\\Screenshots\\new\\enemy2_anim_debug.log");
+            if (logFile.is_open()) {
+                auto& skel = m_enemy2AnimModel->GetSkeleton();
+                logFile << "=== SKELETON JOINTS (" << skel.joints.size() << ") ===\n";
+                for (size_t i = 0; i < skel.joints.size(); ++i) {
+                    const auto& j = skel.joints[i];
+                    logFile << "  [" << i << "] " << j.name
+                            << "  parent=" << (j.parent ? std::to_string(*j.parent) : "NONE")
+                            << "  rot=(" << j.transform.rotate.x << "," << j.transform.rotate.y
+                            << "," << j.transform.rotate.z << "," << j.transform.rotate.w << ")\n";
+                }
+
+                logFile << "\n=== WALK ANIM (duration=" << e2Walk.duration
+                        << ", channels=" << e2Walk.nodeAnimations.size() << ") ===\n";
+                for (const auto& [name, na] : e2Walk.nodeAnimations) {
+                    logFile << "  " << name
+                            << "  T=" << na.translate.size()
+                            << " R=" << na.rotate.size()
+                            << " S=" << na.scale.size() << "\n";
+                }
+
+                logFile << "\n=== RUN ANIM (duration=" << e2Run.duration
+                        << ", channels=" << e2Run.nodeAnimations.size() << ") ===\n";
+                for (const auto& [name, na] : e2Run.nodeAnimations) {
+                    logFile << "  " << name
+                            << "  T=" << na.translate.size()
+                            << " R=" << na.rotate.size()
+                            << " S=" << na.scale.size() << "\n";
+                }
+
+                logFile << "\n=== AFTER STRIP ===\n";
+                logFile << "walk channels remaining: " << e2Walk.nodeAnimations.size() << "\n";
+                logFile << "run  channels remaining: " << e2Run.nodeAnimations.size() << "\n";
+                for (const auto& [name, na] : e2Walk.nodeAnimations) {
+                    logFile << "  walk: " << name << "\n";
+                }
+                for (const auto& [name, na] : e2Run.nodeAnimations) {
+                    logFile << "  run:  " << name << "\n";
+                }
+                logFile.close();
+            }
+        }
+
+        m_enemy2Obj = engine->CreateObj3();
+        m_enemy2Obj->SetModel(static_cast<Model*>(m_enemy2AnimModel.get()));
+        m_enemy2Obj->SetAnimatedModel(m_enemy2AnimModel.get());
+        m_enemy2Obj->SetScale({0.05f, 0.05f, 0.05f});
+        m_enemy2Obj->SetCamera(camera_);
+
+        // Spawn at player's initial position (stays here - not tracked)
+        if (m_playerEntity.IsValid()) {
+            auto& pt = m_world->GetComponent<ECS::TransformComponent>(m_playerEntity);
+            m_enemy2Obj->SetPosition(pt.position);
+        }
+        m_enemy2Obj->Update();
+    }
+#endif
+
     // ゲームシーン開始時にマウスカーソルを非表示・中央固定
     if (input_) {
         input_->SetMouseCursor(false);
@@ -518,6 +627,8 @@ void GamePlayScene::RegisterSystems() {
     // Input (0-99)
     m_world->RegisterSystem(std::make_unique<ECS::InputSystem>(), 0);
     m_world->RegisterSystem(std::make_unique<ECS::DebugInputSystem>(), 10);
+    m_world->RegisterSystem(std::make_unique<ECS::EnemySenseSystem>(), 15);
+    m_world->RegisterSystem(std::make_unique<ECS::SprintSystem>(), 16);
 
     // Physics (100-199)
     m_world->RegisterSystem(std::make_unique<ECS::PlayerMovementSystem>(), 100);
@@ -696,6 +807,19 @@ void GamePlayScene::Update() {
         );
     }
 
+#ifdef _DEBUG
+    // Enemy2 preview: update animation only (position is fixed at spawn)
+    if (m_enemy2AnimModel && m_enemy2Obj) {
+        m_enemy2AnimModel->Update(deltaTime);
+        m_enemy2Obj->Update();
+    }
+    // Main enemy freeze
+    if (m_debugFreezeMainEnemy && m_enemyEntity.IsValid()) {
+        auto& ai = m_world->GetComponent<ECS::EnemyAIComponent>(m_enemyEntity);
+        ai.isActive = false;
+    }
+#endif
+
     // All game logic via ECS
     m_world->UpdateSystems(deltaTime);
 
@@ -724,6 +848,13 @@ void GamePlayScene::Draw() {
     // Render and UI via ECS render systems
     m_renderSystem->Update(*m_world, 0.0f);
     m_uiRenderSystem->Update(*m_world, 0.0f);
+
+#ifdef _DEBUG
+    // Enemy2: draw directly to backbuffer (after post-process, debug only)
+    if (m_showEnemy2 && m_enemy2Obj) {
+        m_enemy2Obj->Draw();
+    }
+#endif
 
 #ifdef _DEBUG
     // ImGui debug (NavMesh, Enemy AI, etc.)
@@ -795,6 +926,48 @@ void GamePlayScene::Draw() {
         auto& gameState = m_world->GetComponent<GameStateComponent>(m_gameStateEntity);
         ImGui::Begin("Game State Debug");
         ImGui::Checkbox("allOrbsCollected", &gameState.allOrbsCollected);
+        ImGui::End();
+    }
+
+    // Enemy2 preview window
+    if (m_enemy2AnimModel) {
+        ImGui::Begin("Enemy2 Preview");
+        ImGui::Checkbox("Show Enemy2", &m_showEnemy2);
+        ImGui::Separator();
+
+        static const char* kAnimNames[] = {"walk", "run"};
+        // Instant switch via ChangeAnimation
+        if (ImGui::Combo("Animation", &m_enemy2AnimIndex, kAnimNames, 2)) {
+            m_enemy2AnimModel->ChangeAnimation(kAnimNames[m_enemy2AnimIndex]);
+            m_enemy2AnimModel->PlayAnimation();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Blend(0.6s)")) {
+            m_enemy2AnimModel->TransitionToAnimation(kAnimNames[m_enemy2AnimIndex], 0.6f);
+        }
+
+        // Debug info: animation durations to verify files are loaded correctly
+        ImGui::Separator();
+        ImGui::Text("Debug info:");
+        // Show current animation time
+        ImGui::Text("Time: %.2f", m_enemy2AnimModel->GetAnimationPlayer().GetTime());
+        ImGui::Text("IsBlending: %s", m_enemy2AnimModel->IsBlending() ? "YES" : "NO");
+
+        // Scale slider for quick adjustment
+        if (m_enemy2Obj) {
+            static float e2Scale = 0.05f;
+            if (ImGui::SliderFloat("Scale", &e2Scale, 0.001f, 2.0f, "%.3f")) {
+                m_enemy2Obj->SetScale({e2Scale, e2Scale, e2Scale});
+            }
+        }
+
+        ImGui::Separator();
+        if (ImGui::Checkbox("Freeze Main Enemy AI", &m_debugFreezeMainEnemy)) {
+            if (m_enemyEntity.IsValid()) {
+                auto& ai = m_world->GetComponent<ECS::EnemyAIComponent>(m_enemyEntity);
+                ai.isActive = !m_debugFreezeMainEnemy;
+            }
+        }
         ImGui::End();
     }
 

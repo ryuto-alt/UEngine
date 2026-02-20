@@ -14,7 +14,8 @@ public:
         TitleNoise,
         PSXRetro,
         VHS,
-        CRT
+        CRT,
+        Sprint
     };
 
     struct HorrorParams {
@@ -72,6 +73,17 @@ public:
         float padding1;
     };
 
+    struct SprintParams {
+        float sprintIntensity;
+        float time;
+        float screenAspect;  // actual screen W/H ratio
+        float targetAspect;  // 4:3 = 1.333
+        float padding0;
+        float padding1;
+        float padding2;
+        float padding3;
+    };
+
     PostProcess() = default;
     ~PostProcess();
 
@@ -102,6 +114,9 @@ public:
     // CRT
     void SetCRTParams(float cornerRadius, float curvature, float vignette,
                       float edgeSoftness, float screenAspect, float targetAspect);
+
+    // Sprint
+    void SetSprintParams(float intensity, float time, float screenAspect, float targetAspect);
 
     void ResizeRenderTarget();
 
@@ -139,6 +154,7 @@ private:
     PSXParams currentPSXParams_{};
     VHSParams currentVHSParams_{};
     CRTParams currentCRTParams_{};
+    SprintParams currentSprintParams_{};
 
     uint32_t backBufferIndex_ = 0;
 };

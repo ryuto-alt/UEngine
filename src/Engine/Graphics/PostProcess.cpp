@@ -81,6 +81,11 @@ void PostProcess::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager, Ef
         currentCRTParams_.targetAspect = 4.0f / 3.0f;
         memcpy(paramsData_, &currentCRTParams_, sizeof(CRTParams));
         break;
+    case EffectType::Sprint:
+        currentSprintParams_.sprintIntensity = 0.0f;
+        currentSprintParams_.time = 0.0f;
+        memcpy(paramsData_, &currentSprintParams_, sizeof(SprintParams));
+        break;
     }
 }
 
@@ -198,6 +203,7 @@ void PostProcess::CreatePipeline() {
     case EffectType::PSXRetro:   psShaderPath = L"Resources/shaders/PSXEffect.PS.hlsl"; break;
     case EffectType::VHS:        psShaderPath = L"Resources/shaders/VHS.PS.hlsl"; break;
     case EffectType::CRT:        psShaderPath = L"Resources/shaders/CRT.PS.hlsl"; break;
+    case EffectType::Sprint:     psShaderPath = L"Resources/shaders/SpeedEffect.PS.hlsl"; break;
     }
     Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = dxCommon_->CompileShader(psShaderPath, L"ps_6_0");
 
@@ -485,6 +491,16 @@ void PostProcess::SetCRTParams(float cornerRadius, float curvature, float vignet
 
     if (paramsData_) {
         memcpy(paramsData_, &currentCRTParams_, sizeof(CRTParams));
+    }
+}
+
+void PostProcess::SetSprintParams(float intensity, float time, float screenAspect, float targetAspect) {
+    currentSprintParams_.sprintIntensity = intensity;
+    currentSprintParams_.time = time;
+    currentSprintParams_.screenAspect = screenAspect;
+    currentSprintParams_.targetAspect = targetAspect;
+    if (paramsData_) {
+        memcpy(paramsData_, &currentSprintParams_, sizeof(SprintParams));
     }
 }
 

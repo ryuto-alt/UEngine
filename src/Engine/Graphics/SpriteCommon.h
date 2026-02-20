@@ -40,6 +40,11 @@ public:
 	// 軽量インスタンシングパイプラインを取得
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> GetFastInstancedPipelineState() const { return fastInstancedPipelineState; }
 
+	// X-ray（壁越し輪郭）パイプラインを取得（深度テストOFF、スキニング対応）
+	Microsoft::WRL::ComPtr<ID3D12PipelineState> GetXRaySkinnedPipelineState() const { return xraySkinnedPipelineState; }
+	// X-ray（非スキニング）パイプラインを取得
+	Microsoft::WRL::ComPtr<ID3D12PipelineState> GetXRayPipelineState() const { return xrayPipelineState; }
+
 private:
 	// ルートシグネチャの作成
 	void RootSignatureInitialize();
@@ -62,6 +67,9 @@ private:
 	// 軽量インスタンシング用パイプライン
 	void FastInstancedPipelineInitialize();
 
+	// X-ray（壁越し輪郭）パイプライン
+	void XRayPipelineInitialize();
+
 private:
 	DirectXCommon* dxCommon_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature = nullptr;
@@ -71,4 +79,6 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> pbrSkinningPipelineState = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> pbrInstancedPipelineState = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> fastInstancedPipelineState = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12PipelineState> xraySkinnedPipelineState = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12PipelineState> xrayPipelineState = nullptr;
 };

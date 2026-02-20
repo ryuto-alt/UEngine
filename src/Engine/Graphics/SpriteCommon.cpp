@@ -19,6 +19,12 @@ SpriteCommon::~SpriteCommon() {
 	if (pbrInstancedPipelineState) {
 		pbrInstancedPipelineState.Reset();
 	}
+	if (xraySkinnedPipelineState) {
+		xraySkinnedPipelineState.Reset();
+	}
+	if (xrayPipelineState) {
+		xrayPipelineState.Reset();
+	}
 	if (rootSignature) {
 		rootSignature.Reset();
 	}
@@ -33,6 +39,7 @@ void SpriteCommon::Initialize(DirectXCommon* dxCommon)
 	PBRSkinningPipelineInitialize();
 	PBRInstancedPipelineInitialize();
 	FastInstancedPipelineInitialize();
+	XRayPipelineInitialize();
 }
 
 
@@ -718,4 +725,108 @@ void SpriteCommon::FastInstancedPipelineInitialize() {
 	if (pixelShaderBlob) pixelShaderBlob->Release();
 
 	OutputDebugStringA("SpriteCommon::FastInstancedPipelineInitialize - Fast instanced pipeline created successfully\n");
+}
+
+void SpriteCommon::XRayPipelineInitialize() {
+	// Skinning input layout (5 elements: base + weight/index from slot 1)
+	D3D12_INPUT_ELEMENT_DESC skinnedInputDescs[5] = {};
+	skinnedInputDescs[0].SemanticName = "POSITION";
+	skinnedInputDescs[0].SemanticIndex = 0;
+	skinnedInputDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	skinnedInputDescs[0].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+	skinnedInputDescs[1].SemanticName = "TEXCOORD";
+	skinnedInputDescs[1].SemanticIndex = 0;
+	skinnedInputDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
+	skinnedInputDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+	skinnedInputDescs[2].SemanticName = "NORMAL";
+	skinnedInputDescs[2].SemanticIndex = 0;
+	skinnedInputDescs[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	skinnedInputDescs[2].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+	skinnedInputDescs[3].SemanticName = "WEIGHT";
+	skinnedInputDescs[3].SemanticIndex = 0;
+	skinnedInputDescs[3].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	skinnedInputDescs[3].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+	skinnedInputDescs[3].InputSlot = 1;
+	skinnedInputDescs[3].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+	skinnedInputDescs[4].SemanticName = "INDEX";
+	skinnedInputDescs[4].SemanticIndex = 0;
+	skinnedInputDescs[4].Format = DXGI_FORMAT_R32G32B32A32_SINT;
+	skinnedInputDescs[4].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+	skinnedInputDescs[4].InputSlot = 1;
+	skinnedInputDescs[4].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+
+	// Additive blend: result = src*alpha + dst*1 → glowing haze through walls
+	D3D12_BLEND_DESC blendDesc{};
+	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+	blendDesc.RenderTarget[0].BlendEnable = TRUE;
+	blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+	blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+	blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+	blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+	blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+
+	// No culling — silhouette visible from any angle
+	D3D12_RASTERIZER_DESC rasterizerDesc{};
+	rasterizerDesc.CullMode = D3D12_CULL_MODE_NONE;
+	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
+
+	// Depth test OFF → renders through walls
+	D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
+	depthStencilDesc.DepthEnable = false;
+	depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+	depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+
+	IDxcBlob* vsSkinnedBlob = dxCommon_->CompileShader(L"Resources/shaders/PBRSkinningObject3d.VS.hlsl", L"vs_6_0");
+	assert(vsSkinnedBlob != nullptr);
+	IDxcBlob* psBlob = dxCommon_->CompileShader(L"Resources/shaders/XRay.PS.hlsl", L"ps_6_0");
+	assert(psBlob != nullptr);
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
+	desc.pRootSignature = rootSignature.Get();
+	desc.InputLayout = { skinnedInputDescs, _countof(skinnedInputDescs) };
+	desc.VS = { vsSkinnedBlob->GetBufferPointer(), vsSkinnedBlob->GetBufferSize() };
+	desc.PS = { psBlob->GetBufferPointer(), psBlob->GetBufferSize() };
+	desc.BlendState = blendDesc;
+	desc.RasterizerState = rasterizerDesc;
+	desc.NumRenderTargets = 1;
+	desc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+	desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	desc.SampleDesc.Count = 1;
+	desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+	desc.DepthStencilState = depthStencilDesc;
+	desc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+
+	HRESULT hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&xraySkinnedPipelineState));
+	assert(SUCCEEDED(hr));
+
+	// Non-skinned X-ray PSO (3-element input layout)
+	D3D12_INPUT_ELEMENT_DESC simpleInputDescs[3] = {};
+	simpleInputDescs[0].SemanticName = "POSITION";
+	simpleInputDescs[0].SemanticIndex = 0;
+	simpleInputDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	simpleInputDescs[0].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+	simpleInputDescs[1].SemanticName = "TEXCOORD";
+	simpleInputDescs[1].SemanticIndex = 0;
+	simpleInputDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
+	simpleInputDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+	simpleInputDescs[2].SemanticName = "NORMAL";
+	simpleInputDescs[2].SemanticIndex = 0;
+	simpleInputDescs[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	simpleInputDescs[2].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+
+	IDxcBlob* vsSimpleBlob = dxCommon_->CompileShader(L"Resources/shaders/Object3d.VS.hlsl", L"vs_6_0");
+	assert(vsSimpleBlob != nullptr);
+
+	desc.InputLayout = { simpleInputDescs, _countof(simpleInputDescs) };
+	desc.VS = { vsSimpleBlob->GetBufferPointer(), vsSimpleBlob->GetBufferSize() };
+
+	hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&xrayPipelineState));
+	assert(SUCCEEDED(hr));
+
+	vsSkinnedBlob->Release();
+	psBlob->Release();
+	vsSimpleBlob->Release();
+
+	OutputDebugStringA("SpriteCommon::XRayPipelineInitialize - X-ray pipelines created successfully\n");
 }

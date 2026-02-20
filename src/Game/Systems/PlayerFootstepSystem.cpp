@@ -16,9 +16,11 @@ void PlayerFootstepSystem::Update(World& world, float deltaTime) {
             if (movement.isMoving && gravity.isGrounded) {
                 footstep.footstepTimer += deltaTime;
 
-                float currentInterval = movement.isRunning
-                    ? footstep.footstepInterval * 0.6f
-                    : footstep.footstepInterval;
+                float currentInterval = movement.isSprinting
+                    ? footstep.footstepInterval * 0.36f  // sprint: 36% (fastest)
+                    : movement.isRunning
+                        ? footstep.footstepInterval * 0.6f  // run: 60%
+                        : footstep.footstepInterval;         // walk: 100%
 
                 if (footstep.footstepTimer >= currentInterval) {
                     UnoEngine* engine = UnoEngine::GetInstance();

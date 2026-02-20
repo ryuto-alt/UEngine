@@ -1,0 +1,71 @@
+{
+  "sceneName": "GamePlay",
+  "environment": {
+    "skyboxEnabled": false,
+    "environmentMap": ""
+  },
+  "camera": {
+    "fovDegrees": 103.00,
+    "mode": "fps",
+    "mouseLookEnabled": true
+  },
+  "postProcess": {
+    "fisheyeStrength": 2.58,
+    "fisheyeRadius": 1.5,
+    "horrorParams": {
+      "vignette": 0.0,
+      "aberration": 0.0,
+      "noise": 0.0,
+      "scanlines": 0.0,
+      "distortion": 0.0
+    }
+  },
+  "audio": {
+    "bgm": {
+      "name": "stagebgm",
+      "path": "Resources/audio/bgm/bgm_gameplay.mp3",
+      "loop": true,
+      "volume": 0.025
+    }
+  },
+  "player": {
+    "position": [0.0, 0.0, 0.0],
+    "useFPSCamera": true,
+    "enableCollision": false
+  },
+  "enemies": [
+    {
+      "position": [15.0, 0.0, 0.0]
+    }
+  ],
+  "objects": [
+    {
+      "name": "ground",
+      "modelPath": "Resources/models/environment/ground/ground.gltf",
+      "position": [0.0, -0.1, 0.0],
+      "rotation": [0.0, 0.0, 0.0],
+      "scale": [1.0, 1.0, 1.0],
+      "enableLighting": true,
+      "enableEnv": false,
+      "enableAnimation": false,
+      "collision": {
+        "enabled": true,
+        "type": "Ground"
+      }
+    },
+    {
+      "name": "wall",
+      "modelPath": "Resources/models/environment/wall/stage_wall.gltf",
+      "position": [0.0, 0.0, 0.0],
+      "rotation": [0.0, 0.0, 0.0],
+      "scale": [1.0, 1.0, 1.0],
+      "enableLighting": true,
+      "enableEnv": false,
+      "enableAnimation": false,
+      "collision": {
+        "enabled": true,
+        "type": "Object"
+      }
+    }
+  ]
+}

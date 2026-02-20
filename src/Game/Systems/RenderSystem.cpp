@@ -90,6 +90,22 @@ void RenderSystem::Update(World& world, float deltaTime) {
         }
     );
 
+    // Enemy sense X-ray pass (Q ability: red haze through walls)
+    float senseAlpha = 0.0f;
+    world.ForEach<PlayerTag, EnemySenseComponent>(
+        [&senseAlpha](Entity, PlayerTag&, EnemySenseComponent& sense) {
+            senseAlpha = sense.fadeAlpha;
+        }
+    );
+    if (senseAlpha > 0.0f) {
+        world.ForEach<EnemyTag, MeshRendererComponent, EnemyAIComponent>(
+            [senseAlpha](Entity, EnemyTag&, MeshRendererComponent& renderer, EnemyAIComponent& ai) {
+                if (!ai.isActive || !renderer.object3d) return;
+                renderer.object3d->DrawXRay(senseAlpha);
+            }
+        );
+    }
+
     // NavMesh visualization
     UnoEngine::GetInstance()->DrawNavVis();
     auto* navMeshManager = UnoEngine::GetInstance()->GetNavMgr();
@@ -218,14 +234,34 @@ void RenderSystem::Update(World& world, float deltaTime) {
     );
 #endif
 
-    // Post-process chain: PSX → Horror → CRT → Backbuffer
+    // Update sprint effect params from player SprintComponent
+    if (ppChain && ppChain->sprintEffect) {
+        float sprintIntensity = 0.0f;
+        float sprintTime = 0.0f;
+        world.ForEach<PlayerTag, SprintComponent>(
+            [&sprintIntensity, &sprintTime](Entity, PlayerTag&, SprintComponent& sprint) {
+                sprintIntensity = sprint.effectIntensity;
+                sprintTime = sprint.sprintTime;
+            }
+        );
+        float screenAspect = camera ? camera->GetAspectRatio() : (16.0f / 9.0f);
+        ppChain->sprintEffect->SetSprintParams(sprintIntensity, sprintTime,
+                                               screenAspect, 4.0f / 3.0f);
+    }
+
+    // Post-process chain: PSX → Horror → CRT → Sprint → Backbuffer
     if (ppChain) {
         if (ppChain->psxEffect && ppChain->horrorEffect && ppChain->crtEffect) {
             ppChain->horrorEffect->SetFisheyeStrength(ppChain->fisheyeStrength);
             ppChain->horrorEffect->SetFisheyeRadius(ppChain->fisheyeRadius);
             ppChain->psxEffect->PostDrawTo(ppChain->horrorEffect.get());
             ppChain->horrorEffect->PostDrawTo(ppChain->crtEffect.get());
-            ppChain->crtEffect->PostDraw();
+            if (ppChain->sprintEffect) {
+                ppChain->crtEffect->PostDrawTo(ppChain->sprintEffect.get());
+                ppChain->sprintEffect->PostDraw();
+            } else {
+                ppChain->crtEffect->PostDraw();
+            }
         } else if (ppChain->psxEffect && ppChain->horrorEffect) {
             ppChain->horrorEffect->SetFisheyeStrength(ppChain->fisheyeStrength);
             ppChain->horrorEffect->SetFisheyeRadius(ppChain->fisheyeRadius);

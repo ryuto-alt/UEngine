@@ -104,7 +104,7 @@ void FPSCamera::ToggleMouseLook() {
     }
 }
 
-void FPSCamera::UpdateCameraShake(bool isMoving, bool isRunning, float deltaTime, UnoEngine* engine) {
+void FPSCamera::UpdateCameraShake(bool isMoving, bool isRunning, bool isSprinting, float deltaTime, UnoEngine* engine) {
     if (!isFPSMode_) {
         cameraShakeOffset_ = {0.0f, 0.0f, 0.0f};
         return;
@@ -118,8 +118,17 @@ void FPSCamera::UpdateCameraShake(bool isMoving, bool isRunning, float deltaTime
 
     if (isMoving) {
         // 移動中の場合、カメラシェイクを適用
-        float amplitude = isRunning ? runShakeAmplitude_ : walkShakeAmplitude_;
-        float frequency = isRunning ? runShakeFrequency_ : walkShakeFrequency_;
+        float amplitude, frequency;
+        if (isSprinting) {
+            amplitude = sprintShakeAmplitude_;
+            frequency = sprintShakeFrequency_;
+        } else if (isRunning) {
+            amplitude = runShakeAmplitude_;
+            frequency = runShakeFrequency_;
+        } else {
+            amplitude = walkShakeAmplitude_;
+            frequency = walkShakeFrequency_;
+        }
 
         // タイマーをデルタタイムで進める
         shakeTimer_ += deltaTime;

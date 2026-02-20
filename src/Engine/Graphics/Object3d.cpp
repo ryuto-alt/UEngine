@@ -41,6 +41,9 @@ Object3d::~Object3d() {
 	if (cameraResource_) {
 		cameraResource_.Reset();
 	}
+	if (xrayColorResource_) {
+		xrayColorResource_.Reset();
+	}
 
 	// データポインタをnullptrに設定（安全のため）
 	materialData_ = nullptr;
@@ -48,6 +51,7 @@ Object3d::~Object3d() {
 	directionalLightData_ = nullptr;
 	spotLightData_ = nullptr;
 	cameraData_ = nullptr;
+	xrayColorData_ = nullptr;
 }
 
 void Object3d::Initialize(DirectXCommon* dxCommon, SpriteCommon* spriteCommon) {
@@ -120,6 +124,11 @@ void Object3d::Initialize(DirectXCommon* dxCommon, SpriteCommon* spriteCommon) {
 	cameraData_->fogDensity = 1.0f; // Fog濃度100%
 	cameraData_->enableFog = 1;     // Fogを有効化(デフォルトON)
 	cameraData_->padding = 0.0f;
+
+	// X-rayカラーリソース（b0スロット用、256バイトアライン）
+	xrayColorResource_ = dxCommon_->CreateBufferResource(256);
+	xrayColorResource_->Map(0, nullptr, reinterpret_cast<void**>(&xrayColorData_));
+	xrayColorData_->color = { 1.0f, 0.0f, 0.0f, 1.0f }; // デフォルト赤
 
 	// デフォルトテクスチャを事前にロードして描画中の動的SRV作成を避ける
 	TextureManager::GetInstance()->LoadDefaultTexture();
@@ -835,6 +844,81 @@ void Object3d::Draw(Camera* camera, int* visibleMeshCount, int* culledMeshCount)
 		else {
 			if (culledMeshCount) (*culledMeshCount)++;
 		}
+	}
+}
+
+void Object3d::DrawXRay(float alpha) {
+	if (!dxCommon_ || !model_ || !spriteCommon_) return;
+
+	auto* cmdList = dxCommon_->GetCommandList();
+	bool useAnimation = enableAnimation_ && animatedModel_;
+
+	// Update fade alpha
+	xrayColorData_->color = { 1.0f, 0.05f, 0.05f, alpha };
+
+	cmdList->SetGraphicsRootSignature(spriteCommon_->GetRootSignature().Get());
+
+	if (useAnimation) {
+		cmdList->SetPipelineState(spriteCommon_->GetXRaySkinnedPipelineState().Get());
+	} else {
+		cmdList->SetPipelineState(spriteCommon_->GetXRayPipelineState().Get());
+	}
+
+	cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	// Slot 0: X-ray color (PS b0)
+	cmdList->SetGraphicsRootConstantBufferView(0, xrayColorResource_->GetGPUVirtualAddress());
+	// Slot 1: transform matrix (VS b0)
+	cmdList->SetGraphicsRootConstantBufferView(1, transformationMatrixResource_->GetGPUVirtualAddress());
+	// Slot 7: camera data (VS/PS b3)
+	cmdList->SetGraphicsRootConstantBufferView(7, cameraResource_->GetGPUVirtualAddress());
+
+	// Skinning palette SRV (slot 4, VS)
+	if (useAnimation) {
+		AnimatedModel* animModel = static_cast<AnimatedModel*>(animatedModel_);
+		const SkinCluster& skinCluster = animModel->GetSkinCluster();
+		if (skinCluster.paletteSrvHandle.second.ptr != 0) {
+			cmdList->SetGraphicsRootDescriptorTable(4, skinCluster.paletteSrvHandle.second);
+		}
+	}
+
+	const ModelData& modelData = model_->GetModelData();
+	bool isMultiMaterial = !modelData.matVertexData.empty();
+
+	if (isMultiMaterial) {
+		const std::vector<D3D12_VERTEX_BUFFER_VIEW>& vbViews = model_->GetVertexBufferViews();
+		size_t meshIndex = 0;
+		size_t vertexOffset = 0;
+
+		for (const auto& matDataPair : modelData.matVertexData) {
+			const MaterialVertexData& matVertexData = matDataPair.second;
+
+			if (useAnimation) {
+				AnimatedModel* animModel = static_cast<AnimatedModel*>(animatedModel_);
+				const SkinCluster& skinCluster = animModel->GetSkinCluster();
+				D3D12_VERTEX_BUFFER_VIEW meshInfluenceView = skinCluster.influenceBufferView;
+				meshInfluenceView.BufferLocation += vertexOffset * sizeof(VertexInfluence);
+				meshInfluenceView.SizeInBytes = static_cast<UINT>(sizeof(VertexInfluence) * matVertexData.vertices.size());
+				D3D12_VERTEX_BUFFER_VIEW vbvs[2] = { vbViews[meshIndex], meshInfluenceView };
+				cmdList->IASetVertexBuffers(0, 2, vbvs);
+			} else {
+				cmdList->IASetVertexBuffers(0, 1, &vbViews[meshIndex]);
+			}
+
+			cmdList->DrawInstanced(static_cast<uint32_t>(matVertexData.vertices.size()), 1, 0, 0);
+			vertexOffset += matVertexData.vertices.size();
+			meshIndex++;
+		}
+	} else {
+		if (useAnimation) {
+			AnimatedModel* animModel = static_cast<AnimatedModel*>(animatedModel_);
+			const SkinCluster& skinCluster = animModel->GetSkinCluster();
+			D3D12_VERTEX_BUFFER_VIEW vbvs[2] = { model_->GetVBView(), skinCluster.influenceBufferView };
+			cmdList->IASetVertexBuffers(0, 2, vbvs);
+		} else {
+			cmdList->IASetVertexBuffers(0, 1, &model_->GetVBView());
+		}
+		cmdList->DrawInstanced(model_->GetVertexCount(), 1, 0, 0);
 	}
 }
 

@@ -36,7 +36,7 @@ public:
     void ToggleMouseLook();
 
     // カメラシェイク
-    void UpdateCameraShake(bool isMoving, bool isRunning, float deltaTime, class UnoEngine* engine);
+    void UpdateCameraShake(bool isMoving, bool isRunning, bool isSprinting, float deltaTime, class UnoEngine* engine);
     Vector3 GetCameraShakeOffset() const { return cameraShakeOffset_; }
 
     // 敵接近による恐怖シェイク
@@ -61,8 +61,10 @@ private:
     float shakeTimer_ = 0.0f;
     float walkShakeAmplitude_ = 0.008f;  // 歩行時の揺れの大きさ
     float walkShakeFrequency_ = 6.0f;    // 歩行時の揺れの速さ
-    float runShakeAmplitude_ = 0.025f;   // 走行時の揺れの大きさ
-    float runShakeFrequency_ = 20.0f;     // 走行時の揺れの速さ
+    float runShakeAmplitude_    = 0.025f; // 走行時の揺れの大きさ
+    float runShakeFrequency_    = 20.0f; // 走行時の揺れの速さ
+    float sprintShakeAmplitude_ = 0.042f; // スプリント時の揺れの大きさ
+    float sprintShakeFrequency_ = 32.0f; // スプリント時の揺れの速さ
 
     // 足音用
     float previousYOffset_ = 0.0f;  // 前フレームのY方向オフセット

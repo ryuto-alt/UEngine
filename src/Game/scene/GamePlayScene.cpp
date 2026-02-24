@@ -468,6 +468,7 @@ void GamePlayScene::Initialize() {
     bitmapFont->Initialize(spriteCommon_, "Resources/fonts/honoka_gothic_16.fnt");
     auto subtitleManager = std::make_unique<SubtitleManager>();
     subtitleManager->Initialize(spriteCommon_, bitmapFont.get());
+#ifdef _DEBUG
     subtitleManager->SetSteps({
         {L"……ここが、あの「夢」か。", 2.5f, 0.05f},
         {L"噂通りだ──暗い迷路。\n出口は見えない。", 3.0f, 0.05f},
@@ -477,6 +478,7 @@ void GamePlayScene::Initialize() {
         {L"足音に気をつけろ……捕まったら終わりだ。", 2.5f, 0.10f},
     });
     subtitleManager->Start();
+#endif
 
     auto& subtitleComp = m_world->GetComponent<SubtitleUIComponent>(m_gameStateEntity);
     subtitleComp.bitmapFont = std::move(bitmapFont);

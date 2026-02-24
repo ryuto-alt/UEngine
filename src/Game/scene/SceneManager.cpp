@@ -7,7 +7,7 @@
 #include "EndingScene.h"
 #include "CreditScene.h"
 #include "GameClearScene.h"
-#include "Enemy2AnimTestScene.h"
+#include "CubAnimTestScene.h"
 #include <cassert>
 
 // 静的メンバ変数の実体化
@@ -65,8 +65,8 @@ void SceneManager::Update() {
             currentScene_ = std::make_unique<CreditScene>();
         } else if (nextScene_ == "GameClear") {
             currentScene_ = std::make_unique<GameClearScene>();
-        } else if (nextScene_ == "Enemy2AnimTest") {
-            currentScene_ = std::make_unique<Enemy2AnimTestScene>();
+        } else if (nextScene_ == "CubAnimTest") {
+            currentScene_ = std::make_unique<CubAnimTestScene>();
         }
 
         // シーンマネージャーのポインタをセット

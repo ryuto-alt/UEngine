@@ -340,34 +340,36 @@ void GamePlayScene::Initialize() {
         jumpscareComp.duration = jumpscareDuration;
     }
 
-    logStep("Enemy model + audio loading");
+    logStep("Bear enemy model + audio loading");
 
-    // Enemy2 表示確認用（プレイヤー位置にスポーン）
+#ifdef _DEBUG
+    // Cub enemy (render only, no AI) - debug only
     {
-        m_enemy2Model = engine->CreateAnim();
-        m_enemy2Model->LoadFromFile("Resources/Models/enemy2", "enemy2_walk.gltf");
-        logStep("Enemy2 LoadFromFile (walk)");
+        m_cubModel = engine->CreateAnim();
+        m_cubModel->LoadFromFile("Resources/Models/cub", "cub_walk.gltf");
+        logStep("Cub LoadFromFile (walk)");
 
-        Animation enemy2WalkAnim = m_enemy2Model->GetAnimationPlayer().GetAnimation();
-        m_enemy2Model->AddAnimation("Walk", enemy2WalkAnim);
-        Animation enemy2RunAnim = engine->LoadAnim("Resources/Models/enemy2", "enemy2_run.gltf");
-        logStep("Enemy2 LoadAnim (run)");
-        m_enemy2Model->AddAnimation("Run", enemy2RunAnim);
-        m_enemy2Model->ChangeAnimation("Walk");
-        m_enemy2Model->PlayAnimation();
+        Animation cubWalkAnim = m_cubModel->GetAnimationPlayer().GetAnimation();
+        m_cubModel->AddAnimation("Walk", cubWalkAnim);
+        Animation cubRunAnim = engine->LoadAnim("Resources/Models/cub", "cub_run.gltf");
+        logStep("Cub LoadAnim (run)");
+        m_cubModel->AddAnimation("Run", cubRunAnim);
+        m_cubModel->ChangeAnimation("Walk");
+        m_cubModel->PlayAnimation();
 
-        m_enemy2Obj = engine->CreateObj3();
-        m_enemy2Obj->SetModel(static_cast<Model*>(m_enemy2Model.get()));
-        m_enemy2Obj->SetAnimatedModel(m_enemy2Model.get());
-        m_enemy2Obj->SetPosition(playerPos);
-        m_enemy2Obj->SetScale({0.3f, 0.3f, 0.3f});
-        m_enemy2Obj->SetRotation({0.0f, 3.14159f, 0.0f});
-        m_enemy2Obj->SetEnableLighting(true);
-        m_enemy2Obj->SetCamera(camera_);
-        m_enemy2Obj->Update();
+        m_cubObj = engine->CreateObj3();
+        m_cubObj->SetModel(static_cast<Model*>(m_cubModel.get()));
+        m_cubObj->SetAnimatedModel(m_cubModel.get());
+        m_cubObj->SetPosition(playerPos);
+        m_cubObj->SetScale({0.3f, 0.3f, 0.3f});
+        m_cubObj->SetRotation({0.0f, 3.14159f, 0.0f});
+        m_cubObj->SetEnableLighting(true);
+        m_cubObj->SetCamera(camera_);
+        m_cubObj->Update();
     }
 
-    logStep("Enemy2 model loading");
+    logStep("Cub model loading");
+#endif
 
     // Orb entities (each needs its own model)
     std::vector<Vector3> orbPositions;
@@ -775,23 +777,27 @@ void GamePlayScene::Update() {
         );
     }
 
-    // Enemy2 アニメーション更新
-    if (m_enemy2Model) {
-        m_enemy2Model->Update(deltaTime);
+#ifdef _DEBUG
+    // Cub animation update
+    if (m_cubModel) {
+        m_cubModel->Update(deltaTime);
     }
+#endif
 
     // All game logic via ECS
     m_world->UpdateSystems(deltaTime);
 
-    // Enemy2 ライト適用（LightDistributionSystem実行後に反映）
-    if (m_enemy2Obj) {
+#ifdef _DEBUG
+    // Cub lighting (applied after LightDistributionSystem)
+    if (m_cubObj) {
         auto* lightManager = m_world->GetResource<LightManager*>();
         if (lightManager) {
-            m_enemy2Obj->SetDirectionalLight(lightManager->GetDirectionalLight());
-            m_enemy2Obj->SetSpotLight(lightManager->GetSpotLight());
+            m_cubObj->SetDirectionalLight(lightManager->GetDirectionalLight());
+            m_cubObj->SetSpotLight(lightManager->GetSpotLight());
         }
-        m_enemy2Obj->Update();
+        m_cubObj->Update();
     }
+#endif
 
     // Ending fade-out: all orbs collected → fade to black → EndingScene
     if (m_gameStateEntity.IsValid()) {
@@ -815,13 +821,15 @@ void GamePlayScene::Update() {
 }
 
 void GamePlayScene::Draw() {
-    // Enemy2をRenderSystem内のPostProcess前に描画するためコールバック登録
     m_renderSystem->ClearExtraDrawCallbacks();
-    if (m_enemy2Obj) {
+#ifdef _DEBUG
+    // Draw cub via callback before PostProcess in RenderSystem
+    if (m_cubObj) {
         m_renderSystem->AddExtraDrawCallback([this]() {
-            m_enemy2Obj->Draw();
+            m_cubObj->Draw();
         });
     }
+#endif
 
     // Render and UI via ECS render systems
     m_renderSystem->Update(*m_world, 0.0f);
@@ -917,31 +925,31 @@ void GamePlayScene::Draw() {
         ImGui::End();
     }
 
-    // Enemy2 Debug
-    if (m_enemy2Obj && m_enemy2Model) {
-        ImGui::Begin("Enemy2 Debug");
+#ifdef _DEBUG
+    // Cub Debug
+    if (m_cubObj && m_cubModel) {
+        ImGui::Begin("Cub Debug");
 
-        // アニメーション切り替え（ブレンド使用）
         static int selectedAnim = 0; // 0=Walk, 1=Run
         static float blendDuration = 0.3f;
         ImGui::SliderFloat("Blend Duration", &blendDuration, 0.05f, 1.0f);
         if (ImGui::RadioButton("Walk", &selectedAnim, 0)) {
-            m_enemy2Model->TransitionToAnimation("Walk", blendDuration);
+            m_cubModel->TransitionToAnimation("Walk", blendDuration);
         }
         ImGui::SameLine();
         if (ImGui::RadioButton("Run", &selectedAnim, 1)) {
-            m_enemy2Model->TransitionToAnimation("Run", blendDuration);
+            m_cubModel->TransitionToAnimation("Run", blendDuration);
         }
-        if (m_enemy2Model->IsBlending()) {
-            ImGui::ProgressBar(m_enemy2Model->GetBlendProgress(), ImVec2(-1, 0), "Blending...");
+        if (m_cubModel->IsBlending()) {
+            ImGui::ProgressBar(m_cubModel->GetBlendProgress(), ImVec2(-1, 0), "Blending...");
         }
 
-        // 位置情報
-        const Vector3& pos = m_enemy2Obj->GetPosition();
+        const Vector3& pos = m_cubObj->GetPosition();
         ImGui::Text("Position: (%.1f, %.1f, %.1f)", pos.x, pos.y, pos.z);
 
         ImGui::End();
     }
+#endif
 
     // Ambush Warp debug
     m_world->ForEach<EnemyTag, TransformComponent, AmbushWarpComponent, EnemyAIComponent>(
@@ -1006,9 +1014,11 @@ void GamePlayScene::Finalize() {
     // Stop chase BGM (may still be playing if orbs collected during chase)
     engine->StopAudio("chaseBGM");
 
-    // Enemy2 解放
-    m_enemy2Obj.reset();
-    m_enemy2Model.reset();
+#ifdef _DEBUG
+    // Cub cleanup
+    m_cubObj.reset();
+    m_cubModel.reset();
+#endif
 
     // Clear collision manager before destroying entities (prevents dangling pointers)
     if (auto* colMgr = Collision::AABBCollisionManager::GetInstance()) {

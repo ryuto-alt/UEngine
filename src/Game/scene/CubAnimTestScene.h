@@ -4,10 +4,10 @@
 #include "Object3d.h"
 #include <memory>
 
-class Enemy2AnimTestScene : public IScene {
+class CubAnimTestScene : public IScene {
 public:
-    Enemy2AnimTestScene() = default;
-    ~Enemy2AnimTestScene() override = default;
+    CubAnimTestScene() = default;
+    ~CubAnimTestScene() override = default;
 
     void Initialize() override;
     void Update() override;

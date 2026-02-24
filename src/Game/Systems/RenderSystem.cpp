@@ -90,7 +90,7 @@ void RenderSystem::Update(World& world, float deltaTime) {
         }
     );
 
-    // Extra draw callbacks (Enemy2など、PostProcess内で描画すべき追加オブジェクト)
+    // Extra draw callbacks (Cub etc., additional objects to draw within PostProcess)
     for (auto& callback : extraDrawCallbacks_) {
         callback();
     }

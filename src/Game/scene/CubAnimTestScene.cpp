@@ -1,4 +1,4 @@
-#include "Enemy2AnimTestScene.h"
+#include "CubAnimTestScene.h"
 #include "SceneManager.h"
 #include "UnoEngine.h"
 #include <wincodec.h>
@@ -109,19 +109,19 @@ static void TakeScreenshot(HWND hwnd) {
 // ─────────────────────────────────────────────
 // シーン実装
 // ─────────────────────────────────────────────
-void Enemy2AnimTestScene::Initialize() {
+void CubAnimTestScene::Initialize() {
     UnoEngine* engine = UnoEngine::GetInstance();
 
     camera_->SetTranslate({0.0f, 2.0f, -6.0f});
     camera_->SetRotate({0.1f, 0.0f, 0.0f});
 
     model_ = engine->CreateAnim();
-    model_->LoadFromFile("Resources/Models/enemy2", "enemy2_walk.gltf");
+    model_->LoadFromFile("Resources/Models/cub", "cub_walk.gltf");
 
     Animation walkAnim = model_->GetAnimationPlayer().GetAnimation();
     model_->AddAnimation("Walk", walkAnim);
 
-    Animation runAnim = engine->LoadAnim("Resources/Models/enemy2", "enemy2_run.gltf");
+    Animation runAnim = engine->LoadAnim("Resources/Models/cub", "cub_run.gltf");
     model_->AddAnimation("Run", runAnim);
 
     model_->ChangeAnimation("Walk");
@@ -138,7 +138,7 @@ void Enemy2AnimTestScene::Initialize() {
     object_->Update();
 }
 
-void Enemy2AnimTestScene::Update() {
+void CubAnimTestScene::Update() {
     UnoEngine* engine = UnoEngine::GetInstance();
     const float dt = engine->GetDelta();
     elapsedTime_ += dt;
@@ -179,7 +179,7 @@ void Enemy2AnimTestScene::Update() {
     camera_->Update();
 
 #ifdef _DEBUG
-    ImGui::Begin("Enemy2 Animation Test");
+    ImGui::Begin("Cub Animation Test");
 
     // スケール
     ImGui::SeparatorText("Scale");
@@ -226,11 +226,11 @@ void Enemy2AnimTestScene::Update() {
 #endif
 }
 
-void Enemy2AnimTestScene::Draw() {
+void CubAnimTestScene::Draw() {
     object_->Draw();
 }
 
-void Enemy2AnimTestScene::Finalize() {
+void CubAnimTestScene::Finalize() {
     object_.reset();
     model_.reset();
 }

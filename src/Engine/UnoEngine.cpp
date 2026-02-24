@@ -5,6 +5,20 @@
 #include <cassert>
 #include <algorithm>
 #include <cctype>
+#include <chrono>
+#include <fstream>
+#include <cstdio>
+
+// パフォーマンス計測ログをファイル出力するヘルパー
+static std::ofstream& GetPerfLogStream() {
+    static std::ofstream perfLog("perf_log.txt", std::ios::trunc);
+    return perfLog;
+}
+void PerfLog(const char* msg) {
+    GetPerfLogStream() << msg;
+    GetPerfLogStream().flush();
+    OutputDebugStringA(msg);
+}
 #define _USE_MATH_DEFINES
 #include <cmath>
 
@@ -41,13 +55,26 @@ void UnoEngine::DestroyInst() {
 // 初期化
 void UnoEngine::Initialize() {
     try {
+        auto engineStart = std::chrono::high_resolution_clock::now();
+        auto stepStart = engineStart;
+        auto logStep = [&stepStart](const char* name) {
+            auto now = std::chrono::high_resolution_clock::now();
+            auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - stepStart).count();
+            char buf[256];
+            sprintf_s(buf, "[PERF] %-40s %lld ms\n", name, ms);
+            PerfLog(buf);
+            stepStart = now;
+        };
+
         // WinAppの初期化
         winApp_ = std::make_unique<WinApp>();
         winApp_->Initialize();
+        logStep("WinApp::Initialize");
 
         // DirectXCommonの初期化
         dxCommon_ = std::make_unique<DirectXCommon>();
         dxCommon_->Initialize(winApp_.get());
+        logStep("DirectXCommon::Initialize");
 
         // ボーダレスウィンドウで起動した場合、スワップチェーンをフルスクリーンサイズにリサイズ
         if (winApp_->IsFullscreen()) {
@@ -59,49 +86,54 @@ void UnoEngine::Initialize() {
         // SRVマネージャの初期化
         srvManager_ = std::make_unique<SrvManager>();
         srvManager_->Initialize(dxCommon_.get());
+        logStep("SrvManager::Initialize");
 
         // ここで明示的にPreDrawを呼び出し、ディスクリプタヒープを設定
         // srvManager_->PreDraw();  // 描画時に呼ぶので初期化では不要
 
         // テクスチャマネージャの初期化
         TextureManager::GetInstance()->Initialize(dxCommon_.get(), srvManager_.get());
+        logStep("TextureManager::Initialize");
 
         // デフォルトテクスチャの事前読み込み
         // TextureManager::GetInstance()->LoadDefaultTexture();
 
         // ImGuiの初期化
         InitializeImGui();
+        logStep("ImGui::Initialize");
 
         // 入力初期化
         input_ = std::make_unique<Input>();
         input_->Initialize(winApp_.get());
+        logStep("Input::Initialize");
 
         // オーディオマネージャの初期化
         AudioManager::GetInstance()->Initialize();
+        logStep("AudioManager::Initialize");
 
         // スプライト共通部分の初期化
         spriteCommon_ = std::make_unique<SpriteCommon>();
         spriteCommon_->Initialize(dxCommon_.get());
+        logStep("SpriteCommon::Initialize (PSO creation)");
 
         // カメラの作成と初期化
         camera_ = std::make_unique<Camera>();
         camera_->SetTranslate({ 0.0f, 0.0f, -5.0f });
         // ウィンドウハンドルを設定（エンジンレベルで自動設定）
         camera_->SetWindowHandle(winApp_->GetHwnd());
-        // Object3dCommonは存在しないためコメントアウト
-        // Object3dCommon::SetDefaultCamera(camera_.get());
+        logStep("Camera::Initialize");
 
         // パーティクルマネージャの初期化
         ParticleManager::GetInstance()->Initialize(dxCommon_.get(), srvManager_.get());
-
-        // 基本的なパーティクルグループの作成（必要になったら作成）
-        // ParticleManager::GetInstance()->CreateParticleGroup("smoke", "Resources/particle/smoke.png");
+        logStep("ParticleManager::Initialize");
 
         // 3Dパーティクルマネージャの初期化
         Particle3DManager::GetInstance()->Initialize(dxCommon_.get(), srvManager_.get(), spriteCommon_.get());
+        logStep("Particle3DManager::Initialize");
 
         // 3Dエフェクトマネージャの初期化
         EffectManager3D::GetInstance()->Initialize();
+        logStep("EffectManager3D::Initialize");
 
         // AABBコリジョンマネージャの初期化
         Collision::AABBCollisionManager::Create();
@@ -118,10 +150,12 @@ void UnoEngine::Initialize() {
         sceneManager->SetSrvManager(srvManager_.get());
         sceneManager->SetCamera(camera_.get());
         sceneManager->SetWinApp(winApp_.get());
+        logStep("SceneManager setup");
 
         // ポストプロセスの初期化
         postProcess_ = std::make_unique<PostProcess>();
         postProcess_->Initialize(dxCommon_.get(), srvManager_.get());
+        logStep("PostProcess::Initialize");
 
         // ライトマネージャーの初期化
         lightManager_ = std::make_unique<LightManager>();
@@ -145,6 +179,12 @@ void UnoEngine::Initialize() {
 
         // JobSystem 初期化
         ECS::JobSystem::GetInstance().Initialize();
+
+        auto engineEnd = std::chrono::high_resolution_clock::now();
+        auto totalMs = std::chrono::duration_cast<std::chrono::milliseconds>(engineEnd - engineStart).count();
+        char totalBuf[256];
+        sprintf_s(totalBuf, "[PERF] ========== UnoEngine::Initialize TOTAL: %lld ms ==========\n", totalMs);
+        PerfLog(totalBuf);
 
     }
     catch (const std::exception&) {

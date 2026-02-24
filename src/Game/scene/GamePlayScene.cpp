@@ -74,6 +74,7 @@
 #include "Collision/AABBCollision.h"
 #include "NavMesh/NavMesh.h"
 #include "LineRenderer.h"
+#include "TextureManager.h"
 
 // ECS component types are in namespace ECS
 using namespace ECS;
@@ -81,6 +82,12 @@ using namespace ECS;
 #include <filesystem>
 #include <cmath>
 #include <string>
+#include <chrono>
+#include <fstream>
+#include <cstdio>
+
+// UnoEngine.cppで定義されたPerfLogを使用
+extern void PerfLog(const char* msg);
 
 #ifdef _DEBUG
 #include "imgui.h"
@@ -98,8 +105,22 @@ void GamePlayScene::Initialize() {
         return;
     }
 
+    auto sceneStart = std::chrono::high_resolution_clock::now();
+    auto stepStart = sceneStart;
+    auto logStep = [&stepStart](const char* name) {
+        auto now = std::chrono::high_resolution_clock::now();
+        auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - stepStart).count();
+        char buf[256];
+        sprintf_s(buf, "[PERF] Scene: %-35s %lld ms\n", name, ms);
+        PerfLog(buf);
+        stepStart = now;
+    };
+
     UnoEngine* engine = UnoEngine::GetInstance();
     m_world = engine->GetECSWorld();
+
+    // テクスチャバッチモード開始（GPU同期を最後に1回だけにする）
+    TextureManager::GetInstance()->BeginBatch();
 
     SceneConfigurator configurator;
     std::vector<std::unique_ptr<Object3d>> sceneObjects;
@@ -119,6 +140,7 @@ void GamePlayScene::Initialize() {
         fpsCamera, postProcess, horrorEffect, skyboxEnabled,
         fisheyeStrength, fisheyeRadius
     );
+    logStep("SceneConfigurator (JSON+objects)");
 
     // NavMesh initialization
     NavMeshManager* navMeshManager = engine->GetNavMgr();
@@ -132,6 +154,7 @@ void GamePlayScene::Initialize() {
     if (!navMeshManager->GetNavMesh() || !navMeshManager->GetNavMesh()->IsValid()) {
         engine->GenNav(sceneObjects, "externals/navimap/stage.navmesh");
     }
+    logStep("NavMesh load/generate");
 
     // Generate minimap textures (cached as PNG)
     const std::string mapPng = "Resources/textures/UI/minimap_navmesh.png";
@@ -147,6 +170,7 @@ void GamePlayScene::Initialize() {
         // circleRatio = 1/FRAME_SCALE so the opening appears as MAP_SIZE on screen
         MinimapGenerator::GenerateCircularFrame(mapFrame, 512, 1.0f / 1.45f);
     }
+    logStep("Minimap generation");
 
     // --- Create ECS Entities ---
 
@@ -199,6 +223,8 @@ void GamePlayScene::Initialize() {
             collisionManager->RegisterObject(renderer.object3d.get(), playerAABB, true, "Player");
         }
     }
+
+    logStep("Player model loading");
 
     if (fpsCamera) {
         auto& fpsCam = m_world->GetComponent<FPSCameraComponent>(m_playerEntity);
@@ -314,14 +340,18 @@ void GamePlayScene::Initialize() {
         jumpscareComp.duration = jumpscareDuration;
     }
 
+    logStep("Enemy model + audio loading");
+
     // Enemy2 表示確認用（プレイヤー位置にスポーン）
     {
         m_enemy2Model = engine->CreateAnim();
         m_enemy2Model->LoadFromFile("Resources/Models/enemy2", "enemy2_walk.gltf");
+        logStep("Enemy2 LoadFromFile (walk)");
 
         Animation enemy2WalkAnim = m_enemy2Model->GetAnimationPlayer().GetAnimation();
         m_enemy2Model->AddAnimation("Walk", enemy2WalkAnim);
         Animation enemy2RunAnim = engine->LoadAnim("Resources/Models/enemy2", "enemy2_run.gltf");
+        logStep("Enemy2 LoadAnim (run)");
         m_enemy2Model->AddAnimation("Run", enemy2RunAnim);
         m_enemy2Model->ChangeAnimation("Walk");
         m_enemy2Model->PlayAnimation();
@@ -336,6 +366,8 @@ void GamePlayScene::Initialize() {
         m_enemy2Obj->SetCamera(camera_);
         m_enemy2Obj->Update();
     }
+
+    logStep("Enemy2 model loading");
 
     // Orb entities (each needs its own model)
     std::vector<Vector3> orbPositions;
@@ -365,6 +397,8 @@ void GamePlayScene::Initialize() {
         }
     }
 
+    logStep("Orb models loading");
+
     // Scene object entities
     for (auto& obj : sceneObjects) {
         ECS::Entity sceneEntity = EntityFactory::CreateSceneObjectEntity(*m_world, std::move(obj));
@@ -386,6 +420,8 @@ void GamePlayScene::Initialize() {
         skyboxComp.enabled = skyboxEnabled;
     }
 
+    logStep("GameState/Skybox entity setup");
+
     // Post-process chain on game state entity
     if (postProcess || horrorEffect) {
         auto& ppChain = m_world->GetComponent<PostProcessChainComponent>(m_gameStateEntity);
@@ -402,6 +438,8 @@ void GamePlayScene::Initialize() {
         crtEffect->SetCRTParams(0.06f, 0.08f, 0.30f, 0.008f, aspect, 4.0f / 3.0f);
         ppChain.crtEffect = std::move(crtEffect);
     }
+
+    logStep("PostProcess CRT init");
 
     // Minimap
     auto minimap = std::make_unique<Minimap>();
@@ -420,6 +458,8 @@ void GamePlayScene::Initialize() {
 
     // Register LightManager as global resource (ownership transfer)
     m_world->SetResource<LightManager*>(lightManager.release());
+
+    logStep("Minimap init");
 
     // Subtitle/Tutorial
     auto bitmapFont = std::make_unique<BitmapFont>();
@@ -453,6 +493,8 @@ void GamePlayScene::Initialize() {
     auto& tutorial = m_world->GetComponent<TutorialComponent>(m_gameStateEntity);
     tutorial.isActive = true;
 
+    logStep("BitmapFont/Subtitle init");
+
     // Settings menu
     {
         auto settingsMenu = std::make_unique<SettingsMenu>();
@@ -471,6 +513,8 @@ void GamePlayScene::Initialize() {
         settingsComp.settingsMenu = settingsMenu.get();
         settingsComp.ownedSettingsMenu = std::move(settingsMenu);
     }
+
+    logStep("SettingsMenu init");
 
     // --- Continue復帰処理 ---
     if (s_gameProgress.isResuming) {
@@ -523,6 +567,10 @@ void GamePlayScene::Initialize() {
     AudioManager::GetInstance()->LoadMP3("orbGet", "Resources/audio/se/orb_collect.mp3");
     AudioManager::GetInstance()->SetVolume("orbGet", 0.125f);
 
+    // テクスチャバッチモード終了（ここで1回だけGPU同期）
+    TextureManager::GetInstance()->EndBatch();
+    logStep("TextureBatch EndBatch (GPU sync)");
+
     // Register all update systems
     RegisterSystems();
 
@@ -530,11 +578,19 @@ void GamePlayScene::Initialize() {
     m_renderSystem = std::make_unique<ECS::RenderSystem>();
     m_uiRenderSystem = std::make_unique<ECS::UIRenderSystem>();
 
+    logStep("Systems registration");
+
     // ゲームシーン開始時にマウスカーソルを非表示・中央固定
     if (input_) {
         input_->SetMouseCursor(false);
         input_->ResetMouseCenter();
     }
+
+    auto sceneEnd = std::chrono::high_resolution_clock::now();
+    auto totalMs = std::chrono::duration_cast<std::chrono::milliseconds>(sceneEnd - sceneStart).count();
+    char totalBuf[256];
+    sprintf_s(totalBuf, "[PERF] ========== GamePlayScene::Initialize TOTAL: %lld ms ==========\n", totalMs);
+    PerfLog(totalBuf);
 }
 
 void GamePlayScene::RegisterSystems() {

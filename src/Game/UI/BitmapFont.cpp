@@ -2,6 +2,7 @@
 #include "../../Engine/Graphics/Sprite.h"
 #include "../../Engine/Graphics/SpriteCommon.h"
 #include "../../Engine/Utility/StringUtility.h"
+#include "../../Engine/Graphics/TextureManager.h"
 #include <fstream>
 #include <sstream>
 #include <filesystem>
@@ -24,18 +25,16 @@ void BitmapFont::Initialize(SpriteCommon* spriteCommon, const std::string& fntFi
 
 	ParseFntFile(fntFilePath);
 
-	// Create sprite pools per page
-	m_spritePoolPerPage.resize(m_pageCount);
-	m_nextSpritePerPage.resize(m_pageCount, 0);
-
+	// テクスチャだけ事前にロード（1回のみ、キャッシュされる）
 	for (int32_t p = 0; p < m_pageCount; ++p) {
-		m_spritePoolPerPage[p].reserve(MAX_SPRITES_PER_PAGE);
-		for (int32_t i = 0; i < MAX_SPRITES_PER_PAGE; ++i) {
-			auto sprite = std::make_unique<Sprite>();
-			sprite->Initialize(m_spriteCommon, m_atlasTexturePaths[p]);
-			m_spritePoolPerPage[p].push_back(std::move(sprite));
+		if (!m_atlasTexturePaths[p].empty()) {
+			TextureManager::GetInstance()->LoadTexture(m_atlasTexturePaths[p]);
 		}
 	}
+
+	// Spriteプールは空で初期化（遅延作成）
+	m_spritePoolPerPage.resize(m_pageCount);
+	m_nextSpritePerPage.resize(m_pageCount, 0);
 }
 
 void BitmapFont::ParseFntFile(const std::string& fntFilePath) {
@@ -186,10 +185,18 @@ Sprite* BitmapFont::AcquireSprite(uint16_t page) {
 	if (page >= m_spritePoolPerPage.size()) return nullptr;
 	auto& pool = m_spritePoolPerPage[page];
 	auto& next = m_nextSpritePerPage[page];
-	if (next < static_cast<int32_t>(pool.size())) {
-		return pool[next++].get();
+
+	// プールが足りなければ新しいSpriteを遅延作成
+	if (next >= static_cast<int32_t>(pool.size())) {
+		if (static_cast<int32_t>(pool.size()) >= MAX_SPRITES_PER_PAGE) {
+			return nullptr; // 上限到達
+		}
+		auto sprite = std::make_unique<Sprite>();
+		sprite->Initialize(m_spriteCommon, m_atlasTexturePaths[page]);
+		pool.push_back(std::move(sprite));
 	}
-	return nullptr;
+
+	return pool[next++].get();
 }
 
 void BitmapFont::ResetPool() {

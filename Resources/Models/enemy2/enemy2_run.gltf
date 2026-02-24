@@ -1931,9 +1931,9 @@
 	],
 	"images":[
 		{
-			"mimeType":"image/png",
+			"mimeType":"image/jpeg",
 			"name":"texture_pbr_20250901",
-			"uri":"texture_pbr_20250901.png"
+			"uri":"texture_pbr_20250901_2k.jpg"
 		}
 	],
 	"skins":[

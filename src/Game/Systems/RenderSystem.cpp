@@ -90,6 +90,11 @@ void RenderSystem::Update(World& world, float deltaTime) {
         }
     );
 
+    // Extra draw callbacks (Enemy2など、PostProcess内で描画すべき追加オブジェクト)
+    for (auto& callback : extraDrawCallbacks_) {
+        callback();
+    }
+
     // NavMesh visualization
     UnoEngine::GetInstance()->DrawNavVis();
     auto* navMeshManager = UnoEngine::GetInstance()->GetNavMgr();

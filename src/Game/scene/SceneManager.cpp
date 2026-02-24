@@ -23,7 +23,7 @@ SceneManager* SceneManager::GetInstance() {
 void SceneManager::Initialize() {
     // 最初のシーンを設定
 #ifdef _DEBUG
-    nextScene_ = "Enemy2AnimTest";  // デバッグ時はEnemy2アニメーションテストから
+    nextScene_ = "GamePlay";  // デバッグ時はGamePlayから
 #else
     nextScene_ = "Logo";            // リリース時はLogoから
 #endif

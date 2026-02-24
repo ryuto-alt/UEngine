@@ -314,6 +314,29 @@ void GamePlayScene::Initialize() {
         jumpscareComp.duration = jumpscareDuration;
     }
 
+    // Enemy2 表示確認用（プレイヤー位置にスポーン）
+    {
+        m_enemy2Model = engine->CreateAnim();
+        m_enemy2Model->LoadFromFile("Resources/Models/enemy2", "enemy2_walk.gltf");
+
+        Animation enemy2WalkAnim = m_enemy2Model->GetAnimationPlayer().GetAnimation();
+        m_enemy2Model->AddAnimation("Walk", enemy2WalkAnim);
+        Animation enemy2RunAnim = engine->LoadAnim("Resources/Models/enemy2", "enemy2_run.gltf");
+        m_enemy2Model->AddAnimation("Run", enemy2RunAnim);
+        m_enemy2Model->ChangeAnimation("Walk");
+        m_enemy2Model->PlayAnimation();
+
+        m_enemy2Obj = engine->CreateObj3();
+        m_enemy2Obj->SetModel(static_cast<Model*>(m_enemy2Model.get()));
+        m_enemy2Obj->SetAnimatedModel(m_enemy2Model.get());
+        m_enemy2Obj->SetPosition(playerPos);
+        m_enemy2Obj->SetScale({0.3f, 0.3f, 0.3f});
+        m_enemy2Obj->SetRotation({0.0f, 3.14159f, 0.0f});
+        m_enemy2Obj->SetEnableLighting(true);
+        m_enemy2Obj->SetCamera(camera_);
+        m_enemy2Obj->Update();
+    }
+
     // Orb entities (each needs its own model)
     std::vector<Vector3> orbPositions;
     if (JsonLoader::LoadOrbPositions("Resources/Models/orb/orb_positions.json", orbPositions)) {
@@ -696,8 +719,23 @@ void GamePlayScene::Update() {
         );
     }
 
+    // Enemy2 アニメーション更新
+    if (m_enemy2Model) {
+        m_enemy2Model->Update(deltaTime);
+    }
+
     // All game logic via ECS
     m_world->UpdateSystems(deltaTime);
+
+    // Enemy2 ライト適用（LightDistributionSystem実行後に反映）
+    if (m_enemy2Obj) {
+        auto* lightManager = m_world->GetResource<LightManager*>();
+        if (lightManager) {
+            m_enemy2Obj->SetDirectionalLight(lightManager->GetDirectionalLight());
+            m_enemy2Obj->SetSpotLight(lightManager->GetSpotLight());
+        }
+        m_enemy2Obj->Update();
+    }
 
     // Ending fade-out: all orbs collected → fade to black → EndingScene
     if (m_gameStateEntity.IsValid()) {
@@ -721,8 +759,17 @@ void GamePlayScene::Update() {
 }
 
 void GamePlayScene::Draw() {
+    // Enemy2をRenderSystem内のPostProcess前に描画するためコールバック登録
+    m_renderSystem->ClearExtraDrawCallbacks();
+    if (m_enemy2Obj) {
+        m_renderSystem->AddExtraDrawCallback([this]() {
+            m_enemy2Obj->Draw();
+        });
+    }
+
     // Render and UI via ECS render systems
     m_renderSystem->Update(*m_world, 0.0f);
+
     m_uiRenderSystem->Update(*m_world, 0.0f);
 
 #ifdef _DEBUG
@@ -795,6 +842,48 @@ void GamePlayScene::Draw() {
         auto& gameState = m_world->GetComponent<GameStateComponent>(m_gameStateEntity);
         ImGui::Begin("Game State Debug");
         ImGui::Checkbox("allOrbsCollected", &gameState.allOrbsCollected);
+
+        // Main enemy freeze toggle
+        if (m_enemyEntity.IsValid() && m_world->HasComponent<EnemyAIComponent>(m_enemyEntity)) {
+            auto& ai = m_world->GetComponent<EnemyAIComponent>(m_enemyEntity);
+            ImGui::Separator();
+            static bool freezeEnemy = false;
+            if (ImGui::Checkbox("Freeze Main Enemy", &freezeEnemy)) {
+                ai.isActive = !freezeEnemy;
+                // 速度もゼロにして完全停止
+                ai.moveSpeed = freezeEnemy ? 0.0f : 8.0f;
+                ai.patrolMoveSpeed = freezeEnemy ? 0.0f : 4.5f;
+                ai.searchMoveSpeed = freezeEnemy ? 0.0f : 5.5f;
+            }
+            ImGui::Text("AI State: %s", ai.isChasing ? "Chasing" : ai.isSearching ? "Searching" : "Patrol");
+        }
+
+        ImGui::End();
+    }
+
+    // Enemy2 Debug
+    if (m_enemy2Obj && m_enemy2Model) {
+        ImGui::Begin("Enemy2 Debug");
+
+        // アニメーション切り替え（ブレンド使用）
+        static int selectedAnim = 0; // 0=Walk, 1=Run
+        static float blendDuration = 0.3f;
+        ImGui::SliderFloat("Blend Duration", &blendDuration, 0.05f, 1.0f);
+        if (ImGui::RadioButton("Walk", &selectedAnim, 0)) {
+            m_enemy2Model->TransitionToAnimation("Walk", blendDuration);
+        }
+        ImGui::SameLine();
+        if (ImGui::RadioButton("Run", &selectedAnim, 1)) {
+            m_enemy2Model->TransitionToAnimation("Run", blendDuration);
+        }
+        if (m_enemy2Model->IsBlending()) {
+            ImGui::ProgressBar(m_enemy2Model->GetBlendProgress(), ImVec2(-1, 0), "Blending...");
+        }
+
+        // 位置情報
+        const Vector3& pos = m_enemy2Obj->GetPosition();
+        ImGui::Text("Position: (%.1f, %.1f, %.1f)", pos.x, pos.y, pos.z);
+
         ImGui::End();
     }
 
@@ -860,6 +949,10 @@ void GamePlayScene::Finalize() {
     }
     // Stop chase BGM (may still be playing if orbs collected during chase)
     engine->StopAudio("chaseBGM");
+
+    // Enemy2 解放
+    m_enemy2Obj.reset();
+    m_enemy2Model.reset();
 
     // Clear collision manager before destroying entities (prevents dangling pointers)
     if (auto* colMgr = Collision::AABBCollisionManager::GetInstance()) {

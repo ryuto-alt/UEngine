@@ -48,6 +48,10 @@ private:
     std::unique_ptr<ECS::RenderSystem> m_renderSystem;
     std::unique_ptr<ECS::UIRenderSystem> m_uiRenderSystem;
 
+    // Enemy2 表示確認用（AI無し・描画のみ）
+    std::unique_ptr<class AnimatedModel> m_enemy2Model;
+    std::unique_ptr<class Object3d> m_enemy2Obj;
+
     // Scene configuration data (kept for JSON loading)
     SceneData m_sceneData;
 

@@ -7,6 +7,7 @@
 #include "EndingScene.h"
 #include "CreditScene.h"
 #include "GameClearScene.h"
+#include "Enemy2AnimTestScene.h"
 #include <cassert>
 
 // 静的メンバ変数の実体化
@@ -22,9 +23,9 @@ SceneManager* SceneManager::GetInstance() {
 void SceneManager::Initialize() {
     // 最初のシーンを設定
 #ifdef _DEBUG
-    nextScene_ = "Title";  // デバッグ時はTitleから
+    nextScene_ = "Enemy2AnimTest";  // デバッグ時はEnemy2アニメーションテストから
 #else
-    nextScene_ = "Logo";   // リリース時はLogoから
+    nextScene_ = "Logo";            // リリース時はLogoから
 #endif
 
     OutputDebugStringA("SceneManager initialized successfully\n");
@@ -64,6 +65,8 @@ void SceneManager::Update() {
             currentScene_ = std::make_unique<CreditScene>();
         } else if (nextScene_ == "GameClear") {
             currentScene_ = std::make_unique<GameClearScene>();
+        } else if (nextScene_ == "Enemy2AnimTest") {
+            currentScene_ = std::make_unique<Enemy2AnimTestScene>();
         }
 
         // シーンマネージャーのポインタをセット

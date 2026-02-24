@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cctype>
 #include <fstream>
+#include <set>
 
 AnimatedModel::AnimatedModel() : rootNodeName_("root") {
 }
@@ -159,14 +160,16 @@ void AnimatedModel::SetAnimationLoop(bool loop) {
     animationBlender_.SetLoop(loop);
 }
 
-// アニメーションの追加
+// アニメーションの追加（必要に応じてスケルトン空間の正規化を行う）
 void AnimatedModel::AddAnimation(const std::string& name, const Animation& animation) {
-    animations_[name] = animation;
-    
+    Animation normalizedAnim = animation;
+    NormalizeAnimationToSkeleton(normalizedAnim);
+    animations_[name] = normalizedAnim;
+
     // 最初のアニメーションの場合は自動的に設定
     if (animations_.size() == 1) {
         currentAnimationName_ = name;
-        animationBlender_.SetAnimation(animation);
+        animationBlender_.SetAnimation(normalizedAnim);
         animationBlender_.Play();
     }
 }
@@ -838,6 +841,112 @@ void AnimatedModel::ProcessAssimpAnimation(const aiScene* scene) {
     }
     
     // OutputDebugStringA(("AnimatedModel: Animation duration: " + std::to_string(animation_.duration) + " seconds\n").c_str());
+}
+
+// ── Quaternion演算ヘルパー（正規化用）──────────────────────────
+
+// クォータニオン乗算: q1 * q2
+static Quaternion QuaternionMultiply(const Quaternion& q1, const Quaternion& q2) {
+    return {
+        q1.w * q2.x + q1.x * q2.w + q1.y * q2.z - q1.z * q2.y,
+        q1.w * q2.y + q1.y * q2.w + q1.z * q2.x - q1.x * q2.z,
+        q1.w * q2.z + q1.z * q2.w + q1.x * q2.y - q1.y * q2.x,
+        q1.w * q2.w - q1.x * q2.x - q1.y * q2.y - q1.z * q2.z
+    };
+}
+
+// クォータニオンの逆（共役）: 単位クォータニオン前提
+static Quaternion QuaternionInverse(const Quaternion& q) {
+    return {-q.x, -q.y, -q.z, q.w};
+}
+
+// クォータニオンでベクトルを回転: v' = q * v * q^-1
+static Vector3 RotateVectorByQuaternion(const Vector3& v, const Quaternion& q) {
+    // v をクォータニオンとして扱い: (v.x, v.y, v.z, 0)
+    Quaternion vq = {v.x, v.y, v.z, 0.0f};
+    Quaternion qInv = QuaternionInverse(q);
+    Quaternion result = QuaternionMultiply(QuaternionMultiply(q, vq), qInv);
+    return {result.x, result.y, result.z};
+}
+
+// ── 外部アニメーションのスケルトン空間正規化 ──────────────────
+void AnimatedModel::NormalizeAnimationToSkeleton(Animation& animation) {
+    // ソースファイルのArmature情報がなければスキップ
+    if (!animation.sourceArmature.valid) return;
+
+    // ベースモデルのスケルトンにArmatureジョイントが存在するか確認
+    auto armatureIt = skeleton_.jointMap.find("Armature");
+    if (armatureIt == skeleton_.jointMap.end()) return;
+
+    // ベースモデルのArmature変換を取得
+    auto baseIt = initialJointTransforms_.find("Armature");
+    if (baseIt == initialJointTransforms_.end()) return;
+
+    const JointTransform& baseArm = baseIt->second;
+    const ArmatureInfo& animArm = animation.sourceArmature;
+
+    // Armature変換の差分を検出（スケール差 or 回転差）
+    float scaleRatio = (std::abs(animArm.scale.x) > 0.001f) ? baseArm.scale.x / animArm.scale.x : 1.0f;
+    bool scaleDiffers = std::abs(scaleRatio - 1.0f) > 0.01f;
+
+    float rotDot = baseArm.rotate.x * animArm.rotate.x +
+                   baseArm.rotate.y * animArm.rotate.y +
+                   baseArm.rotate.z * animArm.rotate.z +
+                   baseArm.rotate.w * animArm.rotate.w;
+    bool rotDiffers = std::abs(std::abs(rotDot) - 1.0f) > 0.01f;
+
+    if (!scaleDiffers && !rotDiffers) {
+        OutputDebugStringA("NormalizeAnimationToSkeleton: Armature transforms match, no normalization needed\n");
+        return;
+    }
+
+    OutputDebugStringA(("NormalizeAnimationToSkeleton: Normalizing animation - scaleRatio=" +
+        std::to_string(scaleRatio) + " rotDot=" + std::to_string(rotDot) + "\n").c_str());
+
+    // 補正パラメータ
+    float correctionScale = 1.0f / scaleRatio;  // animScale / baseScale
+    Quaternion invBaseRot = QuaternionInverse(baseArm.rotate);
+
+    // Armatureの直接の子ジョイント名を収集（回転補正が必要なボーン）
+    const Joint& armatureJoint = skeleton_.joints[armatureIt->second];
+    std::set<std::string> directChildNames;
+    for (int32_t childIdx : armatureJoint.children) {
+        if (childIdx >= 0 && childIdx < static_cast<int32_t>(skeleton_.joints.size())) {
+            directChildNames.insert(skeleton_.joints[childIdx].name);
+        }
+    }
+
+    // 全ボーンのキーフレームを補正
+    // - 全ボーン: Translation をスケール補正（Armatureのscaleが全子孫に伝搬するため）
+    // - Armature直接の子のみ: 追加でTranslationの回転補正 + Rotation補正
+    for (auto& [nodeName, nodeAnim] : animation.nodeAnimations) {
+        bool isDirectChild = directChildNames.count(nodeName) > 0;
+
+        // Translation キーフレーム補正
+        if (scaleDiffers) {
+            for (auto& kf : nodeAnim.translate) {
+                kf.value.x *= correctionScale;
+                kf.value.y *= correctionScale;
+                kf.value.z *= correctionScale;
+            }
+        }
+
+        // Armature直接の子のみ: 回転系の追加補正
+        if (isDirectChild && rotDiffers) {
+            // Translation: inverse(armature_rot) で座標系を回転
+            for (auto& kf : nodeAnim.translate) {
+                kf.value = RotateVectorByQuaternion(kf.value, invBaseRot);
+            }
+            // Rotation: rot_corrected = rot_anim * inverse(armature_rot)
+            for (auto& kf : nodeAnim.rotate) {
+                kf.value = QuaternionMultiply(kf.value, invBaseRot);
+            }
+
+            OutputDebugStringA(("NormalizeAnimationToSkeleton: Corrected direct child: " + nodeName + "\n").c_str());
+        }
+    }
+
+    OutputDebugStringA("NormalizeAnimationToSkeleton: Normalization complete\n");
 }
 
 // 指定したジョイントのブレンドされた変換を取得

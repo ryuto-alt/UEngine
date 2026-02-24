@@ -86,9 +86,12 @@ public:
     
     // 指定したジョイントのブレンドされた変換を取得
     JointTransform GetBlendedTransform(const std::string& jointName, const JointTransform& originalTransform) const;
-    
+
     // 初期ジョイント変換を取得
     const std::unordered_map<std::string, JointTransform>& GetInitialJointTransforms() const { return initialJointTransforms_; }
+
+    // 外部アニメーションをベースモデルのスケルトン空間に正規化
+    void NormalizeAnimationToSkeleton(Animation& animation);
 
 private:
     // assimpを使用したGLTFローダー

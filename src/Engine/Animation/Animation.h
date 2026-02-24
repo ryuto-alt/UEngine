@@ -45,10 +45,19 @@ struct NodeAnimation {
     std::vector<KeyframeVector3> scale;        // スケールのキーフレーム
 };
 
+// ソースファイルのArmatureノード変換情報（異なるGLTF間のアニメーション正規化用）
+struct ArmatureInfo {
+    Vector3 scale = {1.0f, 1.0f, 1.0f};
+    Quaternion rotate = {0.0f, 0.0f, 0.0f, 1.0f};  // identity quaternion
+    Vector3 translate = {0.0f, 0.0f, 0.0f};
+    bool valid = false;  // ソースファイルからArmature情報を取得できたか
+};
+
 // アニメーション全体を表すクラス
 struct Animation {
     float duration;  // アニメーション全体の尺（単位は秒）
     std::map<std::string, NodeAnimation> nodeAnimations;  // NodeAnimationの集合。Node名で引けるようにstd::mapで格納
+    ArmatureInfo sourceArmature;  // ソースファイルのArmatureノード変換（正規化用）
 };
 
 

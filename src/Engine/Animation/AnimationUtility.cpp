@@ -86,7 +86,8 @@ Animation LoadAnimationFile(const std::string& directoryPath, const std::string&
     
     const aiScene* scene = importer.ReadFile(fullPath,
         aiProcess_Triangulate |
-        aiProcess_FlipUVs
+        aiProcess_FlipUVs |
+        aiProcess_PopulateArmatureData
     );
     
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
@@ -162,6 +163,43 @@ Animation LoadAnimationFile(const std::string& directoryPath, const std::string&
     }
     
     ///OutputDebugStringA(("LoadAnimationFile: Animation duration: " + std::to_string(animation.duration) + " seconds\n").c_str());
-    
+
+    // Armatureノードの変換を取得（異なるGLTF間の正規化用）
+    // ノードツリーからArmatureノードを探索
+    const aiNode* armatureNode = nullptr;
+    {
+        // BFS/DFSでArmatureノードを検索
+        std::vector<const aiNode*> searchStack;
+        searchStack.push_back(scene->mRootNode);
+        while (!searchStack.empty()) {
+            const aiNode* current = searchStack.back();
+            searchStack.pop_back();
+            if (std::string(current->mName.C_Str()) == "Armature") {
+                armatureNode = current;
+                break;
+            }
+            for (unsigned int i = 0; i < current->mNumChildren; i++) {
+                searchStack.push_back(current->mChildren[i]);
+            }
+        }
+    }
+
+    if (armatureNode) {
+        aiVector3D armScale, armTranslate;
+        aiQuaternion armRotation;
+        armatureNode->mTransformation.Decompose(armScale, armRotation, armTranslate);
+
+        // 右手→左手座標系変換（ReadNodeと同じ変換を適用）
+        animation.sourceArmature.scale = {armScale.x, armScale.y, armScale.z};
+        animation.sourceArmature.rotate = {armRotation.x, -armRotation.y, -armRotation.z, armRotation.w};
+        animation.sourceArmature.translate = {-armTranslate.x, armTranslate.y, armTranslate.z};
+        animation.sourceArmature.valid = true;
+
+        OutputDebugStringA(("LoadAnimationFile: Armature transform - scale=(" +
+            std::to_string(armScale.x) + "," + std::to_string(armScale.y) + "," + std::to_string(armScale.z) +
+            ") rot=(" + std::to_string(armRotation.x) + "," + std::to_string(armRotation.y) + "," +
+            std::to_string(armRotation.z) + "," + std::to_string(armRotation.w) + ")\n").c_str());
+    }
+
     return animation;
 }

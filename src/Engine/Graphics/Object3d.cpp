@@ -375,6 +375,15 @@ void Object3d::Update() {
 			}
 		}
 		else {
+			// まず全ジョイントをバインドポーズにリセット（異なるアニメーション間でのスタレ変換を防ぐ）
+			for (Joint& joint : skeleton.joints) {
+				auto initialIt = animatedModel_->GetInitialJointTransforms().find(joint.name);
+				if (initialIt != animatedModel_->GetInitialJointTransforms().end()) {
+					joint.transform.scale = initialIt->second.scale;
+					joint.transform.rotate = initialIt->second.rotate;
+					joint.transform.translate = initialIt->second.translate;
+				}
+			}
 			// 通常のアニメーション適用
 			const Animation& currentAnimation = animatedModel_->GetAnimationPlayer().GetAnimation();
 			float animationTime = animatedModel_->GetAnimationPlayer().GetTime();
@@ -862,19 +871,21 @@ void Object3d::SkeletonUpdate(Skeleton& skeleton)
 
 void Object3d::ApplyAnimation(Skeleton& skeleton, const Animation& animation, float animationTime)
 {
-	static int applyCount = 0;
-	bool shouldDebug = (applyCount % 300 == 0); // 5秒ごとに出力
-	applyCount++;
-
 	for (Joint& joint : skeleton.joints) {
 		// 対象のJointのAnimationがあれば、値の適用を行う。
-		// 下記のif文はC++17から可能になった初期化付きif文。
 		if (auto it = animation.nodeAnimations.find(joint.name); it != animation.nodeAnimations.end()) {
 			const NodeAnimation& nodeAnimation = it->second;
 
-			joint.transform.translate = ::CalculateValue(nodeAnimation.translate, animationTime);
-			joint.transform.rotate = ::CalculateValue(nodeAnimation.rotate, animationTime);
-			joint.transform.scale = ::CalculateValue(nodeAnimation.scale, animationTime);
+			// 空チェックを行ってからCalculateValueを呼ぶ（GLTFではチャンネルが省略される場合がある）
+			if (!nodeAnimation.translate.empty()) {
+				joint.transform.translate = ::CalculateValue(nodeAnimation.translate, animationTime);
+			}
+			if (!nodeAnimation.rotate.empty()) {
+				joint.transform.rotate = ::CalculateValue(nodeAnimation.rotate, animationTime);
+			}
+			if (!nodeAnimation.scale.empty()) {
+				joint.transform.scale = ::CalculateValue(nodeAnimation.scale, animationTime);
+			}
 		}
 	}
 }

@@ -30,7 +30,6 @@
 #include "Systems/AIBehaviorSystem.h"
 #include "Systems/PathfindingSystem.h"
 #include "Systems/StuckDetectionSystem.h"
-#include "Systems/StealthSystem.h"
 #include "Systems/AmbushWarpSystem.h"
 #include "Systems/OrbCollectionSystem.h"
 #include "Systems/FloatingAnimationSystem.h"
@@ -39,7 +38,6 @@
 #include "Systems/RespawnSystem.h"
 #include "Systems/FearEffectSystem.h"
 #include "Systems/TutorialSystem.h"
-#include "Systems/StealthTutorialSystem.h"
 #include "Systems/AnimationSystem.h"
 #include "Systems/CameraSystem.h"
 #include "Systems/CameraShakeSystem.h"
@@ -342,35 +340,6 @@ void GamePlayScene::Initialize() {
 
     logStep("Bear enemy model + audio loading");
 
-#ifdef _DEBUG
-    // Cub enemy (render only, no AI) - debug only
-    {
-        m_cubModel = engine->CreateAnim();
-        m_cubModel->LoadFromFile("Resources/Models/cub", "cub_walk.gltf");
-        logStep("Cub LoadFromFile (walk)");
-
-        Animation cubWalkAnim = m_cubModel->GetAnimationPlayer().GetAnimation();
-        m_cubModel->AddAnimation("Walk", cubWalkAnim);
-        Animation cubRunAnim = engine->LoadAnim("Resources/Models/cub", "cub_run.gltf");
-        logStep("Cub LoadAnim (run)");
-        m_cubModel->AddAnimation("Run", cubRunAnim);
-        m_cubModel->ChangeAnimation("Walk");
-        m_cubModel->PlayAnimation();
-
-        m_cubObj = engine->CreateObj3();
-        m_cubObj->SetModel(static_cast<Model*>(m_cubModel.get()));
-        m_cubObj->SetAnimatedModel(m_cubModel.get());
-        m_cubObj->SetPosition(playerPos);
-        m_cubObj->SetScale({0.3f, 0.3f, 0.3f});
-        m_cubObj->SetRotation({0.0f, 3.14159f, 0.0f});
-        m_cubObj->SetEnableLighting(true);
-        m_cubObj->SetCamera(camera_);
-        m_cubObj->Update();
-    }
-
-    logStep("Cub model loading");
-#endif
-
     // Orb entities (each needs its own model)
     std::vector<Vector3> orbPositions;
     if (JsonLoader::LoadOrbPositions("Resources/Models/orb/orb_positions.json", orbPositions)) {
@@ -468,7 +437,6 @@ void GamePlayScene::Initialize() {
     bitmapFont->Initialize(spriteCommon_, "Resources/fonts/honoka_gothic_16.fnt");
     auto subtitleManager = std::make_unique<SubtitleManager>();
     subtitleManager->Initialize(spriteCommon_, bitmapFont.get());
-#ifdef _DEBUG
     subtitleManager->SetSteps({
         {L"……ここが、あの「夢」か。", 2.5f, 0.05f},
         {L"噂通りだ──暗い迷路。\n出口は見えない。", 3.0f, 0.05f},
@@ -478,7 +446,6 @@ void GamePlayScene::Initialize() {
         {L"足音に気をつけろ……捕まったら終わりだ。", 2.5f, 0.10f},
     });
     subtitleManager->Start();
-#endif
 
     auto& subtitleComp = m_world->GetComponent<SubtitleUIComponent>(m_gameStateEntity);
     subtitleComp.bitmapFont = std::move(bitmapFont);
@@ -530,31 +497,10 @@ void GamePlayScene::Initialize() {
             }
         }
 
-        // ステルス状態を復帰
-        m_world->ForEach<EnemyTag, StealthComponent>(
-            [](Entity e, EnemyTag&, StealthComponent& stealth) {
-                stealth.stealthEnabled = s_gameProgress.stealthEnabled;
-                // 復帰猶予を開始
-                stealth.isRevivalGrace = true;
-                stealth.revivalGraceTimer = 0.0f;
-            }
-        );
-
-        // ステルスチュートリアル状態を復帰
-        auto& stealthTut = m_world->GetComponent<StealthTutorialComponent>(m_gameStateEntity);
-        stealthTut.triggered = s_gameProgress.stealthTutorialTriggered;
-
         // チュートリアル字幕をスキップ（復帰時は不要）
         tutorial.isFinished = true;
         subtitleComp.subtitleManager->SetSteps({});
         subtitleComp.subtitleManager->Start(); // 空ステップで即完了
-
-        // 敵AIは猶予中は非アクティブ
-        m_world->ForEach<EnemyTag, EnemyAIComponent>(
-            [](Entity e, EnemyTag&, EnemyAIComponent& ai) {
-                ai.isActive = false;
-            }
-        );
 
         // 移動ロック不要（チュートリアルスキップ済み）
         auto& jumpscareVictim = m_world->GetComponent<JumpscareVictimComponent>(m_playerEntity);
@@ -562,7 +508,7 @@ void GamePlayScene::Initialize() {
 
         s_gameProgress.isResuming = false;
     } else {
-        // 通常開始：チュートリアル中は移動ロック
+        // 通常開始：チュートリアル中は移動ロック（セリフ再生中）
         auto& jumpscareVictim = m_world->GetComponent<JumpscareVictimComponent>(m_playerEntity);
         jumpscareVictim.isInJumpscare = true;
     }
@@ -616,7 +562,6 @@ void GamePlayScene::RegisterSystems() {
     m_world->RegisterSystem(std::make_unique<ECS::AIBehaviorSystem>(), 220);
     m_world->RegisterSystem(std::make_unique<ECS::PathfindingSystem>(), 230);
     m_world->RegisterSystem(std::make_unique<ECS::StuckDetectionSystem>(), 240);
-    m_world->RegisterSystem(std::make_unique<ECS::StealthSystem>(), 250);
     m_world->RegisterSystem(std::make_unique<ECS::AmbushWarpSystem>(), 260);
 
     // Gameplay (300-399)
@@ -627,7 +572,6 @@ void GamePlayScene::RegisterSystems() {
     m_world->RegisterSystem(std::make_unique<ECS::RespawnSystem>(), 340);
     m_world->RegisterSystem(std::make_unique<ECS::FearEffectSystem>(), 350);
     m_world->RegisterSystem(std::make_unique<ECS::TutorialSystem>(), 360);
-    m_world->RegisterSystem(std::make_unique<ECS::StealthTutorialSystem>(), 365);
 
     // Animation (400)
     m_world->RegisterSystem(std::make_unique<ECS::AnimationSystem>(), 400);
@@ -729,17 +673,6 @@ void GamePlayScene::Update() {
                         s_gameProgress.collectedOrbs.push_back(false);
                     }
                 }
-                m_world->ForEach<EnemyTag, StealthComponent>(
-                    [](Entity e, EnemyTag&, StealthComponent& stealth) {
-                        s_gameProgress.stealthEnabled = stealth.stealthEnabled;
-                    }
-                );
-                m_world->ForEach<StealthTutorialComponent>(
-                    [](Entity e, StealthTutorialComponent& st) {
-                        s_gameProgress.stealthTutorialTriggered = st.triggered;
-                    }
-                );
-
                 sceneManager_->ChangeScene("GameOver");
             }
             return; // Skip all game logic during game over fade
@@ -779,27 +712,8 @@ void GamePlayScene::Update() {
         );
     }
 
-#ifdef _DEBUG
-    // Cub animation update
-    if (m_cubModel) {
-        m_cubModel->Update(deltaTime);
-    }
-#endif
-
     // All game logic via ECS
     m_world->UpdateSystems(deltaTime);
-
-#ifdef _DEBUG
-    // Cub lighting (applied after LightDistributionSystem)
-    if (m_cubObj) {
-        auto* lightManager = m_world->GetResource<LightManager*>();
-        if (lightManager) {
-            m_cubObj->SetDirectionalLight(lightManager->GetDirectionalLight());
-            m_cubObj->SetSpotLight(lightManager->GetSpotLight());
-        }
-        m_cubObj->Update();
-    }
-#endif
 
     // Ending fade-out: all orbs collected → fade to black → EndingScene
     if (m_gameStateEntity.IsValid()) {
@@ -824,14 +738,6 @@ void GamePlayScene::Update() {
 
 void GamePlayScene::Draw() {
     m_renderSystem->ClearExtraDrawCallbacks();
-#ifdef _DEBUG
-    // Draw cub via callback before PostProcess in RenderSystem
-    if (m_cubObj) {
-        m_renderSystem->AddExtraDrawCallback([this]() {
-            m_cubObj->Draw();
-        });
-    }
-#endif
 
     // Render and UI via ECS render systems
     m_renderSystem->Update(*m_world, 0.0f);
@@ -927,32 +833,6 @@ void GamePlayScene::Draw() {
         ImGui::End();
     }
 
-#ifdef _DEBUG
-    // Cub Debug
-    if (m_cubObj && m_cubModel) {
-        ImGui::Begin("Cub Debug");
-
-        static int selectedAnim = 0; // 0=Walk, 1=Run
-        static float blendDuration = 0.3f;
-        ImGui::SliderFloat("Blend Duration", &blendDuration, 0.05f, 1.0f);
-        if (ImGui::RadioButton("Walk", &selectedAnim, 0)) {
-            m_cubModel->TransitionToAnimation("Walk", blendDuration);
-        }
-        ImGui::SameLine();
-        if (ImGui::RadioButton("Run", &selectedAnim, 1)) {
-            m_cubModel->TransitionToAnimation("Run", blendDuration);
-        }
-        if (m_cubModel->IsBlending()) {
-            ImGui::ProgressBar(m_cubModel->GetBlendProgress(), ImVec2(-1, 0), "Blending...");
-        }
-
-        const Vector3& pos = m_cubObj->GetPosition();
-        ImGui::Text("Position: (%.1f, %.1f, %.1f)", pos.x, pos.y, pos.z);
-
-        ImGui::End();
-    }
-#endif
-
     // Ambush Warp debug
     m_world->ForEach<EnemyTag, TransformComponent, AmbushWarpComponent, EnemyAIComponent>(
         [this](Entity entity, EnemyTag&, TransformComponent& enemyTransform,
@@ -1015,12 +895,6 @@ void GamePlayScene::Finalize() {
     }
     // Stop chase BGM (may still be playing if orbs collected during chase)
     engine->StopAudio("chaseBGM");
-
-#ifdef _DEBUG
-    // Cub cleanup
-    m_cubObj.reset();
-    m_cubModel.reset();
-#endif
 
     // Clear collision manager before destroying entities (prevents dangling pointers)
     if (auto* colMgr = Collision::AABBCollisionManager::GetInstance()) {

@@ -22,7 +22,7 @@ SceneManager* SceneManager::GetInstance() {
 
 void SceneManager::Initialize() {
     // 最初のシーンを設定
-    nextScene_ = "GamePlay";  // GamePlayシーンから開始
+    nextScene_ = "Logo";  // Logoシーンから開始
 
     OutputDebugStringA("SceneManager initialized successfully\n");
 }

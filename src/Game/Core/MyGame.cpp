@@ -21,8 +21,8 @@ void MyGame::Initialize() {
         // シーンマネージャーの初期化
         engine_->GetScnMgr()->Initialize();
 
-        // 初期シーンへの遷移 - 直接GamePlaySceneに
-        engine_->GetScnMgr()->ChangeScene("GamePlay");
+        // 初期シーンへの遷移 - Logoから開始
+        engine_->GetScnMgr()->ChangeScene("Logo");
     }
     catch (const std::exception&) {
         // エラーは無視

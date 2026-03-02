@@ -94,7 +94,7 @@ private:
 
     // 設定
     float moveSpeed_ = 25.0f;
-    float rotateSpeed_ = 0.003f;
+    float rotateSpeed_ = 1.4f;
     float scrollSpeed_ = 1.0f;
 
     // 状態
@@ -107,6 +107,9 @@ private:
     // マウス
     bool rightMousePressed_ = false;
     POINT lockMousePos_ = { 0, 0 };
+    float smoothDeltaX_ = 0.0f;
+    float smoothDeltaY_ = 0.0f;
+    static constexpr float kMouseSmoothing = 0.5f;  // 0=最大スムージング, 1=スムージングなし
 
     // フリーカメラ用
     float yaw_ = 0.0f;

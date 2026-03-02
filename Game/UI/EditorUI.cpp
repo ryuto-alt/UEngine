@@ -759,10 +759,9 @@ namespace UnoEngine {
 			ImGui::DockBuilderAddNode(dockspaceID, ImGuiDockNodeFlags_DockSpace);
 			ImGui::DockBuilderSetNodeSize(dockspaceID, viewport->WorkSize);
 
-			// ドックスペースを分割（Scene|Game 二画面 + 右プロパティ + 下部）
+			// ドックスペースを分割（Scene/Game タブ + 右プロパティ + 下部）
 			ImGuiID dock_main, dock_bottom;
 			ImGuiID dock_viewport, dock_right;
-			ImGuiID dock_scene, dock_game;
 			ImGuiID dock_project, dock_console;
 
 			// メイン領域(70%) | 下部(30%)
@@ -771,17 +770,12 @@ namespace UnoEngine {
 			// メイン領域をビューポート(75%) | 右プロパティ(25%)に分割
 			dock_viewport = ImGui::DockBuilderSplitNode(dock_main, ImGuiDir_Left, 0.75f, nullptr, &dock_right);
 
-			// ビューポートをシーン(50%) | ゲーム(50%)に左右分割
-			dock_scene = ImGui::DockBuilderSplitNode(dock_viewport, ImGuiDir_Left, 0.50f, nullptr, &dock_game);
-
 			// 下部を左(20%) | 右(80%)に分割
 			dock_project = ImGui::DockBuilderSplitNode(dock_bottom, ImGuiDir_Left, 0.20f, nullptr, &dock_console);
 
-			// 左: シーンビュー
-			ImGui::DockBuilderDockWindow(U8("シーン"), dock_scene);
-
-			// 右半分: ゲームビュー
-			ImGui::DockBuilderDockWindow(U8("ゲーム"), dock_game);
+			// シーンとゲームを同じ場所にタブとして配置（シーンがデフォルト）
+			ImGui::DockBuilderDockWindow(U8("シーン"), dock_viewport);
+			ImGui::DockBuilderDockWindow(U8("ゲーム"), dock_viewport);
 
 			// 右: オブジェクトプロパティ
 			ImGui::DockBuilderDockWindow(U8("プロパティ"), dock_right);

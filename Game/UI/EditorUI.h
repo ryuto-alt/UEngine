@@ -230,7 +230,7 @@ private:
 
     // View表示状態
     bool showSceneView_ = true;
-    bool showGameView_ = true;
+    bool showGameView_ = false;
     bool showBlueprintEditor_ = false;  // Blueprint Editor表示状態
 
     // 中央ビューのアクティブタブ（0: Scene, 1: Game, 2: Blueprint Editor）

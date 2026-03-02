@@ -9,7 +9,7 @@
 #include <cmath>
 #include <cfloat>
 
-#ifdef _DEBUG
+#ifdef WITH_EDITOR
 #include "../../Game/UI/EditorUI.h"
 #endif
 
@@ -35,7 +35,7 @@ void CollisionSystem::OnUpdate(Scene* scene, float deltaTime) {
     if (!IsEnabled()) return;
     if (!scene) return;
 
-#ifdef _DEBUG
+#ifdef WITH_EDITOR
     auto* editorUI = scene->GetEditorUI();
     if (editorUI && !editorUI->IsPlaying()) {
         return;

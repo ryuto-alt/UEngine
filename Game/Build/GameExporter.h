@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <filesystem>
 
 namespace UnoEngine {
 
@@ -14,6 +15,7 @@ struct ExportSettings {
     bool copyModels = true;
     bool copyTextures = true;
     bool copyAudio = true;
+    bool smartAssetCopy = true;  // Only copy assets referenced in scene JSONs
 };
 
 struct ExportProgress {
@@ -53,6 +55,11 @@ private:
     bool CopyShadersFolder(const std::wstring& outputPath);
     bool CopyAssetsFolder(const std::wstring& outputPath, const ExportSettings& settings);
     bool CopyRuntimeDLLs(const std::wstring& outputPath);
+
+    // Smart asset collection helpers
+    std::vector<std::filesystem::path> CollectReferencedAssets(const std::filesystem::path& assetsRoot);
+    void CollectGltfDependencies(const std::filesystem::path& gltfPath, std::vector<std::filesystem::path>& out);
+    static std::vector<std::string> ExtractQuotedPaths(const std::string& text);
 
     void ReportProgress(int step, int total, const std::string& task);
 

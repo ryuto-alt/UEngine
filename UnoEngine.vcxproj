@@ -9,6 +9,10 @@
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Shipping|x64">
+      <Configuration>Shipping</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>
@@ -31,6 +35,13 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
@@ -42,12 +53,15 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NOMINMAX</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NOMINMAX;WITH_EDITOR</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
@@ -75,7 +89,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NOMINMAX</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NOMINMAX;WITH_EDITOR</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
@@ -95,6 +109,34 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
 xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D
 xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <Message>Copying assets folder, assimp DLL, and FFmpeg DLLs to output directory...</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NOMINMAX</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)external\imgui;$(ProjectDir)external\imgui\backends;$(ProjectDir)external\assimp\include;$(ProjectDir)external\lua\src;$(ProjectDir)external;$(ProjectDir)external\recast\Recast\Include;$(ProjectDir)external\recast\Detour\Include;$(ProjectDir)external\recast\DetourCrowd\Include;$(ProjectDir)external\imguizmo;$(ProjectDir)external\ffmpeg\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)external\assimp\lib\Release;$(ProjectDir)external\ffmpeg\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc145-mt.lib;avformat.lib;avcodec.lib;avutil.lib;swscale.lib;swresample.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy "$(ProjectDir)assets" "$(OutDir)assets" /E /I /Y /D
+xcopy "$(ProjectDir)external\assimp\bin\Release\*.dll" "$(OutDir)" /Y /D
+xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
+      <Message>Shipping: Copying assets and DLLs...</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -551,6 +593,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Basic\BasicPS.hlsl">
       <ShaderType>Pixel</ShaderType>
@@ -559,6 +602,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\PBR\PBRVS.hlsl">
       <ShaderType>Vertex</ShaderType>
@@ -567,6 +611,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\PBR\PBRPS.hlsl">
       <ShaderType>Pixel</ShaderType>
@@ -575,6 +620,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Sprite\SpriteVS.hlsl">
       <ShaderType>Vertex</ShaderType>
@@ -583,6 +629,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Sprite\SpritePS.hlsl">
       <ShaderType>Pixel</ShaderType>
@@ -591,6 +638,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Skinned\SkinnedVS.hlsl">
       <ShaderType>Vertex</ShaderType>
@@ -599,6 +647,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Skinned\SkinnedPS.hlsl">
       <ShaderType>Pixel</ShaderType>
@@ -607,6 +656,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Outline\OutlineVS.hlsl">
       <ShaderType>Vertex</ShaderType>
@@ -615,6 +665,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Outline\SkinnedOutlineVS.hlsl">
       <ShaderType>Vertex</ShaderType>
@@ -623,6 +674,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Outline\OutlinePS.hlsl">
       <ShaderType>Pixel</ShaderType>
@@ -631,6 +683,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Debug\InfiniteGridVS.hlsl">
       <ShaderType>Vertex</ShaderType>
@@ -639,6 +692,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Debug\InfiniteGridPS.hlsl">
       <ShaderType>Pixel</ShaderType>
@@ -647,6 +701,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Debug\DebugLineVS.hlsl">
       <ShaderType>Vertex</ShaderType>
@@ -655,6 +710,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Debug\DebugLinePS.hlsl">
       <ShaderType>Pixel</ShaderType>
@@ -663,6 +719,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Particle\ParticleEmitCS.hlsl">
       <ShaderType>Compute</ShaderType>
@@ -671,6 +728,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Particle\ParticleUpdateCS.hlsl">
       <ShaderType>Compute</ShaderType>
@@ -679,6 +737,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Particle\ParticleBillboardVS.hlsl">
       <ShaderType>Vertex</ShaderType>
@@ -687,6 +746,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Particle\ParticlePS.hlsl">
       <ShaderType>Pixel</ShaderType>
@@ -695,6 +755,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Particle\ParticleProceduralPS.hlsl">
       <ShaderType>Pixel</ShaderType>
@@ -703,6 +764,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\PostProcess\FullscreenVS.hlsl">
       <ShaderType>Vertex</ShaderType>
@@ -711,6 +773,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\PostProcess\GrayscalePS.hlsl">
       <ShaderType>Pixel</ShaderType>
@@ -719,6 +782,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\PostProcess\VignettePS.hlsl">
       <ShaderType>Pixel</ShaderType>
@@ -727,6 +791,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\PostProcess\FisheyePS.hlsl">
       <ShaderType>Pixel</ShaderType>
@@ -735,6 +800,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\PostProcess\PS1PS.hlsl">
       <ShaderType>Pixel</ShaderType>
@@ -743,6 +809,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\\GenerateMips.hlsl">
       <ShaderType>Compute</ShaderType>
@@ -750,12 +817,14 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <EntryPointName>main</EntryPointName>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\Particle\ParticleCommon.hlsli">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
     </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

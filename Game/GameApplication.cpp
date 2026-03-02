@@ -8,7 +8,7 @@
 #include "../Engine/Systems/CollisionSystem.h"
 #include "../Engine/Core/Logger.h"
 #include "../Engine/Video/VideoPlayerComponent.h"
-#ifdef _DEBUG
+#ifdef WITH_EDITOR
 #include "../Engine/Graphics/MeshRenderer.h"
 #include "../Engine/Rendering/SkinnedMeshRenderer.h"
 #endif
@@ -82,7 +82,7 @@ void GameApplication::OnRender() {
             loggedOnce = true;
         }
 
-#ifdef _DEBUG
+#ifdef WITH_EDITOR
         auto* editorUI = scene->GetEditorUI();
         if (editorUI) {
             auto* debugRenderer = renderer_->GetDebugRenderer();

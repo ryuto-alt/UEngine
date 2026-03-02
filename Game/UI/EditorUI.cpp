@@ -61,6 +61,83 @@ namespace UnoEngine {
 			out.push_back('"');
 			return out;
 		}
+
+		// ─────────────────────────────────────────────
+		// Inspector UI helpers
+		// ─────────────────────────────────────────────
+
+		// Colored component section header. Returns true when open.
+		static bool DrawComponentHeader(const char* label, ImVec4 col, bool defaultOpen = true) {
+			ImVec4 hov = { std::min(col.x + 0.12f, 1.0f), std::min(col.y + 0.12f, 1.0f),
+			               std::min(col.z + 0.12f, 1.0f), col.w };
+			ImGui::PushStyleColor(ImGuiCol_Header,        col);
+			ImGui::PushStyleColor(ImGuiCol_HeaderHovered, hov);
+			ImGui::PushStyleColor(ImGuiCol_HeaderActive,  col);
+			ImGuiTreeNodeFlags flags = defaultOpen ? ImGuiTreeNodeFlags_DefaultOpen : 0;
+			bool open = ImGui::CollapsingHeader(label, flags);
+			ImGui::PopStyleColor(3);
+			if (open) ImGui::Spacing();
+			return open;
+		}
+
+		// Label aligned to a fixed column (115 px), muted gray color.
+		static void PropLabel(const char* label) {
+			ImGui::TextColored(ImVec4(0.72f, 0.72f, 0.72f, 1.0f), "%s", label);
+			ImGui::SameLine(115.0f);
+		}
+
+		// Unity-style XYZ drag control with colored axis buttons.
+		// Clicking an axis button resets that component to resetVal.
+		// outActivated / outDeactivatedAfterEdit are optional undo-tracking hints.
+		static bool Vec3Control(const char* strId, float* v, float speed = 0.1f,
+		                        float resetVal = 0.0f,
+		                        bool* outActivated = nullptr,
+		                        bool* outDeactivatedAfterEdit = nullptr) {
+			const float lineH  = ImGui::GetFrameHeight();
+			const float btnW   = lineH + 2.0f;
+			const float avail  = ImGui::GetContentRegionAvail().x;
+			const float gap    = ImGui::GetStyle().ItemSpacing.x;
+			const float fieldW = std::max(30.0f, (avail - btnW * 3.0f - gap * 2.0f) / 3.0f);
+
+			ImGui::PushID(strId);
+			bool changed = false;
+			bool anyActivated = false, anyDeactivated = false;
+
+			const char* axisLabel[3]  = { "X",     "Y",     "Z"     };
+			const char* dragId[3]     = { "##Xv",  "##Yv",  "##Zv"  };
+			const ImVec4 btnColor[3]  = {
+				{0.80f, 0.10f, 0.15f, 1.0f},
+				{0.20f, 0.65f, 0.20f, 1.0f},
+				{0.10f, 0.25f, 0.80f, 1.0f},
+			};
+			const ImVec4 btnHover[3]  = {
+				{0.90f, 0.20f, 0.25f, 1.0f},
+				{0.30f, 0.75f, 0.30f, 1.0f},
+				{0.20f, 0.35f, 0.90f, 1.0f},
+			};
+
+			for (int i = 0; i < 3; ++i) {
+				if (i > 0) ImGui::SameLine();
+				ImGui::PushStyleColor(ImGuiCol_Button,        btnColor[i]);
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, btnHover[i]);
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive,  btnColor[i]);
+				if (ImGui::Button(axisLabel[i], ImVec2(btnW, lineH))) {
+					v[i] = resetVal;
+					changed = true;
+				}
+				ImGui::PopStyleColor(3);
+				ImGui::SameLine(0.0f, 0.0f);
+				ImGui::SetNextItemWidth(fieldW);
+				if (ImGui::DragFloat(dragId[i], &v[i], speed)) changed = true;
+				anyActivated  |= ImGui::IsItemActivated();
+				anyDeactivated |= ImGui::IsItemDeactivatedAfterEdit();
+			}
+
+			if (outActivated)          *outActivated          = anyActivated;
+			if (outDeactivatedAfterEdit) *outDeactivatedAfterEdit = anyDeactivated;
+			ImGui::PopID();
+			return changed;
+		}
 	}
 
 	// ============================================================
@@ -1110,46 +1187,37 @@ namespace UnoEngine {
 
 		if (selected) {
 			// ヘッダー（オブジェクト名）
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
 			bool isActive = selected->IsActive();
 			if (ImGui::Checkbox("##active", &isActive)) {
 				selected->SetActive(isActive);
 			}
 			ImGui::SameLine();
-			ImGui::Text("%s", selected->GetName().c_str());
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.75f, 1.0f));
+			ImGui::TextUnformatted(selected->GetName().c_str());
 			ImGui::PopStyleColor();
 
-			// タグ・レイヤー（将来実装用）
-			ImGui::Text(U8("タグ"));
-			ImGui::SameLine(80.0f);
-			if (ImGui::BeginCombo("##Tag", "MainCamera", ImGuiComboFlags_NoArrowButton)) {
-				ImGui::EndCombo();
-			}
-			ImGui::SameLine();
-			ImGui::Text(U8("レイヤー"));
-			ImGui::SameLine();
-			if (ImGui::BeginCombo("##Layer", "Default", ImGuiComboFlags_NoArrowButton)) {
-				ImGui::EndCombo();
-			}
-
+			ImGui::Spacing();
 			ImGui::Separator();
+			ImGui::Spacing();
 
 			// Transform セクション
-			if (ImGui::CollapsingHeader(U8("トランスフォーム"), ImGuiTreeNodeFlags_DefaultOpen)) {
+			if (DrawComponentHeader(U8("  トランスフォーム"), {0.15f, 0.40f, 0.52f, 0.85f})) {
 				auto& transform = selected->GetTransform();
-				Vector3 pos = transform.GetLocalPosition();
+				Vector3 pos   = transform.GetLocalPosition();
 				Vector3 scale = transform.GetLocalScale();
 
 				// Position
 				float posArr[3] = { pos.GetX(), pos.GetY(), pos.GetZ() };
-				ImGui::Text(U8("位置"));
-				ImGui::SameLine(80.0f);
-				ImGui::SetNextItemWidth(-1);
-				if (ImGui::DragFloat3("##Position", posArr, 0.1f)) {
-					transform.SetLocalPosition(Vector3(posArr[0], posArr[1], posArr[2]));
+				PropLabel(U8("位置"));
+				{
+					bool activated = false, deactivated = false;
+					if (Vec3Control("##Position", posArr, 0.1f, 0.0f, &activated, &deactivated)) {
+						transform.SetLocalPosition(Vector3(posArr[0], posArr[1], posArr[2]));
+					}
+					if (activated)   BeginInspectorEdit(selected);
+					if (deactivated) EndInspectorEdit();
 				}
-				if (ImGui::IsItemActivated()) BeginInspectorEdit(selected);
-				if (ImGui::IsItemDeactivatedAfterEdit()) EndInspectorEdit();
+				ImGui::Spacing();
 
 				// Rotation（オイラー角）
 				uint64_t objId = reinterpret_cast<uint64_t>(selected);
@@ -1170,32 +1238,36 @@ namespace UnoEngine {
 				Vector3& cachedEuler = cachedEulerAngles_[objId];
 				float euler[3] = { cachedEuler.GetX(), cachedEuler.GetY(), cachedEuler.GetZ() };
 
-				ImGui::Text(U8("回転"));
-				ImGui::SameLine(80.0f);
-				ImGui::SetNextItemWidth(-1);
-				if (ImGui::DragFloat3("##Rotation", euler, 1.0f)) {
-					cachedEuler = Vector3(euler[0], euler[1], euler[2]);
-					constexpr float DEG_TO_RAD = 0.0174532925f;
-					transform.SetLocalRotation(Quaternion::RotationRollPitchYaw(
-						euler[0] * DEG_TO_RAD, euler[1] * DEG_TO_RAD, euler[2] * DEG_TO_RAD));
+				PropLabel(U8("回転"));
+				{
+					bool activated = false, deactivated = false;
+					if (Vec3Control("##Rotation", euler, 1.0f, 0.0f, &activated, &deactivated)) {
+						cachedEuler = Vector3(euler[0], euler[1], euler[2]);
+						constexpr float DEG_TO_RAD = 0.0174532925f;
+						transform.SetLocalRotation(Quaternion::RotationRollPitchYaw(
+							euler[0] * DEG_TO_RAD, euler[1] * DEG_TO_RAD, euler[2] * DEG_TO_RAD));
+					}
+					if (activated)   BeginInspectorEdit(selected);
+					if (deactivated) EndInspectorEdit();
 				}
-				if (ImGui::IsItemActivated()) BeginInspectorEdit(selected);
-				if (ImGui::IsItemDeactivatedAfterEdit()) EndInspectorEdit();
+				ImGui::Spacing();
 
 				// Scale
 				float scaleArr[3] = { scale.GetX(), scale.GetY(), scale.GetZ() };
-				ImGui::Text(U8("スケール"));
-				ImGui::SameLine(80.0f);
-				ImGui::SetNextItemWidth(-1);
-				if (ImGui::DragFloat3("##Scale", scaleArr, 0.01f, 0.001f, 100.0f)) {
-					transform.SetLocalScale(Vector3(scaleArr[0], scaleArr[1], scaleArr[2]));
+				PropLabel(U8("スケール"));
+				{
+					bool activated = false, deactivated = false;
+					if (Vec3Control("##Scale", scaleArr, 0.01f, 1.0f, &activated, &deactivated)) {
+						transform.SetLocalScale(Vector3(scaleArr[0], scaleArr[1], scaleArr[2]));
+					}
+					if (activated)   BeginInspectorEdit(selected);
+					if (deactivated) EndInspectorEdit();
 				}
-				if (ImGui::IsItemActivated()) BeginInspectorEdit(selected);
-				if (ImGui::IsItemDeactivatedAfterEdit()) EndInspectorEdit();
+				ImGui::Spacing();
 			}
 
 			// エディターカメラ追従セクション
-			if (ImGui::CollapsingHeader(U8("エディターカメラ"))) {
+			if (DrawComponentHeader(U8("  エディターカメラ"), {0.30f, 0.30f, 0.30f, 0.85f}, false)) {
 				bool isFollowing = (editorCamera_.GetFollowTarget() == selected);
 				if (ImGui::Checkbox(U8("カメラ追従"), &isFollowing)) {
 					if (isFollowing) {
@@ -1221,7 +1293,7 @@ namespace UnoEngine {
 
 			// Collision セクション
 			if (auto* collision = selected->GetComponent<CollisionComponent>()) {
-				if (ImGui::CollapsingHeader(U8("コリジョン"), ImGuiTreeNodeFlags_DefaultOpen)) {
+				if (DrawComponentHeader(U8("  コリジョン"), {0.55f, 0.28f, 0.08f, 0.85f})) {
 					// 有効/無効
 					bool enabled = collision->IsEnabled();
 					ImGui::Text(U8("有効"));
@@ -1326,7 +1398,7 @@ namespace UnoEngine {
 				}
 			} else {
 				// CollisionComponentがない場合
-				if (ImGui::CollapsingHeader(U8("物理"))) {
+				if (DrawComponentHeader(U8("  物理"), {0.38f, 0.38f, 0.38f, 0.85f}, false)) {
 					ImGui::TextDisabled(U8("(コリジョンなし)"));
 					if (ImGui::Button(U8("コリジョン追加"))) {
 						selected->AddComponent<CollisionComponent>();
@@ -1337,7 +1409,7 @@ namespace UnoEngine {
 
 			// Camera セクション
 			if (auto* camComp = selected->GetComponent<CameraComponent>()) {
-				if (ImGui::CollapsingHeader(U8("カメラ"), ImGuiTreeNodeFlags_DefaultOpen)) {
+				if (DrawComponentHeader(U8("  カメラ"), {0.10f, 0.22f, 0.62f, 0.85f})) {
 					// Clear Flags
 					ImGui::Text(U8("クリアフラグ"));
 					ImGui::SameLine(100.0f);
@@ -1689,14 +1761,14 @@ namespace UnoEngine {
 
 			// Audio Listener セクション
 			if (selected->GetComponent<AudioListener>()) {
-				if (ImGui::CollapsingHeader(U8("オーディオリスナー"), ImGuiTreeNodeFlags_DefaultOpen)) {
+				if (DrawComponentHeader(U8("  オーディオリスナー"), {0.38f, 0.12f, 0.52f, 0.85f})) {
 					ImGui::TextDisabled(U8("(3Dオーディオのメインリスナー)"));
 				}
 			}
 
 			// Audio Source セクション
 			if (auto* audioSource = selected->GetComponent<AudioSource>()) {
-				if (ImGui::CollapsingHeader(U8("オーディオソース"), ImGuiTreeNodeFlags_DefaultOpen)) {
+				if (DrawComponentHeader(U8("  オーディオソース"), {0.38f, 0.12f, 0.52f, 0.85f})) {
 					// クリップ選択
 					std::string clipName = audioSource->GetClipPath().empty() ? U8("(なし)") :
 						std::filesystem::path(audioSource->GetClipPath()).filename().string();
@@ -1765,7 +1837,7 @@ namespace UnoEngine {
 
 			// Scripts セクション
 			if (auto* luaScript = selected->GetComponent<LuaScriptComponent>()) {
-				if (ImGui::CollapsingHeader(U8("スクリプト"), ImGuiTreeNodeFlags_DefaultOpen)) {
+				if (DrawComponentHeader(U8("  スクリプト"), {0.12f, 0.48f, 0.18f, 0.85f})) {
 					std::string scriptName = luaScript->GetScriptPath().empty() ? U8("(なし)") :
 						std::filesystem::path(luaScript->GetScriptPath()).filename().string();
 					ImGui::Text(U8("スクリプト"));
@@ -4173,13 +4245,43 @@ namespace UnoEngine {
 			ImGui::Checkbox(U8("モデル"), &exportSettings_.copyModels);
 			ImGui::Checkbox(U8("テクスチャ"), &exportSettings_.copyTextures);
 			ImGui::Checkbox(U8("オーディオ"), &exportSettings_.copyAudio);
+		ImGui::Spacing();
+		ImGui::Checkbox(U8("スマートコピー (シーン参照アセットのみ)"), &exportSettings_.smartAssetCopy);
+		ImGui::SameLine();
+		ImGui::TextDisabled("(?)");
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip(U8("ONにするとシーンJSONに参照されていないアセット(未使用音声・モデル等)を除外してサイズを削減します"));
+		}
 
 			ImGui::Spacing();
 			ImGui::Separator();
 			ImGui::Spacing();
 
-			// ステータスメッセージ
-			if (!buildStatusMessage_.empty()) {
+			// async export completion check
+			if (exportDone_.load()) {
+				exportDone_.store(false);
+				if (exportThread_.joinable()) exportThread_.join();
+				buildInProgress_ = false;
+				std::lock_guard<std::mutex> doneLock(buildMsgMutex_);
+				if (exportSuccess_) {
+					buildStatusMessage_ = U8("エクスポート完了!");
+					consoleMessages_.push_back("[Build] Export successful: " + std::string(outputPathBuf));
+				} else {
+					buildStatusMessage_ = U8("エクスポート失敗: ") + exportError_;
+					consoleMessages_.push_back("[Build] Export failed: " + exportError_);
+				}
+			}
+
+			// progress bar while building
+			if (buildInProgress_) {
+				ImGui::ProgressBar(-1.0f * static_cast<float>(ImGui::GetTime()), ImVec2(-1, 0), "");
+				ImGui::Spacing();
+			}
+
+			// status message (mutex protected)
+			{
+				std::lock_guard<std::mutex> msgLock(buildMsgMutex_);
+				if (!buildStatusMessage_.empty()) {
 				if (buildStatusMessage_.find("成功") != std::string::npos ||
 					buildStatusMessage_.find("完了") != std::string::npos) {
 					ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.2f, 1.0f), "%s", buildStatusMessage_.c_str());
@@ -4190,6 +4292,7 @@ namespace UnoEngine {
 					ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.0f), "%s", buildStatusMessage_.c_str());
 				}
 				ImGui::Spacing();
+			}
 			}
 
 			// ビルドログ（エラー時に表示）
@@ -4215,24 +4318,28 @@ namespace UnoEngine {
 				std::wstring wGameName(gameNameBuf, gameNameBuf + strlen(gameNameBuf));
 				exportSettings_.gameName = wGameName;
 
-				buildInProgress_ = true;
-				buildStatusMessage_ = U8("エクスポート中...");
-
-				// エクスポート実行
-				bool success = gameExporter_.Export(exportSettings_,
-					[this](const ExportProgress& progress) {
-						buildStatusMessage_ = progress.currentTask;
-					}
-				);
-
-				buildInProgress_ = false;
-				if (success) {
-					buildStatusMessage_ = U8("エクスポート完了!");
-					consoleMessages_.push_back("[Build] Export successful: " + std::string(outputPathBuf));
-				} else {
-					buildStatusMessage_ = U8("エクスポート失敗: ") + gameExporter_.GetLastError();
-					consoleMessages_.push_back("[Build] Export failed: " + gameExporter_.GetLastError());
+								buildInProgress_ = true;
+				exportDone_.store(false);
+				{
+					std::lock_guard<std::mutex> lock(buildMsgMutex_);
+					buildStatusMessage_ = U8("Shipping ビルド開始中...");
 				}
+
+				if (exportThread_.joinable()) exportThread_.join();
+				ExportSettings settingsCopy = exportSettings_;
+				exportThread_ = std::thread([this, settingsCopy]() {
+					bool success = gameExporter_.Export(settingsCopy,
+						[this](const ExportProgress& progress) {
+							std::lock_guard<std::mutex> lock(buildMsgMutex_);
+							buildStatusMessage_ = progress.currentTask;
+						}
+					);
+					exportSuccess_ = success;
+					if (!success) {
+						exportError_ = gameExporter_.GetLastError();
+					}
+					exportDone_.store(true);
+				});
 			}
 			ImGui::EndDisabled();
 
@@ -4256,19 +4363,36 @@ namespace UnoEngine {
 		GameObject* selected = selectedObject_ ? selectedObject_ : context.player;
 
 		if (selected) {
-			ImGui::Text("Selected: %s", selected->GetName().c_str());
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.75f, 1.0f));
+			ImGui::TextUnformatted(selected->GetName().c_str());
+			ImGui::PopStyleColor();
 			ImGui::Separator();
 
 			auto& transform = selected->GetTransform();
-			auto pos = transform.GetLocalPosition();
-			auto rot = transform.GetLocalRotation();
+			auto pos   = transform.GetLocalPosition();
+			auto rot   = transform.GetLocalRotation();
 			auto scale = transform.GetLocalScale();
 
-			ImGui::Text("Transform");
-			ImGui::Text("Position: (%.2f, %.2f, %.2f)", pos.GetX(), pos.GetY(), pos.GetZ());
-			ImGui::Text("Rotation: (%.2f, %.2f, %.2f, %.2f)",
-				rot.GetX(), rot.GetY(), rot.GetZ(), rot.GetW());
-			ImGui::Text("Scale: (%.2f, %.2f, %.2f)", scale.GetX(), scale.GetY(), scale.GetZ());
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.8f, 1.0f, 1.0f));
+			ImGui::TextUnformatted("Transform");
+			ImGui::PopStyleColor();
+
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.80f, 0.25f, 0.25f, 1.0f));
+			ImGui::Text("  X"); ImGui::SameLine();
+			ImGui::PopStyleColor();
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.25f, 0.75f, 0.25f, 1.0f));
+			ImGui::Text("Y"); ImGui::SameLine();
+			ImGui::PopStyleColor();
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.25f, 0.40f, 0.90f, 1.0f));
+			ImGui::Text("Z");
+			ImGui::PopStyleColor();
+
+			ImGui::TextColored({0.65f,0.65f,0.65f,1.f}, U8("位置  ")); ImGui::SameLine();
+			ImGui::Text("(%.2f, %.2f, %.2f)", pos.GetX(), pos.GetY(), pos.GetZ());
+			ImGui::TextColored({0.65f,0.65f,0.65f,1.f}, U8("回転  ")); ImGui::SameLine();
+			ImGui::Text("(%.1f, %.1f, %.1f, %.1f)", rot.GetX(), rot.GetY(), rot.GetZ(), rot.GetW());
+			ImGui::TextColored({0.65f,0.65f,0.65f,1.f}, U8("スケール")); ImGui::SameLine();
+			ImGui::Text("(%.2f, %.2f, %.2f)", scale.GetX(), scale.GetY(), scale.GetZ());
 
 			// NavAgentコンポーネントの表示
 			auto* navAgent = selected->GetComponent<NavAgentComponent>();

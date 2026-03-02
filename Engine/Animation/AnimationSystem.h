@@ -19,13 +19,13 @@ public:
     bool IsPlaying() const { return isPlaying_; }
 
 private:
-#ifdef _DEBUG
-    bool isPlaying_ = true;  // Debug: 初期再生（0.1秒後にオフ）
+#ifdef WITH_EDITOR
+    bool isPlaying_ = true;
     float elapsedTime_ = 0.0f;
     bool autoStopTriggered_ = false;
     static constexpr float AUTO_STOP_TIME = 0.1f;
 #else
-    bool isPlaying_ = true;  // Release: 常に再生
+    bool isPlaying_ = true;
 #endif
 };
 

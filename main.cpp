@@ -31,7 +31,7 @@ protected:
         auto scene = MakeUnique<Scene>();
         GetSceneManager()->LoadScene(std::move(scene));
 
-#ifdef _DEBUG
+#ifdef WITH_EDITOR
         // Set close request callback for save confirmation
         GetWindow()->SetCloseRequestCallback([this]() -> bool {
             auto* scene = GetSceneManager()->GetActiveScene();

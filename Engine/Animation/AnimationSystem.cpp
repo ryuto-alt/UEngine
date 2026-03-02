@@ -9,7 +9,7 @@ namespace UnoEngine {
 void AnimationSystem::OnUpdate(Scene* scene, float deltaTime) {
     if (!scene) return;
 
-#ifdef _DEBUG
+#ifdef WITH_EDITOR
     // Debug: 0.1秒後に自動停止
     if (!autoStopTriggered_) {
         elapsedTime_ += deltaTime;

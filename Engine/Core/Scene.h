@@ -8,7 +8,7 @@
 #include <memory>
 #include <string>
 
-#ifdef _DEBUG
+#ifdef WITH_EDITOR
 #include "../../Game/UI/EditorUI.h"
 #endif
 
@@ -50,7 +50,7 @@ public:
     // Call Start() on a specific GameObject's components (useful for runtime-created objects)
     void StartGameObject(GameObject* obj);
 
-#ifdef _DEBUG
+#ifdef WITH_EDITOR
     EditorUI* GetEditorUI() { return &editorUI_; }
 #endif
 
@@ -73,7 +73,7 @@ private:
     bool isLoaded_ = false;
     GameObject* mainCamera_ = nullptr;
 
-#ifdef _DEBUG
+#ifdef WITH_EDITOR
     EditorUI editorUI_;
 #endif
 };

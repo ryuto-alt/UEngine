@@ -25,7 +25,7 @@
 #include <algorithm>
 #include <fstream>
 
-#ifdef _DEBUG
+#ifdef WITH_EDITOR
 #include <imgui.h>
 #endif
 
@@ -52,7 +52,7 @@ void Scene::OnLoad() {
         SetupDefaultCamera();
     }
 
-#ifdef _DEBUG
+#ifdef WITH_EDITOR
     auto* app = static_cast<GameApplication*>(GetApplication());
     editorUI_.Initialize(app->GetGraphicsDevice());
     editorUI_.SetGameObjects(&GetGameObjects());
@@ -198,7 +198,7 @@ void Scene::SetupDefaultCamera() {
 }
 
 void Scene::OnUpdate(float deltaTime) {
-#ifdef _DEBUG
+#ifdef WITH_EDITOR
     auto* app = static_cast<GameApplication*>(GetApplication());
 
     // D&Dでキューに入れられたモデルを即座にロード
@@ -209,7 +209,7 @@ void Scene::OnUpdate(float deltaTime) {
     ProcessPendingStarts();
 
     // Update NavMesh Crowd system (must be called once per frame before agent components)
-#ifdef _DEBUG
+#ifdef WITH_EDITOR
     if (editorUI_.IsPlaying()) {
 #endif
         auto& navMesh = Navigation::NavMeshManager::Get();
@@ -217,12 +217,12 @@ void Scene::OnUpdate(float deltaTime) {
         if (navMesh.IsCrowdInitialized() && !navMesh.IsBuilding()) {
             navMesh.UpdateCrowd(deltaTime);
         }
-#ifdef _DEBUG
+#ifdef WITH_EDITOR
     }
 #endif
 
     // Update all game objects
-#ifdef _DEBUG
+#ifdef WITH_EDITOR
     bool isPlayMode = editorUI_.IsPlaying();
     bool editorCameraControlling = editorUI_.GetEditorCamera().IsControlling();
 #else
@@ -267,7 +267,7 @@ void Scene::OnUpdate(float deltaTime) {
         pendingDestroy_.clear();
     }
 
-#ifdef _DEBUG
+#ifdef WITH_EDITOR
     uint32 gameW, gameH, sceneW, sceneH;
     editorUI_.GetDesiredViewportSizes(gameW, gameH, sceneW, sceneH);
     editorUI_.GetGameViewTexture()->Resize(app->GetGraphicsDevice(), gameW, gameH);
@@ -285,7 +285,7 @@ void Scene::OnRender(RenderView& view) {
 }
 
 void Scene::OnImGui() {
-#ifdef _DEBUG
+#ifdef WITH_EDITOR
     EditorContext context;
     context.camera = GetActiveCamera();
     context.gameObjects = &GetGameObjects();

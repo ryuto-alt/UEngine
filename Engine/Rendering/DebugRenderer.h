@@ -125,10 +125,10 @@ private:
     std::vector<DebugLineVertex> triangleVertices_;
 
     // 設定
-#ifdef NDEBUG
-    bool showBones_ = false;  // Releaseでは非表示
+#ifdef WITH_EDITOR
+    bool showBones_ = true;
 #else
-    bool showBones_ = true;   // Debugでは表示
+    bool showBones_ = false;
 #endif
     Vector4 boneColor_ = Vector4(0.0f, 1.0f, 0.0f, 1.0f);   // 緑
     Vector4 jointColor_ = Vector4(1.0f, 1.0f, 0.0f, 1.0f);  // 黄

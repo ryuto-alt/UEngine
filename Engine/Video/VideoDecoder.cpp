@@ -65,7 +65,8 @@ bool VideoDecoder::Open(const std::string& filepath) {
     }
 
     // RGBAバッファ確保
-    m_rgbaBuffer.resize(m_width * m_height * 4);
+    // sws_scale のSIMD最適化はバッファ末尾を AV_INPUT_BUFFER_PADDING_SIZE 分超えて書き込む可能性があるためパディングを追加
+    m_rgbaBuffer.resize(static_cast<size_t>(m_width) * m_height * 4 + AV_INPUT_BUFFER_PADDING_SIZE);
 
     // RGBAフレーム用バッファ設定
     av_image_fill_arrays(

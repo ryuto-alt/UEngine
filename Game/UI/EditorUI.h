@@ -247,10 +247,10 @@ private:
     float gameViewPitch_ = 0.0f;
 
     // Play/Edit モード
-#ifdef NDEBUG
-    EditorMode editorMode_ = EditorMode::Play;  // Releaseでは自動再生
+#ifdef WITH_EDITOR
+    EditorMode editorMode_ = EditorMode::Edit;
 #else
-    EditorMode editorMode_ = EditorMode::Edit;  // Debugでは編集モード
+    EditorMode editorMode_ = EditorMode::Play;
 #endif
     bool stepFrame_ = false;  // 1フレームだけ進める
 
@@ -421,6 +421,11 @@ private:
     ExportSettings exportSettings_;
     std::string buildStatusMessage_;
     bool buildInProgress_ = false;
+    std::thread exportThread_;
+    std::mutex buildMsgMutex_;
+    std::atomic<bool> exportDone_{false};
+    bool exportSuccess_ = false;
+    std::string exportError_;
 };
 
 } // namespace UnoEngine

@@ -66,7 +66,7 @@ void MipmapGenerator::CreatePipelineState(ID3D12Device* device) {
     ComPtr<ID3DBlob> error;
 
     UINT compileFlags = 0;
-#ifdef _DEBUG
+#ifdef WITH_EDITOR
     compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
 

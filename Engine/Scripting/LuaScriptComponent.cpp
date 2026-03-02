@@ -195,47 +195,45 @@ void LuaScriptComponent::BindEngineAPI() {
         );
 
         // ===== transform =====
-        auto& transform = gameObject->GetTransform();
+        // [&transform] ではなく gameObject をキャプチャし、呼び出し時に GetTransform() を経由する
+        // (&transform がスタック上のローカル参照変数を指すためダングリング参照になる問題を回避)
         lua["transform"] = lua.create_table_with(
             // Position
-            "getPosition", [&transform]() {
-                auto pos = transform.GetLocalPosition();
+            "getPosition", [gameObject]() {
+                auto pos = gameObject->GetTransform().GetLocalPosition();
                 return std::make_tuple(pos.GetX(), pos.GetY(), pos.GetZ());
             },
-            "setPosition", [&transform](float x, float y, float z) {
-                transform.SetLocalPosition(Vector3(x, y, z));
+            "setPosition", [gameObject](float x, float y, float z) {
+                gameObject->GetTransform().SetLocalPosition(Vector3(x, y, z));
             },
-            "translate", [&transform](float x, float y, float z) {
-                auto pos = transform.GetLocalPosition();
-                transform.SetLocalPosition(pos + Vector3(x, y, z));
+            "translate", [gameObject](float x, float y, float z) {
+                auto& t = gameObject->GetTransform();
+                t.SetLocalPosition(t.GetLocalPosition() + Vector3(x, y, z));
             },
-            
+
             // Rotation (Euler angles in degrees)
-            "getRotation", [&transform]() {
-                auto rot = transform.GetLocalRotation();
-                // Quaternionからオイラー角に変換（簡易版）
+            "getRotation", [gameObject]() {
+                auto rot = gameObject->GetTransform().GetLocalRotation();
                 float x = rot.GetX(), y = rot.GetY(), z = rot.GetZ(), w = rot.GetW();
                 float pitch = std::asin(2.0f * (w * y - z * x));
                 float yaw = std::atan2(2.0f * (w * z + x * y), 1.0f - 2.0f * (y * y + z * z));
                 float roll = std::atan2(2.0f * (w * x + y * z), 1.0f - 2.0f * (x * x + y * y));
-                // ラジアンから度に変換
                 constexpr float toDeg = 57.2957795f;
                 return std::make_tuple(roll * toDeg, pitch * toDeg, yaw * toDeg);
             },
-            "setRotation", [&transform](float roll, float pitch, float yaw) {
-                // 度からラジアンに変換
+            "setRotation", [gameObject](float roll, float pitch, float yaw) {
                 constexpr float toRad = 0.0174532925f;
                 auto rot = Quaternion::RotationRollPitchYaw(pitch * toRad, yaw * toRad, roll * toRad);
-                transform.SetLocalRotation(rot);
+                gameObject->GetTransform().SetLocalRotation(rot);
             },
-            
+
             // Scale
-            "getScale", [&transform]() {
-                auto scale = transform.GetLocalScale();
+            "getScale", [gameObject]() {
+                auto scale = gameObject->GetTransform().GetLocalScale();
                 return std::make_tuple(scale.GetX(), scale.GetY(), scale.GetZ());
             },
-            "setScale", [&transform](float x, float y, float z) {
-                transform.SetLocalScale(Vector3(x, y, z));
+            "setScale", [gameObject](float x, float y, float z) {
+                gameObject->GetTransform().SetLocalScale(Vector3(x, y, z));
             }
         );
     }

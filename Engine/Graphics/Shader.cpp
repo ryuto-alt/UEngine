@@ -7,7 +7,7 @@ namespace UnoEngine {
 
 void Shader::CompileFromFile(const std::wstring& filepath, ShaderStage stage, const std::string& entryPoint) {
     UINT compileFlags = 0;
-#if defined(_DEBUG)
+#if defined(WITH_EDITOR)
     compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
 

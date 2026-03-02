@@ -94,7 +94,7 @@ private:
 
     // 設定
     float moveSpeed_ = 25.0f;
-    float rotateSpeed_ = 1.4f;
+    float rotateSpeed_ = 0.003f;
     float scrollSpeed_ = 1.0f;
 
     // 状態

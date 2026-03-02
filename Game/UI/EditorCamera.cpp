@@ -90,7 +90,7 @@ void EditorCamera::Update(float deltaTime) {
         // CTRL+右クリック: カメラを上下移動（マウス上→カメラ上、マウス下→カメラ下）
         if (io.KeyCtrl) {
             // マウス上がdeltaY負、カメラは下に移動
-            float heightMove = deltaY * moveSpeed_ * deltaTime * 0.5f;
+            float heightMove = deltaY * 0.01f * moveSpeed_;
             Vector3 camPos = camera_->GetPosition();
             camPos.SetY(camPos.GetY() + heightMove);
             camera_->SetPosition(camPos);
@@ -103,7 +103,7 @@ void EditorCamera::Update(float deltaTime) {
             // SHIFT+右クリック: オービットターゲットの高さを調整
             if (io.KeyShift) {
                 // マウスの上下移動でターゲットのY座標を調整
-                float heightAdjust = deltaY * moveSpeed_ * deltaTime * 0.5f;
+                float heightAdjust = deltaY * 0.01f * moveSpeed_;
                 orbitTarget_.SetY(orbitTarget_.GetY() + heightAdjust);
                 
                 // カメラ位置もY方向に同じだけ移動（オービット角度は保持）
@@ -117,8 +117,8 @@ void EditorCamera::Update(float deltaTime) {
                 camera_->SetRotation(rot);
             } else {
                 // 通常のオービット回転
-                orbitYaw_ += deltaX * rotateSpeed_ * deltaTime;
-                orbitPitch_ += deltaY * rotateSpeed_ * deltaTime;
+                orbitYaw_ += deltaX * rotateSpeed_;
+                orbitPitch_ += deltaY * rotateSpeed_;
 
                 // ピッチ制限
                 const float maxPitch = 1.5f;
@@ -145,8 +145,8 @@ void EditorCamera::Update(float deltaTime) {
             }
         } else {
             // フリーカメラ回転
-            yaw_ += deltaX * rotateSpeed_ * deltaTime;
-            pitch_ += deltaY * rotateSpeed_ * deltaTime;
+            yaw_ += deltaX * rotateSpeed_;
+            pitch_ += deltaY * rotateSpeed_;
 
             // ピッチ制限
             const float maxPitch = 1.5f;

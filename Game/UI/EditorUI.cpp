@@ -63,6 +63,88 @@ namespace UnoEngine {
 		}
 	}
 
+	// ============================================================
+	// Editor Commands (Undo/Redo)
+	// ============================================================
+
+	struct TransformCommand final : IEditorCommand {
+		GameObject* object = nullptr;
+		Vector3 oldPos, newPos;
+		Quaternion oldRot, newRot;
+		Vector3 oldScale, newScale;
+		void Execute() override {
+			auto& t = object->GetTransform();
+			t.SetLocalPosition(newPos);
+			t.SetLocalRotation(newRot);
+			t.SetLocalScale(newScale);
+		}
+		void Undo() override {
+			auto& t = object->GetTransform();
+			t.SetLocalPosition(oldPos);
+			t.SetLocalRotation(oldRot);
+			t.SetLocalScale(oldScale);
+		}
+	};
+
+	struct DeleteObjectCommand final : IEditorCommand {
+		std::vector<UniquePtr<GameObject>>* gameObjects = nullptr;
+		std::unique_ptr<GameObject> savedObject;
+		size_t savedIndex = 0;
+		GameObject* objectPtr = nullptr;
+		GameObject** selectedObjectRef = nullptr;
+		std::unordered_set<GameObject*>* expandedObjects = nullptr;
+
+		DeleteObjectCommand(std::vector<UniquePtr<GameObject>>* gos, GameObject* obj,
+			GameObject** sel, std::unordered_set<GameObject*>* exp)
+			: gameObjects(gos), objectPtr(obj), selectedObjectRef(sel), expandedObjects(exp) {}
+
+		void Execute() override {
+			for (size_t i = 0; i < gameObjects->size(); ++i) {
+				if ((*gameObjects)[i].get() == objectPtr) {
+					savedObject = std::move((*gameObjects)[i]);
+					savedIndex = i;
+					gameObjects->erase(gameObjects->begin() + i);
+					expandedObjects->erase(objectPtr);
+					if (*selectedObjectRef == objectPtr) *selectedObjectRef = nullptr;
+					return;
+				}
+			}
+		}
+		void Undo() override {
+			size_t pos = std::min(savedIndex, gameObjects->size());
+			gameObjects->insert(gameObjects->begin() + pos, std::move(savedObject));
+			*selectedObjectRef = objectPtr;
+		}
+	};
+
+	struct CreateObjectCommand final : IEditorCommand {
+		std::vector<UniquePtr<GameObject>>* gameObjects = nullptr;
+		std::unique_ptr<GameObject> savedObject;
+		GameObject* objectPtr = nullptr;
+		GameObject** selectedObjectRef = nullptr;
+		std::unordered_set<GameObject*>* expandedObjects = nullptr;
+
+		CreateObjectCommand(std::vector<UniquePtr<GameObject>>* gos, GameObject* obj,
+			GameObject** sel, std::unordered_set<GameObject*>* exp)
+			: gameObjects(gos), objectPtr(obj), selectedObjectRef(sel), expandedObjects(exp) {}
+
+		void Execute() override {
+			gameObjects->push_back(std::move(savedObject));
+			*selectedObjectRef = objectPtr;
+		}
+		void Undo() override {
+			for (size_t i = 0; i < gameObjects->size(); ++i) {
+				if ((*gameObjects)[i].get() == objectPtr) {
+					savedObject = std::move((*gameObjects)[i]);
+					gameObjects->erase(gameObjects->begin() + i);
+					expandedObjects->erase(objectPtr);
+					if (*selectedObjectRef == objectPtr) *selectedObjectRef = nullptr;
+					return;
+				}
+			}
+		}
+	};
+
 	void EditorUI::Initialize(GraphicsDevice* graphics) {
 		graphics_ = graphics;
 
@@ -823,7 +905,16 @@ namespace UnoEngine {
 				// ギズモ操作終了時に履歴に追加
 				if (!gizmoSystem_.IsUsing() && isGizmoActive_) {
 					isGizmoActive_ = false;
-					PushUndoSnapshot(preGizmoSnapshot_);
+					auto& t = selectedObject_->GetTransform();
+				auto cmd = std::make_unique<TransformCommand>();
+				cmd->object   = selectedObject_;
+				cmd->oldPos   = preGizmoSnapshot_.position;
+				cmd->oldRot   = preGizmoSnapshot_.rotation;
+				cmd->oldScale = preGizmoSnapshot_.scale;
+				cmd->newPos   = t.GetLocalPosition();
+				cmd->newRot   = t.GetLocalRotation();
+				cmd->newScale = t.GetLocalScale();
+				PushExecutedCommand(std::move(cmd));
 				}
 			}
 		}
@@ -2041,21 +2132,9 @@ namespace UnoEngine {
 					}
 					if (ImGui::MenuItem("Delete", "DEL", false, canDelete)) {
 						if (gameObjects_ && canDelete) {
-							for (auto it = gameObjects_->begin(); it != gameObjects_->end(); ++it) {
-								if (it->get() == obj) {
-									consoleMessages_.push_back("[Editor] Deleted object: " + obj->GetName());
-								expandedObjects_.erase(obj);
-								gameObjects_->erase(it);
-								if (selectedObject_ == obj) {
-									selectedObject_ = nullptr;
-								}
-								if (renamingObject_ == obj) {
-									renamingObject_ = nullptr;
-								}
-								isDirty_ = true;
-								break;
-								}
-							}
+							if (renamingObject_ == obj) renamingObject_ = nullptr;
+						consoleMessages_.push_back("[Editor] Deleted object: " + obj->GetName());
+						ExecuteCommand(std::make_unique<DeleteObjectCommand>(gameObjects_, obj, &selectedObject_, &expandedObjects_));
 						}
 					}
 					if (!canDelete) {
@@ -2587,16 +2666,8 @@ namespace UnoEngine {
 			if (!selectedObject_->IsDeletable()) {
 				consoleMessages_.push_back("[Editor] Cannot delete: " + selectedObject_->GetName() + " (protected)");
 			} else if (gameObjects_) {
-				for (auto it = gameObjects_->begin(); it != gameObjects_->end(); ++it) {
-					if (it->get() == selectedObject_) {
-						consoleMessages_.push_back("[Editor] Deleted object (DEL): " + selectedObject_->GetName());
-					expandedObjects_.erase(selectedObject_);
-					gameObjects_->erase(it);
-					selectedObject_ = nullptr;
-					isDirty_ = true;
-					break;
-					}
-				}
+				consoleMessages_.push_back("[Editor] Deleted object (DEL): " + selectedObject_->GetName());
+				ExecuteCommand(std::make_unique<DeleteObjectCommand>(gameObjects_, selectedObject_, &selectedObject_, &expandedObjects_));
 			}
 		}
 
@@ -2860,6 +2931,7 @@ namespace UnoEngine {
 						audioSource->LoadClip(audioPath);
 						selectedObject_ = newObject.get();
 						gameObjects_->push_back(std::move(newObject));
+						PushExecutedCommand(std::make_unique<CreateObjectCommand>(gameObjects_, selectedObject_, &selectedObject_, &expandedObjects_));
 						consoleMessages_.push_back("[Editor] Created AudioSource object: " + objectName);
 					}
 				}
@@ -2923,6 +2995,7 @@ namespace UnoEngine {
 						videoPlayer->LoadVideo(videoPath);
 						selectedObject_ = newObject.get();
 						gameObjects_->push_back(std::move(newObject));
+						PushExecutedCommand(std::make_unique<CreateObjectCommand>(gameObjects_, selectedObject_, &selectedObject_, &expandedObjects_));
 						consoleMessages_.push_back("[Editor] Created VideoPlayer object: " + objectName);
 					}
 				}
@@ -3107,6 +3180,11 @@ namespace UnoEngine {
 			PerformUndo();
 		}
 
+		// Ctrl+Y: Redo
+		if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Y, false)) {
+			PerformRedo();
+		}
+
 		// Ctrl+S: シーン保存
 		if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S, false)) {
 			SaveScene("assets/scenes/default_scene.json");
@@ -3118,47 +3196,55 @@ namespace UnoEngine {
 			if (!selectedObject_->IsDeletable()) {
 				consoleMessages_.push_back("[Editor] Cannot delete: " + selectedObject_->GetName() + " (protected)");
 			} else if (gameObjects_) {
-				for (auto it = gameObjects_->begin(); it != gameObjects_->end(); ++it) {
-					if (it->get() == selectedObject_) {
-						consoleMessages_.push_back("[Editor] Deleted: " + selectedObject_->GetName());
-						expandedObjects_.erase(selectedObject_);
-						gameObjects_->erase(it);
-						selectedObject_ = nullptr;
-						isDirty_ = true;
-						break;
-					}
-				}
+				consoleMessages_.push_back("[Editor] Deleted: " + selectedObject_->GetName());
+			ExecuteCommand(std::make_unique<DeleteObjectCommand>(gameObjects_, selectedObject_, &selectedObject_, &expandedObjects_));
 			}
 		}
 	}
 
 	// Undo履歴に追加
-	void EditorUI::PushUndoSnapshot(const TransformSnapshot& snapshot) {
-		undoStack_.push(snapshot);
+	void EditorUI::ExecuteCommand(std::unique_ptr<IEditorCommand> cmd) {
+		cmd->Execute();
+		undoHistory_.push_back(std::move(cmd));
+		if (undoHistory_.size() > kMaxUndoHistory) undoHistory_.pop_front();
+		redoHistory_.clear();
 		isDirty_ = true;
-		consoleMessages_.push_back(U8("[エディタ] 変更を記録しました"));
+	}
+
+	void EditorUI::PushExecutedCommand(std::unique_ptr<IEditorCommand> cmd) {
+		undoHistory_.push_back(std::move(cmd));
+		if (undoHistory_.size() > kMaxUndoHistory) undoHistory_.pop_front();
+		redoHistory_.clear();
+		isDirty_ = true;
 	}
 
 	// Undo実行
 	void EditorUI::PerformUndo() {
-		if (undoStack_.empty()) {
+		if (undoHistory_.empty()) {
 			consoleMessages_.push_back(U8("[エディタ] 元に戻す操作がありません"));
 			return;
 		}
+		auto cmd = std::move(undoHistory_.back());
+		undoHistory_.pop_back();
+		cmd->Undo();
+		redoHistory_.push_back(std::move(cmd));
+		if (redoHistory_.size() > kMaxUndoHistory) redoHistory_.pop_front();
+		consoleMessages_.push_back(U8("[エディタ] 元に戻しました"));
+		isDirty_ = true;
+	}
 
-		TransformSnapshot snapshot = undoStack_.top();
-		undoStack_.pop();
-
-		if (snapshot.targetObject) {
-			auto& transform = snapshot.targetObject->GetTransform();
-			transform.SetLocalPosition(snapshot.position);
-			transform.SetLocalRotation(snapshot.rotation);
-			transform.SetLocalScale(snapshot.scale);
-			consoleMessages_.push_back(U8("[エディタ] 元に戻しました"));
+	void EditorUI::PerformRedo() {
+		if (redoHistory_.empty()) {
+			consoleMessages_.push_back(U8("[エディタ] やり直す操作がありません"));
+			return;
 		}
-		else {
-			consoleMessages_.push_back(U8("[エディタ] 元に戻す失敗: オブジェクトが存在しません"));
-		}
+		auto cmd = std::move(redoHistory_.back());
+		redoHistory_.pop_back();
+		cmd->Execute();
+		undoHistory_.push_back(std::move(cmd));
+		if (undoHistory_.size() > kMaxUndoHistory) undoHistory_.pop_front();
+		consoleMessages_.push_back(U8("[エディタ] やり直しました"));
+		isDirty_ = true;
 	}
 
 	// インスペクター編集開始時にスナップショットを保存
@@ -3176,11 +3262,20 @@ namespace UnoEngine {
 	// インスペクター編集終了時にUndoスタックにpush
 	void EditorUI::EndInspectorEdit() {
 		if (!isInspectorEditing_) return;
-
-		if (preInspectorSnapshot_.targetObject) {
-			PushUndoSnapshot(preInspectorSnapshot_);
-		}
 		isInspectorEditing_ = false;
+
+		auto* obj = preInspectorSnapshot_.targetObject;
+		if (!obj) return;
+		auto& t = obj->GetTransform();
+		auto cmd = std::make_unique<TransformCommand>();
+		cmd->object   = obj;
+		cmd->oldPos   = preInspectorSnapshot_.position;
+		cmd->oldRot   = preInspectorSnapshot_.rotation;
+		cmd->oldScale = preInspectorSnapshot_.scale;
+		cmd->newPos   = t.GetLocalPosition();
+		cmd->newRot   = t.GetLocalRotation();
+		cmd->newScale = t.GetLocalScale();
+		PushExecutedCommand(std::move(cmd));
 	}
 
 	// シーン保存
@@ -3514,6 +3609,7 @@ namespace UnoEngine {
 
 			// GameObjectsリストに追加
 			gameObjects_->push_back(std::move(newObject));
+			PushExecutedCommand(std::make_unique<CreateObjectCommand>(gameObjects_, selectedObject_, &selectedObject_, &expandedObjects_));
 			isDirty_ = true;
 
 			// 重要: コンポーネントのStart()を呼んで初期化

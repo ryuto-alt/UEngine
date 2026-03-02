@@ -18,6 +18,7 @@
 #include <string_view>
 #include <span>
 #include <stack>
+#include <deque>
 #include <unordered_set>
 #include <unordered_map>
 #include <memory>
@@ -58,6 +59,13 @@ struct EditorContext {
     // デバッグ表示設定
     DebugRenderer* debugRenderer = nullptr;
     AnimationSystem* animationSystem = nullptr;
+};
+
+// Undo/Redoコマンドインターフェース
+struct IEditorCommand {
+    virtual ~IEditorCommand() = default;
+    virtual void Execute() = 0;
+    virtual void Undo() = 0;
 };
 
 // エディタモード
@@ -305,18 +313,24 @@ private:
     // エディタ用のAudioListener（シーンにリスナーがない場合に使用）
     std::unique_ptr<AudioListener> editorAudioListener_;
 
-    // Undo/Redo履歴
-    std::stack<TransformSnapshot> undoStack_;
-    TransformSnapshot preGizmoSnapshot_;  // ギズモ操作開始時のスナップショット
+    // Undo/Redo履歴（Command Pattern、最大50件）
+    std::deque<std::unique_ptr<IEditorCommand>> undoHistory_;
+    std::deque<std::unique_ptr<IEditorCommand>> redoHistory_;
+    static constexpr size_t kMaxUndoHistory = 50;
+
+    // Transform操作スナップショット（操作前の値を一時保存）
+    TransformSnapshot preGizmoSnapshot_;
     bool isGizmoActive_ = false;
-    TransformSnapshot preInspectorSnapshot_;  // インスペクター編集開始時のスナップショット
+    TransformSnapshot preInspectorSnapshot_;
     bool isInspectorEditing_ = false;
 
     // Undo/Redoヘルパー
-    void PushUndoSnapshot(const TransformSnapshot& snapshot);
+    void ExecuteCommand(std::unique_ptr<IEditorCommand> cmd);     // Execute→履歴push
+    void PushExecutedCommand(std::unique_ptr<IEditorCommand> cmd); // 既適用済みを履歴push
     void PerformUndo();
-    void BeginInspectorEdit(GameObject* obj);  // インスペクター編集開始
-    void EndInspectorEdit();  // インスペクター編集終了
+    void PerformRedo();
+    void BeginInspectorEdit(GameObject* obj);
+    void EndInspectorEdit();
 
     // GameObjectsリスト（保存/ロード用）
     std::vector<UniquePtr<GameObject>>* gameObjects_ = nullptr;

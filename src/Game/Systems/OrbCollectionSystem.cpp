@@ -83,16 +83,6 @@ void OrbCollectionSystem::Update(World& world, float deltaTime) {
             }
         }
 
-        // Trigger stealth mode at threshold
-        if (remaining <= 25) {
-            world.ForEach<EnemyTag, StealthComponent>(
-                [](Entity entity, EnemyTag&, StealthComponent& stealth) {
-                    if (!stealth.stealthEnabled) {
-                        stealth.stealthEnabled = true;
-                    }
-                }
-            );
-        }
     }
 }
 

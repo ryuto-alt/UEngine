@@ -43,15 +43,19 @@ void AmbushWarpSystem::Update(World& world, float deltaTime) {
     std::uniform_real_distribution<float> chanceDist(0.0f, 1.0f);
 
     world.ForEach<EnemyTag, TransformComponent, AmbushWarpComponent, EnemyAIComponent,
-                  VisionComponent, StealthComponent, PathfindingComponent, RotationSmoothingComponent>(
+                  VisionComponent, PathfindingComponent, RotationSmoothingComponent>(
         [&](Entity entity, EnemyTag&, TransformComponent& transform,
             AmbushWarpComponent& ambush, EnemyAIComponent& ai,
-            VisionComponent& vision, StealthComponent& stealth,
+            VisionComponent& vision,
             PathfindingComponent& pathfinding, RotationSmoothingComponent& rotSmoothing) {
 
             // Cooldown countdown
             if (ambush.warpCooldownTimer > 0.0f) {
                 ambush.warpCooldownTimer -= deltaTime;
+            }
+            // Slowdown countdown
+            if (ambush.slowdownTimer > 0.0f) {
+                ambush.slowdownTimer -= deltaTime;
             }
 
             // Reset safety timer only when actually chasing (found the player)
@@ -125,13 +129,10 @@ void AmbushWarpSystem::Update(World& world, float deltaTime) {
             pathfinding.currentPath.clear();
             pathfinding.waypointIndex = 0;
 
-            // Break stealth
-            stealth.stealthActive = false;
-            stealth.outOfRangeTimer = 0.0f;
-
             // Reset ambush timers
             ambush.safetyTimer = 0.0f;
             ambush.warpCooldownTimer = AmbushWarpComponent::kWarpCooldown;
+            ambush.slowdownTimer = AmbushWarpComponent::kSlowdownDuration;
         }
     );
 }

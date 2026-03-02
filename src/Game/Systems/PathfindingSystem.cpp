@@ -83,10 +83,11 @@ void PathfindingSystem::Update(World& world, float deltaTime) {
     }
 
     world.ForEach<EnemyTag, TransformComponent, RotationSmoothingComponent,
-                  EnemyAIComponent, VisionComponent, PathfindingComponent>(
+                  EnemyAIComponent, VisionComponent, PathfindingComponent, AmbushWarpComponent>(
         [deltaTime, &playerPos](Entity entity, EnemyTag&, TransformComponent& transform,
                    RotationSmoothingComponent& rot, EnemyAIComponent& ai,
-                   VisionComponent& vision, PathfindingComponent& pathfinding) {
+                   VisionComponent& vision, PathfindingComponent& pathfinding,
+                   AmbushWarpComponent& ambush) {
 
             if (!ai.isActive) return;
             if (!pathfinding.navMesh || !pathfinding.navMesh->IsValid()) return;
@@ -134,6 +135,11 @@ void PathfindingSystem::Update(World& world, float deltaTime) {
                     currentMoveSpeed = ai.searchMoveSpeed;
                 } else {
                     currentMoveSpeed = ai.patrolMoveSpeed;
+                }
+
+                // Post-warp slowdown
+                if (ambush.slowdownTimer > 0.0f) {
+                    currentMoveSpeed *= AmbushWarpComponent::kSlowdownMultiplier;
                 }
 
                 NavMeshHelper::FollowPath(

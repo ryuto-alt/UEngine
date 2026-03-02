@@ -18,10 +18,10 @@ void DetectionSoundSystem::Update(World& world, float deltaTime) {
     Vector3 listenerPos = listenerComp.listener->GetPosition();
     Vector3 listenerFwd = listenerComp.listener->GetForward();
 
-    world.ForEach<EnemyTag, TransformComponent, EnemyAIComponent, StealthComponent,
+    world.ForEach<EnemyTag, TransformComponent, EnemyAIComponent,
                   DetectionSoundComponent>(
         [&listenerPos, &listenerFwd](Entity entity, EnemyTag&, TransformComponent& transform,
-           EnemyAIComponent& ai, StealthComponent& stealth,
+           EnemyAIComponent& ai,
            DetectionSoundComponent& detection) {
 
             if (!ai.isActive) return;
@@ -29,17 +29,6 @@ void DetectionSoundSystem::Update(World& world, float deltaTime) {
 
             detection.source->SetPosition(transform.position);
             detection.source->Update(listenerPos, listenerFwd);
-
-            // Stealth detection scream on chase start
-            bool justStarted = ai.isChasing && !ai.wasChasing;
-            if (justStarted && stealth.stealthEnabled) {
-                if (detection.source->IsPlaying()) {
-                    detection.source->Stop();
-                }
-                detection.source->SetVolume(0.625f);
-                detection.source->Play(false);
-                detection.isPlaying = true;
-            }
 
             if (detection.isPlaying && !detection.source->IsPlaying()) {
                 detection.isPlaying = false;

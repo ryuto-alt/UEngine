@@ -99,6 +99,11 @@ struct AmbushWarpComponent {
     float safetyTimer = 0.0f;
     float warpCooldownTimer = 0.0f;
 
+    // Post-warp slowdown
+    float slowdownTimer = 0.0f;
+    static constexpr float kSlowdownDuration = 3.0f;
+    static constexpr float kSlowdownMultiplier = 0.5f;
+
     static constexpr float kSafetyThreshold = 20.0f;
     static constexpr float kWarpCooldown = 45.0f;
     static constexpr float kMinEnemyDistance = 22.0f;

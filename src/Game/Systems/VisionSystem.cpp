@@ -39,11 +39,10 @@ void VisionSystem::Update(World& world, float deltaTime) {
     Vector3 playerPos = playerTransform.position;
 
     world.ForEach<EnemyTag, TransformComponent, RotationSmoothingComponent,
-                  VisionComponent, EnemyAIComponent, PathfindingComponent, StealthComponent>(
+                  VisionComponent, EnemyAIComponent, PathfindingComponent>(
         [&playerPos, deltaTime](Entity entity, EnemyTag&, TransformComponent& transform,
                    RotationSmoothingComponent& rot, VisionComponent& vision,
-                   EnemyAIComponent& ai, PathfindingComponent& pathfinding,
-                   StealthComponent& stealth) {
+                   EnemyAIComponent& ai, PathfindingComponent& pathfinding) {
 
             if (!ai.isActive) return;
 
@@ -74,9 +73,7 @@ void VisionSystem::Update(World& world, float deltaTime) {
 
             if (!playerVisible) {
                 // Vision cone check
-                float detectionDist = (stealth.stealthEnabled && stealth.stealthActive)
-                    ? vision.stealthDetectionDistance
-                    : vision.detectionDistance;
+                float detectionDist = vision.detectionDistance;
 
                 if (distanceToPlayer <= detectionDist && distanceToPlayer > 0.01f) {
                     float invLen = 1.0f / distanceToPlayer;

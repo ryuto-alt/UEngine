@@ -33,10 +33,10 @@ void RespawnSystem::Update(World& world, float deltaTime) {
             }
 
             world.ForEach<EnemyTag, TransformComponent, EnemyAIComponent,
-                         EnemyJumpscareComponent, PathfindingComponent, StealthComponent>(
+                         EnemyJumpscareComponent, PathfindingComponent>(
                 [&respawn](Entity entity, EnemyTag&, TransformComponent& transform,
                           EnemyAIComponent& ai, EnemyJumpscareComponent& jumpscare,
-                          PathfindingComponent& pathfinding, StealthComponent& stealth) {
+                          PathfindingComponent& pathfinding) {
                     transform.position = respawn.enemyInitialPosition;
                     ai.isChasing = false;
                     ai.wasChasing = false;
@@ -45,8 +45,6 @@ void RespawnSystem::Update(World& world, float deltaTime) {
                     pathfinding.waypointIndex = 0;
                     jumpscare.isJumpscaring = false;
                     jumpscare.timer = 0.0f;
-                    stealth.stealthActive = stealth.stealthEnabled;
-                    stealth.outOfRangeTimer = 0.0f;
                 }
             );
 

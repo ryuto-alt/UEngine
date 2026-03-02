@@ -19,8 +19,6 @@ public:
     struct GameProgress {
         bool isResuming = false;
         std::vector<bool> collectedOrbs;
-        bool stealthEnabled = false;
-        bool stealthTutorialTriggered = false;
     };
     static GameProgress s_gameProgress;
 
@@ -47,12 +45,6 @@ private:
     // Render systems (called in Draw, not in UpdateSystems)
     std::unique_ptr<ECS::RenderSystem> m_renderSystem;
     std::unique_ptr<ECS::UIRenderSystem> m_uiRenderSystem;
-
-#ifdef _DEBUG
-    // Cub enemy (no AI, render only) - debug only
-    std::unique_ptr<class AnimatedModel> m_cubModel;
-    std::unique_ptr<class Object3d> m_cubObj;
-#endif
 
     // Scene configuration data (kept for JSON loading)
     SceneData m_sceneData;

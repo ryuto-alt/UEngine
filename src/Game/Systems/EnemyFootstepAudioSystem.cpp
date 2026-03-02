@@ -40,10 +40,10 @@ void EnemyFootstepAudioSystem::Update(World& world, float deltaTime) {
     Vector3 listenerPos = listenerComp.listener->GetPosition();
     Vector3 listenerFwd = listenerComp.listener->GetForward();
 
-    world.ForEach<EnemyTag, TransformComponent, EnemyAIComponent, StealthComponent,
+    world.ForEach<EnemyTag, TransformComponent, EnemyAIComponent,
                   AnimatedModelComponent, EnemyFootstepAudioComponent>(
         [deltaTime, &listenerPos, &listenerFwd](Entity entity, EnemyTag&, TransformComponent& transform,
-                   EnemyAIComponent& ai, StealthComponent& stealth,
+                   EnemyAIComponent& ai,
                    AnimatedModelComponent& anim, EnemyFootstepAudioComponent& audio) {
 
             if (!ai.isActive) return;
@@ -52,9 +52,6 @@ void EnemyFootstepAudioSystem::Update(World& world, float deltaTime) {
             // Only during Walk/Run animations
             std::string currentAnimName = anim.animatedModel->GetCurrentAnimationName();
             if (currentAnimName != "Walk" && currentAnimName != "Run") return;
-
-            // Stealth: if active, skip all footstep sounds
-            if (stealth.stealthEnabled && stealth.stealthActive) return;
 
             // Get foot bone positions from skeleton
             const Skeleton& skeleton = anim.animatedModel->GetSkeleton();

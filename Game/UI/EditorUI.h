@@ -189,7 +189,6 @@ private:
     void RenderProfiler();
 
     // 新しいUnity風パネル
-    void RenderWorldOutliner(const EditorContext& context);   // 左: World Outliner & Assets
     void RenderObjectProperties(const EditorContext& context); // 右: Object Properties
     void RenderConsoleAndDebugger();                           // 下: Console & Debugger
 

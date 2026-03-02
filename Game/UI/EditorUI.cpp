@@ -194,7 +194,6 @@ namespace UnoEngine {
 		RenderDockSpace();
 		RenderSceneView();
 		RenderGameView();
-		RenderWorldOutliner(context);   // 新: 左側パネル（World Outliner & Assets）
 		RenderObjectProperties(context); // 新: 右側パネル（Object Properties）
 		RenderConsoleAndDebugger();      // 新: 下部パネル（Console & Debugger）
 		RenderHierarchy(context);        // 互換性のため残す
@@ -601,31 +600,29 @@ namespace UnoEngine {
 			ImGui::DockBuilderAddNode(dockspaceID, ImGuiDockNodeFlags_DockSpace);
 			ImGui::DockBuilderSetNodeSize(dockspaceID, viewport->WorkSize);
 
-			// ドックスペースを分割（Unity風: 左-中央-右、下）
+			// ドックスペースを分割（Scene|Game 二画面 + 右プロパティ + 下部）
 			ImGuiID dock_main, dock_bottom;
-			ImGuiID dock_left, dock_center_right;
-			ImGuiID dock_center, dock_right;
+			ImGuiID dock_viewport, dock_right;
+			ImGuiID dock_scene, dock_game;
 			ImGuiID dock_project, dock_console;
 
 			// メイン領域(70%) | 下部(30%)
 			dock_main = ImGui::DockBuilderSplitNode(dockspaceID, ImGuiDir_Up, 0.70f, nullptr, &dock_bottom);
 
-			// メイン領域を左(15%) | 中央+右(85%)に分割
-			dock_left = ImGui::DockBuilderSplitNode(dock_main, ImGuiDir_Left, 0.15f, nullptr, &dock_center_right);
+			// メイン領域をビューポート(75%) | 右プロパティ(25%)に分割
+			dock_viewport = ImGui::DockBuilderSplitNode(dock_main, ImGuiDir_Left, 0.75f, nullptr, &dock_right);
 
-			// 中央+右を中央(75%) | 右(25%)に分割
-			dock_center = ImGui::DockBuilderSplitNode(dock_center_right, ImGuiDir_Left, 0.75f, nullptr, &dock_right);
+			// ビューポートをシーン(50%) | ゲーム(50%)に左右分割
+			dock_scene = ImGui::DockBuilderSplitNode(dock_viewport, ImGuiDir_Left, 0.50f, nullptr, &dock_game);
 
-			// 下部を左(15%) | 右(85%)に分割
-			dock_project = ImGui::DockBuilderSplitNode(dock_bottom, ImGuiDir_Left, 0.15f, nullptr, &dock_console);
+			// 下部を左(20%) | 右(80%)に分割
+			dock_project = ImGui::DockBuilderSplitNode(dock_bottom, ImGuiDir_Left, 0.20f, nullptr, &dock_console);
 
-			// パネルをドックに配置
-			// 左: ワールドアウトライナー & アセット
-			ImGui::DockBuilderDockWindow(U8("ワールドアウトライナー"), dock_left);
+			// 左: シーンビュー
+			ImGui::DockBuilderDockWindow(U8("シーン"), dock_scene);
 
-			// 中央: シーンビュー / ゲームビュー
-			ImGui::DockBuilderDockWindow(U8("シーン"), dock_center);
-			ImGui::DockBuilderDockWindow(U8("ゲーム"), dock_center);
+			// 右半分: ゲームビュー
+			ImGui::DockBuilderDockWindow(U8("ゲーム"), dock_game);
 
 			// 右: オブジェクトプロパティ
 			ImGui::DockBuilderDockWindow(U8("プロパティ"), dock_right);
@@ -637,7 +634,7 @@ namespace UnoEngine {
 			ImGui::DockBuilderDockWindow(U8("コンソール"), dock_console);
 
 			// 旧ウィンドウ名も配置（互換性）
-			ImGui::DockBuilderDockWindow(U8("ヒエラルキー"), dock_left);
+			ImGui::DockBuilderDockWindow(U8("ヒエラルキー"), dock_project);
 			ImGui::DockBuilderDockWindow(U8("インスペクター"), dock_right);
 			ImGui::DockBuilderDockWindow(U8("統計情報"), dock_right);
 			ImGui::DockBuilderDockWindow(U8("プロファイラー"), dock_console);
@@ -1013,180 +1010,7 @@ namespace UnoEngine {
 	// 新しいUnity風パネル
 	// ============================================================
 
-	void EditorUI::RenderWorldOutliner(const EditorContext& context) {
-		ImGui::Begin(U8("ワールドアウトライナー"));
 
-		// タブバー（ワールドアウトライナー / アセット）
-		if (ImGui::BeginTabBar("WorldOutlinerTabs")) {
-			// ワールドアウトライナー タブ
-			if (ImGui::BeginTabItem(U8("アウトライナー"))) {
-				ImGui::Spacing();
-
-				// 選択解除ボタン
-				if (selectedObject_ && ImGui::SmallButton(U8("選択解除"))) {
-					selectedObject_ = nullptr;
-				}
-				ImGui::SameLine();
-				if (context.gameObjects) {
-					ImGui::TextDisabled(U8("(%zu オブジェクト)"), context.gameObjects->size());
-				}
-				ImGui::Separator();
-
-				// オブジェクトリスト
-				if (context.gameObjects) {
-					for (size_t i = 0; i < context.gameObjects->size(); ++i) {
-						GameObject* obj = (*context.gameObjects)[i].get();
-
-						ImGui::PushID(static_cast<int>(i));
-
-						// アイコン
-						const char* icon = "  ";
-						if (obj->GetComponent<CameraComponent>()) icon = "  ";
-						else if (obj->GetComponent<SkinnedMeshRenderer>()) icon = "  ";
-						else if (obj->GetComponent<DirectionalLightComponent>()) icon = "  ";
-
-						// 展開矢印
-						bool hasChildren = false; // 将来の親子関係対応用
-						if (hasChildren) {
-							ImGui::Text(">");
-						} else {
-							ImGui::Text(" ");
-						}
-						ImGui::SameLine();
-
-						// オブジェクト名
-						ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf |
-							ImGuiTreeNodeFlags_NoTreePushOnOpen |
-							ImGuiTreeNodeFlags_SpanAvailWidth;
-						if (selectedObject_ == obj) {
-							flags |= ImGuiTreeNodeFlags_Selected;
-						}
-
-						ImGui::TreeNodeEx(obj->GetName().c_str(), flags);
-
-						// クリックで選択
-						if (ImGui::IsItemClicked()) {
-							selectedObject_ = obj;
-							FocusOnObject(obj);
-						}
-
-						// 右クリックメニュー
-						if (ImGui::BeginPopupContextItem()) {
-							if (ImGui::MenuItem(U8("フォーカス"), "F")) {
-								FocusOnObject(obj);
-							}
-							if (ImGui::MenuItem(U8("名前変更"), "F2")) {
-								renamingObject_ = obj;
-								strncpy_s(renameBuffer_, obj->GetName().c_str(), sizeof(renameBuffer_) - 1);
-							}
-							ImGui::Separator();
-							bool canDelete = obj->IsDeletable();
-							if (!canDelete) ImGui::BeginDisabled();
-							if (ImGui::MenuItem(U8("削除"), "DEL", false, canDelete)) {
-								if (gameObjects_) {
-									for (auto it = gameObjects_->begin(); it != gameObjects_->end(); ++it) {
-										if (it->get() == obj) {
-											consoleMessages_.push_back(U8("[エディタ] 削除: ") + obj->GetName());
-									gameObjects_->erase(it);
-									if (selectedObject_ == obj) selectedObject_ = nullptr;
-									isDirty_ = true;
-									break;
-										}
-									}
-								}
-							}
-							if (!canDelete) ImGui::EndDisabled();
-							ImGui::EndPopup();
-						}
-
-						ImGui::PopID();
-					}
-				} else {
-					ImGui::TextDisabled("(no objects)");
-				}
-
-				ImGui::EndTabItem();
-			}
-
-			// アセット タブ（Projectからの簡易版）
-			if (ImGui::BeginTabItem(U8("アセット"))) {
-				ImGui::Spacing();
-
-				// アセットリスト
-				if (ImGui::CollapsingHeader(U8("モデル"), ImGuiTreeNodeFlags_DefaultOpen)) {
-					if (cachedModelPaths_.empty()) {
-						RefreshModelPaths();
-					}
-					for (size_t i = 0; i < cachedModelPaths_.size(); ++i) {
-						std::filesystem::path p(cachedModelPaths_[i]);
-						std::string ext = p.extension().string();
-						if (ext == ".obj") continue;  // OBJはスキップ
-
-						ImGui::PushID(static_cast<int>(i));
-						if (ImGui::Selectable(p.filename().string().c_str(), false, ImGuiSelectableFlags_AllowDoubleClick)) {
-							if (ImGui::IsMouseDoubleClicked(0)) {
-								HandleModelDragDropByIndex(i);
-							}
-						}
-						// ドラッグソース
-						if (ImGui::BeginDragDropSource()) {
-							ImGui::SetDragDropPayload("MODEL_INDEX", &i, sizeof(size_t));
-							ImGui::Text("  %s", p.filename().string().c_str());
-							ImGui::EndDragDropSource();
-						}
-						ImGui::PopID();
-					}
-				}
-
-				if (ImGui::CollapsingHeader(U8("オーディオ"))) {
-					if (cachedAudioPaths_.empty()) {
-						RefreshAudioPaths();
-					}
-					for (size_t i = 0; i < cachedAudioPaths_.size(); ++i) {
-						std::filesystem::path p(cachedAudioPaths_[i]);
-						ImGui::PushID(static_cast<int>(i + 10000));
-						if (ImGui::Selectable(p.filename().string().c_str())) {
-							if (selectedObject_) {
-								if (auto* audioSource = selectedObject_->GetComponent<AudioSource>()) {
-									audioSource->SetClipPath(cachedAudioPaths_[i]);
-									audioSource->LoadClip(cachedAudioPaths_[i]);
-								}
-							}
-						}
-						// ドラッグソース
-						if (ImGui::BeginDragDropSource()) {
-							ImGui::SetDragDropPayload("AUDIO_PATH", &i, sizeof(size_t));
-							ImGui::Text("  %s", p.filename().string().c_str());
-							ImGui::EndDragDropSource();
-						}
-						ImGui::PopID();
-					}
-				}
-
-				if (ImGui::CollapsingHeader(U8("スクリプト"))) {
-					if (cachedScriptPaths_.empty()) {
-						RefreshScriptPaths();
-					}
-					for (size_t i = 0; i < cachedScriptPaths_.size(); ++i) {
-						std::filesystem::path p(cachedScriptPaths_[i]);
-						ImGui::PushID(static_cast<int>(i + 20000));
-						if (ImGui::Selectable(p.filename().string().c_str(), false, ImGuiSelectableFlags_AllowDoubleClick)) {
-							if (ImGui::IsMouseDoubleClicked(0)) {
-								OpenScriptInVSCode(cachedScriptPaths_[i]);
-							}
-						}
-						ImGui::PopID();
-					}
-				}
-
-				ImGui::EndTabItem();
-			}
-
-			ImGui::EndTabBar();
-		}
-
-		ImGui::End();
-	}
 
 	void EditorUI::RenderObjectProperties(const EditorContext& context) {
 		ImGui::Begin(U8("プロパティ"));

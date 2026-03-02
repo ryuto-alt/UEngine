@@ -56,9 +56,12 @@ void Renderer::Initialize(GraphicsDevice* graphics, Window* window) {
 
     skinnedTransformBuffer_.Create(device, kSkinnedBufferCount);
     skinnedMaterialBuffer_.Create(device, kSkinnedBufferCount);
-    
+
     // StructuredBuffer for bone matrices (BoneMatrixPair)
     CreateBoneMatrixPairBuffer(device);
+
+    outlinePipeline_.Initialize(graphics_, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, DXGI_FORMAT_D32_FLOAT);
+    outlineCB_.Create(device, 1);
 
     imguiManager_ = MakeUnique<ImGuiManager>();
     imguiManager_->Initialize(graphics_, window_, 2);
@@ -69,12 +72,12 @@ void Renderer::Initialize(GraphicsDevice* graphics, Window* window) {
 }
 
 void Renderer::BeginFrame() {
-    // フレーム開始時にダイナミックバッファをリセット
     constantBuffer_.Reset();
     lightBuffer_.Reset();
     materialBuffer_.Reset();
     skinnedTransformBuffer_.Reset();
     skinnedMaterialBuffer_.Reset();
+    outlineCB_.Reset();
     currentBoneSlot_ = 0;
 }
 
@@ -201,7 +204,9 @@ void Renderer::DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_
                              D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle, const RenderView& view,
                              const std::vector<RenderItem>& items, LightManager* lightManager,
                              const std::vector<SkinnedRenderItem>& skinnedItems,
-                             bool enableDebugDraw) {
+                             bool enableDebugDraw,
+                             std::span<const RenderItem> outlineItems,
+                             std::span<const SkinnedRenderItem> outlineSkinnedItems) {
     if (!view.camera) return;
 
     auto* cmdList = graphics_->GetCommandList();
@@ -287,6 +292,11 @@ void Renderer::DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_
             view.camera->GetViewMatrix(),
             view.camera->GetProjectionMatrix()
         );
+    }
+
+    // Outline pass (after debug draw, before final barrier)
+    if (!outlineItems.empty() || !outlineSkinnedItems.empty()) {
+        RenderOutline(view, outlineItems, outlineSkinnedItems);
     }
 
     // Resource barrier: RENDER_TARGET -> PIXEL_SHADER_RESOURCE
@@ -397,20 +407,17 @@ void Renderer::RenderSkinnedMeshes(const RenderView& view, const std::vector<Ski
         // Bone matrices（現在のスロットに書き込み）
         if (mappedBoneData && item.boneMatrixPairs) {
             size_t numBones = (std::min)(item.boneMatrixPairs->size(), static_cast<size_t>(MAX_BONES));
-            
-            // このスロットのオフセット
+
             BoneMatrixPair* slotData = mappedBoneData + (currentBoneSlot_ * MAX_BONES);
-            
+
             for (size_t i = 0; i < numBones; ++i) {
                 const auto& pair = (*item.boneMatrixPairs)[i];
-                // 転置した行列を格納
                 Matrix4x4 transposedSkeleton = pair.skeletonSpaceMatrix.Transpose();
                 Matrix4x4 transposedInvTranspose = pair.skeletonSpaceInverseTransposeMatrix.Transpose();
                 transposedSkeleton.ToFloatArray(reinterpret_cast<float*>(&slotData[i].skeletonSpaceMatrix));
                 transposedInvTranspose.ToFloatArray(reinterpret_cast<float*>(&slotData[i].skeletonSpaceInverseTransposeMatrix));
             }
-            
-            // このスロット用のSRVをバインド
+
             cmdList->SetGraphicsRootDescriptorTable(1, boneMatrixPairSRVs_[currentBoneSlot_]);
             currentBoneSlot_++;
         }
@@ -486,6 +493,97 @@ void Renderer::CreateBoneMatrixPairBuffer(ID3D12Device* device) {
         
         boneMatrixPairSRVs_[slot] = graphics_->GetSRVHeap()->GetGPUDescriptorHandleForHeapStart();
         boneMatrixPairSRVs_[slot].ptr += (boneMatrixPairSRVBaseIndex_ + slot) * descriptorSize;
+    }
+}
+
+void Renderer::RenderOutline(const RenderView& view,
+                             std::span<const RenderItem> outlineItems,
+                             std::span<const SkinnedRenderItem> outlineSkinnedItems) {
+    auto* cmdList = graphics_->GetCommandList();
+    auto* heap = graphics_->GetSRVHeap();
+
+    OutlineParamsCB outlineData;
+    D3D12_GPU_VIRTUAL_ADDRESS outlineGpuAddr = outlineCB_.Update(outlineData);
+
+    auto viewMatrix = view.camera->GetViewMatrix();
+    auto projection = view.camera->GetProjectionMatrix();
+
+    ID3D12DescriptorHeap* heaps[] = { heap };
+    cmdList->SetDescriptorHeaps(1, heaps);
+    cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    // Static mesh outlines
+    if (!outlineItems.empty()) {
+        cmdList->SetPipelineState(outlinePipeline_.GetStaticPSO());
+        cmdList->SetGraphicsRootSignature(outlinePipeline_.GetStaticRootSignature());
+
+        for (const auto& item : outlineItems) {
+            if (!item.mesh) continue;
+
+            TransformCB transformData;
+            auto mvp = item.worldMatrix * viewMatrix * projection;
+            StoreTransposedMatrix(transformData.world, item.worldMatrix);
+            StoreTransposedMatrix(transformData.view, viewMatrix);
+            StoreTransposedMatrix(transformData.projection, projection);
+            StoreTransposedMatrix(transformData.mvp, mvp);
+            D3D12_GPU_VIRTUAL_ADDRESS transformGpuAddr = constantBuffer_.Update(transformData);
+
+            cmdList->SetGraphicsRootConstantBufferView(0, transformGpuAddr);
+            cmdList->SetGraphicsRootConstantBufferView(1, outlineGpuAddr);
+
+            auto vbView = item.mesh->GetVertexBuffer().GetView();
+            cmdList->IASetVertexBuffers(0, 1, &vbView);
+            auto ibView = item.mesh->GetIndexBuffer().GetView();
+            cmdList->IASetIndexBuffer(&ibView);
+            cmdList->DrawIndexedInstanced(item.mesh->GetIndexBuffer().GetIndexCount(), 1, 0, 0, 0);
+        }
+    }
+
+    // Skinned mesh outlines: upload bone matrices to fresh slots
+    if (!outlineSkinnedItems.empty() && boneMatrixPairBuffer_) {
+        cmdList->SetPipelineState(outlinePipeline_.GetSkinnedPSO());
+        cmdList->SetGraphicsRootSignature(outlinePipeline_.GetSkinnedRootSignature());
+
+        BoneMatrixPair* mappedBoneData = nullptr;
+        boneMatrixPairBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&mappedBoneData));
+
+        for (const auto& item : outlineSkinnedItems) {
+            if (!item.mesh) continue;
+            if (!item.boneMatrixPairs || item.boneMatrixPairs->empty()) continue;
+            if (currentBoneSlot_ >= MAX_SKINNED_OBJECTS) break;
+
+            size_t numBones = (std::min)(item.boneMatrixPairs->size(), static_cast<size_t>(MAX_BONES));
+            BoneMatrixPair* slotData = mappedBoneData + (currentBoneSlot_ * MAX_BONES);
+            for (size_t j = 0; j < numBones; ++j) {
+                const auto& pair = (*item.boneMatrixPairs)[j];
+                Matrix4x4 transposedSkeleton = pair.skeletonSpaceMatrix.Transpose();
+                Matrix4x4 transposedInvTranspose = pair.skeletonSpaceInverseTransposeMatrix.Transpose();
+                transposedSkeleton.ToFloatArray(reinterpret_cast<float*>(&slotData[j].skeletonSpaceMatrix));
+                transposedInvTranspose.ToFloatArray(reinterpret_cast<float*>(&slotData[j].skeletonSpaceInverseTransposeMatrix));
+            }
+
+            TransformCB transformData;
+            auto mvp = item.worldMatrix * viewMatrix * projection;
+            StoreTransposedMatrix(transformData.world, item.worldMatrix);
+            StoreTransposedMatrix(transformData.view, viewMatrix);
+            StoreTransposedMatrix(transformData.projection, projection);
+            StoreTransposedMatrix(transformData.mvp, mvp);
+            auto transformGpuAddr = skinnedTransformBuffer_.Update(transformData);
+
+            cmdList->SetGraphicsRootConstantBufferView(0, transformGpuAddr);
+            cmdList->SetGraphicsRootDescriptorTable(1, boneMatrixPairSRVs_[currentBoneSlot_]);
+            cmdList->SetGraphicsRootConstantBufferView(2, outlineGpuAddr);
+
+            auto vbView = item.mesh->GetVertexBuffer().GetView();
+            cmdList->IASetVertexBuffers(0, 1, &vbView);
+            auto ibView = item.mesh->GetIndexBuffer().GetView();
+            cmdList->IASetIndexBuffer(&ibView);
+            cmdList->DrawIndexedInstanced(item.mesh->GetIndexBuffer().GetIndexCount(), 1, 0, 0, 0);
+
+            currentBoneSlot_++;
+        }
+
+        boneMatrixPairBuffer_->Unmap(0, nullptr);
     }
 }
 

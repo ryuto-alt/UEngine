@@ -3,6 +3,7 @@
 #include "../Graphics/GraphicsDevice.h"
 #include "../Graphics/Pipeline.h"
 #include "../Graphics/SkinnedPipeline.h"
+#include "../Graphics/OutlinePipeline.h"
 #include "../Graphics/ConstantBuffer.h"
 #include "../Graphics/DynamicConstantBuffer.h"
 #include "RenderItem.h"
@@ -14,8 +15,17 @@
 #include "../UI/ImGuiManager.h"
 #include "../Math/MathCommon.h"
 #include <vector>
+#include <span>
 
 namespace UnoEngine {
+
+struct alignas(256) OutlineParamsCB {
+    float width = 0.03f;
+    float r = 1.0f;
+    float g = 0.5f;
+    float b = 0.0f;
+    float pad[60];
+};
 
 struct alignas(256) TransformCB {
     Float4x4 world;
@@ -57,7 +67,9 @@ public:
                        D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle, const RenderView& view,
                        const std::vector<RenderItem>& items, LightManager* lightManager,
                        const std::vector<SkinnedRenderItem>& skinnedItems = {},
-                       bool enableDebugDraw = false);
+                       bool enableDebugDraw = false,
+                       std::span<const RenderItem> outlineItems = {},
+                       std::span<const SkinnedRenderItem> outlineSkinnedItems = {});
     void RenderUIOnly(Scene* scene);
 
     Pipeline* GetPipeline() { return &pipeline_; }
@@ -73,6 +85,9 @@ private:
     void UpdateLighting(const RenderView& view, LightManager* lightManager);
     void RenderMeshes(const RenderView& view, const std::vector<RenderItem>& items);
     void RenderSkinnedMeshes(const RenderView& view, const std::vector<SkinnedRenderItem>& items);
+    void RenderOutline(const RenderView& view,
+                       std::span<const RenderItem> outlineItems,
+                       std::span<const SkinnedRenderItem> outlineSkinnedItems);
     void CreateBoneMatrixPairBuffer(ID3D12Device* device);
 
 private:
@@ -80,6 +95,7 @@ private:
     Window* window_ = nullptr;
     Pipeline pipeline_;
     SkinnedPipeline skinnedPipeline_;
+    OutlinePipeline outlinePipeline_;
 
     // スキンメッシュ用のダイナミックバッファ（フレーム内で複数回更新可能）
     DynamicConstantBuffer<TransformCB> skinnedTransformBuffer_;
@@ -90,6 +106,7 @@ private:
     DynamicConstantBuffer<LightCB> lightBuffer_;
     DynamicConstantBuffer<MaterialCB> materialBuffer_;
     ConstantBuffer<BoneMatricesCB> boneBuffer_;
+    DynamicConstantBuffer<OutlineParamsCB> outlineCB_;
 
     // 現在のライトバッファのGPUアドレス（UpdateLightingで更新）
     D3D12_GPU_VIRTUAL_ADDRESS currentLightGpuAddr_ = 0;
@@ -99,7 +116,7 @@ private:
     ComPtr<ID3D12Resource> boneMatrixPairBuffer_;
     D3D12_GPU_DESCRIPTOR_HANDLE boneMatrixPairSRVs_[MAX_SKINNED_OBJECTS];  // 各スロット用のSRV
     uint32 boneMatrixPairSRVBaseIndex_ = 0;
-    uint32 currentBoneSlot_ = 0;  // 現在使用中のスロット
+    uint32 currentBoneSlot_ = 0;
 
     UniquePtr<ImGuiManager> imguiManager_;
     UniquePtr<DebugRenderer> debugRenderer_;

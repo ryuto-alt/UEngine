@@ -185,7 +185,6 @@ private:
     void RenderInspector(const EditorContext& context);
     void RenderHierarchy(const EditorContext& context);
     void RenderStats(const EditorContext& context);
-    void RenderConsole();
     void RenderProject(const EditorContext& context);
     void RenderProfiler();
 
@@ -252,7 +251,6 @@ private:
     bool showInspector_ = true;
     bool showHierarchy_ = true;
     bool showStats_ = true;
-    bool showConsole_ = true;
     bool showProject_ = true;
     bool showProfiler_ = false;
 

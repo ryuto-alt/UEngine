@@ -8,6 +8,10 @@
 #include "../Engine/Systems/CollisionSystem.h"
 #include "../Engine/Core/Logger.h"
 #include "../Engine/Video/VideoPlayerComponent.h"
+#ifdef _DEBUG
+#include "../Engine/Graphics/MeshRenderer.h"
+#include "../Engine/Rendering/SkinnedMeshRenderer.h"
+#endif
 
 namespace UnoEngine {
 
@@ -131,6 +135,34 @@ void GameApplication::OnRender() {
                     editorUI->PrepareSceneViewGizmos(debugRenderer);
                 }
 
+                // Build outline items for the selected object (edit mode only)
+                std::vector<RenderItem> outlineItems;
+                std::vector<SkinnedRenderItem> outlineSkinnedItems;
+                if (auto* sel = editorUI->GetSelectedObject(); sel && editorUI->IsEditing()) {
+                    // Static meshes: use world matrix directly
+                    if (auto* mr = sel->GetComponent<MeshRenderer>(); mr && mr->HasModel()) {
+                        const Matrix4x4 worldMat = sel->GetTransform().GetWorldMatrix();
+                        for (const auto& mesh : mr->GetMeshes()) {
+                            outlineItems.emplace_back(const_cast<Mesh*>(&mesh),
+                                                      const_cast<Material*>(mesh.GetMaterial()),
+                                                      worldMat);
+                        }
+                    }
+                    // Skinned meshes: find in skinnedItems to reuse the exact world matrix
+                    // (CollectSkinnedRenderables applies coordinate corrections)
+                    if (auto* smr = sel->GetComponent<SkinnedMeshRenderer>(); smr && smr->HasModel()) {
+                        const auto& selMeshes = smr->GetMeshes();
+                        for (const auto& si : skinnedItems) {
+                            for (const auto& mesh : selMeshes) {
+                                if (si.mesh == &mesh) {
+                                    outlineSkinnedItems.push_back(si);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // Scene View用のRenderViewを作成
                 RenderView sceneView;
                 sceneView.camera = sceneCamera;  // EditorCamera（sceneViewCamera_）
@@ -145,7 +177,9 @@ void GameApplication::OnRender() {
                     items,
                     lightManager_.get(),
                     skinnedItems,
-                    true  // デバッグ描画有効
+                    true,  // デバッグ描画有効
+                    outlineItems,
+                    outlineSkinnedItems
                 );
             }
 

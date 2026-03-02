@@ -200,7 +200,6 @@ namespace UnoEngine {
 		RenderHierarchy(context);        // 互換性のため残す
 		RenderInspector(context);        // 互換性のため残す
 		RenderStats(context);            // Stats（右側に統合予定）
-		RenderConsole();                 // 互換性のため残す
 		RenderProject(context);
 		RenderProfiler();
 
@@ -404,7 +403,7 @@ namespace UnoEngine {
 				ImGui::SeparatorText(U8("ツール"));
 				ImGui::MenuItem(U8("インスペクター"), nullptr, &showInspector_);
 				ImGui::MenuItem(U8("ヒエラルキー"), nullptr, &showHierarchy_);
-				ImGui::MenuItem(U8("コンソール"), nullptr, &showConsole_);
+	
 				ImGui::MenuItem(U8("プロジェクト"), nullptr, &showProject_);
 
 				ImGui::SeparatorText(U8("パフォーマンス"));
@@ -2900,32 +2899,6 @@ namespace UnoEngine {
 		ImGui::End();
 	}
 
-	void EditorUI::RenderConsole() {
-		if (!showConsole_) return;
-
-		ImGui::Begin(U8("コンソール (旧)"), &showConsole_);
-
-		if (ImGui::Button(U8("クリア"))) {
-			consoleMessages_.clear();
-		}
-		ImGui::SameLine();
-		if (ImGui::Button(U8("テストログ追加"))) {
-			consoleMessages_.push_back(U8("[情報] テストログメッセージ"));
-		}
-
-		ImGui::Separator();
-		ImGui::BeginChild("ConsoleScrolling", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
-
-		for (const auto& msg : consoleMessages_) {
-			ImGui::TextUnformatted(msg.c_str());
-		}
-
-		if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
-			ImGui::SetScrollHereY(1.0f);
-
-		ImGui::EndChild();
-		ImGui::End();
-	}
 
 	void EditorUI::RenderProject(const EditorContext& context) {
 		if (!showProject_) return;
@@ -3313,6 +3286,25 @@ namespace UnoEngine {
 		// Ctrl+S: シーン保存
 		if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S, false)) {
 			SaveScene("assets/scenes/default_scene.json");
+		}
+
+		// DEL: 選択オブジェクト削除（どのウィンドウにフォーカスがあっても動作）
+		if (selectedObject_ && !renamingObject_ && editorMode_ == EditorMode::Edit
+			&& ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
+			if (!selectedObject_->IsDeletable()) {
+				consoleMessages_.push_back("[Editor] Cannot delete: " + selectedObject_->GetName() + " (protected)");
+			} else if (gameObjects_) {
+				for (auto it = gameObjects_->begin(); it != gameObjects_->end(); ++it) {
+					if (it->get() == selectedObject_) {
+						consoleMessages_.push_back("[Editor] Deleted: " + selectedObject_->GetName());
+						expandedObjects_.erase(selectedObject_);
+						gameObjects_->erase(it);
+						selectedObject_ = nullptr;
+						isDirty_ = true;
+						break;
+					}
+				}
+			}
 		}
 	}
 
@@ -4109,6 +4101,36 @@ namespace UnoEngine {
 				float tMin, tMax;
 				if (localBounds.IntersectsRay(localRayOrigin, localRayDir, tMin, tMax)) {
 					// ワールド空間での距離を計算
+					Vector3 hitPointLocal = localRayOrigin + localRayDir * tMin;
+					Vector4 hitPointWorld4 = worldMatrix.TransformVector4(Vector4(hitPointLocal.GetX(), hitPointLocal.GetY(), hitPointLocal.GetZ(), 1.0f));
+					Vector3 hitPointWorld(hitPointWorld4.GetX(), hitPointWorld4.GetY(), hitPointWorld4.GetZ());
+					float distance = (hitPointWorld - rayOrigin).Length();
+
+					if (distance < closestDistance) {
+						closestDistance = distance;
+						closestObject = obj.get();
+					}
+				}
+			}
+			else if (auto* mr = obj->GetComponent<MeshRenderer>(); mr && mr->HasModel()) {
+				auto* modelData = mr->GetModel();
+				BoundingBox localBounds(modelData->boundingBox.min, modelData->boundingBox.max);
+				if (!localBounds.IsValid()) {
+					localBounds = BoundingBox(Vector3(-1.0f, -1.0f, -1.0f), Vector3(1.0f, 1.0f, 1.0f));
+				}
+
+				const Transform& transform = obj->GetTransform();
+				Matrix4x4 worldMatrix = transform.GetWorldMatrix();
+				Matrix4x4 invWorldMatrix = worldMatrix.Inverse();
+
+				Vector4 localOrigin4 = invWorldMatrix.TransformVector4(Vector4(rayOrigin.GetX(), rayOrigin.GetY(), rayOrigin.GetZ(), 1.0f));
+				Vector4 localDir4 = invWorldMatrix.TransformVector4(Vector4(rayDir.GetX(), rayDir.GetY(), rayDir.GetZ(), 0.0f));
+
+				Vector3 localRayOrigin(localOrigin4.GetX(), localOrigin4.GetY(), localOrigin4.GetZ());
+				Vector3 localRayDir = Vector3(localDir4.GetX(), localDir4.GetY(), localDir4.GetZ()).Normalize();
+
+				float tMin, tMax;
+				if (localBounds.IntersectsRay(localRayOrigin, localRayDir, tMin, tMax)) {
 					Vector3 hitPointLocal = localRayOrigin + localRayDir * tMin;
 					Vector4 hitPointWorld4 = worldMatrix.TransformVector4(Vector4(hitPointLocal.GetX(), hitPointLocal.GetY(), hitPointLocal.GetZ(), 1.0f));
 					Vector3 hitPointWorld(hitPointWorld4.GetX(), hitPointWorld4.GetY(), hitPointWorld4.GetZ());

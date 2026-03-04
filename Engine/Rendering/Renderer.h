@@ -30,12 +30,15 @@ struct alignas(256) OutlineParamsCB {
     float pad[60];
 };
 
+static constexpr int MAX_SPOT_SHADOWS = 4;
+
 struct alignas(256) TransformCB {
     Float4x4 world;
     Float4x4 view;
     Float4x4 projection;
     Float4x4 mvp;
-    Float4x4 lightViewProj; // for shadow mapping
+    Float4x4 lightViewProj;                    // directional shadow
+    Float4x4 spotLightViewProj[MAX_SPOT_SHADOWS]; // spot shadows
 };
 
 struct GPUPointLightCB {
@@ -69,7 +72,9 @@ struct alignas(256) LightCB {
     GPUSpotLightCB  spotLights[4];
     int32_t spotLightCount;           float pad4[3];
     // Shadow
-    float shadowBias;                 float shadowPad[3];
+    float shadowBias;
+    int32_t spotShadowCount;
+    float shadowPad[2];
 };
 
 struct alignas(256) MaterialCB {
@@ -116,6 +121,7 @@ private:
     void SetupViewport();
     void UpdateLighting(const RenderView& view, LightManager* lightManager, Matrix4x4& outLightViewProj);
     void RenderShadowMap(const std::vector<RenderItem>& items, const std::vector<SkinnedRenderItem>& skinnedItems, const Matrix4x4& lightViewProj);
+    void RenderSpotShadowMaps(const std::vector<RenderItem>& items, const std::vector<SkinnedRenderItem>& skinnedItems);
     void RenderMeshes(const RenderView& view, const std::vector<RenderItem>& items, const Matrix4x4& lightViewProj);
     void RenderSkinnedMeshes(const RenderView& view, const std::vector<SkinnedRenderItem>& items, const Matrix4x4& lightViewProj);
     void RenderOutline(const RenderView& view,
@@ -130,6 +136,7 @@ private:
     SkinnedPipeline skinnedPipeline_;
     OutlinePipeline outlinePipeline_;
     ShadowMap shadowMap_;
+    ShadowMap spotShadowMaps_[MAX_SPOT_SHADOWS];
     ShadowPipeline shadowPipeline_;
 
     DynamicConstantBuffer<TransformCB> skinnedTransformBuffer_;
@@ -155,6 +162,8 @@ private:
     UniquePtr<DebugRenderer> debugRenderer_;
 
     Matrix4x4 lastLightViewProj_;
+    Matrix4x4 spotLightViewProjs_[MAX_SPOT_SHADOWS];
+    int32_t activeSpotShadowCount_ = 0;
 };
 
 } // namespace UnoEngine

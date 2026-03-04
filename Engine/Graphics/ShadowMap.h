@@ -29,6 +29,12 @@ public:
                                           const Vector3& sceneCenter,
                                           float sceneRadius);
 
+    // Compute perspective VP for a spot light
+    static Matrix4x4 ComputeSpotLightViewProj(const Vector3& position,
+                                               const Vector3& direction,
+                                               float spotAngleRad,
+                                               float range);
+
 private:
     ComPtr<ID3D12Resource>      depthBuffer_;
     ComPtr<ID3D12DescriptorHeap> dsvHeap_;

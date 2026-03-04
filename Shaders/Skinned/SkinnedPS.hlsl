@@ -2,6 +2,10 @@
 
 Texture2D    diffuseTexture : register(t1);
 Texture2D    shadowMap      : register(t2);
+Texture2D    spotShadowMap0 : register(t3);
+Texture2D    spotShadowMap1 : register(t4);
+Texture2D    spotShadowMap2 : register(t5);
+Texture2D    spotShadowMap3 : register(t6);
 SamplerState samplerState   : register(s0);
 SamplerComparisonState shadowSampler : register(s1);
 
@@ -26,7 +30,8 @@ cbuffer Light : register(b1) {
     int    pointLightCount;           float3 pad3;
     GPUSpotLight  spotLights[4];
     int    spotLightCount;            float3 pad4;
-    float  shadowBias;                float3 shadowPad;
+    float  shadowBias;
+    int    spotShadowCount;           float2 shadowPad;
 };
 
 cbuffer Material : register(b2) {
@@ -37,11 +42,15 @@ cbuffer Material : register(b2) {
 };
 
 struct PSInput {
-    float4 position  : SV_POSITION;
-    float3 worldPos  : POSITION0;
-    float3 normal    : NORMAL;
-    float2 uv        : TEXCOORD0;
-    float4 shadowPos : TEXCOORD1;
+    float4 position      : SV_POSITION;
+    float3 worldPos      : POSITION0;
+    float3 normal        : NORMAL;
+    float2 uv            : TEXCOORD0;
+    float4 shadowPos     : TEXCOORD1;
+    float4 spotShadowPos0 : TEXCOORD2;
+    float4 spotShadowPos1 : TEXCOORD3;
+    float4 spotShadowPos2 : TEXCOORD4;
+    float4 spotShadowPos3 : TEXCOORD5;
 };
 
 float SampleShadowPCF(float4 shadowPos) {
@@ -57,6 +66,23 @@ float SampleShadowPCF(float4 shadowPos) {
     [unroll] for (int x = -1; x <= 1; x++) {
     [unroll] for (int y = -1; y <= 1; y++) {
         shadow += shadowMap.SampleCmpLevelZero(shadowSampler, uv + float2(x, y) * texelSize, depth);
+    }}
+    return shadow / 9.0f;
+}
+
+float SampleSpotShadowPCF(Texture2D spotMap, float4 shadowPos) {
+    float2 projUV = shadowPos.xy / shadowPos.w;
+    float2 uv     = projUV * float2(0.5f, -0.5f) + 0.5f;
+    float  depth  = shadowPos.z / shadowPos.w - shadowBias;
+
+    if (uv.x < 0.0f || uv.x > 1.0f || uv.y < 0.0f || uv.y > 1.0f || depth < 0.0f || depth > 1.0f)
+        return 1.0f;
+
+    float shadow = 0.0f;
+    float2 texelSize = 1.0f / 1024.0f;
+    [unroll] for (int x = -1; x <= 1; x++) {
+    [unroll] for (int y = -1; y <= 1; y++) {
+        shadow += spotMap.SampleCmpLevelZero(shadowSampler, uv + float2(x, y) * texelSize, depth);
     }}
     return shadow / 9.0f;
 }
@@ -100,7 +126,17 @@ float4 main(PSInput input) : SV_TARGET {
         float  atten    = (1.0f - saturate(dist / spotLights[j].range));
         atten *= atten * spotF;
         float  NdotLs   = max(dot(N, Ls), 0.0f);
-        spotContrib    += texColor.rgb * albedo * spotLights[j].color * spotLights[j].intensity * NdotLs * atten;
+
+        // Spot shadow
+        float spotShadow = 1.0f;
+        if (j < spotShadowCount) {
+            if      (j == 0) spotShadow = SampleSpotShadowPCF(spotShadowMap0, input.spotShadowPos0);
+            else if (j == 1) spotShadow = SampleSpotShadowPCF(spotShadowMap1, input.spotShadowPos1);
+            else if (j == 2) spotShadow = SampleSpotShadowPCF(spotShadowMap2, input.spotShadowPos2);
+            else if (j == 3) spotShadow = SampleSpotShadowPCF(spotShadowMap3, input.spotShadowPos3);
+        }
+
+        spotContrib    += texColor.rgb * albedo * spotLights[j].color * spotLights[j].intensity * NdotLs * atten * spotShadow;
     }
 
     float3 finalColor = ambient + directLight + pointContrib + spotContrib;

@@ -36,9 +36,17 @@ void SkinnedPipeline::CreateRootSignature(ID3D12Device* device) {
     descRange3.RegisterSpace = 0;
     descRange3.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
+    D3D12_DESCRIPTOR_RANGE descRange4 = {}; // t3-t6 - spot shadow maps
+    descRange4.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+    descRange4.NumDescriptors = 4;
+    descRange4.BaseShaderRegister = 3;
+    descRange4.RegisterSpace = 0;
+    descRange4.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
     // [0]=Transform(b0,ALL) [1]=bones(t0,VERTEX) [2]=Light(b1,PIXEL)
     // [3]=Material(b2,PIXEL) [4]=albedo(t1,PIXEL) [5]=shadow(t2,PIXEL)
-    D3D12_ROOT_PARAMETER rootParams[6] = {};
+    // [6]=spotShadowMaps(t3-t6,PIXEL)
+    D3D12_ROOT_PARAMETER rootParams[7] = {};
 
     rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
     rootParams[0].Descriptor.ShaderRegister = 0;
@@ -70,6 +78,11 @@ void SkinnedPipeline::CreateRootSignature(ID3D12Device* device) {
     rootParams[5].DescriptorTable.pDescriptorRanges = &descRange3;
     rootParams[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
+    rootParams[6].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+    rootParams[6].DescriptorTable.NumDescriptorRanges = 1;
+    rootParams[6].DescriptorTable.pDescriptorRanges = &descRange4;
+    rootParams[6].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
     D3D12_STATIC_SAMPLER_DESC samplers[2] = {};
     auto& s0 = samplers[0];
     s0.Filter = D3D12_FILTER_ANISOTROPIC;
@@ -99,7 +112,7 @@ void SkinnedPipeline::CreateRootSignature(ID3D12Device* device) {
     s1.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
     D3D12_ROOT_SIGNATURE_DESC rootSigDesc = {};
-    rootSigDesc.NumParameters = 6;
+    rootSigDesc.NumParameters = 7;
     rootSigDesc.pParameters = rootParams;
     rootSigDesc.NumStaticSamplers = 2;
     rootSigDesc.pStaticSamplers = samplers;

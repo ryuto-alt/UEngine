@@ -66,6 +66,9 @@ void Renderer::Initialize(GraphicsDevice* graphics, Window* window) {
     outlineCB_.Create(device, 1);
 
     shadowMap_.Create(graphics_, 2048);
+    for (int i = 0; i < MAX_SPOT_SHADOWS; ++i) {
+        spotShadowMaps_[i].Create(graphics_, 1024);
+    }
     shadowPipeline_.Initialize(device);
     shadowTransformBuffer_.Create(device, kShadowBufferCount);
 
@@ -105,6 +108,7 @@ void Renderer::Draw(const RenderView& view, const std::vector<RenderItem>& items
     Matrix4x4 lightViewProj;
     UpdateLighting(view, lights, lightViewProj);
     RenderShadowMap(items, {}, lightViewProj);
+    RenderSpotShadowMaps(items, {});
     currentBoneSlot_ = 0;
 
     SetupViewport();
@@ -112,6 +116,9 @@ void Renderer::Draw(const RenderView& view, const std::vector<RenderItem>& items
     RenderUI(scene);
 
     shadowMap_.RestoreForNextFrame(cmdList);
+    for (int i = 0; i < activeSpotShadowCount_; ++i) {
+        spotShadowMaps_[i].RestoreForNextFrame(cmdList);
+    }
 }
 
 void Renderer::UpdateLighting(const RenderView& view, LightManager* lights, Matrix4x4& outLightViewProj) {
@@ -153,6 +160,16 @@ void Renderer::UpdateLighting(const RenderView& view, LightManager* lights, Matr
 
     lightData.shadowBias = 0.001f;
 
+    // Compute spot light shadow ViewProjs
+    activeSpotShadowCount_ = static_cast<int32_t>(std::min(spotCount, static_cast<int32_t>(MAX_SPOT_SHADOWS)));
+    lightData.spotShadowCount = activeSpotShadowCount_;
+
+    for (int32_t i = 0; i < activeSpotShadowCount_; ++i) {
+        const auto& sl = gpuLight.spotLights[i];
+        spotLightViewProjs_[i] = ShadowMap::ComputeSpotLightViewProj(
+            sl.position, sl.direction, sl.spotAngle, sl.range);
+    }
+
     currentLightGpuAddr_ = lightBuffer_.Update(lightData);
 
     // Compute directional light view-projection for shadow map
@@ -174,19 +191,25 @@ void Renderer::RenderMeshes(const RenderView& view, const std::vector<RenderItem
     cmdList->SetGraphicsRootConstantBufferView(2, currentLightGpuAddr_);
     cmdList->SetGraphicsRootDescriptorTable(4, shadowMap_.GetSRVHandle()); // shadow map at [4]
 
+    // Bind spot shadow maps at [5] - always bind (contiguous SRVs from initialization)
+    cmdList->SetGraphicsRootDescriptorTable(5, spotShadowMaps_[0].GetSRVHandle());
+
     auto viewMatrix = view.camera->GetViewMatrix();
     auto projection = view.camera->GetProjectionMatrix();
 
     for (const auto& item : items) {
         if (!item.mesh || !item.material) continue;
 
-        TransformCB transformData;
+        TransformCB transformData{};
         auto mvp = item.worldMatrix * viewMatrix * projection;
         StoreTransposedMatrix(transformData.world, item.worldMatrix);
         StoreTransposedMatrix(transformData.view, viewMatrix);
         StoreTransposedMatrix(transformData.projection, projection);
         StoreTransposedMatrix(transformData.mvp, mvp);
         StoreTransposedMatrix(transformData.lightViewProj, lightViewProj);
+        for (int si = 0; si < activeSpotShadowCount_; ++si) {
+            StoreTransposedMatrix(transformData.spotLightViewProj[si], spotLightViewProjs_[si]);
+        }
         D3D12_GPU_VIRTUAL_ADDRESS transformGpuAddr = constantBuffer_.Update(transformData);
         cmdList->SetGraphicsRootConstantBufferView(0, transformGpuAddr);
 
@@ -268,20 +291,61 @@ void Renderer::RenderLoadingScreen(std::string_view message, float progress) {
         ImGuiWindowFlags_NoInputs     | ImGuiWindowFlags_NoNav  |
         ImGuiWindowFlags_NoBringToFrontOnFocus);
 
-    ImDrawList* dl = ImGui::GetBackgroundDrawList();
-    dl->AddRectFilled({0.0f, 0.0f}, sz, IM_COL32(15, 15, 15, 255));
+    // ウィンドウのDrawListを使用（BackgroundDrawListだとウィンドウの後ろに隠れる）
+    ImDrawList* dl = ImGui::GetWindowDrawList();
 
     constexpr float barW = 420.0f;
     constexpr float barH = 12.0f;
     float cx = sz.x * 0.5f;
     float cy = sz.y * 0.5f;
 
+    // スピナー（くるくる）
+    {
+        using namespace std::chrono;
+        static auto startTime = high_resolution_clock::now();
+        float elapsed = duration<float>(high_resolution_clock::now() - startTime).count();
+
+        constexpr float radius    = 18.0f;
+        constexpr float thickness = 3.0f;
+        constexpr int   segments  = 30;
+        constexpr float arcLen    = 3.14159265f * 1.4f; // 弧の長さ（約252°）
+        float spinAngle = elapsed * 4.0f; // 回転速度
+
+        ImVec2 spinCenter = { cx, cy - 56.0f };
+
+        for (int i = 0; i < segments; ++i) {
+            float t0 = static_cast<float>(i) / static_cast<float>(segments);
+            float t1 = static_cast<float>(i + 1) / static_cast<float>(segments);
+            float a0 = spinAngle + t0 * arcLen;
+            float a1 = spinAngle + t1 * arcLen;
+
+            // フェードイン: 先頭が明るく、末尾が薄い
+            uint8_t alpha = static_cast<uint8_t>(40 + 215 * t0);
+            ImU32 col = IM_COL32(100, 160, 255, alpha);
+
+            ImVec2 p0 = { spinCenter.x + cosf(a0) * radius, spinCenter.y + sinf(a0) * radius };
+            ImVec2 p1 = { spinCenter.x + cosf(a1) * radius, spinCenter.y + sinf(a1) * radius };
+            dl->AddLine(p0, p1, col, thickness);
+        }
+    }
+
+    // メッセージテキスト
     ImVec2 textSize = ImGui::CalcTextSize(message.data());
-    ImGui::SetCursorPos({cx - textSize.x * 0.5f, cy - 34.0f});
+    ImGui::SetCursorPos({cx - textSize.x * 0.5f, cy - 28.0f});
     ImGui::TextUnformatted(message.data());
 
-    ImGui::SetCursorPos({cx - barW * 0.5f, cy - 10.0f});
+    // プログレスバー
+    ImGui::SetCursorPos({cx - barW * 0.5f, cy + 0.0f});
     ImGui::ProgressBar(progress, {barW, barH}, "");
+
+    // パーセント表示
+    {
+        char pctBuf[16];
+        snprintf(pctBuf, sizeof(pctBuf), "%d%%", static_cast<int>(progress * 100.0f));
+        ImVec2 pctSize = ImGui::CalcTextSize(pctBuf);
+        ImGui::SetCursorPos({cx - pctSize.x * 0.5f, cy + 18.0f});
+        ImGui::TextColored({0.6f, 0.6f, 0.6f, 1.0f}, "%s", pctBuf);
+    }
 
     ImGui::End();
 
@@ -305,6 +369,7 @@ void Renderer::DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_
     Matrix4x4 lightViewProj;
     UpdateLighting(view, lightManager, lightViewProj);
     RenderShadowMap(items, skinnedItems, lightViewProj);
+    RenderSpotShadowMaps(items, skinnedItems);
     currentBoneSlot_ = 0;
 
     // Resource barrier: PIXEL_SHADER_RESOURCE -> RENDER_TARGET
@@ -396,6 +461,9 @@ void Renderer::DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_
 
     // Restore shadow map to DEPTH_WRITE for next frame
     shadowMap_.RestoreForNextFrame(cmdList);
+    for (int i = 0; i < activeSpotShadowCount_; ++i) {
+        spotShadowMaps_[i].RestoreForNextFrame(cmdList);
+    }
 }
 
 void Renderer::DrawSkinnedMeshes(const RenderView& view, const std::vector<SkinnedRenderItem>& items, LightManager* lights) {
@@ -443,6 +511,9 @@ void Renderer::RenderSkinnedMeshes(const RenderView& view, const std::vector<Ski
     cmdList->SetGraphicsRootConstantBufferView(2, currentLightGpuAddr_);
     cmdList->SetGraphicsRootDescriptorTable(5, shadowMap_.GetSRVHandle()); // shadow at [5]
 
+    // Bind spot shadow maps at [6] - always bind (contiguous SRVs from initialization)
+    cmdList->SetGraphicsRootDescriptorTable(6, spotShadowMaps_[0].GetSRVHandle());
+
     auto viewMatrix = view.camera->GetViewMatrix();
     auto projection = view.camera->GetProjectionMatrix();
 
@@ -468,13 +539,16 @@ void Renderer::RenderSkinnedMeshes(const RenderView& view, const std::vector<Ski
             break;
         }
 
-        TransformCB transformData;
+        TransformCB transformData{};
         auto mvp = item.worldMatrix * viewMatrix * projection;
         StoreTransposedMatrix(transformData.world, item.worldMatrix);
         StoreTransposedMatrix(transformData.view, viewMatrix);
         StoreTransposedMatrix(transformData.projection, projection);
         StoreTransposedMatrix(transformData.mvp, mvp);
         StoreTransposedMatrix(transformData.lightViewProj, lightViewProj);
+        for (int si = 0; si < activeSpotShadowCount_; ++si) {
+            StoreTransposedMatrix(transformData.spotLightViewProj[si], spotLightViewProjs_[si]);
+        }
         auto transformGpuAddr = skinnedTransformBuffer_.Update(transformData);
         cmdList->SetGraphicsRootConstantBufferView(0, transformGpuAddr);
 
@@ -608,6 +682,88 @@ void Renderer::RenderShadowMap(const std::vector<RenderItem>& items,
     }
 
     shadowMap_.EndShadowPass(cmdList);
+}
+
+void Renderer::RenderSpotShadowMaps(const std::vector<RenderItem>& items,
+                                     const std::vector<SkinnedRenderItem>& skinnedItems) {
+    if (activeSpotShadowCount_ <= 0) return;
+
+    auto* cmdList = graphics_->GetCommandList();
+    auto* heap    = graphics_->GetSRVHeap();
+
+    for (int si = 0; si < activeSpotShadowCount_; ++si) {
+        spotShadowMaps_[si].BeginShadowPass(cmdList);
+
+        // Static meshes
+        if (!items.empty()) {
+            cmdList->SetPipelineState(shadowPipeline_.GetStaticPSO());
+            cmdList->SetGraphicsRootSignature(shadowPipeline_.GetStaticRootSignature());
+            cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+            for (const auto& item : items) {
+                if (!item.mesh) continue;
+
+                ShadowTransformCB shadowData{};
+                StoreTransposedMatrix(shadowData.world, item.worldMatrix);
+                StoreTransposedMatrix(shadowData.lightViewProj, spotLightViewProjs_[si]);
+                auto gpuAddr = shadowTransformBuffer_.Update(shadowData);
+                cmdList->SetGraphicsRootConstantBufferView(0, gpuAddr);
+
+                auto vbView = item.mesh->GetVertexBuffer().GetView();
+                cmdList->IASetVertexBuffers(0, 1, &vbView);
+                auto ibView = item.mesh->GetIndexBuffer().GetView();
+                cmdList->IASetIndexBuffer(&ibView);
+                cmdList->DrawIndexedInstanced(item.mesh->GetIndexBuffer().GetIndexCount(), 1, 0, 0, 0);
+            }
+        }
+
+        // Skinned meshes
+        if (!skinnedItems.empty() && boneMatrixPairBuffer_) {
+            ID3D12DescriptorHeap* heaps[] = { heap };
+            cmdList->SetDescriptorHeaps(1, heaps);
+
+            cmdList->SetPipelineState(shadowPipeline_.GetSkinnedPSO());
+            cmdList->SetGraphicsRootSignature(shadowPipeline_.GetSkinnedRootSignature());
+            cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+            BoneMatrixPair* mappedBoneData = nullptr;
+            boneMatrixPairBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&mappedBoneData));
+
+            uint32 boneSlot = 0;
+            for (const auto& item : skinnedItems) {
+                if (!item.mesh || !item.boneMatrixPairs || item.boneMatrixPairs->empty()) continue;
+                if (boneSlot >= MAX_SKINNED_OBJECTS) break;
+
+                ShadowTransformCB shadowData{};
+                StoreTransposedMatrix(shadowData.world, item.worldMatrix);
+                StoreTransposedMatrix(shadowData.lightViewProj, spotLightViewProjs_[si]);
+                auto gpuAddr = shadowTransformBuffer_.Update(shadowData);
+                cmdList->SetGraphicsRootConstantBufferView(0, gpuAddr);
+
+                size_t numBones = std::min(item.boneMatrixPairs->size(), static_cast<size_t>(MAX_BONES));
+                BoneMatrixPair* slotData = mappedBoneData + (boneSlot * MAX_BONES);
+                for (size_t bi = 0; bi < numBones; ++bi) {
+                    const auto& pair = (*item.boneMatrixPairs)[bi];
+                    Matrix4x4 ts = pair.skeletonSpaceMatrix.Transpose();
+                    Matrix4x4 ti = pair.skeletonSpaceInverseTransposeMatrix.Transpose();
+                    ts.ToFloatArray(reinterpret_cast<float*>(&slotData[bi].skeletonSpaceMatrix));
+                    ti.ToFloatArray(reinterpret_cast<float*>(&slotData[bi].skeletonSpaceInverseTransposeMatrix));
+                }
+                cmdList->SetGraphicsRootDescriptorTable(1, boneMatrixPairSRVs_[boneSlot]);
+                boneSlot++;
+
+                auto vbView = item.mesh->GetVertexBuffer().GetView();
+                cmdList->IASetVertexBuffers(0, 1, &vbView);
+                auto ibView = item.mesh->GetIndexBuffer().GetView();
+                cmdList->IASetIndexBuffer(&ibView);
+                cmdList->DrawIndexedInstanced(item.mesh->GetIndexBuffer().GetIndexCount(), 1, 0, 0, 0);
+            }
+
+            boneMatrixPairBuffer_->Unmap(0, nullptr);
+        }
+
+        spotShadowMaps_[si].EndShadowPass(cmdList);
+    }
 }
 
 void Renderer::CreateBoneMatrixPairBuffer(ID3D12Device* device) {

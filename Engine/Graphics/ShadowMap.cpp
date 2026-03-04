@@ -138,4 +138,27 @@ Matrix4x4 ShadowMap::ComputeLightViewProj(const Vector3& lightDir,
     return view * proj;
 }
 
+Matrix4x4 ShadowMap::ComputeSpotLightViewProj(const Vector3& position,
+                                               const Vector3& direction,
+                                               float spotAngleRad,
+                                               float range) {
+    Vector3 dir = direction.Normalize();
+    Vector3 target = position + dir;
+
+    Vector3 up = (std::abs(dir.GetY()) > 0.99f)
+        ? Vector3(1, 0, 0) : Vector3(0, 1, 0);
+
+    Matrix4x4 view = Matrix4x4::LookAtLH(position, target, up);
+
+    // Use the full cone angle (spotAngle is half-angle, so fov = spotAngle * 2)
+    float fov = spotAngleRad * 2.0f;
+    // Clamp to reasonable range
+    if (fov < 0.1f) fov = 0.1f;
+    if (fov > 3.0f) fov = 3.0f;
+
+    Matrix4x4 proj = Matrix4x4::PerspectiveFovLH(fov, 1.0f, 0.1f, range);
+
+    return view * proj;
+}
+
 } // namespace UnoEngine

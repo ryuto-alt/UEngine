@@ -30,9 +30,17 @@ void Pipeline::CreateRootSignature(ID3D12Device* device) {
     shadowRange.RegisterSpace = 0;
     shadowRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
+    // ディスクリプタレンジ: スポットシャドウマップ (t2-t5)
+    D3D12_DESCRIPTOR_RANGE spotShadowRange = {};
+    spotShadowRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+    spotShadowRange.NumDescriptors = 4;
+    spotShadowRange.BaseShaderRegister = 2;
+    spotShadowRange.RegisterSpace = 0;
+    spotShadowRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
     // ルートパラメータ [0]=Transform(b0,ALL) [1]=albedo(t0,PIXEL) [2]=Light(b1,PIXEL)
-    //                 [3]=Material(b2,PIXEL) [4]=shadowMap(t1,PIXEL)
-    D3D12_ROOT_PARAMETER rootParams[5] = {};
+    //                 [3]=Material(b2,PIXEL) [4]=shadowMap(t1,PIXEL) [5]=spotShadowMaps(t2-t5,PIXEL)
+    D3D12_ROOT_PARAMETER rootParams[6] = {};
 
     rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
     rootParams[0].Descriptor.ShaderRegister = 0;
@@ -58,6 +66,11 @@ void Pipeline::CreateRootSignature(ID3D12Device* device) {
     rootParams[4].DescriptorTable.NumDescriptorRanges = 1;
     rootParams[4].DescriptorTable.pDescriptorRanges = &shadowRange;
     rootParams[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+    rootParams[5].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+    rootParams[5].DescriptorTable.NumDescriptorRanges = 1;
+    rootParams[5].DescriptorTable.pDescriptorRanges = &spotShadowRange;
+    rootParams[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
     // s0: アルベドサンプラー (異方性)
     D3D12_STATIC_SAMPLER_DESC samplers[2] = {};
@@ -93,7 +106,7 @@ void Pipeline::CreateRootSignature(ID3D12Device* device) {
     s1.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
     D3D12_ROOT_SIGNATURE_DESC rootSigDesc = {};
-    rootSigDesc.NumParameters = 5;
+    rootSigDesc.NumParameters = 6;
     rootSigDesc.pParameters = rootParams;
     rootSigDesc.NumStaticSamplers = 2;
     rootSigDesc.pStaticSamplers = samplers;

@@ -18,6 +18,7 @@
 #include "../Math/MathCommon.h"
 #include <vector>
 #include <span>
+#include <string_view>
 
 namespace UnoEngine {
 
@@ -97,6 +98,11 @@ public:
                        std::span<const RenderItem> outlineItems = {},
                        std::span<const SkinnedRenderItem> outlineSkinnedItems = {});
     void RenderUIOnly(Scene* scene);
+
+#ifdef WITH_EDITOR
+    // 起動時ローディング画面（ImGui全画面オーバーレイ）
+    void RenderLoadingScreen(std::string_view message, float progress);
+#endif
 
     Pipeline* GetPipeline() { return &pipeline_; }
     SkinnedPipeline* GetSkinnedPipeline() { return &skinnedPipeline_; }

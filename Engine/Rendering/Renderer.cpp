@@ -245,6 +245,51 @@ void Renderer::RenderUIOnly(Scene* scene) {
     RenderUI(scene);
 }
 
+#ifdef WITH_EDITOR
+void Renderer::RenderLoadingScreen(std::string_view message, float progress) {
+    SetupViewport();
+    auto* imgui   = imguiManager_.get();
+    auto* cmdList = graphics_->GetCommandList();
+
+    // ImGui の DX12 バックエンドはフォントテクスチャ参照時に SRV ヒープが必要
+    ID3D12DescriptorHeap* heaps[] = { graphics_->GetSRVHeap() };
+    cmdList->SetDescriptorHeaps(1, heaps);
+
+    imgui->BeginFrame();
+
+    ImGuiIO& io = ImGui::GetIO();
+    ImVec2 sz   = io.DisplaySize;
+
+    ImGui::SetNextWindowPos({0.0f, 0.0f});
+    ImGui::SetNextWindowSize(sz);
+    ImGui::SetNextWindowBgAlpha(1.0f);
+    ImGui::Begin("##LoadingScreen", nullptr,
+        ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoInputs     | ImGuiWindowFlags_NoNav  |
+        ImGuiWindowFlags_NoBringToFrontOnFocus);
+
+    ImDrawList* dl = ImGui::GetBackgroundDrawList();
+    dl->AddRectFilled({0.0f, 0.0f}, sz, IM_COL32(15, 15, 15, 255));
+
+    constexpr float barW = 420.0f;
+    constexpr float barH = 12.0f;
+    float cx = sz.x * 0.5f;
+    float cy = sz.y * 0.5f;
+
+    ImVec2 textSize = ImGui::CalcTextSize(message.data());
+    ImGui::SetCursorPos({cx - textSize.x * 0.5f, cy - 34.0f});
+    ImGui::TextUnformatted(message.data());
+
+    ImGui::SetCursorPos({cx - barW * 0.5f, cy - 10.0f});
+    ImGui::ProgressBar(progress, {barW, barH}, "");
+
+    ImGui::End();
+
+    imgui->EndFrame();
+    imgui->Render(cmdList);
+}
+#endif
+
 void Renderer::DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle,
                              D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle, const RenderView& view,
                              const std::vector<RenderItem>& items, LightManager* lightManager,

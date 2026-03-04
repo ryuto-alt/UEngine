@@ -26,6 +26,8 @@ public:
     bool IsReady(const std::string& modelPath) const;
     bool HasPending() const { return !pending_.empty(); }
     bool IsInitialized() const { return initialized_; }
+    size_t GetPendingCount() const { return pending_.size(); }
+    size_t GetTotalCount() const { return cache_.size(); }
 
     // Phase 1: BeginFrame前にモデルをキャッシュへロード（コマンドリストが閉じている状態）
     void PreLoadPending();

@@ -362,6 +362,10 @@ private:
     std::vector<std::string> cachedVideoPaths_;
     std::vector<std::string> cachedScriptPaths_;
 
+    // モデルパス非同期スキャン
+    std::future<std::vector<std::string>> modelScanFuture_;
+    std::atomic<bool> isModelScanning_{false};
+
     void RefreshModelPaths();
     void RefreshAudioPaths();
     void RefreshVideoPaths();

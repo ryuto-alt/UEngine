@@ -3040,8 +3040,16 @@ void EditorUI::PreLoadPendingThumbnails() {
 				thumbnailRenderer_.Initialize(graphics_, resourceManager_);
 			}
 
-			// 初回またはリフレッシュ時にスキャン
-			if (cachedModelPaths_.empty()) {
+			// 非同期スキャン完了チェック（毎フレーム）
+			if (isModelScanning_ && modelScanFuture_.valid()) {
+				if (modelScanFuture_.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+					cachedModelPaths_ = modelScanFuture_.get();
+					isModelScanning_ = false;
+				}
+			}
+
+			// 初回またはリフレッシュ時にスキャン開始（非同期）
+			if (cachedModelPaths_.empty() && !isModelScanning_) {
 				RefreshModelPaths();
 			}
 
@@ -3074,7 +3082,9 @@ void EditorUI::PreLoadPendingThumbnails() {
 			}
 			ImGui::Separator();
 
-			if (cachedModelPaths_.empty()) {
+			if (isModelScanning_) {
+				ImGui::TextDisabled(U8("アセットをスキャン中..."));
+			} else if (cachedModelPaths_.empty()) {
 				ImGui::TextDisabled(U8("(モデルなし)"));
 			} else if (projectGridMode_) {
 				// ── グリッドビュー ──
@@ -3192,6 +3202,19 @@ void EditorUI::PreLoadPendingThumbnails() {
 					}
 
 					ImGui::PopID();
+				}
+			}
+
+			// サムネイル生成進捗
+			{
+				size_t pending = thumbnailRenderer_.GetPendingCount();
+				size_t total   = thumbnailRenderer_.GetTotalCount();
+				if (total > 0 && pending > 0) {
+					size_t done = total - pending;
+					float prog  = static_cast<float>(done) / static_cast<float>(total);
+					ImGui::Separator();
+					ImGui::TextDisabled(U8("サムネイル生成中... (%zu / %zu)"), done, total);
+					ImGui::ProgressBar(prog, {-1.0f, 6.0f}, "");
 				}
 			}
 
@@ -3786,8 +3809,36 @@ void EditorUI::PreLoadPendingThumbnails() {
 	}
 
 	void EditorUI::RefreshModelPaths() {
-		constexpr std::string_view exts[] = { ".gltf", ".glb", ".fbx", ".obj" };
-		RefreshAssetPaths(cachedModelPaths_, "assets/model", exts);
+		if (isModelScanning_) return;
+		isModelScanning_ = true;
+		cachedModelPaths_.clear();
+
+		modelScanFuture_ = std::async(std::launch::async, []() -> std::vector<std::string> {
+			std::vector<std::string> result;
+			constexpr std::string_view exts[] = { ".gltf", ".glb", ".fbx", ".obj" };
+
+			std::filesystem::path dirPath("assets/model");
+			if (!std::filesystem::exists(dirPath) || !std::filesystem::is_directory(dirPath))
+				return result;
+
+			for (const auto& entry : std::filesystem::recursive_directory_iterator(
+					dirPath, std::filesystem::directory_options::skip_permission_denied)) {
+				if (!entry.is_regular_file()) continue;
+
+				std::string ext = entry.path().extension().string();
+				std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+				for (auto validExt : exts) {
+					if (ext == validExt) {
+						std::string relativePath = entry.path().string();
+						std::replace(relativePath.begin(), relativePath.end(), '\\', '/');
+						result.push_back(relativePath);
+						break;
+					}
+				}
+			}
+			return result;
+		});
 	}
 
 	void EditorUI::RefreshAudioPaths() {

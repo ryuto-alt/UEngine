@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string_view>
 #include "Types.h"
 #include "NonCopyable.h"
 #include "../Rendering/RenderSystem.h"
@@ -61,6 +62,10 @@ private:
     void MainLoop();
     virtual void OnRender();
     void Shutdown();
+
+#ifdef WITH_EDITOR
+    void RenderLoadingScreen(std::string_view message, float progress = 0.0f);
+#endif
 
 private:
     ApplicationConfig config_;

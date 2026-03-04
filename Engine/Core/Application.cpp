@@ -12,6 +12,11 @@ Application::Application(const ApplicationConfig& config)
 int Application::Run() {
     try {
         Initialize();
+#ifdef WITH_EDITOR
+        RenderLoadingScreen("Starting UnoEngine Editor...", 0.0f);
+#endif
+        OnInit();
+        running_ = true;
         MainLoop();
         Shutdown();
         return 0;
@@ -59,9 +64,19 @@ void Application::Initialize() {
     particleEditor_ = MakeUnique<ParticleEditor>();
     particleEditor_->Initialize(graphics_.get(), particleSystem_.get());
 
-    OnInit();
-    running_ = true;
 }
+
+#ifdef WITH_EDITOR
+void Application::RenderLoadingScreen(std::string_view message, float progress) {
+    window_->ProcessMessages();
+    graphics_->BeginFrame();
+    renderer_->BeginFrame();
+    graphics_->SetBackBufferAsRenderTarget();
+    renderer_->RenderLoadingScreen(message, progress);
+    graphics_->EndFrame();
+    graphics_->Present();
+}
+#endif
 
 void Application::MainLoop() {
     using namespace std::chrono;

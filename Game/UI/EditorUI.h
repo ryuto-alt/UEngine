@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../Engine/Rendering/ThumbnailRenderer.h"
 #include "../../Engine/Graphics/RenderTexture.h"
 #include "../../Engine/PostProcess/PostProcessManager.h"
 #include "../../Engine/Core/GameObject.h"
@@ -19,6 +20,7 @@
 #include <span>
 #include <stack>
 #include <deque>
+#include <optional>
 #include <unordered_set>
 #include <unordered_map>
 #include <memory>
@@ -157,6 +159,15 @@ public:
 
     // ResourceManagerへの参照を設定（モデル読み込み用）
     void SetResourceManager(class ResourceManager* resourceManager) { resourceManager_ = resourceManager; }
+
+    // Renderer / LightManager（サムネイル描画用）
+    void SetRenderer(class Renderer* r)         { renderer_ = r; }
+    void SetLightManager(class LightManager* lm) { lightManager_ = lm; }
+
+    // Phase 1: BeginFrame前にモデルロード（コマンドリスト閉じた状態で呼ぶ）
+    void PreLoadPendingThumbnails();
+    // Phase 2: BeginFrame後にサムネイル描画（コマンドリストオープン状態で呼ぶ）
+    void ProcessPendingThumbnails();
 
     // Sceneへの参照を設定（Start呼び出し用）
     void SetScene(class Scene* scene) { scene_ = scene; }
@@ -351,6 +362,10 @@ private:
     std::vector<std::string> cachedVideoPaths_;
     std::vector<std::string> cachedScriptPaths_;
 
+    // モデルパス非同期スキャン
+    std::future<std::vector<std::string>> modelScanFuture_;
+    std::atomic<bool> isModelScanning_{false};
+
     void RefreshModelPaths();
     void RefreshAudioPaths();
     void RefreshVideoPaths();
@@ -368,6 +383,7 @@ private:
 
     // 遅延ロード用キュー
     std::vector<std::string> pendingModelLoads_;
+    std::optional<Vector3> pendingDropPosition_;  // Scene ViewへのD&Dドロップ位置
 
     // D&D処理用ヘルパー
     void HandleModelDragDrop(const std::string& modelPath);
@@ -379,6 +395,16 @@ private:
     // 新規オブジェクトにカメラをフォーカス（角度もリセット）
     void FocusOnNewObject(GameObject* obj);
 
+
+    // Renderer / LightManager（サムネイル描画用）
+    class Renderer*     renderer_     = nullptr;
+    class LightManager* lightManager_ = nullptr;
+    ThumbnailRenderer   thumbnailRenderer_;
+
+    // Project グリッドビュー
+    bool  projectGridMode_        = true;
+    float projectThumbnailSize_   = 80.0f;
+    int   projectSelectedModelIdx_ = -1;
 
     // 変更追跡フラグ
     bool isDirty_ = false;

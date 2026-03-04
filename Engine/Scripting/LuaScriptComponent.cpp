@@ -7,6 +7,7 @@
 #include "../Input/InputManager.h"
 #include "../Animation/AnimatorComponent.h"
 #include "../Navigation/NavAgentComponent.h"
+#include "../Physics/PhysicsWorld.h"
 
 namespace UnoEngine {
 
@@ -520,6 +521,41 @@ void LuaScriptComponent::BindEngineAPI() {
             return {cosYaw, 0.0f, -sinYaw};
         }
     );
+
+    // ===== Physics API =====
+    if (scene_) {
+        Scene* scenePtr = scene_;
+        LuaState* luaStatePtr = luaState_.get();
+        lua["Physics"] = lua.create_table_with(
+            "Raycast", [scenePtr, luaStatePtr](
+                float ox, float oy, float oz,
+                float dx, float dy, float dz,
+                float maxDist) -> sol::object {
+                if (!scenePtr || !luaStatePtr) return sol::lua_nil;
+
+                auto hit = PhysicsWorld::Raycast(
+                    Vector3(ox, oy, oz),
+                    Vector3(dx, dy, dz),
+                    maxDist,
+                    0xFFFFFFFF,
+                    scenePtr->GetGameObjects()
+                );
+                if (!hit) return sol::lua_nil;
+
+                auto& ls = luaStatePtr->GetState();
+                sol::table t = ls.create_table();
+                t["object_name"] = hit->object ? hit->object->GetName() : "";
+                t["distance"]    = hit->distance;
+                t["point_x"]     = hit->point.GetX();
+                t["point_y"]     = hit->point.GetY();
+                t["point_z"]     = hit->point.GetZ();
+                t["normal_x"]    = hit->normal.GetX();
+                t["normal_y"]    = hit->normal.GetY();
+                t["normal_z"]    = hit->normal.GetZ();
+                return t;
+            }
+        );
+    }
 
     Logger::Debug("[LuaScriptComponent] Engine API bound to Lua");
 }

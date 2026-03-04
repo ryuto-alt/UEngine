@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string_view>
 #include "Types.h"
 #include "NonCopyable.h"
 #include "../Rendering/RenderSystem.h"
@@ -33,6 +34,8 @@ public:
     // アクセサ
     Window* GetWindow() const { return window_.get(); }
     GraphicsDevice* GetGraphics() const { return graphics_.get(); }
+    Renderer*     GetRenderer()     const { return renderer_.get(); }
+    LightManager* GetLightManager() const { return lightManager_.get(); }
     InputManager* GetInput() const { return input_.get(); }
     SceneManager* GetSceneManager() const { return sceneManager_.get(); }
     SystemManager* GetSystemManager() { return &systemManager_; }
@@ -59,6 +62,10 @@ private:
     void MainLoop();
     virtual void OnRender();
     void Shutdown();
+
+#ifdef WITH_EDITOR
+    void RenderLoadingScreen(std::string_view message, float progress = 0.0f);
+#endif
 
 private:
     ApplicationConfig config_;

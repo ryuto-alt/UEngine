@@ -24,6 +24,12 @@ public:
     /// @return ロードが成功したかどうか
     static bool LoadScene(const std::string& filepath, std::vector<std::unique_ptr<GameObject>>& outGameObjects);
 
+    /// GameObjectをJSON文字列にシリアライズ（Prefab用）
+    static std::string SerializeSingleObject(const GameObject& obj);
+
+    /// JSON文字列からGameObjectを復元（Prefab用）
+    static std::unique_ptr<GameObject> DeserializeSingleObject(const std::string& jsonStr);
+
 private:
     /// GameObject単体をJSONにシリアライズ
     static nlohmann::json SerializeGameObject(const GameObject& gameObject);

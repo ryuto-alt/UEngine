@@ -152,6 +152,8 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
     <ClCompile Include="Engine\Core\Scene.cpp" />
     <ClCompile Include="Engine\Core\SceneManager.cpp" />
     <ClCompile Include="Engine\Core\CollisionComponent.cpp" />
+    <ClCompile Include="Engine\Core\PrefabManager.cpp" />
+    <ClCompile Include="Engine\Physics\PhysicsWorld.cpp" />
     <ClCompile Include="Engine\Scene\SceneSerializer.cpp" />
     <ClCompile Include="Engine\Core\OrbitController.cpp" />
     <ClCompile Include="Engine\Core\Logger.cpp" />
@@ -178,10 +180,13 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
     <ClCompile Include="Engine\Graphics\DirectionalLight.cpp" />
     <ClCompile Include="Engine\Graphics\MeshRenderer.cpp" />
     <ClCompile Include="Engine\Graphics\DirectionalLightComponent.cpp" />
+    <ClCompile Include="Engine\Graphics\ShadowMap.cpp" />
+    <ClCompile Include="Engine\Graphics\ShadowPipeline.cpp" />
     <ClCompile Include="Engine\Resource\ResourceLoader.cpp" />
     <ClCompile Include="Game\Components\PlayerController.cpp" />
     <ClCompile Include="Engine\Rendering\Renderer.cpp" />
     <ClCompile Include="Engine\Rendering\SkinnedMeshRenderer.cpp" />
+    <ClCompile Include="Engine\Rendering\ThumbnailRenderer.cpp" />
     <ClCompile Include="Game\GameApplication.cpp" />
     <ClCompile Include="Game\Systems\CameraSystem.cpp" />
     <ClCompile Include="Game\UI\EditorUI.cpp" />
@@ -213,6 +218,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
     <ClCompile Include="Engine\Animation\AnimationSystem.cpp" />
     <ClCompile Include="Engine\Systems\SystemManager.cpp" />
     <ClCompile Include="Engine\Systems\CollisionSystem.cpp" />
+    <ClCompile Include="Engine\Systems\PhysicsSystem.cpp" />
     <ClCompile Include="Engine\AI\NavMesh\NavMeshBuilder.cpp" />
     <ClCompile Include="Engine\AI\NavMesh\NavMeshQuery.cpp" />
     <ClCompile Include="Engine\AI\NavMesh\NavMeshSerializer.cpp" />

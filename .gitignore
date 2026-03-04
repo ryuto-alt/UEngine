@@ -376,3 +376,12 @@ compile_commands.json
 editor_camera_settings.json
 imgui.ini
 nul
+
+# Game export output (exe + DLLs, not source)
+Build/
+
+# Font generation workspace (not runtime assets)
+BITMAPFONT/
+
+# Source art (large binaries, not needed at runtime)
+SourceArt/

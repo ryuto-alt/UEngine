@@ -6,6 +6,7 @@
 #include "../Engine/Rendering/SkinnedRenderItem.h"
 #include "../Engine/Audio/AudioSystem.h"
 #include "../Engine/Systems/CollisionSystem.h"
+#include "../Engine/Systems/PhysicsSystem.h"
 #include "../Engine/Core/Logger.h"
 #include "../Engine/Video/VideoPlayerComponent.h"
 #ifdef WITH_EDITOR
@@ -25,7 +26,8 @@ void GameApplication::OnInit() {
     GetSystemManager()->RegisterSystem<CameraSystem>();
     GetSystemManager()->RegisterSystem<AudioSystem>();
     GetSystemManager()->RegisterSystem<CollisionSystem>();
-    Logger::Info("[初期化] システム登録完了 (Animation, Camera, Audio, Collision)");
+    GetSystemManager()->RegisterSystem<PhysicsSystem>();
+    Logger::Info("[初期化] システム登録完了 (Animation, Camera, Audio, Collision, Physics)");
 }
 
 Mesh* GameApplication::LoadMesh(const std::string& path) {
@@ -37,6 +39,17 @@ Material* GameApplication::LoadMaterial(const std::string& name) {
 }
 
 void GameApplication::OnRender() {
+#ifdef WITH_EDITOR
+    // Phase 1: BeginFrame前にサムネイル用モデルをキャッシュへロード
+    // (ResourceLoader::LoadModel は内部で commandList->Reset するため BeginFrame前に行う)
+    {
+        Scene* scene = GetSceneManager()->GetActiveScene();
+        if (auto* editorUI = scene ? scene->GetEditorUI() : nullptr) {
+            editorUI->PreLoadPendingThumbnails();
+        }
+    }
+#endif
+
     graphics_->BeginFrame();
     renderer_->BeginFrame();
 
@@ -85,6 +98,9 @@ void GameApplication::OnRender() {
 #ifdef WITH_EDITOR
         auto* editorUI = scene->GetEditorUI();
         if (editorUI) {
+            // サムネイルを1フレームに1枚処理（メインレンダー前）
+            editorUI->ProcessPendingThumbnails();
+
             auto* debugRenderer = renderer_->GetDebugRenderer();
 
             // Scene View用カメラを取得（Main Cameraとは完全に独立したEditorCamera）

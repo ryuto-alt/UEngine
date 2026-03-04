@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../Engine/Rendering/ThumbnailRenderer.h"
 #include "../../Engine/Graphics/RenderTexture.h"
 #include "../../Engine/PostProcess/PostProcessManager.h"
 #include "../../Engine/Core/GameObject.h"
@@ -158,6 +159,15 @@ public:
     // ResourceManagerへの参照を設定（モデル読み込み用）
     void SetResourceManager(class ResourceManager* resourceManager) { resourceManager_ = resourceManager; }
 
+    // Renderer / LightManager（サムネイル描画用）
+    void SetRenderer(class Renderer* r)         { renderer_ = r; }
+    void SetLightManager(class LightManager* lm) { lightManager_ = lm; }
+
+    // Phase 1: BeginFrame前にモデルロード（コマンドリスト閉じた状態で呼ぶ）
+    void PreLoadPendingThumbnails();
+    // Phase 2: BeginFrame後にサムネイル描画（コマンドリストオープン状態で呼ぶ）
+    void ProcessPendingThumbnails();
+
     // Sceneへの参照を設定（Start呼び出し用）
     void SetScene(class Scene* scene) { scene_ = scene; }
 
@@ -230,7 +240,7 @@ private:
 
     // View表示状態
     bool showSceneView_ = true;
-    bool showGameView_ = false;
+    bool showGameView_ = true;
     bool showBlueprintEditor_ = false;  // Blueprint Editor表示状態
 
     // 中央ビューのアクティブタブ（0: Scene, 1: Game, 2: Blueprint Editor）
@@ -379,6 +389,16 @@ private:
     // 新規オブジェクトにカメラをフォーカス（角度もリセット）
     void FocusOnNewObject(GameObject* obj);
 
+
+    // Renderer / LightManager（サムネイル描画用）
+    class Renderer*     renderer_     = nullptr;
+    class LightManager* lightManager_ = nullptr;
+    ThumbnailRenderer   thumbnailRenderer_;
+
+    // Project グリッドビュー
+    bool  projectGridMode_        = true;
+    float projectThumbnailSize_   = 80.0f;
+    int   projectSelectedModelIdx_ = -1;
 
     // 変更追跡フラグ
     bool isDirty_ = false;

@@ -33,6 +33,8 @@ public:
     // アクセサ
     Window* GetWindow() const { return window_.get(); }
     GraphicsDevice* GetGraphics() const { return graphics_.get(); }
+    Renderer*     GetRenderer()     const { return renderer_.get(); }
+    LightManager* GetLightManager() const { return lightManager_.get(); }
     InputManager* GetInput() const { return input_.get(); }
     SceneManager* GetSceneManager() const { return sceneManager_.get(); }
     SystemManager* GetSystemManager() { return &systemManager_; }

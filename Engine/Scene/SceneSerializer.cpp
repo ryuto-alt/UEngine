@@ -13,6 +13,9 @@
 #include "../AI/EnemyDetectionComponent.h"
 #include "../PostProcess/PostProcessType.h"
 #include "../Video/VideoPlayerComponent.h"
+#include "../Graphics/PointLightComponent.h"
+#include "../Graphics/SpotLightComponent.h"
+#include "../Physics/RigidbodyComponent.h"
 #include <fstream>
 #include <iostream>
 #include <filesystem>
@@ -163,6 +166,19 @@ bool SceneSerializer::LoadScene(const std::string& filepath, std::vector<std::un
     } catch (const std::exception& e) {
         std::cerr << "Error loading scene: " << e.what() << std::endl;
         return false;
+    }
+}
+
+std::string SceneSerializer::SerializeSingleObject(const GameObject& obj) {
+    return SerializeGameObject(obj).dump(4);
+}
+
+std::unique_ptr<GameObject> SceneSerializer::DeserializeSingleObject(const std::string& jsonStr) {
+    try {
+        return DeserializeGameObject(json::parse(jsonStr));
+    } catch (const std::exception& e) {
+        std::cerr << "Error deserializing prefab: " << e.what() << std::endl;
+        return nullptr;
     }
 }
 
@@ -470,6 +486,38 @@ json SceneSerializer::SerializeComponent(const Component& component) {
         comp["lostWaitTime"] = detection->GetLostWaitTime();
         comp["wanderRadius"] = detection->GetWanderRadius();
         comp["targetName"] = detection->GetTargetName();
+        return comp;
+    }
+
+    // PointLightComponent
+    if (auto* pl = dynamic_cast<const PointLightComponent*>(&component)) {
+        comp["type"] = "PointLightComponent";
+        auto c = pl->GetColor();
+        comp["color"]     = { c.GetX(), c.GetY(), c.GetZ() };
+        comp["intensity"] = pl->GetIntensity();
+        comp["range"]     = pl->GetRange();
+        return comp;
+    }
+
+    // SpotLightComponent
+    if (auto* sl = dynamic_cast<const SpotLightComponent*>(&component)) {
+        comp["type"] = "SpotLightComponent";
+        auto c = sl->GetColor();
+        comp["color"]       = { c.GetX(), c.GetY(), c.GetZ() };
+        comp["intensity"]   = sl->GetIntensity();
+        comp["range"]       = sl->GetRange();
+        comp["spotAngle"]   = sl->GetSpotAngle();
+        comp["innerAngle"]  = sl->GetInnerAngle();
+        return comp;
+    }
+
+    // RigidbodyComponent
+    if (auto* rb = dynamic_cast<const RigidbodyComponent*>(&component)) {
+        comp["type"]        = "RigidbodyComponent";
+        comp["mass"]        = rb->GetMass();
+        comp["drag"]        = rb->GetDrag();
+        comp["useGravity"]  = rb->UseGravity();
+        comp["isKinematic"] = rb->IsKinematic();
         return comp;
     }
 
@@ -825,6 +873,33 @@ void SceneSerializer::DeserializeComponent(const json& json, GameObject& gameObj
         if (json.contains("targetName")) {
             detection->SetTargetName(json["targetName"].get<std::string>());
         }
+    }
+    else if (type == "PointLightComponent") {
+        auto* pl = gameObject.AddComponent<PointLightComponent>();
+        if (json.contains("color")) {
+            auto& c = json["color"];
+            pl->SetColor(Vector3(c[0].get<float>(), c[1].get<float>(), c[2].get<float>()));
+        }
+        if (json.contains("intensity")) pl->SetIntensity(json["intensity"].get<float>());
+        if (json.contains("range"))     pl->SetRange(json["range"].get<float>());
+    }
+    else if (type == "SpotLightComponent") {
+        auto* sl = gameObject.AddComponent<SpotLightComponent>();
+        if (json.contains("color")) {
+            auto& c = json["color"];
+            sl->SetColor(Vector3(c[0].get<float>(), c[1].get<float>(), c[2].get<float>()));
+        }
+        if (json.contains("intensity"))  sl->SetIntensity(json["intensity"].get<float>());
+        if (json.contains("range"))      sl->SetRange(json["range"].get<float>());
+        if (json.contains("spotAngle"))  sl->SetSpotAngle(json["spotAngle"].get<float>());
+        if (json.contains("innerAngle")) sl->SetInnerAngle(json["innerAngle"].get<float>());
+    }
+    else if (type == "RigidbodyComponent") {
+        auto* rb = gameObject.AddComponent<RigidbodyComponent>();
+        if (json.contains("mass"))        rb->SetMass(json["mass"].get<float>());
+        if (json.contains("drag"))        rb->SetDrag(json["drag"].get<float>());
+        if (json.contains("useGravity"))  rb->SetUseGravity(json["useGravity"].get<bool>());
+        if (json.contains("isKinematic")) rb->SetKinematic(json["isKinematic"].get<bool>());
     }
 }
 

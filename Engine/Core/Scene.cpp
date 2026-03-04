@@ -59,6 +59,8 @@ void Scene::OnLoad() {
     editorUI_.SetResourceManager(app->GetResourceManager());
     editorUI_.SetScene(this);
     editorUI_.SetAudioSystem(app->GetAudioSystem());
+    editorUI_.SetRenderer(app->GetRenderer());
+    editorUI_.SetLightManager(app->GetLightManager());
 
     // Game Camera（Main Camera）を設定
     editorUI_.SetGameCamera(GetActiveCamera());

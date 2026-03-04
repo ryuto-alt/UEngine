@@ -3,6 +3,7 @@
 #include "../Core/Scene.h"
 #include "../Core/Logger.h"
 #include "../Graphics/DirectionalLightComponent.h"
+#include "../Graphics/ShadowMap.h"
 #include "../Graphics/Shader.h"
 #include "../Animation/Animator.h"
 #include "../Video/VideoPlayerComponent.h"
@@ -13,10 +14,11 @@ namespace UnoEngine {
 
 namespace {
 
-constexpr uint32_t kConstantBufferCount = 512;
-constexpr uint32_t kLightBufferCount = 16;
-constexpr uint32_t kMaterialBufferCount = 512;
-constexpr uint32_t kSkinnedBufferCount = 256;
+constexpr uint32_t kConstantBufferCount  = 512;
+constexpr uint32_t kLightBufferCount     = 16;
+constexpr uint32_t kMaterialBufferCount  = 512;
+constexpr uint32_t kSkinnedBufferCount   = 256;
+constexpr uint32_t kShadowBufferCount    = 768; // static + skinned shadow pass slots
 
 void StoreTransposedMatrix(Float4x4& dest, const Matrix4x4& src) {
     Matrix4x4 transposed = src.Transpose();
@@ -63,6 +65,10 @@ void Renderer::Initialize(GraphicsDevice* graphics, Window* window) {
     outlinePipeline_.Initialize(graphics_, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, DXGI_FORMAT_D32_FLOAT);
     outlineCB_.Create(device, 1);
 
+    shadowMap_.Create(graphics_, 2048);
+    shadowPipeline_.Initialize(device);
+    shadowTransformBuffer_.Create(device, kShadowBufferCount);
+
     imguiManager_ = MakeUnique<ImGuiManager>();
     imguiManager_->Initialize(graphics_, window_, 2);
 
@@ -78,15 +84,16 @@ void Renderer::BeginFrame() {
     skinnedTransformBuffer_.Reset();
     skinnedMaterialBuffer_.Reset();
     outlineCB_.Reset();
+    shadowTransformBuffer_.Reset();
     currentBoneSlot_ = 0;
 }
 
 void Renderer::Draw(const RenderView& view, const std::vector<RenderItem>& items, LightManager* lights, Scene* scene) {
     if (!view.camera) return;
 
-    // VideoPlayerComponentのフレームアップロード
+    auto* cmdList = graphics_->GetCommandList();
+
     if (scene) {
-        auto* cmdList = graphics_->GetCommandList();
         for (const auto& obj : scene->GetGameObjects()) {
             auto* videoPlayer = obj->GetComponent<VideoPlayerComponent>();
             if (videoPlayer && videoPlayer->HasPendingFrame()) {
@@ -95,28 +102,65 @@ void Renderer::Draw(const RenderView& view, const std::vector<RenderItem>& items
         }
     }
 
+    Matrix4x4 lightViewProj;
+    UpdateLighting(view, lights, lightViewProj);
+    RenderShadowMap(items, {}, lightViewProj);
+    currentBoneSlot_ = 0;
+
     SetupViewport();
-    UpdateLighting(view, lights);
-    RenderMeshes(view, items);
+    RenderMeshes(view, items, lightViewProj);
     RenderUI(scene);
+
+    shadowMap_.RestoreForNextFrame(cmdList);
 }
 
-void Renderer::UpdateLighting(const RenderView& view, LightManager* lights) {
+void Renderer::UpdateLighting(const RenderView& view, LightManager* lights, Matrix4x4& outLightViewProj) {
     auto gpuLight = lights ? lights->BuildGPULightData() : GPULightData{};
 
-    LightCB lightData;
+    LightCB lightData{};
     lightData.directionalLightDirection = Float3(gpuLight.direction.GetX(), gpuLight.direction.GetY(), gpuLight.direction.GetZ());
-    lightData.directionalLightColor = Float3(gpuLight.color.GetX(), gpuLight.color.GetY(), gpuLight.color.GetZ());
+    lightData.directionalLightColor     = Float3(gpuLight.color.GetX(), gpuLight.color.GetY(), gpuLight.color.GetZ());
     lightData.directionalLightIntensity = gpuLight.intensity;
-    lightData.ambientLight = Float3(gpuLight.ambient.GetX(), gpuLight.ambient.GetY(), gpuLight.ambient.GetZ());
+    lightData.ambientLight              = Float3(gpuLight.ambient.GetX(), gpuLight.ambient.GetY(), gpuLight.ambient.GetZ());
 
     auto cameraPos = view.camera->GetPosition();
     lightData.cameraPosition = Float3(cameraPos.GetX(), cameraPos.GetY(), cameraPos.GetZ());
 
+    // Point lights (max 8)
+    auto pointCount = static_cast<int32_t>(std::min(gpuLight.pointLights.size(), size_t(8)));
+    lightData.pointLightCount = pointCount;
+    for (int32_t i = 0; i < pointCount; ++i) {
+        const auto& pl = gpuLight.pointLights[i];
+        lightData.pointLights[i].position  = Float3(pl.position.GetX(), pl.position.GetY(), pl.position.GetZ());
+        lightData.pointLights[i].range     = pl.range;
+        lightData.pointLights[i].color     = Float3(pl.color.GetX(), pl.color.GetY(), pl.color.GetZ());
+        lightData.pointLights[i].intensity = pl.intensity;
+    }
+
+    // Spot lights (max 4)
+    auto spotCount = static_cast<int32_t>(std::min(gpuLight.spotLights.size(), size_t(4)));
+    lightData.spotLightCount = spotCount;
+    for (int32_t i = 0; i < spotCount; ++i) {
+        const auto& sl = gpuLight.spotLights[i];
+        lightData.spotLights[i].position   = Float3(sl.position.GetX(), sl.position.GetY(), sl.position.GetZ());
+        lightData.spotLights[i].range      = sl.range;
+        lightData.spotLights[i].direction  = Float3(sl.direction.GetX(), sl.direction.GetY(), sl.direction.GetZ());
+        lightData.spotLights[i].spotAngle  = sl.spotAngle;
+        lightData.spotLights[i].color      = Float3(sl.color.GetX(), sl.color.GetY(), sl.color.GetZ());
+        lightData.spotLights[i].intensity  = sl.intensity;
+        lightData.spotLights[i].innerAngle = sl.innerAngle;
+    }
+
+    lightData.shadowBias = 0.001f;
+
     currentLightGpuAddr_ = lightBuffer_.Update(lightData);
+
+    // Compute directional light view-projection for shadow map
+    outLightViewProj = ShadowMap::ComputeLightViewProj(gpuLight.direction, Vector3(0.0f, 0.0f, 0.0f), 50.0f);
+    lastLightViewProj_ = outLightViewProj;
 }
 
-void Renderer::RenderMeshes(const RenderView& view, const std::vector<RenderItem>& items) {
+void Renderer::RenderMeshes(const RenderView& view, const std::vector<RenderItem>& items, const Matrix4x4& lightViewProj) {
     auto* cmdList = graphics_->GetCommandList();
     auto* heap = graphics_->GetSRVHeap();
 
@@ -127,8 +171,8 @@ void Renderer::RenderMeshes(const RenderView& view, const std::vector<RenderItem
     cmdList->SetDescriptorHeaps(1, heaps);
     cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    // ライトバッファはUpdateLightingで更新済み
     cmdList->SetGraphicsRootConstantBufferView(2, currentLightGpuAddr_);
+    cmdList->SetGraphicsRootDescriptorTable(4, shadowMap_.GetSRVHandle()); // shadow map at [4]
 
     auto viewMatrix = view.camera->GetViewMatrix();
     auto projection = view.camera->GetProjectionMatrix();
@@ -142,6 +186,7 @@ void Renderer::RenderMeshes(const RenderView& view, const std::vector<RenderItem
         StoreTransposedMatrix(transformData.view, viewMatrix);
         StoreTransposedMatrix(transformData.projection, projection);
         StoreTransposedMatrix(transformData.mvp, mvp);
+        StoreTransposedMatrix(transformData.lightViewProj, lightViewProj);
         D3D12_GPU_VIRTUAL_ADDRESS transformGpuAddr = constantBuffer_.Update(transformData);
         cmdList->SetGraphicsRootConstantBufferView(0, transformGpuAddr);
 
@@ -149,8 +194,8 @@ void Renderer::RenderMeshes(const RenderView& view, const std::vector<RenderItem
 
         MaterialCB materialData;
         const auto& matData = item.material->GetData();
-        materialData.albedo = Float3(matData.albedo[0], matData.albedo[1], matData.albedo[2]);
-        materialData.metallic = matData.metallic;
+        materialData.albedo    = Float3(matData.albedo[0], matData.albedo[1], matData.albedo[2]);
+        materialData.metallic  = matData.metallic;
         materialData.roughness = matData.roughness;
         D3D12_GPU_VIRTUAL_ADDRESS materialGpuAddr = materialBuffer_.Update(materialData);
         cmdList->SetGraphicsRootConstantBufferView(3, materialGpuAddr);
@@ -211,6 +256,12 @@ void Renderer::DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_
 
     auto* cmdList = graphics_->GetCommandList();
 
+    // Shadow pass (before scene RT barrier)
+    Matrix4x4 lightViewProj;
+    UpdateLighting(view, lightManager, lightViewProj);
+    RenderShadowMap(items, skinnedItems, lightViewProj);
+    currentBoneSlot_ = 0;
+
     // Resource barrier: PIXEL_SHADER_RESOURCE -> RENDER_TARGET
     D3D12_RESOURCE_BARRIER barrier = {};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -220,32 +271,28 @@ void Renderer::DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     cmdList->ResourceBarrier(1, &barrier);
 
-    // Set render target with depth buffer
     cmdList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 
-    // Clear render target and depth buffer
     const float clearColor[] = {0.2f, 0.3f, 0.4f, 1.0f};
     cmdList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
     cmdList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
-    // Set viewport based on texture size
     D3D12_RESOURCE_DESC desc = renderTarget->GetDesc();
     D3D12_VIEWPORT viewport = {};
     viewport.TopLeftX = 0.0f;
     viewport.TopLeftY = 0.0f;
-    viewport.Width = static_cast<float>(desc.Width);
-    viewport.Height = static_cast<float>(desc.Height);
+    viewport.Width    = static_cast<float>(desc.Width);
+    viewport.Height   = static_cast<float>(desc.Height);
     viewport.MinDepth = 0.0f;
     viewport.MaxDepth = 1.0f;
 
     D3D12_RECT scissorRect = {};
-    scissorRect.right = static_cast<LONG>(desc.Width);
+    scissorRect.right  = static_cast<LONG>(desc.Width);
     scissorRect.bottom = static_cast<LONG>(desc.Height);
 
     cmdList->RSSetViewports(1, &viewport);
     cmdList->RSSetScissorRects(1, &scissorRect);
 
-    // グリッド描画（最初に描画）
     if (enableDebugDraw && debugRenderer_) {
         debugRenderer_->RenderGrid(
             cmdList,
@@ -255,13 +302,11 @@ void Renderer::DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_
         );
     }
 
-    // Render scene
-    UpdateLighting(view, lightManager);
-    RenderMeshes(view, items);
+    // Main scene pass (shadow map is now in PSR state)
+    RenderMeshes(view, items, lightViewProj);
 
-    // Render skinned meshes
     if (!skinnedItems.empty()) {
-        RenderSkinnedMeshes(view, skinnedItems);
+        RenderSkinnedMeshes(view, skinnedItems, lightViewProj);
     }
 
     // デバッグ描画（enableDebugDrawがtrueの場合のみ）
@@ -301,16 +346,20 @@ void Renderer::DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_
 
     // Resource barrier: RENDER_TARGET -> PIXEL_SHADER_RESOURCE
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+    barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
     cmdList->ResourceBarrier(1, &barrier);
+
+    // Restore shadow map to DEPTH_WRITE for next frame
+    shadowMap_.RestoreForNextFrame(cmdList);
 }
 
 void Renderer::DrawSkinnedMeshes(const RenderView& view, const std::vector<SkinnedRenderItem>& items, LightManager* lights) {
     if (!view.camera) return;
 
     SetupViewport();
-    UpdateLighting(view, lights);
-    RenderSkinnedMeshes(view, items);
+    Matrix4x4 lightViewProj;
+    UpdateLighting(view, lights, lightViewProj);
+    RenderSkinnedMeshes(view, items, lightViewProj);
 
 #ifdef WITH_EDITOR
     // デバッグボーン描画
@@ -335,7 +384,7 @@ void Renderer::DrawSkinnedMeshes(const RenderView& view, const std::vector<Skinn
 #endif
 }
 
-void Renderer::RenderSkinnedMeshes(const RenderView& view, const std::vector<SkinnedRenderItem>& items) {
+void Renderer::RenderSkinnedMeshes(const RenderView& view, const std::vector<SkinnedRenderItem>& items, const Matrix4x4& lightViewProj) {
     auto* cmdList = graphics_->GetCommandList();
     auto* heap = graphics_->GetSRVHeap();
 
@@ -346,8 +395,8 @@ void Renderer::RenderSkinnedMeshes(const RenderView& view, const std::vector<Ski
     cmdList->SetDescriptorHeaps(1, heaps);
     cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    // ライトバッファはUpdateLightingで更新済み
     cmdList->SetGraphicsRootConstantBufferView(2, currentLightGpuAddr_);
+    cmdList->SetGraphicsRootDescriptorTable(5, shadowMap_.GetSRVHandle()); // shadow at [5]
 
     auto viewMatrix = view.camera->GetViewMatrix();
     auto projection = view.camera->GetProjectionMatrix();
@@ -374,13 +423,13 @@ void Renderer::RenderSkinnedMeshes(const RenderView& view, const std::vector<Ski
             break;
         }
 
-        // Transform（ダイナミックバッファを使用）
         TransformCB transformData;
         auto mvp = item.worldMatrix * viewMatrix * projection;
         StoreTransposedMatrix(transformData.world, item.worldMatrix);
         StoreTransposedMatrix(transformData.view, viewMatrix);
         StoreTransposedMatrix(transformData.projection, projection);
         StoreTransposedMatrix(transformData.mvp, mvp);
+        StoreTransposedMatrix(transformData.lightViewProj, lightViewProj);
         auto transformGpuAddr = skinnedTransformBuffer_.Update(transformData);
         cmdList->SetGraphicsRootConstantBufferView(0, transformGpuAddr);
 
@@ -436,6 +485,84 @@ void Renderer::RenderSkinnedMeshes(const RenderView& view, const std::vector<Ski
     if (boneMatrixPairBuffer_) {
         boneMatrixPairBuffer_->Unmap(0, nullptr);
     }
+}
+
+void Renderer::RenderShadowMap(const std::vector<RenderItem>& items,
+                               const std::vector<SkinnedRenderItem>& skinnedItems,
+                               const Matrix4x4& lightViewProj) {
+    auto* cmdList = graphics_->GetCommandList();
+    auto* heap    = graphics_->GetSRVHeap();
+
+    shadowMap_.BeginShadowPass(cmdList);
+
+    // Static meshes (depth-only)
+    if (!items.empty()) {
+        cmdList->SetPipelineState(shadowPipeline_.GetStaticPSO());
+        cmdList->SetGraphicsRootSignature(shadowPipeline_.GetStaticRootSignature());
+        cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+        for (const auto& item : items) {
+            if (!item.mesh) continue;
+
+            ShadowTransformCB shadowData{};
+            StoreTransposedMatrix(shadowData.world, item.worldMatrix);
+            StoreTransposedMatrix(shadowData.lightViewProj, lightViewProj);
+            auto gpuAddr = shadowTransformBuffer_.Update(shadowData);
+            cmdList->SetGraphicsRootConstantBufferView(0, gpuAddr);
+
+            auto vbView = item.mesh->GetVertexBuffer().GetView();
+            cmdList->IASetVertexBuffers(0, 1, &vbView);
+            auto ibView = item.mesh->GetIndexBuffer().GetView();
+            cmdList->IASetIndexBuffer(&ibView);
+            cmdList->DrawIndexedInstanced(item.mesh->GetIndexBuffer().GetIndexCount(), 1, 0, 0, 0);
+        }
+    }
+
+    // Skinned meshes (depth-only, bones from existing buffer)
+    if (!skinnedItems.empty() && boneMatrixPairBuffer_) {
+        ID3D12DescriptorHeap* heaps[] = { heap };
+        cmdList->SetDescriptorHeaps(1, heaps);
+
+        cmdList->SetPipelineState(shadowPipeline_.GetSkinnedPSO());
+        cmdList->SetGraphicsRootSignature(shadowPipeline_.GetSkinnedRootSignature());
+        cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+        BoneMatrixPair* mappedBoneData = nullptr;
+        boneMatrixPairBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&mappedBoneData));
+
+        for (const auto& item : skinnedItems) {
+            if (!item.mesh || !item.boneMatrixPairs || item.boneMatrixPairs->empty()) continue;
+            if (currentBoneSlot_ >= MAX_SKINNED_OBJECTS) break;
+
+            ShadowTransformCB shadowData{};
+            StoreTransposedMatrix(shadowData.world, item.worldMatrix);
+            StoreTransposedMatrix(shadowData.lightViewProj, lightViewProj);
+            auto gpuAddr = shadowTransformBuffer_.Update(shadowData);
+            cmdList->SetGraphicsRootConstantBufferView(0, gpuAddr);
+
+            size_t numBones = std::min(item.boneMatrixPairs->size(), static_cast<size_t>(MAX_BONES));
+            BoneMatrixPair* slotData = mappedBoneData + (currentBoneSlot_ * MAX_BONES);
+            for (size_t i = 0; i < numBones; ++i) {
+                const auto& pair = (*item.boneMatrixPairs)[i];
+                Matrix4x4 ts = pair.skeletonSpaceMatrix.Transpose();
+                Matrix4x4 ti = pair.skeletonSpaceInverseTransposeMatrix.Transpose();
+                ts.ToFloatArray(reinterpret_cast<float*>(&slotData[i].skeletonSpaceMatrix));
+                ti.ToFloatArray(reinterpret_cast<float*>(&slotData[i].skeletonSpaceInverseTransposeMatrix));
+            }
+            cmdList->SetGraphicsRootDescriptorTable(1, boneMatrixPairSRVs_[currentBoneSlot_]);
+            currentBoneSlot_++;
+
+            auto vbView = item.mesh->GetVertexBuffer().GetView();
+            cmdList->IASetVertexBuffers(0, 1, &vbView);
+            auto ibView = item.mesh->GetIndexBuffer().GetView();
+            cmdList->IASetIndexBuffer(&ibView);
+            cmdList->DrawIndexedInstanced(item.mesh->GetIndexBuffer().GetIndexCount(), 1, 0, 0, 0);
+        }
+
+        boneMatrixPairBuffer_->Unmap(0, nullptr);
+    }
+
+    shadowMap_.EndShadowPass(cmdList);
 }
 
 void Renderer::CreateBoneMatrixPairBuffer(ID3D12Device* device) {

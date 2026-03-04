@@ -14,62 +14,89 @@ void Pipeline::Initialize(
 }
 
 void Pipeline::CreateRootSignature(ID3D12Device* device) {
-    // ディスクリプタレンジ: テクスチャ (t0)
-    D3D12_DESCRIPTOR_RANGE descRange = {};
-    descRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-    descRange.NumDescriptors = 1;
-    descRange.BaseShaderRegister = 0;
-    descRange.RegisterSpace = 0;
-    descRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+    // ディスクリプタレンジ: アルベドテクスチャ (t0)
+    D3D12_DESCRIPTOR_RANGE albedoRange = {};
+    albedoRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+    albedoRange.NumDescriptors = 1;
+    albedoRange.BaseShaderRegister = 0;
+    albedoRange.RegisterSpace = 0;
+    albedoRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-    // ルートパラメータ
-    D3D12_ROOT_PARAMETER rootParams[4] = {};
+    // ディスクリプタレンジ: シャドウマップ (t1)
+    D3D12_DESCRIPTOR_RANGE shadowRange = {};
+    shadowRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+    shadowRange.NumDescriptors = 1;
+    shadowRange.BaseShaderRegister = 1;
+    shadowRange.RegisterSpace = 0;
+    shadowRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-    // 定数バッファ (b0) - Transform
+    // ルートパラメータ [0]=Transform(b0,ALL) [1]=albedo(t0,PIXEL) [2]=Light(b1,PIXEL)
+    //                 [3]=Material(b2,PIXEL) [4]=shadowMap(t1,PIXEL)
+    D3D12_ROOT_PARAMETER rootParams[5] = {};
+
     rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
     rootParams[0].Descriptor.ShaderRegister = 0;
     rootParams[0].Descriptor.RegisterSpace = 0;
     rootParams[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-    // テクスチャディスクリプタテーブル (t0)
     rootParams[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
     rootParams[1].DescriptorTable.NumDescriptorRanges = 1;
-    rootParams[1].DescriptorTable.pDescriptorRanges = &descRange;
+    rootParams[1].DescriptorTable.pDescriptorRanges = &albedoRange;
     rootParams[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
-    // 定数バッファ (b1) - Light
     rootParams[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
     rootParams[2].Descriptor.ShaderRegister = 1;
     rootParams[2].Descriptor.RegisterSpace = 0;
     rootParams[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
-    // 定数バッファ (b2) - Material
     rootParams[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
     rootParams[3].Descriptor.ShaderRegister = 2;
     rootParams[3].Descriptor.RegisterSpace = 0;
     rootParams[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
-    // スタティックサンプラー (s0)
-    D3D12_STATIC_SAMPLER_DESC sampler = {};
-    sampler.Filter = D3D12_FILTER_ANISOTROPIC;
-    sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-    sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-    sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-    sampler.MipLODBias = -0.5f;
-    sampler.MaxAnisotropy = 16;
-    sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-    sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
-    sampler.MinLOD = 0.0f;
-    sampler.MaxLOD = D3D12_FLOAT32_MAX;
-    sampler.ShaderRegister = 0;
-    sampler.RegisterSpace = 0;
-    sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+    rootParams[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+    rootParams[4].DescriptorTable.NumDescriptorRanges = 1;
+    rootParams[4].DescriptorTable.pDescriptorRanges = &shadowRange;
+    rootParams[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+    // s0: アルベドサンプラー (異方性)
+    D3D12_STATIC_SAMPLER_DESC samplers[2] = {};
+    auto& s0 = samplers[0];
+    s0.Filter = D3D12_FILTER_ANISOTROPIC;
+    s0.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+    s0.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+    s0.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+    s0.MipLODBias = -0.5f;
+    s0.MaxAnisotropy = 16;
+    s0.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+    s0.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+    s0.MinLOD = 0.0f;
+    s0.MaxLOD = D3D12_FLOAT32_MAX;
+    s0.ShaderRegister = 0;
+    s0.RegisterSpace = 0;
+    s0.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+    // s1: シャドウ比較サンプラー (PCF)
+    auto& s1 = samplers[1];
+    s1.Filter = D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
+    s1.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+    s1.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+    s1.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+    s1.MipLODBias = 0.0f;
+    s1.MaxAnisotropy = 1;
+    s1.ComparisonFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+    s1.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
+    s1.MinLOD = 0.0f;
+    s1.MaxLOD = 0.0f;
+    s1.ShaderRegister = 1;
+    s1.RegisterSpace = 0;
+    s1.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
     D3D12_ROOT_SIGNATURE_DESC rootSigDesc = {};
-    rootSigDesc.NumParameters = 4;
+    rootSigDesc.NumParameters = 5;
     rootSigDesc.pParameters = rootParams;
-    rootSigDesc.NumStaticSamplers = 1;
-    rootSigDesc.pStaticSamplers = &sampler;
+    rootSigDesc.NumStaticSamplers = 2;
+    rootSigDesc.pStaticSamplers = samplers;
     rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
     ComPtr<ID3DBlob> signature;

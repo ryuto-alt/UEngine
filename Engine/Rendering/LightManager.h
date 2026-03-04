@@ -1,6 +1,9 @@
 #pragma once
 
 #include "../Graphics/DirectionalLight.h"
+#include "../Graphics/PointLightComponent.h"
+#include "../Graphics/SpotLightComponent.h"
+#include <vector>
 
 namespace UnoEngine {
 
@@ -11,6 +14,26 @@ struct GPULightData {
     Vector3 color{1.0f, 1.0f, 1.0f};
     float intensity{1.0f};
     Vector3 ambient{0.3f, 0.3f, 0.3f};
+
+    struct PointLight {
+        Vector3 position;
+        float range;
+        Vector3 color;
+        float intensity;
+    };
+
+    struct SpotLight {
+        Vector3 position;
+        float range;
+        Vector3 direction;
+        float spotAngle;
+        Vector3 color;
+        float intensity;
+        float innerAngle;
+    };
+
+    std::vector<PointLight> pointLights;
+    std::vector<SpotLight>  spotLights;
 };
 
 class LightManager {
@@ -20,6 +43,13 @@ public:
 
     void RegisterLight(DirectionalLightComponent* light);
     void UnregisterLight(DirectionalLightComponent* light);
+
+    void RegisterLight(PointLightComponent* light);
+    void UnregisterLight(PointLightComponent* light);
+
+    void RegisterLight(SpotLightComponent* light);
+    void UnregisterLight(SpotLightComponent* light);
+
     void Clear();
 
     GPULightData BuildGPULightData() const;
@@ -27,7 +57,9 @@ public:
     DirectionalLightComponent* GetDirectionalLight() const;
 
 private:
-    DirectionalLightComponent* directionalLight_ = nullptr;
+    DirectionalLightComponent*        directionalLight_ = nullptr;
+    std::vector<PointLightComponent*> pointLights_;
+    std::vector<SpotLightComponent*>  spotLights_;
 };
 
 } // namespace UnoEngine

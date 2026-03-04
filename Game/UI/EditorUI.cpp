@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "EditorUI.h"
 #include "../../Engine/Graphics/GraphicsDevice.h"
 #include "../../Engine/Rendering/DebugRenderer.h"
@@ -19,6 +19,10 @@
 #include "../../Engine/Audio/AudioClip.h"
 #include "../../Engine/Core/CameraComponent.h"
 #include "../../Engine/Core/CollisionComponent.h"
+#include "../../Engine/Graphics/PointLightComponent.h"
+#include "../../Engine/Graphics/SpotLightComponent.h"
+#include "../../Engine/Physics/RigidbodyComponent.h"
+#include "../../Engine/Core/PrefabManager.h"
 #include "../../Engine/Editor/ParticleEditor.h"
 #include "../../Engine/Navigation/NavMeshManager.h"
 #include "../../Engine/Navigation/NavAgentComponent.h"
@@ -759,23 +763,29 @@ namespace UnoEngine {
 			ImGui::DockBuilderAddNode(dockspaceID, ImGuiDockNodeFlags_DockSpace);
 			ImGui::DockBuilderSetNodeSize(dockspaceID, viewport->WorkSize);
 
-			// ドックスペースを分割（Scene/Game タブ + 右プロパティ + 下部）
+			// ドックスペースを分割（左ヒエラルキー + 中央Scene/Game + 右プロパティ + 下部）
 			ImGuiID dock_main, dock_bottom;
-			ImGuiID dock_viewport, dock_right;
+			ImGuiID dock_left, dock_viewport, dock_right;
 			ImGuiID dock_project, dock_console;
 
 			// メイン領域(70%) | 下部(30%)
 			dock_main = ImGui::DockBuilderSplitNode(dockspaceID, ImGuiDir_Up, 0.70f, nullptr, &dock_bottom);
 
-			// メイン領域をビューポート(75%) | 右プロパティ(25%)に分割
+			// メイン領域の左にヒエラルキー(15%)を切り出す
+			dock_left = ImGui::DockBuilderSplitNode(dock_main, ImGuiDir_Left, 0.15f, nullptr, &dock_main);
+
+			// 残りをビューポート(75%) | 右プロパティ(25%)に分割
 			dock_viewport = ImGui::DockBuilderSplitNode(dock_main, ImGuiDir_Left, 0.75f, nullptr, &dock_right);
 
 			// 下部を左(20%) | 右(80%)に分割
 			dock_project = ImGui::DockBuilderSplitNode(dock_bottom, ImGuiDir_Left, 0.20f, nullptr, &dock_console);
 
-			// シーンとゲームを同じ場所にタブとして配置（シーンがデフォルト）
-			ImGui::DockBuilderDockWindow(U8("シーン"), dock_viewport);
+			// ゲームを先にドック → シーンを後でドックしてアクティブにする
 			ImGui::DockBuilderDockWindow(U8("ゲーム"), dock_viewport);
+			ImGui::DockBuilderDockWindow(U8("シーン"), dock_viewport);
+
+			// 左: ヒエラルキー
+			ImGui::DockBuilderDockWindow(U8("ヒエラルキー"), dock_left);
 
 			// 右: オブジェクトプロパティ
 			ImGui::DockBuilderDockWindow(U8("プロパティ"), dock_right);
@@ -787,7 +797,6 @@ namespace UnoEngine {
 			ImGui::DockBuilderDockWindow(U8("コンソール"), dock_console);
 
 			// 旧ウィンドウ名も配置（互換性）
-			ImGui::DockBuilderDockWindow(U8("ヒエラルキー"), dock_project);
 			ImGui::DockBuilderDockWindow(U8("インスペクター"), dock_right);
 			ImGui::DockBuilderDockWindow(U8("統計情報"), dock_right);
 			ImGui::DockBuilderDockWindow(U8("プロファイラー"), dock_console);
@@ -1399,6 +1408,102 @@ namespace UnoEngine {
 						isDirty_ = true;
 					}
 				}
+			}
+
+			// Rigidbody section
+			if (auto* rb = selected->GetComponent<RigidbodyComponent>()) {
+				if (DrawComponentHeader(U8("  Rigidbody"), {0.20f, 0.50f, 0.80f, 0.85f})) {
+					float rbMass = rb->GetMass();
+					ImGui::Text("Mass"); ImGui::SameLine(100.0f); ImGui::SetNextItemWidth(-1);
+					if (ImGui::DragFloat("##RBMass", &rbMass, 0.01f, 0.001f, 1000.0f)) {
+						rb->SetMass(rbMass); isDirty_ = true;
+					}
+					float rbDrag = rb->GetDrag();
+					ImGui::Text("Drag"); ImGui::SameLine(100.0f); ImGui::SetNextItemWidth(-1);
+					if (ImGui::DragFloat("##RBDrag", &rbDrag, 0.001f, 0.0f, 10.0f)) {
+						rb->SetDrag(rbDrag); isDirty_ = true;
+					}
+					bool rbUseGrav = rb->UseGravity();
+					if (ImGui::Checkbox("Use Gravity", &rbUseGrav)) {
+						rb->SetUseGravity(rbUseGrav); isDirty_ = true;
+					}
+					bool rbKinematic = rb->IsKinematic();
+					if (ImGui::Checkbox("Is Kinematic", &rbKinematic)) {
+						rb->SetKinematic(rbKinematic); isDirty_ = true;
+					}
+					auto rbVel = rb->GetVelocity();
+					ImGui::TextDisabled("Vel: (%.2f, %.2f, %.2f)", rbVel.GetX(), rbVel.GetY(), rbVel.GetZ());
+					ImGui::TextDisabled(rb->IsGrounded() ? "Grounded: Yes" : "Grounded: No");
+				}
+			} else {
+				if (DrawComponentHeader("  Rigidbody", {0.38f, 0.38f, 0.38f, 0.85f}, false)) {
+					ImGui::TextDisabled("(No Rigidbody)");
+					if (ImGui::Button("Add Rigidbody")) {
+						selected->AddComponent<RigidbodyComponent>(); isDirty_ = true;
+					}
+				}
+			}
+
+			// PointLight section
+			if (auto* pl = selected->GetComponent<PointLightComponent>()) {
+				if (DrawComponentHeader(U8("  PointLight"), {0.85f, 0.75f, 0.10f, 0.85f})) {
+					auto plCol = pl->GetColor();
+					float plC[3] = { plCol.GetX(), plCol.GetY(), plCol.GetZ() };
+					ImGui::Text("Color"); ImGui::SameLine(100.0f); ImGui::SetNextItemWidth(-1);
+					if (ImGui::ColorEdit3("##PLColor", plC)) {
+						pl->SetColor(Vector3(plC[0], plC[1], plC[2])); isDirty_ = true;
+					}
+					float plInt = pl->GetIntensity();
+					ImGui::Text("Intensity"); ImGui::SameLine(100.0f); ImGui::SetNextItemWidth(-1);
+					if (ImGui::DragFloat("##PLInt", &plInt, 0.01f, 0.0f, 100.0f)) {
+						pl->SetIntensity(plInt); isDirty_ = true;
+					}
+					float plRange = pl->GetRange();
+					ImGui::Text("Range"); ImGui::SameLine(100.0f); ImGui::SetNextItemWidth(-1);
+					if (ImGui::DragFloat("##PLRange", &plRange, 0.1f, 0.0f, 1000.0f)) {
+						pl->SetRange(plRange); isDirty_ = true;
+					}
+				}
+			}
+
+			// SpotLight section
+			if (auto* sl = selected->GetComponent<SpotLightComponent>()) {
+				if (DrawComponentHeader(U8("  SpotLight"), {0.85f, 0.50f, 0.10f, 0.85f})) {
+					auto slCol = sl->GetColor();
+					float slC[3] = { slCol.GetX(), slCol.GetY(), slCol.GetZ() };
+					ImGui::Text("Color"); ImGui::SameLine(100.0f); ImGui::SetNextItemWidth(-1);
+					if (ImGui::ColorEdit3("##SLColor", slC)) {
+						sl->SetColor(Vector3(slC[0], slC[1], slC[2])); isDirty_ = true;
+					}
+					float slInt = sl->GetIntensity();
+					ImGui::Text("Intensity"); ImGui::SameLine(100.0f); ImGui::SetNextItemWidth(-1);
+					if (ImGui::DragFloat("##SLInt", &slInt, 0.01f, 0.0f, 100.0f)) {
+						sl->SetIntensity(slInt); isDirty_ = true;
+					}
+					float slRange = sl->GetRange();
+					ImGui::Text("Range"); ImGui::SameLine(100.0f); ImGui::SetNextItemWidth(-1);
+					if (ImGui::DragFloat("##SLRange", &slRange, 0.1f, 0.0f, 1000.0f)) {
+						sl->SetRange(slRange); isDirty_ = true;
+					}
+					float slSpot = sl->GetSpotAngle();
+					ImGui::Text("Outer Angle"); ImGui::SameLine(100.0f); ImGui::SetNextItemWidth(-1);
+					if (ImGui::SliderFloat("##SLOuter", &slSpot, 0.0f, 90.0f)) {
+						sl->SetSpotAngle(slSpot); isDirty_ = true;
+					}
+					float slInner = sl->GetInnerAngle();
+					ImGui::Text("Inner Angle"); ImGui::SameLine(100.0f); ImGui::SetNextItemWidth(-1);
+					if (ImGui::SliderFloat("##SLInner", &slInner, 0.0f, slSpot)) {
+						sl->SetInnerAngle(slInner); isDirty_ = true;
+					}
+				}
+			}
+
+			// Prefab
+			ImGui::Separator();
+			if (ImGui::Button("Save as Prefab")) {
+				std::string prefabPath = "assets/prefabs/" + selected->GetName() + ".prefab";
+				PrefabManager::SavePrefab(selected, prefabPath);
+				AddConsoleMessage("[Prefab] Saved: " + prefabPath);
 			}
 
 			// Camera セクション
@@ -2861,6 +2966,17 @@ namespace UnoEngine {
 	}
 
 
+void EditorUI::PreLoadPendingThumbnails() {
+    if (thumbnailRenderer_.IsInitialized() && thumbnailRenderer_.HasPending()) {
+        thumbnailRenderer_.PreLoadPending();
+    }
+}
+	void EditorUI::ProcessPendingThumbnails() {
+		if (renderer_ && lightManager_ && thumbnailRenderer_.HasPending()) {
+			thumbnailRenderer_.ProcessOne(renderer_, lightManager_, graphics_);
+		}
+	}
+
 	void EditorUI::RenderProject(const EditorContext& context) {
 		if (!showProject_) return;
 
@@ -2870,65 +2986,203 @@ namespace UnoEngine {
 		ImGui::Separator();
 
 		// モデルフォルダをスキャン
-		if (ImGui::TreeNode(U8("モデル"))) {
-			// リフレッシュボタン
-			if (ImGui::SmallButton(U8("更新"))) {
-				RefreshModelPaths();
-				consoleMessages_.push_back(U8("[エディタ] モデルリストを更新しました"));
+		if (ImGui::TreeNodeEx(U8("モデル"), ImGuiTreeNodeFlags_DefaultOpen)) {
+			// 遅延初期化
+			if (!thumbnailRenderer_.IsInitialized() && graphics_ && resourceManager_) {
+				thumbnailRenderer_.Initialize(graphics_, resourceManager_);
 			}
-			ImGui::Separator();
 
 			// 初回またはリフレッシュ時にスキャン
 			if (cachedModelPaths_.empty()) {
 				RefreshModelPaths();
 			}
 
-			// モデルリストを表示
-			for (size_t i = 0; i < cachedModelPaths_.size(); ++i) {
-				const auto& modelPath = cachedModelPaths_[i];
-				std::filesystem::path p(modelPath);
-				std::string filename = p.filename().string();
+			// ツールバー
+			{
+				ImGui::PushStyleColor(ImGuiCol_Button,
+					projectGridMode_ ? ImVec4(0.30f, 0.50f, 0.80f, 1.0f) : ImVec4(0.25f, 0.25f, 0.25f, 1.0f));
+				if (ImGui::SmallButton(U8(" ⊞ "))) projectGridMode_ = true;
+				ImGui::PopStyleColor();
 
-				ImGui::PushID(static_cast<int>(i));
-				
-				// アイコン表示（ファイル拡張子に応じて）
-			std::string ext = p.extension().string();
+				ImGui::SameLine(0, 2);
 
-			// OBJファイルはスキンメッシュ非対応なのでスキップ
-			if (ext == ".obj") {
-				ImGui::PopID();
-				continue;
-			}
+				ImGui::PushStyleColor(ImGuiCol_Button,
+					!projectGridMode_ ? ImVec4(0.30f, 0.50f, 0.80f, 1.0f) : ImVec4(0.25f, 0.25f, 0.25f, 1.0f));
+				if (ImGui::SmallButton(U8(" ≡ "))) projectGridMode_ = false;
+				ImGui::PopStyleColor();
 
-			const char* icon = "📦"; // デフォルトアイコン
-			if (ext == ".gltf" || ext == ".glb") icon = "🎨";
-			else if (ext == ".fbx") icon = "🔷";
-				
-				ImGui::Text("%s", icon);
-				ImGui::SameLine();
-				
-				bool selected = false;
-				if (ImGui::Selectable(filename.c_str(), selected, ImGuiSelectableFlags_AllowDoubleClick)) {
-					// ダブルクリックでシーンに追加
-					if (ImGui::IsMouseDoubleClicked(0)) {
-						HandleModelDragDropByIndex(i);
-					}
+				ImGui::SameLine(0, 8);
+				if (projectGridMode_) {
+					ImGui::SetNextItemWidth(80.0f);
+					ImGui::SliderFloat("##ThumbSize", &projectThumbnailSize_, 48.0f, 128.0f, "%.0f");
+					ImGui::SameLine(0, 8);
 				}
 
-				// ドラッグソース設定
-				if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-					ImGui::SetDragDropPayload("MODEL_INDEX", &i, sizeof(size_t));
-					ImGui::Text("🎯 Drag: %s", filename.c_str());
-					ImGui::EndDragDropSource();
+				if (ImGui::SmallButton(U8("更新"))) {
+					RefreshModelPaths();
+					projectSelectedModelIdx_ = -1;
+					consoleMessages_.push_back(U8("[エディタ] モデルリストを更新しました"));
 				}
-
-				ImGui::PopID();
 			}
-			
+			ImGui::Separator();
+
 			if (cachedModelPaths_.empty()) {
 				ImGui::TextDisabled(U8("(モデルなし)"));
+			} else if (projectGridMode_) {
+				// ── グリッドビュー ──
+				const float pad   = 6.0f;
+				const float sz    = projectThumbnailSize_;
+				const float nameH = ImGui::GetTextLineHeightWithSpacing();
+				const float cellH = sz + nameH;
+				const float avail = ImGui::GetContentRegionAvail().x;
+				const int   cols  = std::max(1, static_cast<int>((avail + pad) / (sz + pad)));
+
+				// スクロール可能領域（プレビューパネル分を残す）
+				float scrollH = (projectSelectedModelIdx_ >= 0) ? -160.0f : 0.0f;
+				ImGui::BeginChild("##ModelGrid", ImVec2(0, scrollH), false);
+
+				int col = 0;
+				for (size_t i = 0; i < cachedModelPaths_.size(); ++i) {
+					const auto& modelPath = cachedModelPaths_[i];
+					std::filesystem::path p(modelPath);
+					std::string ext      = p.extension().string();
+					std::string filename = p.filename().string();
+
+					if (ext == ".obj") continue;
+
+					if (col > 0 && col % cols != 0) ImGui::SameLine(0, pad);
+
+					ImGui::PushID(static_cast<int>(i));
+
+					ImVec2 tilePos = ImGui::GetCursorScreenPos();
+					bool   sel     = (projectSelectedModelIdx_ == static_cast<int>(i));
+					auto*  dl      = ImGui::GetWindowDrawList();
+
+					// 背景
+					ImU32 bgCol = sel ? IM_COL32(70, 55, 10, 220) : IM_COL32(50, 50, 50, 200);
+					dl->AddRectFilled(tilePos, { tilePos.x + sz, tilePos.y + cellH }, bgCol, 4.0f);
+
+					// サムネイル or プレースホルダー
+					D3D12_GPU_DESCRIPTOR_HANDLE thumb{ 0 };
+					if (thumbnailRenderer_.IsInitialized()) {
+						thumb = thumbnailRenderer_.Request(modelPath);
+					}
+					if (thumb.ptr != 0) {
+						dl->AddImage(
+							(ImTextureID)thumb.ptr,
+							tilePos, { tilePos.x + sz, tilePos.y + sz }
+						);
+					} else {
+						dl->AddRectFilled(tilePos, { tilePos.x + sz, tilePos.y + sz }, IM_COL32(35, 35, 35, 255), 3.0f);
+						// 読み込み中アイコン（中央）
+						ImVec2 ic = { tilePos.x + sz * 0.5f - 8, tilePos.y + sz * 0.5f - 7 };
+						dl->AddText(ic, IM_COL32(140, 140, 140, 255), "...");
+					}
+
+					// ファイル名（中央揃え・トリミング）
+					std::string shortName = filename;
+					if (shortName.size() > 12) shortName = shortName.substr(0, 11) + "~";
+					float tw = ImGui::CalcTextSize(shortName.c_str()).x;
+					dl->AddText(
+						{ tilePos.x + (sz - tw) * 0.5f, tilePos.y + sz + 2 },
+						IM_COL32(220, 220, 220, 255), shortName.c_str()
+					);
+
+					// クリック / D&D / ダブルクリック
+					ImGui::InvisibleButton("##tile", { sz, cellH });
+
+					if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+						projectSelectedModelIdx_ = static_cast<int>(i);
+					}
+					if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+						HandleModelDragDropByIndex(i);
+					}
+					if (ImGui::IsItemHovered()) {
+						dl->AddRectFilled(tilePos, { tilePos.x + sz, tilePos.y + cellH }, IM_COL32(255, 255, 255, 18), 4.0f);
+					}
+					if (sel) {
+						dl->AddRect(tilePos, { tilePos.x + sz, tilePos.y + cellH }, IM_COL32(255, 200, 0, 255), 4.0f, 0, 2.0f);
+					}
+					if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+						ImGui::SetDragDropPayload("MODEL_INDEX", &i, sizeof(size_t));
+						ImGui::Text("%s", filename.c_str());
+						ImGui::EndDragDropSource();
+					}
+
+					ImGui::PopID();
+					col++;
+				}
+
+				ImGui::EndChild();
+
+				// ── プレビューパネル ──
+				if (projectSelectedModelIdx_ >= 0 &&
+					projectSelectedModelIdx_ < static_cast<int>(cachedModelPaths_.size()))
+				{
+					const auto& selPath = cachedModelPaths_[projectSelectedModelIdx_];
+					std::filesystem::path selP(selPath);
+					std::string selName = selP.filename().string();
+
+					ImGui::Separator();
+					ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.3f, 1.0f), "%s", selName.c_str());
+
+					D3D12_GPU_DESCRIPTOR_HANDLE prevThumb{ 0 };
+					if (thumbnailRenderer_.IsInitialized()) {
+						prevThumb = thumbnailRenderer_.Request(selPath);
+					}
+
+					if (prevThumb.ptr != 0) {
+						ImGui::Image((ImTextureID)prevThumb.ptr, ImVec2(128, 128));
+					} else {
+						ImGui::Dummy(ImVec2(128, 128));
+					}
+
+					ImGui::SameLine();
+					ImGui::BeginGroup();
+					ImGui::TextDisabled("%s", selPath.c_str());
+					ImGui::Spacing();
+					if (ImGui::Button(U8("シーンに追加"), ImVec2(110, 0))) {
+						HandleModelDragDropByIndex(static_cast<size_t>(projectSelectedModelIdx_));
+					}
+					if (ImGui::Button(U8("選択解除"), ImVec2(110, 0))) {
+						projectSelectedModelIdx_ = -1;
+					}
+					ImGui::EndGroup();
+				}
+
+			} else {
+				// ── リストビュー（従来） ──
+				for (size_t i = 0; i < cachedModelPaths_.size(); ++i) {
+					const auto& modelPath = cachedModelPaths_[i];
+					std::filesystem::path p(modelPath);
+					std::string ext      = p.extension().string();
+					std::string filename = p.filename().string();
+
+					if (ext == ".obj") continue;
+
+					ImGui::PushID(static_cast<int>(i));
+
+					const char* icon = (ext == ".gltf" || ext == ".glb") ? "🎨" : "📦";
+					ImGui::Text("%s", icon);
+					ImGui::SameLine();
+
+					bool sel = (projectSelectedModelIdx_ == static_cast<int>(i));
+					if (ImGui::Selectable(filename.c_str(), sel, ImGuiSelectableFlags_AllowDoubleClick)) {
+						projectSelectedModelIdx_ = static_cast<int>(i);
+						if (ImGui::IsMouseDoubleClicked(0)) {
+							HandleModelDragDropByIndex(i);
+						}
+					}
+					if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+						ImGui::SetDragDropPayload("MODEL_INDEX", &i, sizeof(size_t));
+						ImGui::Text("Drag: %s", filename.c_str());
+						ImGui::EndDragDropSource();
+					}
+
+					ImGui::PopID();
+				}
 			}
-			
+
 			ImGui::TreePop();
 		}
 

@@ -955,6 +955,54 @@ namespace UnoEngine {
 			// SceneViewでのクリック選択処理
 			HandleSceneViewPicking();
 
+			// Scene View へのモデルD&Dターゲット
+			if (ImGui::BeginDragDropTarget()) {
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MODEL_INDEX")) {
+					size_t modelIdx = *static_cast<const size_t*>(payload->Data);
+					// ドロップ位置をY=0平面に投影してワールド座標を計算
+					ImVec2 mouse = ImGui::GetIO().MousePos;
+					Camera* cam = editorCamera_.GetCamera();
+					if (cam && sceneViewSizeX_ > 0 && sceneViewSizeY_ > 0) {
+						float ndcX = ((mouse.x - sceneViewPosX_) / sceneViewSizeX_) * 2.0f - 1.0f;
+						float ndcY = 1.0f - ((mouse.y - sceneViewPosY_) / sceneViewSizeY_) * 2.0f;
+						Matrix4x4 invProj = cam->GetProjectionMatrix().Inverse();
+						Matrix4x4 invView = cam->GetViewMatrix().Inverse();
+						auto divW = [](const Vector4& v) {
+							float w = std::abs(v.GetW()) > 1e-6f ? v.GetW() : 1.0f;
+							return Vector4(v.GetX()/w, v.GetY()/w, v.GetZ()/w, 1.0f);
+						};
+						Vector4 nearW = divW(invProj.TransformVector4(Vector4(ndcX, ndcY, 0.0f, 1.0f)));
+						Vector4 farW  = divW(invProj.TransformVector4(Vector4(ndcX, ndcY, 1.0f, 1.0f)));
+						Vector3 rayOrigin(invView.TransformVector4(nearW).GetX(),
+						                  invView.TransformVector4(nearW).GetY(),
+						                  invView.TransformVector4(nearW).GetZ());
+						Vector3 rayEnd   (invView.TransformVector4(farW).GetX(),
+						                  invView.TransformVector4(farW).GetY(),
+						                  invView.TransformVector4(farW).GetZ());
+						Vector3 rayDir = (rayEnd - rayOrigin).Normalize();
+						// Y=0平面との交点。交差しない場合はカメラ前方10m
+						Vector3 dropPos;
+						if (std::abs(rayDir.GetY()) > 1e-4f) {
+							float t = -rayOrigin.GetY() / rayDir.GetY();
+							if (t > 0.0f) {
+								dropPos = Vector3(
+									rayOrigin.GetX() + rayDir.GetX() * t,
+									0.0f,
+									rayOrigin.GetZ() + rayDir.GetZ() * t
+								);
+							} else {
+								dropPos = rayOrigin + rayDir * 10.0f;
+							}
+						} else {
+							dropPos = rayOrigin + rayDir * 10.0f;
+						}
+						pendingDropPosition_ = dropPos;
+					}
+					HandleModelDragDropByIndex(modelIdx);
+				}
+				ImGui::EndDragDropTarget();
+			}
+
 			// ギズモ描画（Edit/Pauseモードかつオブジェクトが選択されている場合）
 			if (editorMode_ != EditorMode::Play && selectedObject_ && editorCamera_.GetCamera()) {
 				// ギズモ操作開始時にスナップショットを保存
@@ -3038,7 +3086,7 @@ void EditorUI::PreLoadPendingThumbnails() {
 				const int   cols  = std::max(1, static_cast<int>((avail + pad) / (sz + pad)));
 
 				// スクロール可能領域（プレビューパネル分を残す）
-				float scrollH = (projectSelectedModelIdx_ >= 0) ? -160.0f : 0.0f;
+				float scrollH = 0.0f;
 				ImGui::BeginChild("##ModelGrid", ImVec2(0, scrollH), false);
 
 				int col = 0;
@@ -3114,42 +3162,6 @@ void EditorUI::PreLoadPendingThumbnails() {
 				}
 
 				ImGui::EndChild();
-
-				// ── プレビューパネル ──
-				if (projectSelectedModelIdx_ >= 0 &&
-					projectSelectedModelIdx_ < static_cast<int>(cachedModelPaths_.size()))
-				{
-					const auto& selPath = cachedModelPaths_[projectSelectedModelIdx_];
-					std::filesystem::path selP(selPath);
-					std::string selName = selP.filename().string();
-
-					ImGui::Separator();
-					ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.3f, 1.0f), "%s", selName.c_str());
-
-					D3D12_GPU_DESCRIPTOR_HANDLE prevThumb{ 0 };
-					if (thumbnailRenderer_.IsInitialized()) {
-						prevThumb = thumbnailRenderer_.Request(selPath);
-					}
-
-					if (prevThumb.ptr != 0) {
-						ImGui::Image((ImTextureID)prevThumb.ptr, ImVec2(128, 128));
-					} else {
-						ImGui::Dummy(ImVec2(128, 128));
-					}
-
-					ImGui::SameLine();
-					ImGui::BeginGroup();
-					ImGui::TextDisabled("%s", selPath.c_str());
-					ImGui::Spacing();
-					if (ImGui::Button(U8("シーンに追加"), ImVec2(110, 0))) {
-						HandleModelDragDropByIndex(static_cast<size_t>(projectSelectedModelIdx_));
-					}
-					if (ImGui::Button(U8("選択解除"), ImVec2(110, 0))) {
-						projectSelectedModelIdx_ = -1;
-					}
-					ImGui::EndGroup();
-				}
-
 			} else {
 				// ── リストビュー（従来） ──
 				for (size_t i = 0; i < cachedModelPaths_.size(); ++i) {
@@ -3938,14 +3950,19 @@ void EditorUI::PreLoadPendingThumbnails() {
 				scene_->StartGameObject(selectedObject_);
 			}
 
-			// カメラをモデルにフォーカス（新規追加なので角度もリセット）
-			FocusOnNewObject(selectedObject_);
+			// Scene ViewへのD&Dならドロップ位置に配置、それ以外はカメラフォーカス
+			if (pendingDropPosition_.has_value()) {
+				selectedObject_->GetTransform().SetLocalPosition(pendingDropPosition_.value());
+			} else {
+				FocusOnNewObject(selectedObject_);
+			}
 
 			consoleMessages_.push_back("[Editor] Created object: " + modelName);
 	}
 
 	// キューをクリア
 		pendingModelLoads_.clear();
+		pendingDropPosition_.reset();
 	}
 
 	// オブジェクトにカメラをフォーカス（バウンディングボックスから距離を自動計算）

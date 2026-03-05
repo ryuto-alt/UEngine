@@ -28,6 +28,9 @@
 #include "../../Engine/Navigation/NavAgentComponent.h"
 #include "../../Engine/AI/EnemyDetectionComponent.h"
 #include "../../Engine/Video/VideoPlayerComponent.h"
+#include "../../Engine/Rendering/Renderer.h"
+#include "../../Engine/Vegetation/GrassSystem.h"
+#include "../../Engine/Vegetation/GrassRenderer.h"
 #include <imgui.h>
 #include <imgui_internal.h>
 #include "../../Engine/UI/imgui_toggle.h"
@@ -225,6 +228,47 @@ namespace UnoEngine {
 			}
 		}
 	};
+
+	// バッチコマンド（複数操作をアトミックにUndo/Redo）
+	struct BatchCommand final : IEditorCommand {
+		std::vector<std::unique_ptr<IEditorCommand>> commands;
+
+		void Execute() override {
+			for (auto& cmd : commands) cmd->Execute();
+		}
+		void Undo() override {
+			for (auto it = commands.rbegin(); it != commands.rend(); ++it) {
+				(*it)->Undo();
+			}
+		}
+	};
+
+	void EditorUI::ClearSelection() {
+		selectedObjects_.clear();
+		selectedObject_ = nullptr;
+	}
+
+	void EditorUI::SelectObject(GameObject* obj, bool addToSelection) {
+		if (!addToSelection) {
+			selectedObjects_.clear();
+		}
+		if (obj) {
+			if (selectedObjects_.count(obj)) {
+				// トグル: 既に選択中なら解除
+				selectedObjects_.erase(obj);
+				if (selectedObject_ == obj) {
+					selectedObject_ = selectedObjects_.empty() ? nullptr : *selectedObjects_.begin();
+				}
+			} else {
+				selectedObjects_.insert(obj);
+				selectedObject_ = obj;
+			}
+		}
+	}
+
+	bool EditorUI::IsSelected(GameObject* obj) const {
+		return selectedObjects_.count(obj) > 0;
+	}
 
 	void EditorUI::Initialize(GraphicsDevice* graphics) {
 		graphics_ = graphics;
@@ -952,8 +996,13 @@ namespace UnoEngine {
 			// エディタカメラにビューポート矩形を設定（マウスクリップ用）
 			editorCamera_.SetViewportRect(sceneViewPosX_, sceneViewPosY_, sceneViewSizeX_, sceneViewSizeY_);
 
-			// SceneViewでのクリック選択処理
-			HandleSceneViewPicking();
+			// 草ペイントが有効な場合はペイント処理を優先
+			if (grassPaintActive_) {
+				HandleGrassPainting();
+			} else {
+				// SceneViewでのクリック選択処理
+				HandleSceneViewPicking();
+			}
 
 			// Scene View へのモデルD&Dターゲット
 			if (ImGui::BeginDragDropTarget()) {
@@ -1215,6 +1264,19 @@ namespace UnoEngine {
 				if (ImGui::BeginTabItem("NavMesh", nullptr, flags)) {
 					inspectorTabIndex_ = 1;
 					RenderNavMeshInspectorTab();
+					ImGui::EndTabItem();
+				}
+			}
+
+			// 草ペイントタブ
+			{
+				ImGuiTabItemFlags flags = ImGuiTabItemFlags_None;
+				if (inspectorTabIndex_ == 2) {
+					flags |= ImGuiTabItemFlags_SetSelected;
+				}
+				if (ImGui::BeginTabItem(U8("草原"), nullptr, flags)) {
+					inspectorTabIndex_ = 2;
+					RenderGrassPaintTab();
 					ImGui::EndTabItem();
 				}
 			}
@@ -1489,6 +1551,27 @@ namespace UnoEngine {
 					if (ImGui::Button("Add Rigidbody")) {
 						selected->AddComponent<RigidbodyComponent>(); isDirty_ = true;
 					}
+				}
+			}
+
+			// DirectionalLight section
+			if (auto* dl = selected->GetComponent<DirectionalLightComponent>()) {
+				if (DrawComponentHeader(U8("  Directional Light"), {0.95f, 0.85f, 0.20f, 0.85f})) {
+					auto dlCol = dl->GetColor();
+					float dlC[3] = { dlCol.GetX(), dlCol.GetY(), dlCol.GetZ() };
+					ImGui::Text("Color"); ImGui::SameLine(100.0f); ImGui::SetNextItemWidth(-1);
+					if (ImGui::ColorEdit3("##DLColor", dlC)) {
+						dl->SetColor(Vector3(dlC[0], dlC[1], dlC[2])); isDirty_ = true;
+					}
+					float dlInt = dl->GetIntensity();
+					ImGui::Text("Intensity"); ImGui::SameLine(100.0f); ImGui::SetNextItemWidth(-1);
+					if (ImGui::DragFloat("##DLInt", &dlInt, 0.01f, 0.0f, 100.0f)) {
+						dl->SetIntensity(dlInt); isDirty_ = true;
+					}
+					auto dir = dl->GetDirection();
+					ImGui::Text("Direction"); ImGui::SameLine(100.0f);
+					ImGui::TextDisabled("(%.2f, %.2f, %.2f)", dir.GetX(), dir.GetY(), dir.GetZ());
+					ImGui::TextDisabled(U8("  ※ Transformの回転で変更"));
 				}
 			}
 
@@ -2098,13 +2181,380 @@ namespace UnoEngine {
 					videoPlayer->SetGraphicsDevice(graphics_);
 					isDirty_ = true;
 				}
+				if (ImGui::BeginMenu(U8("ライト"))) {
+					if (ImGui::MenuItem("Directional Light") && !selected->GetComponent<DirectionalLightComponent>()) {
+						auto* dl = selected->AddComponent<DirectionalLightComponent>();
+						dl->UseTransformDirection(true);
+						isDirty_ = true;
+					}
+					if (ImGui::MenuItem("Point Light") && !selected->GetComponent<PointLightComponent>()) {
+						selected->AddComponent<PointLightComponent>();
+						isDirty_ = true;
+					}
+					if (ImGui::MenuItem("Spot Light") && !selected->GetComponent<SpotLightComponent>()) {
+						selected->AddComponent<SpotLightComponent>();
+						isDirty_ = true;
+					}
+					ImGui::EndMenu();
+				}
 				ImGui::EndPopup();
 			}
+		} else if (selectedGenerator_ != GeneratorType::None) {
+			RenderGeneratorProperties();
 		} else {
 			ImGui::TextDisabled("No object selected");
 		}
 
 		ImGui::End();
+	}
+
+	void EditorUI::RenderGeneratorProperties() {
+		if (selectedGenerator_ == GeneratorType::Grass) {
+			// ===== 草原ジェネレーター（テクスチャベース・シンプル版） =====
+			if (!renderer_) return;
+			auto* grassSystem = renderer_->GetGrassSystem();
+			auto* grassRenderer = renderer_->GetGrassRenderer();
+			if (!grassSystem || !grassRenderer) return;
+
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 1.0f, 0.4f, 1.0f));
+			ImGui::Text("🌿");
+			ImGui::SameLine();
+			ImGui::TextUnformatted(U8("草原ジェネレーター"));
+			ImGui::PopStyleColor();
+
+			ImGui::Spacing();
+			ImGui::Separator();
+			ImGui::Spacing();
+
+			// テクスチャ
+			if (ImGui::CollapsingHeader(U8("テクスチャ"), ImGuiTreeNodeFlags_DefaultOpen)) {
+				const auto& currentPath = grassRenderer->GetTexturePath();
+				if (currentPath.empty()) {
+					ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), U8("(未設定 - 白テクスチャ)"));
+				} else {
+					namespace fs = std::filesystem;
+					std::string filename = fs::path(currentPath).filename().string();
+					ImGui::TextWrapped("%s", filename.c_str());
+				}
+				if (ImGui::Button(U8("テクスチャを選択..."), ImVec2(-1, 0))) {
+					grassTextureBrowseOpen_ = true;
+					grassTextureScanned_ = false;
+				}
+			}
+
+			ImGui::Spacing();
+
+			// サイズ
+			if (ImGui::CollapsingHeader(U8("サイズ"), ImGuiTreeNodeFlags_DefaultOpen)) {
+				float bw = grassRenderer->GetBaseWidth();
+				float bh = grassRenderer->GetBaseHeight();
+				if (ImGui::SliderFloat(U8("幅"), &bw, 0.1f, 5.0f, "%.2f")) {
+					grassRenderer->SetBaseWidth(bw);
+				}
+				if (ImGui::SliderFloat(U8("高さ"), &bh, 0.1f, 5.0f, "%.2f")) {
+					grassRenderer->SetBaseHeight(bh);
+				}
+				ImGui::SliderFloat(U8("最小スケール"), &grassMinScale_, 0.1f, 2.0f, "%.2f");
+				ImGui::SliderFloat(U8("最大スケール"), &grassMaxScale_, 0.1f, 3.0f, "%.2f");
+				ImGui::SliderFloat(U8("色変化"), &grassColorVariation_, 0.0f, 1.0f, "%.2f");
+			}
+
+			ImGui::Spacing();
+
+			// ブラシ
+			if (ImGui::CollapsingHeader(U8("ブラシ"), ImGuiTreeNodeFlags_DefaultOpen)) {
+				bool isBrush = (grassPaintMode_ == GrassPaintMode::Brush);
+				bool isStamp = (grassPaintMode_ == GrassPaintMode::Stamp);
+				bool isErase = (grassPaintMode_ == GrassPaintMode::Erase);
+				if (ImGui::RadioButton(U8("ブラシ"), isBrush)) grassPaintMode_ = GrassPaintMode::Brush;
+				ImGui::SameLine();
+				if (ImGui::RadioButton(U8("スタンプ"), isStamp)) grassPaintMode_ = GrassPaintMode::Stamp;
+				ImGui::SameLine();
+				if (ImGui::RadioButton(U8("消去"), isErase)) grassPaintMode_ = GrassPaintMode::Erase;
+
+				ImGui::SliderFloat(U8("半径"), &grassBrushRadius_, 0.5f, 20.0f, "%.1f m");
+				ImGui::SliderFloat(U8("密度"), &grassDensity_, 1.0f, 50.0f, "%.0f /m2");
+
+				ImGui::Spacing();
+
+				if (grassPaintActive_) {
+					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.7f, 0.2f, 1.0f));
+					if (ImGui::Button(U8("ペイント ON"), ImVec2(-1, 28))) {
+						grassPaintActive_ = false;
+					}
+					ImGui::PopStyleColor();
+				} else {
+					if (ImGui::Button(U8("ペイント OFF"), ImVec2(-1, 28))) {
+						grassPaintActive_ = true;
+					}
+				}
+			}
+
+			ImGui::Spacing();
+
+			// 風（シンプル版）
+			if (ImGui::CollapsingHeader(U8("風"), ImGuiTreeNodeFlags_DefaultOpen)) {
+				float wd = grassRenderer->GetWindDis();
+				if (ImGui::SliderFloat(U8("風の強さ"), &wd, 0.0f, 1.0f, "%.2f")) {
+					grassRenderer->SetWindDis(wd);
+				}
+			}
+
+			ImGui::Spacing();
+			ImGui::Separator();
+			ImGui::Spacing();
+
+			// 統計
+			ImGui::Text(U8("草の本数: %d"), grassSystem->GetInstanceCount());
+			if (ImGui::Button(U8("全てクリア"), ImVec2(-1, 0))) {
+				grassSystem->Clear();
+			}
+
+		} else if (selectedGenerator_ == GeneratorType::GodotGrass) {
+			// ===== GodotGrass ジェネレーター =====
+			RenderGodotGrassProperties();
+		}
+	}
+
+	void EditorUI::RenderGodotGrassProperties() {
+		if (!renderer_) return;
+		auto* grassSystem = renderer_->GetGrassSystem();
+		auto* grassRenderer = renderer_->GetGrassRenderer();
+		if (!grassSystem || !grassRenderer) return;
+
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 1.0f, 0.6f, 1.0f));
+		ImGui::Text("🌾");
+		ImGui::SameLine();
+		ImGui::TextUnformatted("GodotGrass");
+		ImGui::PopStyleColor();
+		ImGui::TextDisabled(U8("Godot風シェーダー草原"));
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		// === カラー ===
+		if (ImGui::CollapsingHeader(U8("カラー##godot"), ImGuiTreeNodeFlags_DefaultOpen)) {
+			auto bc = grassRenderer->GetBottomColor();
+			auto tc = grassRenderer->GetTopColor();
+			auto cv1 = grassRenderer->GetColorVar1();
+			auto cv2 = grassRenderer->GetColorVar2();
+			float bottomCol[3] = { bc.x, bc.y, bc.z };
+			float topCol[3]    = { tc.x, tc.y, tc.z };
+			float var1Col[3]   = { cv1.x, cv1.y, cv1.z };
+			float var2Col[3]   = { cv2.x, cv2.y, cv2.z };
+
+			if (ImGui::ColorEdit3(U8("根元の色##g"), bottomCol)) {
+				grassRenderer->SetBottomColor(bottomCol[0], bottomCol[1], bottomCol[2]);
+			}
+			if (ImGui::ColorEdit3(U8("先端の色##g"), topCol)) {
+				grassRenderer->SetTopColor(topCol[0], topCol[1], topCol[2]);
+			}
+			if (ImGui::ColorEdit3(U8("バリエーション1##g"), var1Col)) {
+				grassRenderer->SetColorVar1(var1Col[0], var1Col[1], var1Col[2]);
+			}
+			if (ImGui::ColorEdit3(U8("バリエーション2##g"), var2Col)) {
+				grassRenderer->SetColorVar2(var2Col[0], var2Col[1], var2Col[2]);
+			}
+		}
+
+		ImGui::Spacing();
+
+		// === サイズ & 高さノイズ ===
+		if (ImGui::CollapsingHeader(U8("サイズ##godot"), ImGuiTreeNodeFlags_DefaultOpen)) {
+			float bw = grassRenderer->GetBaseWidth();
+			float bh = grassRenderer->GetBaseHeight();
+			if (ImGui::SliderFloat(U8("幅##g"), &bw, 0.1f, 5.0f, "%.2f")) {
+				grassRenderer->SetBaseWidth(bw);
+			}
+			if (ImGui::SliderFloat(U8("高さ##g"), &bh, 0.1f, 5.0f, "%.2f")) {
+				grassRenderer->SetBaseHeight(bh);
+			}
+
+			ImGui::Spacing();
+			ImGui::TextDisabled(U8("ノイズベース高さ変動"));
+
+			float minS = grassRenderer->GetCombinedNoiseMinScale();
+			float maxS = grassRenderer->GetCombinedNoiseMaxScale();
+			bool inv = grassRenderer->GetInvertCombinedNoise();
+			if (ImGui::SliderFloat(U8("最小高さ##g"), &minS, 0.0f, 2.0f, "%.2f")) {
+				grassRenderer->SetCombinedNoiseMinScale(minS);
+			}
+			if (ImGui::SliderFloat(U8("最大高さ##g"), &maxS, 0.0f, 3.0f, "%.2f")) {
+				grassRenderer->SetCombinedNoiseMaxScale(maxS);
+			}
+			if (ImGui::Checkbox(U8("ノイズ反転##g"), &inv)) {
+				grassRenderer->SetInvertCombinedNoise(inv);
+			}
+		}
+
+		ImGui::Spacing();
+
+		// === ブラシ ===
+		if (ImGui::CollapsingHeader(U8("ブラシ##godot"), ImGuiTreeNodeFlags_DefaultOpen)) {
+			bool isBrush = (grassPaintMode_ == GrassPaintMode::Brush);
+			bool isStamp = (grassPaintMode_ == GrassPaintMode::Stamp);
+			bool isErase = (grassPaintMode_ == GrassPaintMode::Erase);
+			if (ImGui::RadioButton(U8("ブラシ##g"), isBrush)) grassPaintMode_ = GrassPaintMode::Brush;
+			ImGui::SameLine();
+			if (ImGui::RadioButton(U8("スタンプ##g"), isStamp)) grassPaintMode_ = GrassPaintMode::Stamp;
+			ImGui::SameLine();
+			if (ImGui::RadioButton(U8("消去##g"), isErase)) grassPaintMode_ = GrassPaintMode::Erase;
+
+			ImGui::SliderFloat(U8("半径##g"), &grassBrushRadius_, 0.5f, 20.0f, "%.1f m");
+			ImGui::SliderFloat(U8("密度##g"), &grassDensity_, 1.0f, 50.0f, "%.0f /m2");
+			ImGui::SliderFloat(U8("最小スケール##g"), &grassMinScale_, 0.1f, 2.0f, "%.2f");
+			ImGui::SliderFloat(U8("最大スケール##g"), &grassMaxScale_, 0.1f, 3.0f, "%.2f");
+
+			ImGui::Spacing();
+
+			if (grassPaintActive_) {
+				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.7f, 0.2f, 1.0f));
+				if (ImGui::Button(U8("ペイント ON##g"), ImVec2(-1, 28))) {
+					grassPaintActive_ = false;
+				}
+				ImGui::PopStyleColor();
+			} else {
+				if (ImGui::Button(U8("ペイント OFF##g"), ImVec2(-1, 28))) {
+					grassPaintActive_ = true;
+				}
+			}
+		}
+
+		ImGui::Spacing();
+
+		// === 風 ===
+		if (ImGui::CollapsingHeader(U8("風##godot"), ImGuiTreeNodeFlags_DefaultOpen)) {
+			float ws = grassRenderer->GetWindSpeed();
+			float wd = grassRenderer->GetWindDis();
+			float ns = grassRenderer->GetNoiseStrength();
+			float ds = grassRenderer->GetDisplaceStrength();
+
+			if (ImGui::SliderFloat(U8("風速##g"), &ws, 0.0f, 0.05f, "%.4f")) {
+				grassRenderer->SetWindSpeed(ws);
+			}
+			if (ImGui::SliderFloat(U8("揺れ幅##g"), &wd, 0.0f, 1.0f, "%.2f")) {
+				grassRenderer->SetWindDis(wd);
+			}
+			if (ImGui::SliderFloat(U8("ノイズ強度##g"), &ns, 0.0f, 2.0f, "%.2f")) {
+				grassRenderer->SetNoiseStrength(ns);
+			}
+			if (ImGui::SliderFloat(U8("変位強度##g"), &ds, 0.0f, 10.0f, "%.1f")) {
+				grassRenderer->SetDisplaceStrength(ds);
+			}
+
+			ImGui::Spacing();
+			ImGui::TextDisabled(U8("風ノイズテクスチャ"));
+
+			float wns = grassRenderer->GetWindNoiseScale();
+			float wpx = grassRenderer->GetWindNoisePanSpeedX();
+			float wpy = grassRenderer->GetWindNoisePanSpeedY();
+			float nf = grassRenderer->GetNoiseFloor();
+			float wnss = grassRenderer->GetWindNoiseScaleStrength();
+
+			if (ImGui::SliderFloat(U8("ノイズスケール##g"), &wns, 1.0f, 100.0f, "%.1f")) {
+				grassRenderer->SetWindNoiseScale(wns);
+			}
+			float panSpeed[2] = { wpx, wpy };
+			if (ImGui::SliderFloat2(U8("パン速度##g"), panSpeed, -0.1f, 0.1f, "%.3f")) {
+				grassRenderer->SetWindNoisePanSpeed(panSpeed[0], panSpeed[1]);
+			}
+			if (ImGui::SliderFloat(U8("ノイズ床##g"), &nf, 0.0f, 1.0f, "%.2f")) {
+				grassRenderer->SetNoiseFloor(nf);
+			}
+			if (ImGui::SliderFloat(U8("高さ変動##g"), &wnss, 0.0f, 1.0f, "%.2f")) {
+				grassRenderer->SetWindNoiseScaleStrength(wnss);
+			}
+		}
+
+		ImGui::Spacing();
+
+		// === 風影 ===
+		if (ImGui::CollapsingHeader(U8("風影##godot"), 0)) {
+			auto wsc = grassRenderer->GetWindShadowColor();
+			float shadowCol[3] = { wsc.x, wsc.y, wsc.z };
+			if (ImGui::ColorEdit3(U8("影の色##g"), shadowCol)) {
+				grassRenderer->SetWindShadowColor(shadowCol[0], shadowCol[1], shadowCol[2]);
+			}
+			float wss = grassRenderer->GetWindShadowStrength();
+			if (ImGui::SliderFloat(U8("影の強さ##g"), &wss, 0.0f, 1.0f, "%.2f")) {
+				grassRenderer->SetWindShadowStrength(wss);
+			}
+			float wdt = grassRenderer->GetWindShadowDispThreshold();
+			if (ImGui::SliderFloat(U8("閾値##g"), &wdt, 0.0f, 1.0f, "%.2f")) {
+				grassRenderer->SetWindShadowDispThreshold(wdt);
+			}
+			float wsm = grassRenderer->GetWindShadowSmoothing();
+			if (ImGui::SliderFloat(U8("スムージング##g"), &wsm, 0.0f, 1.0f, "%.2f")) {
+				grassRenderer->SetWindShadowSmoothing(wsm);
+			}
+			float fss = grassRenderer->GetFlattenShadowStrength();
+			if (ImGui::SliderFloat(U8("踏み倒し影##g"), &fss, 0.0f, 1.0f, "%.2f")) {
+				grassRenderer->SetFlattenShadowStrength(fss);
+			}
+		}
+
+		ImGui::Spacing();
+
+		// === 踏み倒し ===
+		if (ImGui::CollapsingHeader(U8("踏み倒し##godot"), 0)) {
+			float fr = grassRenderer->GetFlattenRadius();
+			float fs = grassRenderer->GetFlattenStrength();
+			float ff = grassRenderer->GetFlattenFloor();
+			if (ImGui::SliderFloat(U8("範囲##g"), &fr, 0.1f, 5.0f, "%.2f")) {
+				grassRenderer->SetFlattenRadius(fr);
+			}
+			if (ImGui::SliderFloat(U8("強さ##g"), &fs, 0.0f, 10.0f, "%.1f")) {
+				grassRenderer->SetFlattenStrength(fs);
+			}
+			if (ImGui::SliderFloat(U8("最低高さ##g"), &ff, 0.0f, 1.0f, "%.2f")) {
+				grassRenderer->SetFlattenFloor(ff);
+			}
+			ImGui::TextDisabled(U8("カメラ位置で踏み倒しテスト"));
+		}
+
+		ImGui::Spacing();
+
+		// === ノイズスケール ===
+		if (ImGui::CollapsingHeader(U8("ノイズ##godot"), 0)) {
+			float n1s = grassRenderer->GetNoise1Scale();
+			float n2s = grassRenderer->GetNoise2Scale();
+			if (ImGui::SliderFloat(U8("ノイズ1スケール##g"), &n1s, 1.0f, 100.0f, "%.1f")) {
+				grassRenderer->SetNoise1Scale(n1s);
+			}
+			if (ImGui::SliderFloat(U8("ノイズ2スケール##g"), &n2s, 1.0f, 100.0f, "%.1f")) {
+				grassRenderer->SetNoise2Scale(n2s);
+			}
+		}
+
+		ImGui::Spacing();
+
+		// === テクスチャ（アルファカットアウト用） ===
+		if (ImGui::CollapsingHeader(U8("テクスチャ##godot"), 0)) {
+			const auto& currentPath = grassRenderer->GetTexturePath();
+			if (currentPath.empty()) {
+				ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), U8("(未設定 - 白テクスチャ)"));
+			} else {
+				namespace fs = std::filesystem;
+				std::string filename = fs::path(currentPath).filename().string();
+				ImGui::TextWrapped("%s", filename.c_str());
+			}
+			ImGui::TextDisabled(U8("アルファカットアウト形状用"));
+			if (ImGui::Button(U8("テクスチャを選択...##g"), ImVec2(-1, 0))) {
+				grassTextureBrowseOpen_ = true;
+				grassTextureScanned_ = false;
+			}
+		}
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		// === 統計 ===
+		ImGui::Text(U8("草の本数: %d"), grassSystem->GetInstanceCount());
+		if (ImGui::Button(U8("全てクリア##g"), ImVec2(-1, 0))) {
+			grassSystem->Clear();
+		}
 	}
 
 	void EditorUI::RenderConsoleAndDebugger() {
@@ -2202,8 +2652,8 @@ namespace UnoEngine {
 		ImGui::Separator();
 
 		// 選択解除ボタン
-		if (selectedObject_ && ImGui::SmallButton(U8("選択解除"))) {
-			selectedObject_ = nullptr;
+		if ((selectedObject_ || !selectedObjects_.empty()) && ImGui::SmallButton(U8("選択解除"))) {
+			ClearSelection();
 		}
 		ImGui::SameLine();
 		if (context.gameObjects) {
@@ -2225,7 +2675,9 @@ namespace UnoEngine {
 				const char* icon = "📦";
 				if (obj->GetComponent<CameraComponent>()) icon = "📷";  // カメラコンポーネント優先
 				else if (obj->GetComponent<SkinnedMeshRenderer>()) icon = "🎭";
-				else if (obj->GetComponent<DirectionalLightComponent>()) icon = "💡";
+				else if (obj->GetComponent<DirectionalLightComponent>()) icon = "☀";
+				else if (obj->GetComponent<PointLightComponent>()) icon = "💡";
+				else if (obj->GetComponent<SpotLightComponent>()) icon = "🔦";
 				else if (obj->GetName() == "Player") icon = "🎮";
 
 				// 展開矢印（小さい三角形）
@@ -2275,7 +2727,7 @@ namespace UnoEngine {
 					ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf |
 						ImGuiTreeNodeFlags_NoTreePushOnOpen |
 						ImGuiTreeNodeFlags_SpanAvailWidth;
-					if (selectedObject_ == obj) {
+					if (IsSelected(obj) || selectedObject_ == obj) {
 						flags |= ImGuiTreeNodeFlags_Selected;
 					}
 
@@ -2283,7 +2735,8 @@ namespace UnoEngine {
 
 					// シングルクリックで選択＋フォーカス
 					if (ImGui::IsItemClicked() && !ImGui::IsMouseDoubleClicked(0)) {
-						selectedObject_ = obj;
+						bool fHeld = ImGui::IsKeyDown(ImGuiKey_F);
+						SelectObject(obj, fHeld);
 						FocusOnObject(obj);
 					}
 
@@ -2382,6 +2835,25 @@ namespace UnoEngine {
 							consoleMessages_.push_back("[Editor] Added CollisionComponent to: " + obj->GetName());
 							isDirty_ = true;
 						}
+					}
+					if (ImGui::BeginMenu("Light")) {
+						if (ImGui::MenuItem("Directional Light") && !obj->GetComponent<DirectionalLightComponent>()) {
+							auto* dl = obj->AddComponent<DirectionalLightComponent>();
+							dl->UseTransformDirection(true);
+							consoleMessages_.push_back("[Editor] Added DirectionalLight to: " + obj->GetName());
+							isDirty_ = true;
+						}
+						if (ImGui::MenuItem("Point Light") && !obj->GetComponent<PointLightComponent>()) {
+							obj->AddComponent<PointLightComponent>();
+							consoleMessages_.push_back("[Editor] Added PointLight to: " + obj->GetName());
+							isDirty_ = true;
+						}
+						if (ImGui::MenuItem("Spot Light") && !obj->GetComponent<SpotLightComponent>()) {
+							obj->AddComponent<SpotLightComponent>();
+							consoleMessages_.push_back("[Editor] Added SpotLight to: " + obj->GetName());
+							isDirty_ = true;
+						}
+						ImGui::EndMenu();
 					}
 					ImGui::EndMenu();
 					}
@@ -2902,6 +3374,73 @@ namespace UnoEngine {
 			renamingObject_ = nullptr;
 		}
 
+		// Hierarchy背景の右クリックメニュー（オブジェクト作成）
+		if (ImGui::BeginPopupContextWindow("HierarchyContextMenu", ImGuiPopupFlags_NoOpenOverItems | ImGuiPopupFlags_MouseButtonRight)) {
+			if (ImGui::MenuItem("Create Empty")) {
+				auto newObj = std::make_unique<GameObject>();
+				newObj->SetName("GameObject");
+				auto* ptr = newObj.get();
+				if (gameObjects_) {
+					gameObjects_->push_back(std::move(newObj));
+					selectedObject_ = ptr;
+					isDirty_ = true;
+					consoleMessages_.push_back("[Editor] Created: GameObject");
+				}
+			}
+			if (ImGui::BeginMenu("Create Light")) {
+				if (ImGui::MenuItem("Directional Light")) {
+					auto newObj = std::make_unique<GameObject>();
+					newObj->SetName("Directional Light");
+					auto* dl = newObj->AddComponent<DirectionalLightComponent>();
+					dl->UseTransformDirection(true);
+					// Default rotation: angled down (45 deg around X)
+					constexpr float DEG_TO_RAD = 0.0174532925f;
+					newObj->GetTransform().SetLocalRotation(Quaternion::RotationRollPitchYaw(50.0f * DEG_TO_RAD, -30.0f * DEG_TO_RAD, 0.0f));
+					auto* ptr = newObj.get();
+					if (gameObjects_) {
+						gameObjects_->push_back(std::move(newObj));
+						selectedObject_ = ptr;
+						FocusOnNewObject(ptr);
+						isDirty_ = true;
+						consoleMessages_.push_back("[Editor] Created: Directional Light");
+					}
+				}
+				if (ImGui::MenuItem("Point Light")) {
+					auto newObj = std::make_unique<GameObject>();
+					newObj->SetName("Point Light");
+					newObj->AddComponent<PointLightComponent>();
+					newObj->GetTransform().SetLocalPosition(Vector3(0.0f, 3.0f, 0.0f));
+					auto* ptr = newObj.get();
+					if (gameObjects_) {
+						gameObjects_->push_back(std::move(newObj));
+						selectedObject_ = ptr;
+						FocusOnNewObject(ptr);
+						isDirty_ = true;
+						consoleMessages_.push_back("[Editor] Created: Point Light");
+					}
+				}
+				if (ImGui::MenuItem("Spot Light")) {
+					auto newObj = std::make_unique<GameObject>();
+					newObj->SetName("Spot Light");
+					newObj->AddComponent<SpotLightComponent>();
+					newObj->GetTransform().SetLocalPosition(Vector3(0.0f, 3.0f, 0.0f));
+					// Point downward by default
+					constexpr float DEG_TO_RAD = 0.0174532925f;
+					newObj->GetTransform().SetLocalRotation(Quaternion::RotationRollPitchYaw(90.0f * DEG_TO_RAD, 0.0f, 0.0f));
+					auto* ptr = newObj.get();
+					if (gameObjects_) {
+						gameObjects_->push_back(std::move(newObj));
+						selectedObject_ = ptr;
+						FocusOnNewObject(ptr);
+						isDirty_ = true;
+						consoleMessages_.push_back("[Editor] Created: Spot Light");
+					}
+				}
+				ImGui::EndMenu();
+			}
+			ImGui::EndPopup();
+		}
+
 		// ウィンドウ全体をドロップターゲットに（背景エリア）
 		ImVec2 windowPos = ImGui::GetWindowPos();
 		ImVec2 windowSize = ImGui::GetWindowSize();
@@ -3372,6 +3911,133 @@ void EditorUI::PreLoadPendingThumbnails() {
 			ImGui::TreePop();
 		}
 
+		// ライト作成セクション
+		if (ImGui::TreeNode(U8("ライト"))) {
+			struct LightPreset {
+				const char* icon;
+				const char* name;
+				int type; // 0=Directional, 1=Point, 2=Spot
+			};
+			LightPreset presets[] = {
+				{"☀", "Directional Light", 0},
+				{"💡", "Point Light", 1},
+				{"🔦", "Spot Light", 2},
+			};
+
+			for (int li = 0; li < 3; ++li) {
+				auto& preset = presets[li];
+				ImGui::PushID(li + 50000);
+				ImGui::Text("%s", preset.icon);
+				ImGui::SameLine();
+				if (ImGui::Selectable(preset.name, false, ImGuiSelectableFlags_AllowDoubleClick)) {
+					if (ImGui::IsMouseDoubleClicked(0) && gameObjects_) {
+						auto newObj = std::make_unique<GameObject>();
+						newObj->SetName(preset.name);
+						constexpr float DEG_TO_RAD = 0.0174532925f;
+						if (preset.type == 0) {
+							auto* dl = newObj->AddComponent<DirectionalLightComponent>();
+							dl->UseTransformDirection(true);
+							newObj->GetTransform().SetLocalRotation(
+								Quaternion::RotationRollPitchYaw(50.0f * DEG_TO_RAD, -30.0f * DEG_TO_RAD, 0.0f));
+						} else if (preset.type == 1) {
+							newObj->AddComponent<PointLightComponent>();
+							newObj->GetTransform().SetLocalPosition(Vector3(0.0f, 3.0f, 0.0f));
+						} else {
+							newObj->AddComponent<SpotLightComponent>();
+							newObj->GetTransform().SetLocalPosition(Vector3(0.0f, 3.0f, 0.0f));
+							newObj->GetTransform().SetLocalRotation(
+								Quaternion::RotationRollPitchYaw(90.0f * DEG_TO_RAD, 0.0f, 0.0f));
+						}
+						selectedObject_ = newObj.get();
+						gameObjects_->push_back(std::move(newObj));
+						FocusOnNewObject(selectedObject_);
+						isDirty_ = true;
+						consoleMessages_.push_back(std::string("[Editor] Created: ") + preset.name);
+					}
+				}
+				if (ImGui::IsItemHovered()) {
+					ImGui::SetTooltip(U8("ダブルクリックでシーンに配置"));
+				}
+				ImGui::PopID();
+			}
+
+			ImGui::TreePop();
+		}
+
+		// プロシージャルジェネレーター
+		if (ImGui::TreeNode(U8("ジェネレーター"))) {
+			ImGui::PushID(60000);
+
+			// 草原
+			{
+				bool isSelected = (selectedGenerator_ == GeneratorType::Grass);
+				if (isSelected) {
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 1.0f, 0.4f, 1.0f));
+				}
+				ImGui::Text("🌿");
+				ImGui::SameLine();
+				if (ImGui::Selectable(U8("草原"), isSelected)) {
+					if (isSelected) {
+						// 選択解除
+						selectedGenerator_ = GeneratorType::None;
+						grassPaintActive_ = false;
+						consoleMessages_.push_back(U8("[ジェネレーター] 草原の選択を解除"));
+					} else {
+						// 選択 → ペイントON + テクスチャモード
+						selectedGenerator_ = GeneratorType::Grass;
+						selectedObject_ = nullptr;
+						grassPaintActive_ = true;
+						inspectorTabIndex_ = 2;
+						if (auto* gr = renderer_ ? renderer_->GetGrassRenderer() : nullptr) {
+							gr->SetUseGodotShading(false);
+						}
+						consoleMessages_.push_back(U8("[ジェネレーター] 草原ペイント ON - テクスチャベース"));
+					}
+				}
+				if (isSelected) {
+					ImGui::PopStyleColor();
+				}
+				if (ImGui::IsItemHovered()) {
+					ImGui::SetTooltip(U8("テクスチャベースの草原ペイント\nScene Viewでマウスドラッグで配置"));
+				}
+			}
+
+			// GodotGrass
+			{
+				bool isSelected = (selectedGenerator_ == GeneratorType::GodotGrass);
+				if (isSelected) {
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 1.0f, 0.6f, 1.0f));
+				}
+				ImGui::Text("🌾");
+				ImGui::SameLine();
+				if (ImGui::Selectable("GodotGrass", isSelected)) {
+					if (isSelected) {
+						selectedGenerator_ = GeneratorType::None;
+						grassPaintActive_ = false;
+						consoleMessages_.push_back(U8("[ジェネレーター] GodotGrass の選択を解除"));
+					} else {
+						selectedGenerator_ = GeneratorType::GodotGrass;
+						selectedObject_ = nullptr;
+						grassPaintActive_ = true;
+						inspectorTabIndex_ = 2;
+						if (auto* gr = renderer_ ? renderer_->GetGrassRenderer() : nullptr) {
+							gr->SetUseGodotShading(true);
+						}
+						consoleMessages_.push_back(U8("[ジェネレーター] GodotGrass ペイント ON - Shaderベース草原"));
+					}
+				}
+				if (isSelected) {
+					ImGui::PopStyleColor();
+				}
+				if (ImGui::IsItemHovered()) {
+					ImGui::SetTooltip(U8("Godot風シェーダー草原\nグラデーション+ノイズ風+踏み倒し+風影"));
+				}
+			}
+
+			ImGui::PopID();
+			ImGui::TreePop();
+		}
+
 		// スクリプトフォルダをスキャン
 		if (ImGui::TreeNode(U8("スクリプト"))) {
 			if (ImGui::SmallButton(U8("更新##Scripts"))) {
@@ -3483,7 +4149,7 @@ void EditorUI::PreLoadPendingThumbnails() {
 				Stop();
 			} else {
 				// 編集モードでは選択をクリア
-				selectedObject_ = nullptr;
+				ClearSelection();
 			}
 		}
 
@@ -3545,14 +4211,76 @@ void EditorUI::PreLoadPendingThumbnails() {
 			SaveScene("assets/scenes/default_scene.json");
 		}
 
+		// Ctrl+C: 選択オブジェクトをクリップボードにコピー
+		if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_C, false) && editorMode_ == EditorMode::Edit) {
+			clipboard_.clear();
+			if (!selectedObjects_.empty()) {
+				for (auto* obj : selectedObjects_) {
+					if (obj) clipboard_.push_back(SceneSerializer::SerializeSingleObject(*obj));
+				}
+			} else if (selectedObject_) {
+				clipboard_.push_back(SceneSerializer::SerializeSingleObject(*selectedObject_));
+			}
+			if (!clipboard_.empty()) {
+				consoleMessages_.push_back("[Editor] Copied " + std::to_string(clipboard_.size()) + " object(s)");
+			}
+		}
+
+		// Ctrl+V: クリップボードからペースト
+		if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_V, false) && editorMode_ == EditorMode::Edit) {
+			if (!clipboard_.empty() && gameObjects_) {
+				auto batch = std::make_unique<BatchCommand>();
+				selectedObjects_.clear();
+				for (const auto& json : clipboard_) {
+					auto newObj = SceneSerializer::DeserializeSingleObject(json);
+					if (newObj) {
+						newObj->SetName(newObj->GetName() + " (Copy)");
+						auto& t = newObj->GetTransform();
+						auto pos = t.GetLocalPosition();
+						t.SetLocalPosition(pos + Vector3(1.0f, 0.0f, 1.0f));
+						GameObject* rawPtr = newObj.get();
+						gameObjects_->push_back(std::move(newObj));
+						if (scene_) scene_->StartGameObject(rawPtr);
+						selectedObjects_.insert(rawPtr);
+						selectedObject_ = rawPtr;
+
+						auto cmd = std::make_unique<CreateObjectCommand>(gameObjects_, rawPtr, &selectedObject_, &expandedObjects_);
+						batch->commands.push_back(std::move(cmd));
+					}
+				}
+				if (!batch->commands.empty()) {
+					consoleMessages_.push_back("[Editor] Pasted " + std::to_string(batch->commands.size()) + " object(s)");
+					// Already executed (objects added above), just push to undo history
+					PushExecutedCommand(std::move(batch));
+				}
+			}
+		}
+
 		// DEL: 選択オブジェクト削除（どのウィンドウにフォーカスがあっても動作）
-		if (selectedObject_ && !renamingObject_ && editorMode_ == EditorMode::Edit
+		if (!renamingObject_ && editorMode_ == EditorMode::Edit
 			&& ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
-			if (!selectedObject_->IsDeletable()) {
-				consoleMessages_.push_back("[Editor] Cannot delete: " + selectedObject_->GetName() + " (protected)");
-			} else if (gameObjects_) {
-				consoleMessages_.push_back("[Editor] Deleted: " + selectedObject_->GetName());
-			ExecuteCommand(std::make_unique<DeleteObjectCommand>(gameObjects_, selectedObject_, &selectedObject_, &expandedObjects_));
+			// マルチセレクション対応
+			if (selectedObjects_.size() > 1 && gameObjects_) {
+				auto batch = std::make_unique<BatchCommand>();
+				for (auto* obj : selectedObjects_) {
+					if (obj && obj->IsDeletable()) {
+						consoleMessages_.push_back("[Editor] Deleted: " + obj->GetName());
+						auto cmd = std::make_unique<DeleteObjectCommand>(gameObjects_, obj, &selectedObject_, &expandedObjects_);
+						batch->commands.push_back(std::move(cmd));
+					}
+				}
+				if (!batch->commands.empty()) {
+					ExecuteCommand(std::move(batch));
+				}
+				selectedObjects_.clear();
+			} else if (selectedObject_) {
+				if (!selectedObject_->IsDeletable()) {
+					consoleMessages_.push_back("[Editor] Cannot delete: " + selectedObject_->GetName() + " (protected)");
+				} else if (gameObjects_) {
+					consoleMessages_.push_back("[Editor] Deleted: " + selectedObject_->GetName());
+					ExecuteCommand(std::make_unique<DeleteObjectCommand>(gameObjects_, selectedObject_, &selectedObject_, &expandedObjects_));
+					selectedObjects_.clear();
+				}
 			}
 		}
 	}
@@ -3643,12 +4371,13 @@ void EditorUI::PreLoadPendingThumbnails() {
 		// 保存前にPostProcessManagerの現在値をCameraComponentに同期
 		SyncPostProcessParamsToCamera();
 
-		if (SceneSerializer::SaveScene(*gameObjects_, filepath)) {
+		GrassSystem* grassSystem = renderer_ ? renderer_->GetGrassSystem() : nullptr;
+		if (SceneSerializer::SaveScene(*gameObjects_, filepath, grassSystem)) {
 			consoleMessages_.push_back(U8("[エディタ] シーンを保存しました: ") + filepath);
 			// EditorCameraの設定も保存
 			editorCamera_.SaveSettings();
 			consoleMessages_.push_back(U8("[エディタ] カメラ設定を保存しました"));
-			
+
 			// NavMesh情報を表示
 			auto& navMesh = Navigation::NavMeshManager::Get();
 			if (navMesh.IsBuilt()) {
@@ -3656,7 +4385,13 @@ void EditorUI::PreLoadPendingThumbnails() {
 			} else {
 				consoleMessages_.push_back(U8("[エディタ] NavMesh設定を保存しました（ベイクデータなし）"));
 			}
-			
+
+			// 草原情報を表示
+			if (grassSystem && grassSystem->GetInstanceCount() > 0) {
+				consoleMessages_.push_back(U8("[エディタ] 草原データを保存しました (") +
+					std::to_string(grassSystem->GetInstanceCount()) + U8("本)"));
+			}
+
 			isDirty_ = false;
 		}
 		else {
@@ -3671,7 +4406,8 @@ void EditorUI::PreLoadPendingThumbnails() {
 			return;
 		}
 
-		if (SceneSerializer::LoadScene(filepath, *gameObjects_)) {
+		GrassSystem* grassSystem = renderer_ ? renderer_->GetGrassSystem() : nullptr;
+		if (SceneSerializer::LoadScene(filepath, *gameObjects_, grassSystem)) {
 			consoleMessages_.push_back(U8("[エディタ] シーンを読み込みました: ") + filepath);
 			// ロード後、最初のオブジェクトを選択
 			if (!gameObjects_->empty()) {
@@ -3679,12 +4415,30 @@ void EditorUI::PreLoadPendingThumbnails() {
 			}
 			// CameraComponentのPostProcessパラメータをPostProcessManagerに同期
 			SyncPostProcessParamsFromCamera();
-			
+
 			// NavMesh読み込み状態を表示
 			auto& navMesh = Navigation::NavMeshManager::Get();
 			if (navMesh.IsBuilt()) {
 				consoleMessages_.push_back(U8("[エディタ] NavMeshを読み込みました"));
 				showRecastNavMesh_ = true;  // 自動的にNavMesh表示をON
+			}
+
+			// 草原読み込み状態を表示
+			if (grassSystem && grassSystem->GetInstanceCount() > 0) {
+				consoleMessages_.push_back(U8("[エディタ] 草原データを読み込みました (") +
+					std::to_string(grassSystem->GetInstanceCount()) + U8("本)"));
+			}
+			// 草テクスチャパスが保存されていたら復元
+			if (grassSystem && !grassSystem->GetGrassTexturePath().empty()) {
+				auto* grassRenderer = renderer_->GetGrassRenderer();
+				if (grassRenderer && graphics_) {
+					graphics_->BeginResourceUpload();
+					if (grassRenderer->LoadTextureFromFile(grassSystem->GetGrassTexturePath())) {
+						consoleMessages_.push_back(U8("[エディタ] 草テクスチャを復元: ") +
+							grassSystem->GetGrassTexturePath());
+					}
+					graphics_->EndResourceUpload();
+				}
 			}
 		}
 		else {
@@ -3839,6 +4593,45 @@ void EditorUI::PreLoadPendingThumbnails() {
 			}
 			return result;
 		});
+	}
+
+	void EditorUI::QueueAllThumbnails() {
+		// ThumbnailRendererを初期化
+		if (!thumbnailRenderer_.IsInitialized() && graphics_ && resourceManager_) {
+			thumbnailRenderer_.Initialize(graphics_, resourceManager_);
+		}
+		if (!thumbnailRenderer_.IsInitialized()) return;
+
+		// モデルパスを同期スキャン
+		constexpr std::string_view exts[] = { ".gltf", ".glb", ".fbx", ".obj" };
+		std::filesystem::path dirPath("assets/model");
+		if (!std::filesystem::exists(dirPath) || !std::filesystem::is_directory(dirPath))
+			return;
+
+		cachedModelPaths_.clear();
+		for (const auto& entry : std::filesystem::recursive_directory_iterator(
+				dirPath, std::filesystem::directory_options::skip_permission_denied)) {
+			if (!entry.is_regular_file()) continue;
+
+			std::string ext = entry.path().extension().string();
+			std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+			for (auto validExt : exts) {
+				if (ext == validExt) {
+					std::string relativePath = entry.path().string();
+					std::replace(relativePath.begin(), relativePath.end(), '\\', '/');
+					cachedModelPaths_.push_back(relativePath);
+					break;
+				}
+			}
+		}
+
+		// .objを除外してサムネイルをキューに積む
+		for (const auto& path : cachedModelPaths_) {
+			std::filesystem::path p(path);
+			if (p.extension() == ".obj") continue;
+			thumbnailRenderer_.Request(path);
+		}
 	}
 
 	void EditorUI::RefreshAudioPaths() {
@@ -4238,6 +5031,89 @@ void EditorUI::PreLoadPendingThumbnails() {
 			}
 		}
 
+		// ライトギズモの描画
+		for (const auto& obj : *gameObjects_) {
+			bool isSelected = (selectedObject_ == obj.get());
+
+			// Directional Light: 球アイコン + 方向矢印
+			if (auto* dl = obj->GetComponent<DirectionalLightComponent>()) {
+				Vector3 pos = obj->GetTransform().GetLocalPosition();
+				Vector3 dir = dl->GetDirection();
+				Vector3 col = dl->GetColor();
+				Vector4 gizmoColor = isSelected
+					? Vector4(1.0f, 1.0f, 0.0f, 1.0f)
+					: Vector4(col.GetX(), col.GetY(), col.GetZ(), 1.0f);
+
+				debugRenderer->AddSphere(pos, 0.3f, gizmoColor, 8);
+				// Direction arrow (3 lines from center)
+				float arrowLen = 2.0f;
+				debugRenderer->AddLine(pos, pos + dir * arrowLen, gizmoColor);
+				// Arrow head lines
+				Vector3 arrowEnd = pos + dir * arrowLen;
+				Vector3 perpA = dir.Cross(Vector3(0, 1, 0));
+				if (perpA.Length() < 0.001f) perpA = dir.Cross(Vector3(1, 0, 0));
+				perpA = perpA.Normalize() * 0.3f;
+				Vector3 perpB = dir.Cross(perpA).Normalize() * 0.3f;
+				debugRenderer->AddLine(arrowEnd, arrowEnd - dir * 0.5f + perpA, gizmoColor);
+				debugRenderer->AddLine(arrowEnd, arrowEnd - dir * 0.5f - perpA, gizmoColor);
+				debugRenderer->AddLine(arrowEnd, arrowEnd - dir * 0.5f + perpB, gizmoColor);
+				debugRenderer->AddLine(arrowEnd, arrowEnd - dir * 0.5f - perpB, gizmoColor);
+			}
+
+			// Point Light: 球 + range sphere
+			if (auto* pl = obj->GetComponent<PointLightComponent>()) {
+				Vector3 pos = obj->GetTransform().GetLocalPosition();
+				Vector3 col = pl->GetColor();
+				Vector4 gizmoColor = isSelected
+					? Vector4(1.0f, 1.0f, 0.0f, 1.0f)
+					: Vector4(col.GetX(), col.GetY(), col.GetZ(), 1.0f);
+
+				debugRenderer->AddSphere(pos, 0.2f, gizmoColor, 8);
+				// Range sphere (wireframe)
+				Vector4 rangeColor(gizmoColor.GetX(), gizmoColor.GetY(), gizmoColor.GetZ(), 0.4f);
+				debugRenderer->AddSphere(pos, pl->GetRange(), rangeColor, 16);
+			}
+
+			// Spot Light: 球 + cone lines
+			if (auto* sl = obj->GetComponent<SpotLightComponent>()) {
+				Vector3 pos = obj->GetTransform().GetLocalPosition();
+				Vector3 dir = -obj->GetTransform().GetForward();  // Same as BuildGPULightData
+				Vector3 col = sl->GetColor();
+				Vector4 gizmoColor = isSelected
+					? Vector4(1.0f, 1.0f, 0.0f, 1.0f)
+					: Vector4(col.GetX(), col.GetY(), col.GetZ(), 1.0f);
+
+				debugRenderer->AddSphere(pos, 0.2f, gizmoColor, 8);
+
+				// Cone visualization (8 lines)
+				float range = sl->GetRange();
+				float halfAngle = sl->GetSpotAngle() * 0.0174532925f;  // deg to rad
+				float coneRadius = range * std::tan(halfAngle);
+
+				Vector3 perpX = dir.Cross(Vector3(0, 1, 0));
+				if (perpX.Length() < 0.001f) perpX = dir.Cross(Vector3(1, 0, 0));
+				perpX = perpX.Normalize();
+				Vector3 perpY = dir.Cross(perpX).Normalize();
+
+				Vector3 tipEnd = pos + dir * range;
+				constexpr int coneLines = 8;
+				constexpr float pi2 = 6.28318530718f;
+				for (int i = 0; i < coneLines; ++i) {
+					float angle = (static_cast<float>(i) / coneLines) * pi2;
+					Vector3 rimPoint = tipEnd + perpX * (std::cos(angle) * coneRadius) + perpY * (std::sin(angle) * coneRadius);
+					debugRenderer->AddLine(pos, rimPoint, gizmoColor);
+				}
+				// Draw rim circle
+				for (int i = 0; i < coneLines; ++i) {
+					float angle1 = (static_cast<float>(i) / coneLines) * pi2;
+					float angle2 = (static_cast<float>(i + 1) / coneLines) * pi2;
+					Vector3 p1 = tipEnd + perpX * (std::cos(angle1) * coneRadius) + perpY * (std::sin(angle1) * coneRadius);
+					Vector3 p2 = tipEnd + perpX * (std::cos(angle2) * coneRadius) + perpY * (std::sin(angle2) * coneRadius);
+					debugRenderer->AddLine(p1, p2, gizmoColor);
+				}
+			}
+		}
+
 		// Collision AABBの描画
 		for (const auto& obj : *gameObjects_) {
 			auto* collision = obj->GetComponent<CollisionComponent>();
@@ -4502,7 +5378,8 @@ void EditorUI::PreLoadPendingThumbnails() {
 
 				GameObject* picked = PickObjectAtScreenPos(mousePos.x, mousePos.y);
 				if (picked) {
-					selectedObject_ = picked;
+					bool fHeld = ImGui::IsKeyDown(ImGuiKey_F);
+					SelectObject(picked, fHeld);
 					// オイラー角キャッシュをクリア（新しいオブジェクト選択時）
 					cachedEulerAngles_.clear();
 				}
@@ -5512,6 +6389,319 @@ void EditorUI::PreLoadPendingThumbnails() {
 			navMeshBaking_.store(false);
 			return result;
 		});
+	}
+
+	// ============================================================
+	// 草ペイントツール
+	// ============================================================
+
+	void EditorUI::RenderGrassPaintTab() {
+		if (!renderer_) return;
+		auto* grassSystem = renderer_->GetGrassSystem();
+		auto* grassRenderer = renderer_->GetGrassRenderer();
+		if (!grassSystem || !grassRenderer) return;
+
+		ImGui::Spacing();
+
+		// === テクスチャ選択 ===
+		ImGui::Text(U8("草テクスチャ"));
+		{
+			const auto& currentPath = grassRenderer->GetTexturePath();
+			if (currentPath.empty()) {
+				ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), U8("(未設定 - 白テクスチャ)"));
+			} else {
+				// ファイル名のみ表示
+				namespace fs = std::filesystem;
+				std::string filename = fs::path(currentPath).filename().string();
+				ImGui::TextWrapped("%s", filename.c_str());
+			}
+
+			if (ImGui::Button(U8("テクスチャを選択..."), ImVec2(-1, 0))) {
+				grassTextureBrowseOpen_ = true;
+				grassTextureScanned_ = false;
+			}
+		}
+
+		// テクスチャ選択ポップアップ
+		if (grassTextureBrowseOpen_) {
+			ImGui::OpenPopup(U8("草テクスチャ選択"));
+			grassTextureBrowseOpen_ = false;
+		}
+
+		if (ImGui::BeginPopupModal(U8("草テクスチャ選択"), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+			// 初回スキャン
+			if (!grassTextureScanned_) {
+				grassTextureCandidates_.clear();
+				namespace fs = std::filesystem;
+				if (fs::exists("assets")) {
+					for (auto& entry : fs::recursive_directory_iterator("assets")) {
+						if (!entry.is_regular_file()) continue;
+						auto ext = entry.path().extension().string();
+						// 小文字に変換
+						for (auto& c : ext) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+						if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".tga" || ext == ".bmp") {
+							grassTextureCandidates_.push_back(entry.path().string());
+						}
+					}
+				}
+				// パス区切りを統一
+				for (auto& p : grassTextureCandidates_) {
+					std::replace(p.begin(), p.end(), '\\', '/');
+				}
+				grassTextureScanned_ = true;
+			}
+
+			ImGui::Text(U8("assets/ 内の画像ファイル (%d 件)"), static_cast<int>(grassTextureCandidates_.size()));
+			ImGui::Separator();
+
+			ImGui::BeginChild("TextureList", ImVec2(450, 300), true);
+			for (size_t i = 0; i < grassTextureCandidates_.size(); ++i) {
+				namespace fs = std::filesystem;
+				std::string display = fs::path(grassTextureCandidates_[i]).filename().string();
+				std::string relDir = fs::path(grassTextureCandidates_[i]).parent_path().string();
+
+				bool selected = (grassTextureCandidates_[i] == grassRenderer->GetTexturePath());
+				if (ImGui::Selectable((display + "##" + std::to_string(i)).c_str(), selected, ImGuiSelectableFlags_AllowDoubleClick)) {
+					// テクスチャ読み込み
+					if (graphics_) {
+						graphics_->BeginResourceUpload();
+						if (grassRenderer->LoadTextureFromFile(grassTextureCandidates_[i])) {
+							grassSystem->SetGrassTexturePath(grassTextureCandidates_[i]);
+							consoleMessages_.push_back(
+								U8("[草原] テクスチャ変更: ") + display);
+						}
+						graphics_->EndResourceUpload();
+					}
+					ImGui::CloseCurrentPopup();
+				}
+				if (ImGui::IsItemHovered()) {
+					ImGui::SetTooltip("%s", grassTextureCandidates_[i].c_str());
+				}
+			}
+			ImGui::EndChild();
+
+			if (ImGui::Button(U8("キャンセル"), ImVec2(120, 0))) {
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		// === モード切り替え ===
+		ImGui::Text(U8("ペイントモード"));
+		ImGui::SameLine();
+		bool isBrush = (grassPaintMode_ == GrassPaintMode::Brush);
+		bool isStamp = (grassPaintMode_ == GrassPaintMode::Stamp);
+		bool isErase = (grassPaintMode_ == GrassPaintMode::Erase);
+
+		if (ImGui::RadioButton(U8("ブラシ"), isBrush)) grassPaintMode_ = GrassPaintMode::Brush;
+		ImGui::SameLine();
+		if (ImGui::RadioButton(U8("スタンプ"), isStamp)) grassPaintMode_ = GrassPaintMode::Stamp;
+		ImGui::SameLine();
+		if (ImGui::RadioButton(U8("消去"), isErase)) grassPaintMode_ = GrassPaintMode::Erase;
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		// ペイントON/OFF
+		if (grassPaintActive_) {
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.7f, 0.2f, 1.0f));
+			if (ImGui::Button(U8("ペイント ON (Scene Viewでクリック)"), ImVec2(-1, 30))) {
+				grassPaintActive_ = false;
+			}
+			ImGui::PopStyleColor();
+		} else {
+			if (ImGui::Button(U8("ペイント OFF (クリックで有効化)"), ImVec2(-1, 30))) {
+				grassPaintActive_ = true;
+			}
+		}
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		// パラメータ
+		ImGui::Text(U8("ブラシ設定"));
+		ImGui::SliderFloat(U8("半径"), &grassBrushRadius_, 0.5f, 20.0f, "%.1f m");
+		ImGui::SliderFloat(U8("密度"), &grassDensity_, 1.0f, 50.0f, "%.0f /m2");
+
+		ImGui::Spacing();
+		ImGui::Text(U8("草パラメータ"));
+		ImGui::SliderFloat(U8("最小スケール"), &grassMinScale_, 0.1f, 2.0f, "%.2f");
+		ImGui::SliderFloat(U8("最大スケール"), &grassMaxScale_, 0.1f, 3.0f, "%.2f");
+		ImGui::SliderFloat(U8("色変化"), &grassColorVariation_, 0.0f, 1.0f, "%.2f");
+
+		ImGui::Spacing();
+		ImGui::Text(U8("草サイズ"));
+		float bw = grassRenderer->GetBaseWidth();
+		float bh = grassRenderer->GetBaseHeight();
+		if (ImGui::SliderFloat(U8("幅"), &bw, 0.1f, 5.0f, "%.2f")) {
+			grassRenderer->SetBaseWidth(bw);
+		}
+		if (ImGui::SliderFloat(U8("高さ"), &bh, 0.1f, 5.0f, "%.2f")) {
+			grassRenderer->SetBaseHeight(bh);
+		}
+
+		ImGui::Spacing();
+		ImGui::Text(U8("風"));
+		ImGui::SliderFloat(U8("風の強さ"), &grassWindStrength_, 0.0f, 1.0f, "%.2f");
+		grassRenderer->SetWindStrength(grassWindStrength_);
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		// 統計
+		ImGui::Text(U8("草の本数: %d"), grassSystem->GetInstanceCount());
+
+		if (ImGui::Button(U8("全てクリア"), ImVec2(-1, 0))) {
+			grassSystem->Clear();
+		}
+
+		ImGui::Spacing();
+
+		// テスト配置ボタン
+		if (ImGui::Button(U8("テスト: 原点に100本配置"), ImVec2(-1, 0))) {
+			grassSystem->AddInstancesInRadius(0.0f, 0.0f, 0.0f, 5.0f,
+				grassDensity_, grassMinScale_, grassMaxScale_, grassColorVariation_);
+			grassSystem->SetDirty();
+		}
+	}
+
+	Vector3 EditorUI::ScreenToGroundPosition(float screenX, float screenY) {
+		// Scene Viewのカメラからレイを飛ばしてY=0平面と交差
+		auto& cam = sceneViewCamera_;
+		auto viewMatrix = cam.GetViewMatrix();
+		auto projMatrix = cam.GetProjectionMatrix();
+
+		// NDC座標に変換
+		float ndcX = (2.0f * (screenX - sceneViewPosX_) / sceneViewSizeX_) - 1.0f;
+		float ndcY = 1.0f - (2.0f * (screenY - sceneViewPosY_) / sceneViewSizeY_);
+
+		// 逆投影行列でワールド空間のレイを構築
+		auto invProj = projMatrix.Inverse();
+		auto invView = viewMatrix.Inverse();
+
+		// Near plane上の点
+		Vector3 nearNDC(ndcX, ndcY, 0.0f);
+		Vector3 farNDC(ndcX, ndcY, 1.0f);
+
+		// NDC → View space
+		auto unprojectPoint = [&](const Vector3& ndc) -> Vector3 {
+			float x = ndc.GetX();
+			float y = ndc.GetY();
+			float z = ndc.GetZ();
+
+			// invProj を使って view space に変換
+			// 4x4行列の各要素にアクセスする簡易計算
+			// w = invProj[3][2] * z + invProj[3][3]
+			float viewArr[16];
+			invProj.ToFloatArray(viewArr);
+
+			float vx = viewArr[0] * x + viewArr[4] * y + viewArr[8] * z + viewArr[12];
+			float vy = viewArr[1] * x + viewArr[5] * y + viewArr[9] * z + viewArr[13];
+			float vz = viewArr[2] * x + viewArr[6] * y + viewArr[10] * z + viewArr[14];
+			float vw = viewArr[3] * x + viewArr[7] * y + viewArr[11] * z + viewArr[15];
+
+			if (std::abs(vw) > 0.0001f) {
+				vx /= vw; vy /= vw; vz /= vw;
+			}
+
+			// View space → World space
+			float invViewArr[16];
+			invView.ToFloatArray(invViewArr);
+
+			float wx = invViewArr[0] * vx + invViewArr[4] * vy + invViewArr[8] * vz + invViewArr[12];
+			float wy = invViewArr[1] * vx + invViewArr[5] * vy + invViewArr[9] * vz + invViewArr[13];
+			float wz = invViewArr[2] * vx + invViewArr[6] * vy + invViewArr[10] * vz + invViewArr[14];
+
+			return Vector3(wx, wy, wz);
+		};
+
+		Vector3 nearWorld = unprojectPoint(nearNDC);
+		Vector3 farWorld = unprojectPoint(farNDC);
+
+		// レイ方向
+		Vector3 rayDir = farWorld - nearWorld;
+		float len = rayDir.Length();
+		if (len > 0.0001f) rayDir = rayDir * (1.0f / len);
+
+		Vector3 rayOrigin = nearWorld;
+
+		// Y=0平面との交差
+		float denom = rayDir.GetY();
+		if (std::abs(denom) < 0.0001f) {
+			return Vector3(0, 0, 0); // 平行
+		}
+		float t = -rayOrigin.GetY() / denom;
+		if (t < 0) {
+			return Vector3(0, 0, 0); // カメラの後ろ
+		}
+
+		return rayOrigin + rayDir * t;
+	}
+
+	void EditorUI::HandleGrassPainting() {
+		if (!grassPaintActive_ || !renderer_) return;
+		if (editorMode_ != EditorMode::Edit) return;
+
+		auto* grassSystem = renderer_->GetGrassSystem();
+		if (!grassSystem) return;
+
+		auto& io = ImGui::GetIO();
+
+		// Scene View内でマウスが押されている場合
+		float mouseX = io.MousePos.x;
+		float mouseY = io.MousePos.y;
+
+		// Scene Viewの範囲内かチェック
+		if (mouseX < sceneViewPosX_ || mouseX > sceneViewPosX_ + sceneViewSizeX_ ||
+			mouseY < sceneViewPosY_ || mouseY > sceneViewPosY_ + sceneViewSizeY_) {
+			return;
+		}
+
+		bool isLeftDown = ImGui::IsMouseDown(ImGuiMouseButton_Left);
+		bool isLeftClicked = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
+
+		if (!isLeftDown && !isLeftClicked) return;
+
+		Vector3 groundPos = ScreenToGroundPosition(mouseX, mouseY);
+
+		if (grassPaintMode_ == GrassPaintMode::Erase) {
+			if (isLeftDown) {
+				grassSystem->RemoveInstancesInRadius(
+					groundPos.GetX(), groundPos.GetY(), groundPos.GetZ(),
+					grassBrushRadius_);
+			}
+		} else if (grassPaintMode_ == GrassPaintMode::Stamp) {
+			if (isLeftClicked) {
+				grassSystem->AddInstancesInRadius(
+					groundPos.GetX(), groundPos.GetY(), groundPos.GetZ(),
+					grassBrushRadius_, grassDensity_,
+					grassMinScale_, grassMaxScale_, grassColorVariation_);
+				grassSystem->SetDirty();
+			}
+		} else { // Brush
+			if (isLeftDown) {
+				grassPaintCooldown_ -= io.DeltaTime;
+				if (grassPaintCooldown_ <= 0.0f) {
+					// ブラシ密度をフレーム間隔に合わせて調整
+					float effectiveDensity = grassDensity_ * 0.3f; // ブラシは軽めに
+					grassSystem->AddInstancesInRadius(
+						groundPos.GetX(), groundPos.GetY(), groundPos.GetZ(),
+						grassBrushRadius_, effectiveDensity,
+						grassMinScale_, grassMaxScale_, grassColorVariation_);
+					grassSystem->SetDirty();
+					grassPaintCooldown_ = 0.05f; // 50msインターバル
+				}
+			} else {
+				grassPaintCooldown_ = 0.0f;
+			}
+		}
 	}
 
 } // namespace UnoEngine

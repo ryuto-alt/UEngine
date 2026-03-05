@@ -44,6 +44,22 @@ DirectionalLightComponent* LightManager::GetDirectionalLight() const {
     return directionalLight_;
 }
 
+void LightManager::SyncFromScene(const std::vector<UniquePtr<GameObject>>& objects) {
+    Clear();
+    for (const auto& obj : objects) {
+        if (!obj) continue;
+        if (auto* dl = obj->GetComponent<DirectionalLightComponent>()) {
+            RegisterLight(dl);
+        }
+        if (auto* pl = obj->GetComponent<PointLightComponent>()) {
+            RegisterLight(pl);
+        }
+        if (auto* sl = obj->GetComponent<SpotLightComponent>()) {
+            RegisterLight(sl);
+        }
+    }
+}
+
 GPULightData LightManager::BuildGPULightData() const {
     GPULightData data;
 
@@ -51,6 +67,9 @@ GPULightData LightManager::BuildGPULightData() const {
         data.direction = directionalLight_->GetDirection();
         data.color     = directionalLight_->GetColor();
         data.intensity = directionalLight_->GetIntensity();
+    } else {
+        // No directional light in scene: zero out so it doesn't illuminate
+        data.intensity = 0.0f;
     }
 
     constexpr int kMaxPoint = 8;

@@ -13,9 +13,11 @@
 #include "../AI/EnemyDetectionComponent.h"
 #include "../PostProcess/PostProcessType.h"
 #include "../Video/VideoPlayerComponent.h"
+#include "../Graphics/DirectionalLightComponent.h"
 #include "../Graphics/PointLightComponent.h"
 #include "../Graphics/SpotLightComponent.h"
 #include "../Physics/RigidbodyComponent.h"
+#include "../Vegetation/GrassSystem.h"
 #include <fstream>
 #include <iostream>
 #include <filesystem>
@@ -24,11 +26,11 @@ using json = nlohmann::json;
 
 namespace UnoEngine {
 
-bool SceneSerializer::SaveScene(const std::vector<std::unique_ptr<GameObject>>& gameObjects, const std::string& filepath) {
+bool SceneSerializer::SaveScene(const std::vector<std::unique_ptr<GameObject>>& gameObjects, const std::string& filepath, GrassSystem* grassSystem) {
     try {
         json sceneJson;
         sceneJson["scene_name"] = "Scene";
-        sceneJson["version"] = "1.1";
+        sceneJson["version"] = "1.2";
 
         json objectsArray = json::array();
         for (const auto& obj : gameObjects) {
@@ -79,6 +81,30 @@ bool SceneSerializer::SaveScene(const std::vector<std::unique_ptr<GameObject>>& 
         
         sceneJson["navmesh"] = navMeshJson;
 
+        // 草原データを保存
+        if (grassSystem) {
+            json grassJson;
+            if (grassSystem->GetInstanceCount() > 0) {
+                const auto& instances = grassSystem->GetInstances();
+                json instancesArray = json::array();
+                for (const auto& inst : instances) {
+                    instancesArray.push_back({
+                        inst.posX, inst.posY, inst.posZ,
+                        inst.rotation, inst.scale, inst.colorVariation
+                    });
+                }
+                grassJson["instances"] = instancesArray;
+                grassJson["count"] = grassSystem->GetInstanceCount();
+            }
+            // テクスチャパスも保存
+            if (!grassSystem->GetGrassTexturePath().empty()) {
+                grassJson["texturePath"] = grassSystem->GetGrassTexturePath();
+            }
+            if (!grassJson.empty()) {
+                sceneJson["grass"] = grassJson;
+            }
+        }
+
         std::ofstream file(filepath);
         if (!file.is_open()) {
             std::cerr << "Failed to open file for writing: " << filepath << std::endl;
@@ -97,7 +123,7 @@ bool SceneSerializer::SaveScene(const std::vector<std::unique_ptr<GameObject>>& 
     }
 }
 
-bool SceneSerializer::LoadScene(const std::string& filepath, std::vector<std::unique_ptr<GameObject>>& outGameObjects) {
+bool SceneSerializer::LoadScene(const std::string& filepath, std::vector<std::unique_ptr<GameObject>>& outGameObjects, GrassSystem* grassSystem) {
     try {
         std::ifstream file(filepath);
         if (!file.is_open()) {
@@ -156,6 +182,29 @@ bool SceneSerializer::LoadScene(const std::string& filepath, std::vector<std::un
                 if (navMesh.LoadNavMesh(navMeshPath)) {
                     std::cout << "NavMesh loaded: " << navMeshPath << std::endl;
                 }
+            }
+        }
+
+        // 草原データを読み込み
+        if (grassSystem && sceneJson.contains("grass")) {
+            const auto& grassJson = sceneJson["grass"];
+            grassSystem->Clear();
+
+            if (grassJson.contains("instances") && grassJson["instances"].is_array()) {
+                for (const auto& inst : grassJson["instances"]) {
+                    if (inst.is_array() && inst.size() >= 6) {
+                        grassSystem->AddInstance(
+                            inst[0].get<float>(), inst[1].get<float>(), inst[2].get<float>(),
+                            inst[3].get<float>(), inst[4].get<float>(), inst[5].get<float>()
+                        );
+                    }
+                }
+                grassSystem->SetDirty();
+                std::cout << "Grass loaded: " << grassSystem->GetInstanceCount() << " instances" << std::endl;
+            }
+            // テクスチャパスを復元
+            if (grassJson.contains("texturePath")) {
+                grassSystem->SetGrassTexturePath(grassJson["texturePath"].get<std::string>());
             }
         }
 
@@ -486,6 +535,17 @@ json SceneSerializer::SerializeComponent(const Component& component) {
         comp["lostWaitTime"] = detection->GetLostWaitTime();
         comp["wanderRadius"] = detection->GetWanderRadius();
         comp["targetName"] = detection->GetTargetName();
+        return comp;
+    }
+
+    // DirectionalLightComponent
+    if (auto* dl = dynamic_cast<const DirectionalLightComponent*>(&component)) {
+        comp["type"] = "DirectionalLightComponent";
+        auto c = dl->GetColor();
+        comp["color"]     = { c.GetX(), c.GetY(), c.GetZ() };
+        comp["intensity"] = dl->GetIntensity();
+        auto d = dl->GetDirection();
+        comp["direction"] = { d.GetX(), d.GetY(), d.GetZ() };
         return comp;
     }
 
@@ -873,6 +933,20 @@ void SceneSerializer::DeserializeComponent(const json& json, GameObject& gameObj
         if (json.contains("targetName")) {
             detection->SetTargetName(json["targetName"].get<std::string>());
         }
+    }
+    else if (type == "DirectionalLightComponent") {
+        auto* dl = gameObject.AddComponent<DirectionalLightComponent>();
+        if (json.contains("color")) {
+            auto& c = json["color"];
+            dl->SetColor(Vector3(c[0].get<float>(), c[1].get<float>(), c[2].get<float>()));
+        }
+        if (json.contains("intensity")) dl->SetIntensity(json["intensity"].get<float>());
+        if (json.contains("direction")) {
+            auto& d = json["direction"];
+            dl->SetDirection(Vector3(d[0].get<float>(), d[1].get<float>(), d[2].get<float>()));
+        }
+        // Default to using transform direction
+        dl->UseTransformDirection(true);
     }
     else if (type == "PointLightComponent") {
         auto* pl = gameObject.AddComponent<PointLightComponent>();

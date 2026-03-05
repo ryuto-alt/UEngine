@@ -9,9 +9,13 @@
 #include "../Engine/Systems/PhysicsSystem.h"
 #include "../Engine/Core/Logger.h"
 #include "../Engine/Video/VideoPlayerComponent.h"
+#include "../Engine/Rendering/LightManager.h"
 #ifdef WITH_EDITOR
 #include "../Engine/Graphics/MeshRenderer.h"
 #include "../Engine/Rendering/SkinnedMeshRenderer.h"
+#include <thread>
+#include <atomic>
+#include <chrono>
 #endif
 
 namespace UnoEngine {
@@ -38,6 +42,102 @@ Material* GameApplication::LoadMaterial(const std::string& name) {
     return ResourceLoader::LoadMaterial(name);
 }
 
+#ifdef WITH_EDITOR
+void GameApplication::OnLoadingPhase() {
+    Scene* scene = GetSceneManager()->GetActiveScene();
+    auto* editorUI = scene ? scene->GetEditorUI() : nullptr;
+    if (!editorUI) return;
+
+    // 全モデルのサムネイルをキューに積む
+    editorUI->QueueAllThumbnails();
+
+    size_t totalThumbnails = editorUI->GetThumbnailTotalCount();
+    if (totalThumbnails == 0) return;
+
+    Logger::Info("[ローディング] サムネイル生成開始: {}個", totalThumbnails);
+
+    // ── Phase 1: バックグラウンドスレッドでモデルデータを一括プリロード ──
+    std::atomic<int> preloadedCount{0};
+    std::atomic<bool> preloadDone{false};
+
+    std::thread preloadThread([&]() {
+        editorUI->PreLoadAllThumbnailsAsync(preloadedCount);
+        preloadDone.store(true, std::memory_order_release);
+    });
+
+    float displayProgress = 0.0f;
+
+    // メインスレッド: スムーズなローディング画面を描画
+    while (!preloadDone.load(std::memory_order_acquire)) {
+        if (!GetWindow()->ProcessMessages()) {
+            preloadThread.join();
+            return;
+        }
+
+        // ターゲット進捗（プリロードは全体の50%）
+        int loaded = preloadedCount.load(std::memory_order_relaxed);
+        float targetProgress = static_cast<float>(loaded) / static_cast<float>(totalThumbnails) * 0.5f;
+
+        // イージング（Exponential ease-out）
+        displayProgress += (targetProgress - displayProgress) * 0.12f;
+        if (std::abs(targetProgress - displayProgress) < 0.001f) {
+            displayProgress = targetProgress;
+        }
+
+        std::string msg = "Loading assets... (" + std::to_string(loaded) + "/" + std::to_string(totalThumbnails) + ")";
+
+        graphics_->BeginFrame();
+        renderer_->BeginFrame();
+        graphics_->SetBackBufferAsRenderTarget();
+        renderer_->RenderLoadingScreen(msg, displayProgress);
+        graphics_->EndFrame();
+        graphics_->Present();
+    }
+
+    preloadThread.join();
+
+    // ── Phase 2: サムネイル描画（モデルはキャッシュ済みなので高速） ──
+    while (editorUI->HasPendingThumbnails()) {
+        if (!GetWindow()->ProcessMessages()) break;
+
+        size_t pending = editorUI->GetThumbnailPendingCount();
+        size_t done = totalThumbnails - pending;
+        float targetProgress = 0.5f + static_cast<float>(done) / static_cast<float>(totalThumbnails) * 0.5f;
+
+        // イージング
+        displayProgress += (targetProgress - displayProgress) * 0.18f;
+        if (std::abs(targetProgress - displayProgress) < 0.001f) {
+            displayProgress = targetProgress;
+        }
+
+        std::string msg = "Generating previews... (" + std::to_string(done) + "/" + std::to_string(totalThumbnails) + ")";
+
+        // PreLoadPendingはスキップ（Phase 1で全モデルキャッシュ済み）
+        graphics_->BeginFrame();
+        renderer_->BeginFrame();
+        editorUI->ProcessPendingThumbnails();
+        graphics_->SetBackBufferAsRenderTarget();
+        renderer_->RenderLoadingScreen(msg, displayProgress);
+        graphics_->EndFrame();
+        graphics_->Present();
+    }
+
+    // イージング完了まで数フレーム描画
+    for (int f = 0; f < 15 && displayProgress < 0.99f; f++) {
+        if (!GetWindow()->ProcessMessages()) break;
+        displayProgress += (1.0f - displayProgress) * 0.25f;
+        graphics_->BeginFrame();
+        renderer_->BeginFrame();
+        graphics_->SetBackBufferAsRenderTarget();
+        renderer_->RenderLoadingScreen("Ready!", displayProgress);
+        graphics_->EndFrame();
+        graphics_->Present();
+    }
+
+    Logger::Info("[ローディング] サムネイル生成完了");
+}
+#endif
+
 void GameApplication::OnRender() {
 #ifdef WITH_EDITOR
     // Phase 1: BeginFrame前にサムネイル用モデルをキャッシュへロード
@@ -54,6 +154,12 @@ void GameApplication::OnRender() {
     renderer_->BeginFrame();
 
     Scene* scene = GetSceneManager()->GetActiveScene();
+
+    // Sync all light components from scene to LightManager every frame
+    if (scene && lightManager_) {
+        lightManager_->SyncFromScene(scene->GetGameObjects());
+    }
+
     if (scene) {
         // ビデオフレームをGPUにアップロード（コマンドリストがオープンな状態で実行）
         auto* cmdList = graphics_->GetCommandList();

@@ -6,6 +6,7 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <assimp/GltfMaterial.h>
 #include <filesystem>
 #include <Windows.h>
 #include <iostream>
@@ -72,6 +73,36 @@ MaterialData ConvertMaterial(const aiMaterial* aiMat, const std::string& baseDir
         material.specular[2] = color.b;
     }
 
+    float opacity = 1.0f;
+    if (aiMat->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS) {
+        material.opacity = opacity;
+    }
+    if (material.opacity < 1.0f) {
+        material.useAlphaClip = true;
+    }
+
+    // glTF alphaMode検出 (MASK or BLEND)
+    aiString alphaMode;
+    if (aiMat->Get(AI_MATKEY_GLTF_ALPHAMODE, alphaMode) == AI_SUCCESS) {
+        std::string mode = alphaMode.C_Str();
+        if (mode == "MASK") {
+            material.useAlphaClip = true;
+            float cutoff = 0.5f;
+            if (aiMat->Get(AI_MATKEY_GLTF_ALPHACUTOFF, cutoff) == AI_SUCCESS) {
+                material.alphaClipThreshold = cutoff;
+            }
+        } else if (mode == "BLEND") {
+            material.useAlphaBlend = true;    // BLENDモード: アルファブレンドで半透明描画
+            material.doubleSided = true;      // BLENDは通常doubleSided
+        }
+    }
+
+    // doubleSided検出
+    int twosided = 0;
+    if (aiMat->Get(AI_MATKEY_TWOSIDED, twosided) == AI_SUCCESS && twosided) {
+        material.doubleSided = true;
+    }
+
     aiString texPath;
     if (aiMat->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == AI_SUCCESS) {
         namespace fs = std::filesystem;
@@ -91,7 +122,14 @@ Mesh ProcessStaticMesh(const aiMesh* aiMesh, const aiScene* scene,
     std::vector<uint32> indices;
 
     vertices.resize(aiMesh->mNumVertices);
-    
+
+    // マテリアルが指定するUVチャンネルを取得（glTFのtexCoord対応）
+    int uvChannel = 0;
+    if (aiMesh->mMaterialIndex < scene->mNumMaterials) {
+        scene->mMaterials[aiMesh->mMaterialIndex]->Get(
+            AI_MATKEY_UVWSRC(aiTextureType_DIFFUSE, 0), uvChannel);
+    }
+
     // 法線用のトランスフォーム（逆転置行列）
     aiMatrix3x3 normalMatrix(transform);
     normalMatrix.Inverse();
@@ -122,12 +160,12 @@ Mesh ProcessStaticMesh(const aiMesh* aiMesh, const aiScene* scene,
             vertex.nz = 0.0f;
         }
 
-        // TEXCOORD_1があればそちらを優先（glTFのbaseColorTextureがtexCoord:1を指定している場合）
-        // なければTEXCOORD_0を使用
-        if (aiMesh->HasTextureCoords(1)) {
-            vertex.u = aiMesh->mTextureCoords[1][i].x;
-            vertex.v = aiMesh->mTextureCoords[1][i].y;
-        } else if (aiMesh->HasTextureCoords(0)) {
+        // マテリアルが指定するUVチャンネルを使用（glTFのtexCoord対応）
+        if (aiMesh->HasTextureCoords(uvChannel)) {
+            vertex.u = aiMesh->mTextureCoords[uvChannel][i].x;
+            vertex.v = aiMesh->mTextureCoords[uvChannel][i].y;
+        } else if (uvChannel != 0 && aiMesh->HasTextureCoords(0)) {
+            // 指定チャンネルがなければTEXCOORD_0にフォールバック
             vertex.u = aiMesh->mTextureCoords[0][i].x;
             vertex.v = aiMesh->mTextureCoords[0][i].y;
         } else {
@@ -187,6 +225,18 @@ void ProcessNode(const aiNode* node, const aiScene* scene,
     
     for (uint32 i = 0; i < node->mNumMeshes; ++i) {
         const aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+
+        // テクスチャのないメッシュをスキップ（glTFのデフォルトマテリアル＝地面プレーン等）
+        if (mesh->mMaterialIndex < scene->mNumMaterials) {
+            aiString texPath;
+            if (scene->mMaterials[mesh->mMaterialIndex]->GetTexture(
+                    aiTextureType_DIFFUSE, 0, &texPath) != AI_SUCCESS) {
+                Logger::Debug("[StaticModelImporter] メッシュ '{}' をスキップ (テクスチャなし)",
+                              mesh->mName.C_Str());
+                continue;
+            }
+        }
+
         outMeshes.push_back(ProcessStaticMesh(mesh, scene, graphics, commandList, baseDirectory, globalTransform));
     }
 

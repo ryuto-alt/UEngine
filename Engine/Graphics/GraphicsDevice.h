@@ -4,6 +4,7 @@
 #include "../Core/NonCopyable.h"
 #include "../Window/Window.h"
 #include "MipmapGenerator.h"
+#include <mutex>
 
 namespace UnoEngine {
 
@@ -49,6 +50,9 @@ public:
     uint32 GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type) const;
     
     MipmapGenerator* GetMipmapGenerator() { return &mipmapGenerator_; }
+
+    // コマンドキューのスレッドセーフなアクセス用mutex
+    std::mutex& GetCommandQueueMutex() { return commandQueueMutex_; }
 
 private:
     void EnableDebugLayer();
@@ -100,6 +104,9 @@ private:
     uint32 currentBackBufferIndex_ = 0;
     
     MipmapGenerator mipmapGenerator_;
+
+    // コマンドキュー同期用mutex（マルチスレッドリソースロード用）
+    std::mutex commandQueueMutex_;
 };
 
 } // namespace UnoEngine

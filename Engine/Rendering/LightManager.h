@@ -3,11 +3,13 @@
 #include "../Graphics/DirectionalLight.h"
 #include "../Graphics/PointLightComponent.h"
 #include "../Graphics/SpotLightComponent.h"
+#include "../Core/Types.h"
 #include <vector>
 
 namespace UnoEngine {
 
 class DirectionalLightComponent;
+class GameObject;
 
 struct GPULightData {
     Vector3 direction{0.0f, -1.0f, 0.0f};
@@ -51,6 +53,9 @@ public:
     void UnregisterLight(SpotLightComponent* light);
 
     void Clear();
+
+    // Sync lights from scene objects (call every frame before render)
+    void SyncFromScene(const std::vector<UniquePtr<GameObject>>& objects);
 
     GPULightData BuildGPULightData() const;
 

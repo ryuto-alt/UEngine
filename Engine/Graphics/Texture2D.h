@@ -28,6 +28,7 @@ public:
     uint32 GetHeight() const { return height_; }
     uint32 GetMipLevels() const { return mipLevels_; }
     uint32 GetSRVIndex() const { return srvIndex_; }
+    bool HasAlphaPixels() const { return hasAlphaPixels_; }
 
 private:
     ComPtr<ID3D12Resource> resource_;
@@ -36,6 +37,7 @@ private:
     uint32 height_ = 0;
     uint32 mipLevels_ = 0;
     uint32 srvIndex_ = 0;
+    bool hasAlphaPixels_ = false;
 };
 
 } // namespace UnoEngine

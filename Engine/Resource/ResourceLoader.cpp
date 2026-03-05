@@ -3,6 +3,7 @@
 #include "../Graphics/GraphicsDevice.h"
 #include "ModelImporter.h"
 #include <stdexcept>
+#include <mutex>
 
 namespace UnoEngine {
 
@@ -105,22 +106,27 @@ std::vector<Mesh*> ResourceLoader::LoadModelImpl(const std::string& path) {
 
     auto* device = graphics_->GetDevice();
     auto* commandQueue = graphics_->GetCommandQueue();
-    auto* commandList = graphics_->GetCommandList();
 
+    // 専用コマンドリスト・アロケータを作成（共有コマンドリストを使わない）
     Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
+    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList;
     device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator));
-    commandList->Reset(allocator.Get(), nullptr);
+    device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, allocator.Get(), nullptr, IID_PPV_ARGS(&cmdList));
 
-    std::vector<Mesh> loadedMeshes = ModelImporter::Load(graphics_, commandList, path);
+    std::vector<Mesh> loadedMeshes = ModelImporter::Load(graphics_, cmdList.Get(), path);
 
-    commandList->Close();
-    ID3D12CommandList* commandLists[] = { commandList };
-    commandQueue->ExecuteCommandLists(1, commandLists);
+    cmdList->Close();
 
+    // コマンドキューへの投入はmutexで保護
     Microsoft::WRL::ComPtr<ID3D12Fence> fence;
     device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
     HANDLE fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-    commandQueue->Signal(fence.Get(), 1);
+    {
+        std::lock_guard<std::mutex> lock(graphics_->GetCommandQueueMutex());
+        ID3D12CommandList* commandLists[] = { cmdList.Get() };
+        commandQueue->ExecuteCommandLists(1, commandLists);
+        commandQueue->Signal(fence.Get(), 1);
+    }
     fence->SetEventOnCompletion(1, fenceEvent);
     WaitForSingleObject(fenceEvent, INFINITE);
     CloseHandle(fenceEvent);

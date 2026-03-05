@@ -53,6 +53,7 @@ void Scene::OnLoad() {
     }
 
 #ifdef WITH_EDITOR
+    GetApplication()->RenderLoadingScreen("Initializing editor...", 0.9f);
     auto* app = static_cast<GameApplication*>(GetApplication());
     editorUI_.Initialize(app->GetGraphicsDevice());
     editorUI_.SetGameObjects(&GetGameObjects());
@@ -98,6 +99,15 @@ void Scene::LoadSceneFromFile(const std::string& filepath) {
 
     bool foundMainCamera = false;
 
+    // ローディング進捗用: モデルを持つオブジェクト数をカウント
+    int totalModels = 0;
+    int loadedModels = 0;
+    for (auto& obj : GetGameObjects()) {
+        if (obj->GetComponent<SkinnedMeshRenderer>() || obj->GetComponent<MeshRenderer>()) {
+            totalModels++;
+        }
+    }
+
     // 各モデルを個別にロード
     for (auto& obj : GetGameObjects()) {
         // CameraComponentを持つオブジェクトを検出
@@ -142,6 +152,16 @@ void Scene::LoadSceneFromFile(const std::string& filepath) {
                 } else {
                     Logger::Warning("[シーン] スキンモデル再ロード失敗: {}", modelPath);
                 }
+
+                // ローディング画面更新
+                loadedModels++;
+#ifdef WITH_EDITOR
+                if (totalModels > 0) {
+                    float progress = static_cast<float>(loadedModels) / static_cast<float>(totalModels);
+                    std::string msg = "Loading models... (" + std::to_string(loadedModels) + "/" + std::to_string(totalModels) + ")";
+                    GetApplication()->RenderLoadingScreen(msg, progress);
+                }
+#endif
             }
         }
 
@@ -167,6 +187,16 @@ void Scene::LoadSceneFromFile(const std::string& filepath) {
                 } else {
                     Logger::Warning("[シーン] 静的モデル再ロード失敗: {}", modelPath);
                 }
+
+                // ローディング画面更新
+                loadedModels++;
+#ifdef WITH_EDITOR
+                if (totalModels > 0) {
+                    float progress = static_cast<float>(loadedModels) / static_cast<float>(totalModels);
+                    std::string msg = "Loading models... (" + std::to_string(loadedModels) + "/" + std::to_string(totalModels) + ")";
+                    GetApplication()->RenderLoadingScreen(msg, progress);
+                }
+#endif
             }
         }
 

@@ -27,6 +27,10 @@ protected:
         // Initialize ResourceLoader
         ResourceLoader::Initialize(GetGraphics());
 
+#ifdef WITH_EDITOR
+        RenderLoadingScreen("Loading scene...", 0.1f);
+#endif
+
         // Load Scene
         auto scene = MakeUnique<Scene>();
         GetSceneManager()->LoadScene(std::move(scene));

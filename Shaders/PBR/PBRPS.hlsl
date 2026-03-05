@@ -38,7 +38,9 @@ cbuffer MaterialData : register(b2) {
     float3 materialAlbedo;
     float  materialMetallic;
     float  materialRoughness;
-    float3 padding3;
+    float  alphaClipThreshold;  // 0 = no clip, >0 = alpha test
+    float  doubleSided;         // 1.0 = flip normal for back faces
+    float  useAlphaBlend;       // 1.0 = alpha blend mode (output alpha, no discard)
 };
 
 struct PSInput {
@@ -91,9 +93,26 @@ float SampleSpotShadowPCF(Texture2D spotMap, float4 shadowPos) {
 }
 
 float4 main(PSInput input) : SV_TARGET {
-    float3 albedo = albedoTexture.Sample(albedoSampler, input.uv).rgb;
+    float4 texColor = albedoTexture.Sample(albedoSampler, input.uv);
+    float3 albedo = texColor.rgb;
+    float  alpha  = texColor.a;
+
+    // Alpha blend mode: テクスチャのアルファをそのまま使用（discardなし）
+    // Alpha clip mode: 閾値以下を完全に破棄
+    if (useAlphaBlend < 0.5f && alphaClipThreshold > 0.0f && alpha < alphaClipThreshold) {
+        discard;
+    }
 
     float3 N = normalize(input.normal);
+
+    // 両面描画: カメラから見て裏面の場合、法線を反転（草木等のライティング補正）
+    if (doubleSided > 0.5f) {
+        float3 viewDir = normalize(cameraPosition - input.worldPos);
+        if (dot(N, viewDir) < 0.0f) {
+            N = -N;
+        }
+    }
+
     float3 L = normalize(-directionalLightDirection);
 
     float  NdotL       = max(dot(N, L), 0.0f);
@@ -143,5 +162,8 @@ float4 main(PSInput input) : SV_TARGET {
     }
 
     float3 color = ambient + directLight + pointContrib + spotContrib;
-    return float4(color, 1.0f);
+
+    // Alpha blend mode: テクスチャのアルファ値で半透明出力
+    float outAlpha = (useAlphaBlend > 0.5f) ? alpha : 1.0f;
+    return float4(color, outAlpha);
 }

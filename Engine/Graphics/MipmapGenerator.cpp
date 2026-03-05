@@ -2,6 +2,7 @@
 #include "MipmapGenerator.h"
 #include "GraphicsDevice.h"
 #include "d3dx12.h"
+#include "../Core/Logger.h"
 #include <d3dcompiler.h>
 
 namespace UnoEngine {
@@ -133,11 +134,15 @@ void MipmapGenerator::GenerateMips(
     uint32 textureBaseOffset = m_currentTextureOffset * DESCRIPTORS_PER_MIP * MAX_MIP_LEVELS;
     m_currentTextureOffset = (m_currentTextureOffset + 1) % MAX_TEXTURES_PER_BATCH;
 
+    Logger::Debug("[MipmapGen] SetComputeRootSignature (ptr={})", (void*)m_rootSignature.Get());
     commandList->SetComputeRootSignature(m_rootSignature.Get());
+    Logger::Debug("[MipmapGen] SetPipelineState (ptr={})", (void*)m_pipelineState.Get());
     commandList->SetPipelineState(m_pipelineState.Get());
 
+    Logger::Debug("[MipmapGen] SetDescriptorHeaps (ptr={})", (void*)m_descriptorHeap.Get());
     ID3D12DescriptorHeap* heaps[] = { m_descriptorHeap.Get() };
     commandList->SetDescriptorHeaps(1, heaps);
+    Logger::Debug("[MipmapGen] ヒープ設定完了, ミップレベル={}", mipLevels);
 
     // Track state per mip level
     std::vector<D3D12_RESOURCE_STATES> mipStates(mipLevels, currentState);

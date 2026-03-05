@@ -38,7 +38,9 @@ cbuffer Material : register(b2) {
     float3 albedo;
     float  metallic;
     float  roughness;
-    float3 padding3;
+    float  alphaClipThreshold;
+    float  doubleSided;
+    float  useAlphaBlend;
 };
 
 struct PSInput {

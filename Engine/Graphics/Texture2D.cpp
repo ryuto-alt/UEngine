@@ -2,6 +2,7 @@
 #include "Texture2D.h"
 #include "GraphicsDevice.h"
 #include "d3dx12.h"
+#include "../Core/Logger.h"
 #include <DirectXTex.h>
 #include <algorithm>
 #include <cmath>
@@ -12,14 +13,32 @@ namespace UnoEngine {
 void Texture2D::LoadFromFile(GraphicsDevice* graphics, ID3D12GraphicsCommandList* commandList,
                              const std::wstring& filepath, uint32 srvIndex) {
     auto* device = graphics->GetDevice();
+    Logger::Debug("[Texture2D] LoadFromFile 開始: SRV={}", srvIndex);
 
     DirectX::TexMetadata metadata;
     DirectX::ScratchImage scratchImage;
 
+    Logger::Debug("[Texture2D] WICファイル読み込み中...");
     ThrowIfFailed(
         DirectX::LoadFromWICFile(filepath.c_str(), DirectX::WIC_FLAGS_NONE, &metadata, scratchImage),
         "Failed to load texture file"
     );
+    Logger::Debug("[Texture2D] WIC読み込み完了: {}x{}, format={}", metadata.width, metadata.height, static_cast<int>(metadata.format));
+
+    // フォーマットがR8G8B8A8_UNORMでない場合は変換（BGRAやRGB等の不一致を防ぐ）
+    if (metadata.format != DXGI_FORMAT_R8G8B8A8_UNORM) {
+        DirectX::ScratchImage converted;
+        HRESULT hr = DirectX::Convert(
+            scratchImage.GetImages(), scratchImage.GetImageCount(),
+            scratchImage.GetMetadata(), DXGI_FORMAT_R8G8B8A8_UNORM,
+            DirectX::TEX_FILTER_DEFAULT, DirectX::TEX_THRESHOLD_DEFAULT,
+            converted
+        );
+        if (SUCCEEDED(hr)) {
+            scratchImage = std::move(converted);
+            metadata = scratchImage.GetMetadata();
+        }
+    }
 
     // 元のメタデータを保存
     DirectX::TexMetadata originalMetadata = metadata;
@@ -93,14 +112,18 @@ void Texture2D::LoadFromFile(GraphicsDevice* graphics, ID3D12GraphicsCommandList
         "Failed to create upload buffer"
     );
 
+    Logger::Debug("[Texture2D] UpdateSubresources 実行中...");
     UpdateSubresources(commandList, resource_.Get(), uploadBuffer_.Get(),
                       0, 0, 1, subresources.data());
+    Logger::Debug("[Texture2D] UpdateSubresources 完了");
 
     // Generate mipmaps on GPU
     if (mipLevels > 1) {
+        Logger::Debug("[Texture2D] MipMap生成開始 (mipLevels={})", mipLevels);
         graphics->GetMipmapGenerator()->GenerateMips(
             commandList, resource_.Get(), D3D12_RESOURCE_STATE_COPY_DEST
         );
+        Logger::Debug("[Texture2D] MipMap生成完了");
     } else {
         // No mips to generate, just transition to shader resource
         D3D12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
@@ -113,6 +136,24 @@ void Texture2D::LoadFromFile(GraphicsDevice* graphics, ID3D12GraphicsCommandList
     height_ = static_cast<uint32>(metadata.height);
     mipLevels_ = mipLevels;
     srvIndex_ = srvIndex;
+
+    // Check if the source image has any non-opaque pixels (for alpha clip detection)
+    hasAlphaPixels_ = false;
+    const auto* img = scratchImage.GetImage(0, 0, 0);
+    if (img && img->pixels) {
+        const size_t pixelCount = img->width * img->height;
+        const uint8_t* pixels = img->pixels;
+        const size_t rowPitch = img->rowPitch;
+        for (size_t y = 0; y < img->height && !hasAlphaPixels_; ++y) {
+            const uint8_t* row = pixels + y * rowPitch;
+            for (size_t x = 0; x < img->width; ++x) {
+                if (row[x * 4 + 3] < 250) {  // Alpha channel < ~0.98
+                    hasAlphaPixels_ = true;
+                    break;
+                }
+            }
+        }
+    }
 
     graphics->CreateSRV(resource_.Get(), srvIndex);
 }

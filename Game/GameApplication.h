@@ -34,6 +34,9 @@ public:
 protected:
     void OnInit() override;
     void OnRender() override;
+#ifdef WITH_EDITOR
+    void OnLoadingPhase() override;
+#endif
 
 private:
     std::unique_ptr<ResourceManager> resourceManager_;

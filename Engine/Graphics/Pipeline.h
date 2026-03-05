@@ -29,6 +29,8 @@ public:
     // アクセサ
     ID3D12RootSignature* GetRootSignature() const { return rootSignature_.Get(); }
     ID3D12PipelineState* GetPipelineState() const { return pipelineState_.Get(); }
+    ID3D12PipelineState* GetAlphaTestPipelineState() const { return alphaTestPipelineState_.Get(); }
+    ID3D12PipelineState* GetAlphaBlendPipelineState() const { return alphaBlendPipelineState_.Get(); }
 
 private:
     void CreateRootSignature(ID3D12Device* device);
@@ -42,6 +44,8 @@ private:
 private:
     ComPtr<ID3D12RootSignature> rootSignature_;
     ComPtr<ID3D12PipelineState> pipelineState_;
+    ComPtr<ID3D12PipelineState> alphaTestPipelineState_;
+    ComPtr<ID3D12PipelineState> alphaBlendPipelineState_;
 };
 
 } // namespace UnoEngine

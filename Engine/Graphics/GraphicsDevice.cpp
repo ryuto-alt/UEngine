@@ -2,6 +2,7 @@
 #include "GraphicsDevice.h"
 #include "../Core/Logger.h"
 #include <stdexcept>
+#include <mutex>
 
 namespace UnoEngine {
 
@@ -371,9 +372,12 @@ void GraphicsDevice::EndFrame() {
         "Failed to close command list"
     );
 
-    // コマンドキューに投入
-    ID3D12CommandList* cmdLists[] = { commandList_.Get() };
-    commandQueue_->ExecuteCommandLists(1, cmdLists);
+    // コマンドキューに投入（mutex保護）
+    {
+        std::lock_guard<std::mutex> lock(commandQueueMutex_);
+        ID3D12CommandList* cmdLists[] = { commandList_.Get() };
+        commandQueue_->ExecuteCommandLists(1, cmdLists);
+    }
 }
 
 void GraphicsDevice::Present() {
@@ -442,9 +446,12 @@ void GraphicsDevice::EndResourceUpload() {
 
     Logger::Debug("[GraphicsDevice] EndResourceUpload: コマンドキューに投入中...");
 
-    // コマンドキューに投入
-    ID3D12CommandList* cmdLists[] = { commandList_.Get() };
-    commandQueue_->ExecuteCommandLists(1, cmdLists);
+    // コマンドキューに投入（mutex保護）
+    {
+        std::lock_guard<std::mutex> lock(commandQueueMutex_);
+        ID3D12CommandList* cmdLists[] = { commandList_.Get() };
+        commandQueue_->ExecuteCommandLists(1, cmdLists);
+    }
 
     Logger::Debug("[GraphicsDevice] EndResourceUpload: GPUの完了を待機中...");
 

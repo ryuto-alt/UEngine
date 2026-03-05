@@ -43,6 +43,9 @@
     <Filter Include="Engine\Systems">
       <UniqueIdentifier>{1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Vegetation">
+      <UniqueIdentifier>{a1b2c3d4-e5f6-7890-abcd-ef1234567890}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Engine\Animation">
       <UniqueIdentifier>{c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f}</UniqueIdentifier>
     </Filter>
@@ -308,6 +311,16 @@
     </ClCompile>
     <ClCompile Include="Engine\Resource\StaticModelImporter.cpp">
       <Filter>Engine\Resource</Filter>
+    </ClCompile>
+    <!-- Engine\Vegetation -->
+    <ClCompile Include="Engine\Vegetation\GrassSystem.cpp">
+      <Filter>Engine\Vegetation</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Vegetation\GrassPipeline.cpp">
+      <Filter>Engine\Vegetation</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Vegetation\GrassRenderer.cpp">
+      <Filter>Engine\Vegetation</Filter>
     </ClCompile>
     <!-- Engine\Systems -->
     <ClCompile Include="Engine\Systems\SystemManager.cpp">
@@ -866,6 +879,16 @@
     </ClInclude>
     <ClInclude Include="Engine\Resource\StaticModelImporter.h">
       <Filter>Engine\Resource</Filter>
+    </ClInclude>
+    <!-- Engine\Vegetation -->
+    <ClInclude Include="Engine\Vegetation\GrassSystem.h">
+      <Filter>Engine\Vegetation</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Vegetation\GrassPipeline.h">
+      <Filter>Engine\Vegetation</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Vegetation\GrassRenderer.h">
+      <Filter>Engine\Vegetation</Filter>
     </ClInclude>
     <!-- Engine\Systems -->
     <ClInclude Include="Engine\Systems\ISystem.h">

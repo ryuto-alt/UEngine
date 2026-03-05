@@ -24,30 +24,6 @@
     "objects": [
         {
             "active": true,
-            "components": [],
-            "layer": 1,
-            "name": "DirectionalLight",
-            "transform": {
-                "position": [
-                    0.0,
-                    0.0,
-                    0.6796146631240845
-                ],
-                "rotation": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    1.0
-                ],
-                "scale": [
-                    1.0,
-                    1.0,
-                    1.0
-                ]
-            }
-        },
-        {
-            "active": true,
             "components": [
                 {
                     "aspect": 1.7777777910232544,
@@ -95,15 +71,15 @@
             "name": "Camera",
             "transform": {
                 "position": [
-                    0.0,
+                    3.239720582962036,
                     1.7999999523162842,
-                    0.0
+                    2.649764060974121
                 ],
                 "rotation": [
-                    -0.13251923024654388,
-                    -0.02835013158619404,
-                    0.0037919459864497185,
-                    -0.9907677173614502
+                    0.0,
+                    0.0,
+                    0.0,
+                    -1.0
                 ],
                 "scale": [
                     1.0,
@@ -125,8 +101,8 @@
             "transform": {
                 "position": [
                     0.0,
-                    0.0,
-                    0.2485429048538208
+                    2.384185791015625e-07,
+                    0.24854278564453125
                 ],
                 "rotation": [
                     0.0,
@@ -137,7 +113,7 @@
                 "scale": [
                     1.0,
                     1.0,
-                    1.0
+                    5.0
                 ]
             }
         },
@@ -171,14 +147,14 @@
                 {
                     "properties": [
                         {
-                            "name": "moveSpeed",
-                            "type": "int",
-                            "value": 10
-                        },
-                        {
                             "name": "dashSpeedBonus",
                             "type": "int",
                             "value": 4
+                        },
+                        {
+                            "name": "moveSpeed",
+                            "type": "int",
+                            "value": 10
                         }
                     ],
                     "scriptPath": "assets/scripts/PlayerController.lua",
@@ -192,9 +168,9 @@
             "name": "player",
             "transform": {
                 "position": [
+                    3.239720582962036,
                     0.0,
-                    0.0,
-                    0.0
+                    2.649764060974121
                 ],
                 "rotation": [
                     -0.0,
@@ -208,8 +184,105 @@
                     1.0
                 ]
             }
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "modelPath": "assets/model/terebi/terebi.gltf",
+                    "type": "MeshRenderer"
+                }
+            ],
+            "layer": 1,
+            "name": "terebi",
+            "transform": {
+                "position": [
+                    0.7137546539306641,
+                    3.0,
+                    7.541423797607422
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            }
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "modelPath": "assets/model/testmodel/kani/kani.gltf",
+                    "type": "MeshRenderer"
+                }
+            ],
+            "layer": 1,
+            "name": "kani",
+            "transform": {
+                "position": [
+                    -1.4039545059204102,
+                    0.0,
+                    12.112449645996094
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                ],
+                "scale": [
+                    5.0,
+                    5.0,
+                    5.0
+                ]
+            }
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "color": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "direction": [
+                        0.028656452894210815,
+                        -0.9596025347709656,
+                        0.2798960208892822
+                    ],
+                    "intensity": 1.0,
+                    "type": "DirectionalLightComponent"
+                }
+            ],
+            "layer": 1,
+            "name": "Directional Light",
+            "transform": {
+                "position": [
+                    0.0,
+                    13.100000381469727,
+                    0.0
+                ],
+                "rotation": [
+                    -0.3573760390281677,
+                    -0.48201075196266174,
+                    0.6281003952026367,
+                    -0.49541687965393066
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            }
         }
     ],
     "scene_name": "Scene",
-    "version": "1.1"
+    "version": "1.2"
 }

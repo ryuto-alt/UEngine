@@ -134,4 +134,13 @@ void ThumbnailRenderer::ProcessOne(Renderer* renderer, LightManager* lights, Gra
     entry.ready = true;
 }
 
+void ThumbnailRenderer::PreLoadAllAsync(std::atomic<int>& loadedCount) {
+    // 別スレッドから呼び出し可能: 全pendingモデルをResourceLoaderにキャッシュ
+    auto paths = GetPendingPaths();
+    for (const auto& path : paths) {
+        ResourceLoader::LoadModel(path);
+        loadedCount.fetch_add(1, std::memory_order_relaxed);
+    }
+}
+
 } // namespace UnoEngine

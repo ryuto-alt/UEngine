@@ -8,6 +8,8 @@
 #include "../Graphics/ShadowPipeline.h"
 #include "../Graphics/ConstantBuffer.h"
 #include "../Graphics/DynamicConstantBuffer.h"
+#include "../Vegetation/GrassSystem.h"
+#include "../Vegetation/GrassRenderer.h"
 #include "RenderItem.h"
 #include "SkinnedRenderItem.h"
 #include "RenderView.h"
@@ -81,7 +83,9 @@ struct alignas(256) MaterialCB {
     Float3 albedo;
     float metallic;
     float roughness;
-    Float3 padding;
+    float alphaClipThreshold;  // 0 = opaque, >0 = alpha test
+    float doubleSided;         // 1.0 = 両面描画（裏面法線反転）
+    float useAlphaBlend;       // 1.0 = alpha blending mode (output alpha, no discard)
 };
 
 class Scene;
@@ -113,6 +117,8 @@ public:
     SkinnedPipeline* GetSkinnedPipeline() { return &skinnedPipeline_; }
     ImGuiManager* GetImGuiManager() { return imguiManager_.get(); }
     DebugRenderer* GetDebugRenderer() { return debugRenderer_.get(); }
+    GrassSystem* GetGrassSystem() { return &grassSystem_; }
+    GrassRenderer* GetGrassRenderer() { return &grassRenderer_; }
 
 protected:
     virtual void RenderUI(Scene* scene);
@@ -160,6 +166,9 @@ private:
 
     UniquePtr<ImGuiManager> imguiManager_;
     UniquePtr<DebugRenderer> debugRenderer_;
+
+    GrassSystem grassSystem_;
+    GrassRenderer grassRenderer_;
 
     Matrix4x4 lastLightViewProj_;
     Matrix4x4 spotLightViewProjs_[MAX_SPOT_SHADOWS];

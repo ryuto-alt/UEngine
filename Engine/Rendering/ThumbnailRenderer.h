@@ -6,6 +6,8 @@
 #include <deque>
 #include <string>
 #include <memory>
+#include <atomic>
+#include <vector>
 
 namespace UnoEngine {
 
@@ -33,6 +35,11 @@ public:
     void PreLoadPending();
     // Phase 2: BeginFrame後にサムネイルを描画（コマンドリストがオープンな状態）
     void ProcessOne(Renderer* renderer, LightManager* lights, GraphicsDevice* graphics);
+
+    // バックグラウンドで全モデルを一括プリロード（別スレッドから呼び出し可能）
+    void PreLoadAllAsync(std::atomic<int>& loadedCount);
+    // プリロード対象パスリストを取得
+    std::vector<std::string> GetPendingPaths() const { return { pending_.begin(), pending_.end() }; }
 
     static constexpr uint32_t kSize = 128;
 

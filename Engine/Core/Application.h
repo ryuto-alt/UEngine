@@ -47,6 +47,9 @@ protected:
     virtual void OnInit() {}
     virtual void OnUpdate(float deltaTime) {}
     virtual void OnShutdown() {}
+#ifdef WITH_EDITOR
+    virtual void OnLoadingPhase() {}
+#endif
 
     // サブクラスからアクセス可能なメンバー
     UniquePtr<GraphicsDevice> graphics_;
@@ -57,15 +60,16 @@ protected:
     UniquePtr<ParticleEditor> particleEditor_;
     SystemManager systemManager_;
 
+public:
+#ifdef WITH_EDITOR
+    void RenderLoadingScreen(std::string_view message, float progress = 0.0f);
+#endif
+
 private:
     void Initialize();
     void MainLoop();
     virtual void OnRender();
     void Shutdown();
-
-#ifdef WITH_EDITOR
-    void RenderLoadingScreen(std::string_view message, float progress = 0.0f);
-#endif
 
 private:
     ApplicationConfig config_;

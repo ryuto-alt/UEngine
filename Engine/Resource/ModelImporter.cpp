@@ -3,6 +3,7 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <assimp/GltfMaterial.h>
 #include <filesystem>
 #include <Windows.h>
 #include <iostream>
@@ -64,6 +65,33 @@ MaterialData ConvertMaterial(const aiMaterial* aiMat, const std::string& baseDir
     float opacity = 1.0f;
     if (aiMat->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS) {
         material.opacity = opacity;
+    }
+
+    // Detect alpha clip from opacity or gltf alphaMode
+    if (material.opacity < 1.0f) {
+        material.useAlphaClip = true;
+    }
+
+    // Check gltf alphaMode (MASK or BLEND)
+    aiString alphaMode;
+    if (aiMat->Get(AI_MATKEY_GLTF_ALPHAMODE, alphaMode) == AI_SUCCESS) {
+        std::string mode = alphaMode.C_Str();
+        if (mode == "MASK") {
+            material.useAlphaClip = true;
+            float cutoff = 0.5f;
+            if (aiMat->Get(AI_MATKEY_GLTF_ALPHACUTOFF, cutoff) == AI_SUCCESS) {
+                material.alphaClipThreshold = cutoff;
+            }
+        } else if (mode == "BLEND") {
+            material.useAlphaBlend = true;    // BLENDモード: アルファブレンドで半透明描画
+            material.doubleSided = true;      // BLENDは通常doubleSided
+        }
+    }
+
+    // doubleSided検出
+    int twosided = 0;
+    if (aiMat->Get(AI_MATKEY_TWOSIDED, twosided) == AI_SUCCESS && twosided) {
+        material.doubleSided = true;
     }
 
     aiString texPath;

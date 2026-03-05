@@ -11,6 +11,8 @@ void Material::LoadFromData(const MaterialData& data, GraphicsDevice* graphics,
     data_ = data;
     device_ = graphics->GetDevice();
 
+    bool textureLoaded = false;
+
     if (!data_.diffuseTexturePath.empty()) {
         namespace fs = std::filesystem;
 
@@ -26,10 +28,26 @@ void Material::LoadFromData(const MaterialData& data, GraphicsDevice* graphics,
         if (fs::exists(texturePath)) {
             diffuseTexture_ = std::make_unique<Texture2D>();
             diffuseTexture_->LoadFromFile(graphics, commandList, texturePath.wstring(), srvIndex);
+            textureLoaded = true;
             OutputDebugStringA(("[Material] Texture loaded: " + texturePath.string() + " SRV=" + std::to_string(srvIndex) + "\n").c_str());
+
+            // Auto-detect alpha clip from texture alpha channel
+            if (diffuseTexture_->HasAlphaPixels() && !data_.useAlphaClip) {
+                data_.useAlphaClip = true;
+                data_.alphaClipThreshold = 0.5f;
+                OutputDebugStringA(("[Material] Alpha clip auto-enabled for: " + texturePath.string() + "\n").c_str());
+            }
         } else {
             OutputDebugStringA(("[Material] Texture NOT FOUND: " + texturePath.string() + "\n").c_str());
         }
+    }
+
+    // テクスチャがない場合、1x1白テクスチャを生成（黒描画防止）
+    if (!textureLoaded) {
+        uint32_t white = 0xFFFFFFFF;
+        diffuseTexture_ = std::make_unique<Texture2D>();
+        diffuseTexture_->CreateFromData(graphics, commandList, &white, 1, 1, srvIndex, false);
+        OutputDebugStringA(("[Material] Created fallback white texture, SRV=" + std::to_string(srvIndex) + "\n").c_str());
     }
 }
 

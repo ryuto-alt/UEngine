@@ -210,6 +210,9 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
     <ClCompile Include="Engine\Resource\SkinnedModelImporter.cpp" />
     <ClCompile Include="Engine\Resource\StaticModelImporter.cpp" />
     <ClCompile Include="Engine\Resource\ResourceManager.cpp" />
+    <ClCompile Include="Engine\Vegetation\GrassSystem.cpp" />
+    <ClCompile Include="Engine\Vegetation\GrassPipeline.cpp" />
+    <ClCompile Include="Engine\Vegetation\GrassRenderer.cpp" />
     <ClCompile Include="Engine\Animation\Skeleton.cpp" />
     <ClCompile Include="Engine\Animation\AnimationClip.cpp" />
     <ClCompile Include="Engine\Animation\AnimationState.cpp" />
@@ -524,6 +527,9 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
     <ClInclude Include="Engine\Resource\SkinnedModelImporter.h" />
     <ClInclude Include="Engine\Resource\StaticModelImporter.h" />
     <ClInclude Include="Engine\Resource\ResourceManager.h" />
+    <ClInclude Include="Engine\Vegetation\GrassSystem.h" />
+    <ClInclude Include="Engine\Vegetation\GrassPipeline.h" />
+    <ClInclude Include="Engine\Vegetation\GrassRenderer.h" />
     <ClInclude Include="Engine\Resource\ImportOptions.h" />
     <ClInclude Include="Engine\Rendering\SkinnedRenderItem.h" />
     <ClInclude Include="Engine\Rendering\MeshRendererBase.h" />
@@ -624,6 +630,22 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
       <ShaderModel>6.5</ShaderModel>
       <EntryPointName>main</EntryPointName>
       <AdditionalOptions Condition="'$(Configuration)'=='Debug'">/Qembed_debug %(AdditionalOptions)</AdditionalOptions>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Grass\GrassVS.hlsl">
+      <ShaderType>Vertex</ShaderType>
+      <ShaderModel>6.5</ShaderModel>
+      <EntryPointName>main</EntryPointName>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Grass\GrassPS.hlsl">
+      <ShaderType>Pixel</ShaderType>
+      <ShaderModel>6.5</ShaderModel>
+      <EntryPointName>main</EntryPointName>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">true</ExcludedFromBuild>

@@ -10,12 +10,18 @@ Application::Application(const ApplicationConfig& config)
 }
 
 int Application::Run() {
+    // COM初期化（WIC/DirectXTexテクスチャ読み込みに必要）
+    CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+
     try {
         Initialize();
 #ifdef WITH_EDITOR
-        RenderLoadingScreen("Starting UnoEngine Editor...", 0.0f);
+        RenderLoadingScreen("Initializing engine...", 0.0f);
 #endif
         OnInit();
+#ifdef WITH_EDITOR
+        OnLoadingPhase();
+#endif
         running_ = true;
         MainLoop();
         Shutdown();
@@ -24,8 +30,10 @@ int Application::Run() {
     catch (const std::exception& e) {
         // エラーハンドリング（将来的にはログシステムへ）
         MessageBoxA(nullptr, e.what(), "Error", MB_OK | MB_ICONERROR);
+        CoUninitialize();
         return -1;
     }
+    CoUninitialize();
 }
 
 void Application::Initialize() {
@@ -155,6 +163,11 @@ void Application::OnRender() {
 }
 
 void Application::Shutdown() {
+    // GPU処理完了を待ってからリソース解放
+    if (graphics_) {
+        graphics_->WaitForGPU();
+    }
+
     OnShutdown();
 
     // パーティクルシステム解放
@@ -162,6 +175,11 @@ void Application::Shutdown() {
     if (particleSystem_) {
         particleSystem_->Shutdown();
         particleSystem_.reset();
+    }
+
+    // リソース解放前にもう一度GPU完了を待つ
+    if (graphics_) {
+        graphics_->WaitForGPU();
     }
 
     input_.reset();

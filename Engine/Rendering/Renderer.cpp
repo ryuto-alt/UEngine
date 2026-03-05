@@ -78,6 +78,17 @@ void Renderer::Initialize(GraphicsDevice* graphics, Window* window) {
     // デバッグレンダラー初期化
     debugRenderer_ = MakeUnique<DebugRenderer>();
     debugRenderer_->Initialize(graphics_);
+
+    // 草原システム初期化
+    grassRenderer_.Initialize(graphics_);
+
+    // 草メッシュとデフォルトテクスチャのGPUアップロード
+    graphics_->BeginResourceUpload();
+    grassSystem_.Initialize(graphics_);
+    if (!grassRenderer_.LoadTextureFromFile("assets/tex/grass/Foliage/Foliage006.png")) {
+        grassRenderer_.CreateFallbackTexture(graphics_, graphics_->GetCommandList());
+    }
+    graphics_->EndResourceUpload();
 }
 
 void Renderer::BeginFrame() {
@@ -89,6 +100,9 @@ void Renderer::BeginFrame() {
     outlineCB_.Reset();
     shadowTransformBuffer_.Reset();
     currentBoneSlot_ = 0;
+
+    // 草原システム更新（風アニメ用タイマー）
+    grassRenderer_.Update(1.0f / 60.0f); // TODO: 実際のデルタタイムを渡す
 }
 
 void Renderer::Draw(const RenderView& view, const std::vector<RenderItem>& items, LightManager* lights, Scene* scene) {
@@ -113,6 +127,14 @@ void Renderer::Draw(const RenderView& view, const std::vector<RenderItem>& items
 
     SetupViewport();
     RenderMeshes(view, items, lightViewProj);
+
+    // 草原描画
+    if (grassSystem_.GetInstanceCount() > 0) {
+        grassRenderer_.Render(view, lightViewProj, spotLightViewProjs_,
+                              activeSpotShadowCount_, currentLightGpuAddr_,
+                              shadowMap_, spotShadowMaps_, grassSystem_);
+    }
+
     RenderUI(scene);
 
     shadowMap_.RestoreForNextFrame(cmdList);
@@ -181,7 +203,6 @@ void Renderer::RenderMeshes(const RenderView& view, const std::vector<RenderItem
     auto* cmdList = graphics_->GetCommandList();
     auto* heap = graphics_->GetSRVHeap();
 
-    cmdList->SetPipelineState(pipeline_.GetPipelineState());
     cmdList->SetGraphicsRootSignature(pipeline_.GetRootSignature());
 
     ID3D12DescriptorHeap* heaps[] = {heap};
@@ -197,37 +218,61 @@ void Renderer::RenderMeshes(const RenderView& view, const std::vector<RenderItem
     auto viewMatrix = view.camera->GetViewMatrix();
     auto projection = view.camera->GetProjectionMatrix();
 
-    for (const auto& item : items) {
-        if (!item.mesh || !item.material) continue;
+    // 3-pass rendering: opaque → alpha-test(MASK) → alpha-blend(BLEND)
+    for (int pass = 0; pass < 3; ++pass) {
+        if (pass == 0)
+            cmdList->SetPipelineState(pipeline_.GetPipelineState());
+        else if (pass == 1)
+            cmdList->SetPipelineState(pipeline_.GetAlphaTestPipelineState());
+        else
+            cmdList->SetPipelineState(pipeline_.GetAlphaBlendPipelineState());
 
-        TransformCB transformData{};
-        auto mvp = item.worldMatrix * viewMatrix * projection;
-        StoreTransposedMatrix(transformData.world, item.worldMatrix);
-        StoreTransposedMatrix(transformData.view, viewMatrix);
-        StoreTransposedMatrix(transformData.projection, projection);
-        StoreTransposedMatrix(transformData.mvp, mvp);
-        StoreTransposedMatrix(transformData.lightViewProj, lightViewProj);
-        for (int si = 0; si < activeSpotShadowCount_; ++si) {
-            StoreTransposedMatrix(transformData.spotLightViewProj[si], spotLightViewProjs_[si]);
+        for (const auto& item : items) {
+            if (!item.mesh || !item.material) continue;
+
+            const auto& matData = item.material->GetData();
+
+            // パス振り分け: pass0=不透明, pass1=アルファテスト(MASK), pass2=アルファブレンド(BLEND)
+            if (pass == 0) {
+                if (matData.useAlphaClip || matData.useAlphaBlend || matData.doubleSided) continue;
+            } else if (pass == 1) {
+                if (matData.useAlphaBlend) continue;
+                if (!(matData.useAlphaClip || matData.doubleSided)) continue;
+            } else {
+                if (!matData.useAlphaBlend) continue;
+            }
+
+            TransformCB transformData{};
+            auto mvp = item.worldMatrix * viewMatrix * projection;
+            StoreTransposedMatrix(transformData.world, item.worldMatrix);
+            StoreTransposedMatrix(transformData.view, viewMatrix);
+            StoreTransposedMatrix(transformData.projection, projection);
+            StoreTransposedMatrix(transformData.mvp, mvp);
+            StoreTransposedMatrix(transformData.lightViewProj, lightViewProj);
+            for (int si = 0; si < activeSpotShadowCount_; ++si) {
+                StoreTransposedMatrix(transformData.spotLightViewProj[si], spotLightViewProjs_[si]);
+            }
+            D3D12_GPU_VIRTUAL_ADDRESS transformGpuAddr = constantBuffer_.Update(transformData);
+            cmdList->SetGraphicsRootConstantBufferView(0, transformGpuAddr);
+
+            cmdList->SetGraphicsRootDescriptorTable(1, item.material->GetAlbedoSRV(heap));
+
+            MaterialCB materialData{};
+            materialData.albedo    = Float3(matData.albedo[0], matData.albedo[1], matData.albedo[2]);
+            materialData.metallic  = matData.metallic;
+            materialData.roughness = matData.roughness;
+            materialData.alphaClipThreshold = matData.useAlphaClip ? matData.alphaClipThreshold : 0.0f;
+            materialData.doubleSided = matData.doubleSided ? 1.0f : 0.0f;
+            materialData.useAlphaBlend = matData.useAlphaBlend ? 1.0f : 0.0f;
+            D3D12_GPU_VIRTUAL_ADDRESS materialGpuAddr = materialBuffer_.Update(materialData);
+            cmdList->SetGraphicsRootConstantBufferView(3, materialGpuAddr);
+
+            auto vbView = item.mesh->GetVertexBuffer().GetView();
+            cmdList->IASetVertexBuffers(0, 1, &vbView);
+            auto ibView = item.mesh->GetIndexBuffer().GetView();
+            cmdList->IASetIndexBuffer(&ibView);
+            cmdList->DrawIndexedInstanced(item.mesh->GetIndexBuffer().GetIndexCount(), 1, 0, 0, 0);
         }
-        D3D12_GPU_VIRTUAL_ADDRESS transformGpuAddr = constantBuffer_.Update(transformData);
-        cmdList->SetGraphicsRootConstantBufferView(0, transformGpuAddr);
-
-        cmdList->SetGraphicsRootDescriptorTable(1, item.material->GetAlbedoSRV(heap));
-
-        MaterialCB materialData;
-        const auto& matData = item.material->GetData();
-        materialData.albedo    = Float3(matData.albedo[0], matData.albedo[1], matData.albedo[2]);
-        materialData.metallic  = matData.metallic;
-        materialData.roughness = matData.roughness;
-        D3D12_GPU_VIRTUAL_ADDRESS materialGpuAddr = materialBuffer_.Update(materialData);
-        cmdList->SetGraphicsRootConstantBufferView(3, materialGpuAddr);
-
-        auto vbView = item.mesh->GetVertexBuffer().GetView();
-        cmdList->IASetVertexBuffers(0, 1, &vbView);
-        auto ibView = item.mesh->GetIndexBuffer().GetView();
-        cmdList->IASetIndexBuffer(&ibView);
-        cmdList->DrawIndexedInstanced(item.mesh->GetIndexBuffer().GetIndexCount(), 1, 0, 0, 0);
     }
 }
 
@@ -419,6 +464,13 @@ void Renderer::DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_
         RenderSkinnedMeshes(view, skinnedItems, lightViewProj);
     }
 
+    // 草原描画
+    if (grassSystem_.GetInstanceCount() > 0) {
+        grassRenderer_.Render(view, lightViewProj, spotLightViewProjs_,
+                              activeSpotShadowCount_, currentLightGpuAddr_,
+                              shadowMap_, spotShadowMaps_, grassSystem_);
+    }
+
     // デバッグ描画（enableDebugDrawがtrueの場合のみ）
     // 注意: BeginFrame()は呼び出し側（GameApplication等）で管理する
     // ここではボーン描画とライン描画のみ行う
@@ -558,16 +610,18 @@ void Renderer::RenderSkinnedMeshes(const RenderView& view, const std::vector<Ski
         }
 
         // Material（ダイナミックバッファを使用）
-        MaterialCB materialData;
+        MaterialCB materialData{};
         if (item.material) {
             const auto& matData = item.material->GetData();
             materialData.albedo = Float3(matData.albedo[0], matData.albedo[1], matData.albedo[2]);
             materialData.metallic = matData.metallic;
             materialData.roughness = matData.roughness;
+            materialData.alphaClipThreshold = 0.0f;
         } else {
             materialData.albedo = Float3(1.0f, 1.0f, 1.0f);
             materialData.metallic = 0.0f;
             materialData.roughness = 0.5f;
+            materialData.alphaClipThreshold = 0.0f;
         }
         auto materialGpuAddr = skinnedMaterialBuffer_.Update(materialData);
         cmdList->SetGraphicsRootConstantBufferView(3, materialGpuAddr);

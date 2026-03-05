@@ -36,6 +36,8 @@ class AnimationSystem;
 class AudioSystem;
 class AudioSource;
 class ParticleEditor;
+class GrassSystem;
+class GrassRenderer;
 
 // Transform操作履歴
 struct TransformSnapshot {
@@ -142,6 +144,12 @@ public:
     void SetSelectedObject(GameObject* obj) { selectedObject_ = obj; }
     GameObject* GetSelectedObject() const { return selectedObject_; }
 
+    // マルチセレクション
+    void ClearSelection();
+    void SelectObject(GameObject* obj, bool addToSelection = false);
+    bool IsSelected(GameObject* obj) const;
+    const std::unordered_set<GameObject*>& GetSelectedObjects() const { return selectedObjects_; }
+
     // シーン保存/ロード
     void SaveScene(const std::string& filepath);
     void LoadScene(const std::string& filepath);
@@ -196,6 +204,17 @@ public:
     // PostProcessManagerのパラメータをCameraComponentに同期（保存前）
     void SyncPostProcessParamsToCamera();
 
+    // サムネイル一括キュー（ローディングフェーズ用）
+    void QueueAllThumbnails();
+    bool HasPendingThumbnails() const { return thumbnailRenderer_.HasPending(); }
+    size_t GetThumbnailPendingCount() const { return thumbnailRenderer_.GetPendingCount(); }
+    size_t GetThumbnailTotalCount() const { return thumbnailRenderer_.GetTotalCount(); }
+
+    // バックグラウンドスレッドで全モデルをプリロード
+    void PreLoadAllThumbnailsAsync(std::atomic<int>& loadedCount) {
+        thumbnailRenderer_.PreLoadAllAsync(loadedCount);
+    }
+
 private:
     // 各パネルの描画メソッド
     void RenderDockSpace();
@@ -223,7 +242,12 @@ private:
     // インスペクタータブ
     void RenderObjectInspectorTab(const EditorContext& context);
     void RenderNavMeshInspectorTab();
+    void RenderGrassPaintTab();
     void AppendNavAgentLogLine(const std::string& line);
+
+    // 草ペイントツール
+    void HandleGrassPainting();
+    Vector3 ScreenToGroundPosition(float screenX, float screenY);
 
 private:
     // GraphicsDevice参照
@@ -280,6 +304,12 @@ private:
 
     // 選択中のオブジェクト
     GameObject* selectedObject_ = nullptr;
+
+    // マルチセレクション
+    std::unordered_set<GameObject*> selectedObjects_;
+
+    // コピー/ペーストクリップボード（シリアライズ済みJSON文字列）
+    std::vector<std::string> clipboard_;
 
     // Hierarchyリネーム用
     GameObject* renamingObject_ = nullptr;
@@ -440,6 +470,30 @@ private:
     // レイピッキング（SceneViewでのクリック選択）
     GameObject* PickObjectAtScreenPos(float screenX, float screenY);
     void HandleSceneViewPicking();
+
+    // ジェネレーター選択
+    enum class GeneratorType { None, Grass, GodotGrass };
+    GeneratorType selectedGenerator_ = GeneratorType::None;
+    void RenderGeneratorProperties();
+    void RenderGodotGrassProperties();
+
+    // 草ペイントツール
+    enum class GrassPaintMode { Brush, Stamp, Erase };
+    bool grassPaintActive_ = false;
+    GrassPaintMode grassPaintMode_ = GrassPaintMode::Brush;
+    float grassBrushRadius_ = 3.0f;
+    float grassDensity_ = 15.0f;     // instances per m²
+    float grassMinScale_ = 0.6f;
+    float grassMaxScale_ = 1.2f;
+    float grassColorVariation_ = 0.4f;
+    float grassWindStrength_ = 0.15f;
+    bool  grassPainting_ = false;      // 現在ペイント中か
+    float grassPaintCooldown_ = 0.0f;  // ブラシの連続配置間隔
+
+    // 草テクスチャ選択
+    bool grassTextureBrowseOpen_ = false;
+    std::vector<std::string> grassTextureCandidates_;
+    bool grassTextureScanned_ = false;
 
     // ビルド/エクスポート関連
     bool showBuildDialog_ = false;

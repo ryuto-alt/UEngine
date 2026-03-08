@@ -51,8 +51,6 @@ void EditorCamera::Update(float deltaTime) {
         // 右クリック開始
         rightMousePressed_ = true;
         isControlling_ = true;
-        smoothDeltaX_ = 0.0f;
-        smoothDeltaY_ = 0.0f;
         while (ShowCursor(FALSE) >= 0);
         GetCursorPos(&lockMousePos_);
 
@@ -81,19 +79,17 @@ void EditorCamera::Update(float deltaTime) {
 
     // カメラ操作
     if (rightMousePressed_) {
-        POINT currentPos;
-        GetCursorPos(&currentPos);
+        // Raw Inputデルタを使用（高精度・フレームレート非依存）
+        float deltaX = rawMouseDX_;
+        float deltaY = rawMouseDY_;
 
-        float rawDeltaX = static_cast<float>(currentPos.x - lockMousePos_.x);
-        float rawDeltaY = static_cast<float>(currentPos.y - lockMousePos_.y);
-
+        // カーソルをロック位置に戻す
         SetCursorPos(lockMousePos_.x, lockMousePos_.y);
 
-        // マウスデルタをスムージング（整数座標の量子化ノイズを軽減）
-        smoothDeltaX_ = smoothDeltaX_ + (rawDeltaX - smoothDeltaX_) * kMouseSmoothing;
-        smoothDeltaY_ = smoothDeltaY_ + (rawDeltaY - smoothDeltaY_) * kMouseSmoothing;
-        float deltaX = smoothDeltaX_;
-        float deltaY = smoothDeltaY_;
+        // 異常に大きいデルタを無視（フォーカス復帰時など）
+        constexpr float kMaxDelta = 150.0f;
+        if (std::abs(deltaX) > kMaxDelta) deltaX = 0.0f;
+        if (std::abs(deltaY) > kMaxDelta) deltaY = 0.0f;
 
         // CTRL+右クリック: カメラを上下移動（マウス上→カメラ上、マウス下→カメラ下）
         if (io.KeyCtrl) {

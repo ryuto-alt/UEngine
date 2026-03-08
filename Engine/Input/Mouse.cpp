@@ -13,6 +13,12 @@ void Mouse::Update() {
     previousX_ = x_;
     previousY_ = y_;
 
+    // Raw Input デルタを確定してリセット
+    rawDeltaX_ = rawAccumX_;
+    rawDeltaY_ = rawAccumY_;
+    rawAccumX_ = 0;
+    rawAccumY_ = 0;
+
     // ホイールはフレーム毎にリセット
     wheelDelta_ = 0;
 }
@@ -55,6 +61,11 @@ bool Mouse::IsReleased(MouseButton button) const {
     return index < BUTTON_COUNT && !currentState_[index] && previousState_[index];
 }
 
+void Mouse::ProcessRawDelta(int32 dx, int32 dy) {
+    rawAccumX_ += dx;
+    rawAccumY_ += dy;
+}
+
 void Mouse::Reset() {
     currentState_.fill(false);
     previousState_.fill(false);
@@ -62,6 +73,8 @@ void Mouse::Reset() {
     previousX_ = previousY_ = 0;
     deltaX_ = deltaY_ = 0;
     wheelDelta_ = 0;
+    rawAccumX_ = rawAccumY_ = 0;
+    rawDeltaX_ = rawDeltaY_ = 0;
 }
 
 } // namespace UnoEngine

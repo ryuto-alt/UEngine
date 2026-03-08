@@ -274,15 +274,17 @@ void CameraComponent::UpdateFollowCamera(float deltaTime) {
 
         if (isPlaying_ && mouseLocked_ && scene_) {
             if (auto* input = scene_->GetInputManager()) {
-                POINT currentPos;
-                GetCursorPos(&currentPos);
+                // Raw Inputデルタを使用（高精度・フレームレート非依存）
+                float deltaX = static_cast<float>(input->GetMouse().GetRawDeltaX());
+                float deltaY = static_cast<float>(input->GetMouse().GetRawDeltaY());
 
-                float deltaX = static_cast<float>(currentPos.x - mouseLockX_);
-                float deltaY = static_cast<float>(currentPos.y - mouseLockY_);
+                // カーソルをロック位置に戻す（画面外に出ないように）
+                SetCursorPos(mouseLockX_, mouseLockY_);
 
-                if (deltaX != 0.0f || deltaY != 0.0f) {
-                    SetCursorPos(mouseLockX_, mouseLockY_);
-                }
+                // 異常に大きいデルタを無視（フォーカス復帰時など）
+                constexpr float kMaxDelta = 150.0f;
+                if (std::abs(deltaX) > kMaxDelta) deltaX = 0.0f;
+                if (std::abs(deltaY) > kMaxDelta) deltaY = 0.0f;
 
                 cameraYaw_ += deltaX * mouseSensitivity_ * 0.01f;
                 cameraPitch_ += deltaY * mouseSensitivity_ * 0.01f;

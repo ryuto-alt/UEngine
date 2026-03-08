@@ -30,6 +30,7 @@ public:
     void ProcessButtonUp(MouseButton button);
     void ProcessMove(int32 x, int32 y);
     void ProcessWheel(int32 delta);
+    void ProcessRawDelta(int32 dx, int32 dy);
 
     // ボタン状態取得
     bool IsDown(MouseButton button) const;
@@ -41,6 +42,10 @@ public:
     int32 GetY() const { return y_; }
     int32 GetDeltaX() const { return deltaX_; }
     int32 GetDeltaY() const { return deltaY_; }
+
+    // Raw Input デルタ（高精度、フレーム間累積）
+    int32 GetRawDeltaX() const { return rawDeltaX_; }
+    int32 GetRawDeltaY() const { return rawDeltaY_; }
 
     // ホイール
     int32 GetWheelDelta() const { return wheelDelta_; }
@@ -62,6 +67,12 @@ private:
     int32 deltaY_ = 0;
 
     int32 wheelDelta_ = 0; // ホイールの移動量（1フレーム分）
+
+    // Raw Input 累積デルタ（フレーム間で複数のWM_INPUTを蓄積）
+    int32 rawAccumX_ = 0;
+    int32 rawAccumY_ = 0;
+    int32 rawDeltaX_ = 0;  // 前フレームの確定デルタ
+    int32 rawDeltaY_ = 0;
 };
 
 } // namespace UnoEngine

@@ -66,6 +66,14 @@ void Window::CreateWindowInstance(const WindowConfig& config) {
 
     ShowWindow(hwnd_, SW_SHOWMAXIMIZED);
     UpdateWindow(hwnd_);
+
+    // Raw Input デバイス登録（マウス）
+    RAWINPUTDEVICE rid = {};
+    rid.usUsagePage = 0x01; // Generic Desktop
+    rid.usUsage     = 0x02; // Mouse
+    rid.dwFlags     = 0;
+    rid.hwndTarget  = hwnd_;
+    RegisterRawInputDevices(&rid, 1, sizeof(rid));
 }
 
 bool Window::ProcessMessages() {

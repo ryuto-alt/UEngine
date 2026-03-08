@@ -45,6 +45,9 @@ public:
     // 再生中かどうかを設定（編集中は右クリックなしでWASD移動可能）
     void SetPlaying(bool playing) { isPlaying_ = playing; }
 
+    // Raw Inputデルタを設定（フレーム毎にEditorUIから呼び出す）
+    void SetRawMouseDelta(float dx, float dy) { rawMouseDX_ = dx; rawMouseDY_ = dy; }
+
     // ビューポートの矩形を設定（マウスクリップ用）
     void SetViewportRect(float x, float y, float w, float h) {
         viewportRect_ = { x, y, w, h };
@@ -107,9 +110,8 @@ private:
     // マウス
     bool rightMousePressed_ = false;
     POINT lockMousePos_ = { 0, 0 };
-    float smoothDeltaX_ = 0.0f;
-    float smoothDeltaY_ = 0.0f;
-    static constexpr float kMouseSmoothing = 0.5f;  // 0=最大スムージング, 1=スムージングなし
+    float rawMouseDX_ = 0.0f;  // Raw Inputデルタ（フレーム毎に外部から設定）
+    float rawMouseDY_ = 0.0f;
 
     // フリーカメラ用
     float yaw_ = 0.0f;

@@ -18,6 +18,7 @@
 #include "../../Engine/Audio/AudioListener.h"
 #include "../../Engine/Audio/AudioClip.h"
 #include "../../Engine/Core/CameraComponent.h"
+#include "../../Engine/Input/InputManager.h"
 #include "../../Engine/Core/CollisionComponent.h"
 #include "../../Engine/Graphics/PointLightComponent.h"
 #include "../../Engine/Graphics/SpotLightComponent.h"
@@ -455,6 +456,13 @@ namespace UnoEngine {
 		float deltaTime = ImGui::GetIO().DeltaTime;
 		editorCamera_.SetMovementEnabled(true);
 		editorCamera_.SetPlaying(IsPlaying());
+		// Raw Inputデルタを渡す
+		if (scene_ && scene_->GetInputManager()) {
+			auto& mouse = scene_->GetInputManager()->GetMouse();
+			editorCamera_.SetRawMouseDelta(
+				static_cast<float>(mouse.GetRawDeltaX()),
+				static_cast<float>(mouse.GetRawDeltaY()));
+		}
 		editorCamera_.Update(deltaTime);
 
 		// MainCameraのCameraComponentにも再生状態を設定
@@ -1180,16 +1188,21 @@ namespace UnoEngine {
 				}
 
 				if (gameViewMouseLocked_ && gameCamera_ && !cameraComponentHandlesInput) {
-					POINT currentPos;
-					GetCursorPos(&currentPos);
+					// Raw Inputデルタを使用（高精度・フレームレート非依存）
+					float deltaX = 0.0f;
+					float deltaY = 0.0f;
+					if (scene_ && scene_->GetInputManager()) {
+						auto& mouse = scene_->GetInputManager()->GetMouse();
+						deltaX = static_cast<float>(mouse.GetRawDeltaX());
+						deltaY = static_cast<float>(mouse.GetRawDeltaY());
+					}
 
-					float deltaX = static_cast<float>(currentPos.x - gameViewLockMousePos_.x);
-					float deltaY = static_cast<float>(currentPos.y - gameViewLockMousePos_.y);
-
+					// カーソルをロック位置に戻す
 					SetCursorPos(gameViewLockMousePos_.x, gameViewLockMousePos_.y);
 
-					// 感度
-					float sensitivity = editorCamera_.GetRotateSpeed() * io.DeltaTime;
+					// 感度（マウスデルタはフレーム間移動量なのでdeltaTimeを掛けない）
+					float sensitivity = editorCamera_.GetRotateSpeed() * 0.01f;
+
 					gameViewYaw_ += deltaX * sensitivity;
 					gameViewPitch_ += deltaY * sensitivity;
 

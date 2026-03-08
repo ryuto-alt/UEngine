@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "InputManager.h"
+#include <vector>
 
 namespace UnoEngine {
 
@@ -71,6 +72,24 @@ void InputManager::ProcessMessage(UINT msg, WPARAM wparam, LPARAM lparam) {
         case WM_MOUSEWHEEL: {
             const int32 delta = GET_WHEEL_DELTA_WPARAM(wparam);
             mouse_.ProcessWheel(delta);
+            break;
+        }
+
+        // Raw Input（高精度マウスデルタ）
+        case WM_INPUT: {
+            UINT size = 0;
+            GetRawInputData(reinterpret_cast<HRAWINPUT>(lparam), RID_INPUT, nullptr, &size, sizeof(RAWINPUTHEADER));
+            if (size > 0) {
+                std::vector<BYTE> buf(size);
+                if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lparam), RID_INPUT, buf.data(), &size, sizeof(RAWINPUTHEADER)) == size) {
+                    auto* raw = reinterpret_cast<RAWINPUT*>(buf.data());
+                    if (raw->header.dwType == RIM_TYPEMOUSE) {
+                        mouse_.ProcessRawDelta(
+                            static_cast<int32>(raw->data.mouse.lLastX),
+                            static_cast<int32>(raw->data.mouse.lLastY));
+                    }
+                }
+            }
             break;
         }
 

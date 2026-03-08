@@ -34,6 +34,21 @@ void GameApplication::OnInit() {
     Logger::Info("[初期化] システム登録完了 (Animation, Camera, Audio, Collision, Physics)");
 }
 
+void GameApplication::OnUpdate(float deltaTime) {
+#ifndef WITH_EDITOR
+    // ESCキー1.5秒長押しでゲーム終了
+    auto* input = GetInput();
+    if (input && input->GetKeyboard().IsDown(KeyCode::Escape)) {
+        escHoldTime_ += deltaTime;
+        if (escHoldTime_ >= kEscQuitThreshold) {
+            PostQuitMessage(0);
+        }
+    } else {
+        escHoldTime_ = 0.0f;
+    }
+#endif
+}
+
 Mesh* GameApplication::LoadMesh(const std::string& path) {
     return ResourceLoader::LoadMesh(path);
 }

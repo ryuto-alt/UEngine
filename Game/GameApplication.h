@@ -33,6 +33,7 @@ public:
 
 protected:
     void OnInit() override;
+    void OnUpdate(float deltaTime) override;
     void OnRender() override;
 #ifdef WITH_EDITOR
     void OnLoadingPhase() override;
@@ -40,6 +41,10 @@ protected:
 
 private:
     std::unique_ptr<ResourceManager> resourceManager_;
+#ifndef WITH_EDITOR
+    float escHoldTime_ = 0.0f;
+    static constexpr float kEscQuitThreshold = 1.5f;
+#endif
 };
 
 } // namespace UnoEngine

@@ -125,6 +125,8 @@ void Renderer::Draw(const RenderView& view, const std::vector<RenderItem>& items
     RenderSpotShadowMaps(items, {});
     currentBoneSlot_ = 0;
 
+    // シャドウマップ描画でRTVが変わるため、バックバッファに戻す
+    graphics_->SetBackBufferAsRenderTarget();
     SetupViewport();
     RenderMeshes(view, items, lightViewProj);
 

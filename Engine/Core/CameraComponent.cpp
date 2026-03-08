@@ -5,6 +5,7 @@
 #include "Scene.h"
 #include "../Input/InputManager.h"
 #include "../Input/Keyboard.h"
+#include "../Input/Mouse.h"
 #include <Windows.h>
 #include <algorithm>
 #include <cmath>
@@ -19,11 +20,29 @@ void CameraComponent::Awake() {
     // 初期投影設定
     UpdateProjectionMatrix();
 
+#ifndef WITH_EDITOR
+    // エディタなしの場合は自動的に再生状態にする
+    isPlaying_ = true;
+#endif
 }
 
 void CameraComponent::Start() {
     // TransformからカメラのPosition/Rotationを初期化
     UpdateCameraTransform();
+
+#ifndef WITH_EDITOR
+    // スタンドアロン: カメラの現在の向きからyaw/pitchを初期化
+    if (viewMode_ == CameraViewMode::FirstPerson) {
+        Vector3 forward = camera_.GetForward();
+        cameraYaw_ = std::atan2(forward.GetX(), forward.GetZ());
+        cameraPitch_ = std::asin(-forward.GetY());
+
+        // 起動時に自動でマウスロック
+        if (isPlaying_) {
+            LockMouse();
+        }
+    }
+#endif
 }
 
 void CameraComponent::OnUpdate(float deltaTime) {
@@ -43,7 +62,10 @@ void CameraComponent::OnUpdate(float deltaTime) {
 }
 
 void CameraComponent::OnDestroy() {
-    // 特に必要な処理なし
+    // カーソルが非表示のままにならないよう復元
+    if (mouseLocked_) {
+        UnlockMouse();
+    }
 }
 
 void CameraComponent::SetPerspective(float fovY, float aspect, float nearZ, float farZ) {
@@ -187,6 +209,27 @@ GameObject* CameraComponent::GetFirstPersonExcludeTarget() const {
     return FindFollowTarget();
 }
 
+void CameraComponent::LockMouse() {
+    if (mouseLocked_) return;
+    mouseLocked_ = true;
+    POINT pt;
+    GetCursorPos(&pt);
+    mouseLockX_ = pt.x;
+    mouseLockY_ = pt.y;
+    while (ShowCursor(FALSE) >= 0);
+
+    // 現在のカメラ方向からyaw/pitchを初期化
+    Vector3 forward = camera_.GetForward();
+    cameraYaw_ = std::atan2(forward.GetX(), forward.GetZ());
+    cameraPitch_ = std::asin(-forward.GetY());
+}
+
+void CameraComponent::UnlockMouse() {
+    if (!mouseLocked_) return;
+    mouseLocked_ = false;
+    while (ShowCursor(TRUE) < 0);
+}
+
 void CameraComponent::UpdateFollowCamera(float deltaTime) {
     GameObject* target = FindFollowTarget();
     if (!target) {
@@ -195,12 +238,39 @@ void CameraComponent::UpdateFollowCamera(float deltaTime) {
     }
 
     Vector3 targetPos = target->GetTransform().GetPosition();
-    
+
     Vector3 desiredPos;
     Quaternion desiredRot;
 
     if (viewMode_ == CameraViewMode::FirstPerson) {
         // 一人称視点: マウスで視点回転のみ（移動はLuaスクリプトで管理）
+
+        // 初回フレームでカメラの現在方向からyaw/pitchを初期化
+        if (!yawPitchInitialized_) {
+            Vector3 fwd = camera_.GetForward();
+            float len = std::sqrt(fwd.GetX() * fwd.GetX() + fwd.GetZ() * fwd.GetZ());
+            if (len > 0.001f) {
+                cameraYaw_ = std::atan2(fwd.GetX(), fwd.GetZ());
+                cameraPitch_ = std::asin(std::max(-1.0f, std::min(1.0f, -fwd.GetY())));
+                yawPitchInitialized_ = true;
+            }
+        }
+
+#ifndef WITH_EDITOR
+        // スタンドアロン: クリックでマウスロック、ESC/Tabでアンロック
+        if (isPlaying_ && scene_) {
+            if (auto* input = scene_->GetInputManager()) {
+                // 左クリックでマウスロック
+                if (!mouseLocked_ && input->GetMouse().IsPressed(MouseButton::Left)) {
+                    LockMouse();
+                }
+                // TabまたはEscでマウスアンロック
+                if (mouseLocked_ && (input->GetKeyboard().IsPressed(KeyCode::Tab) || input->GetKeyboard().IsPressed(KeyCode::Escape))) {
+                    UnlockMouse();
+                }
+            }
+        }
+#endif
 
         if (isPlaying_ && mouseLocked_ && scene_) {
             if (auto* input = scene_->GetInputManager()) {

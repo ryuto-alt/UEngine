@@ -71,49 +71,20 @@
             "name": "Camera",
             "transform": {
                 "position": [
-                    3.239720582962036,
+                    23.650808334350586,
                     1.7999999523162842,
-                    2.649764060974121
+                    3.2185606956481934
                 ],
                 "rotation": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    -1.0
+                    -0.006810248363763094,
+                    -0.9890954494476318,
+                    0.13889528810977936,
+                    -0.048496875911951065
                 ],
                 "scale": [
                     1.0,
                     1.0,
                     1.0
-                ]
-            }
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "modelPath": "assets/model/ground/ground.gltf",
-                    "type": "MeshRenderer"
-                }
-            ],
-            "layer": 1,
-            "name": "ground",
-            "transform": {
-                "position": [
-                    0.0,
-                    2.384185791015625e-07,
-                    0.24854278564453125
-                ],
-                "rotation": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    1.0
-                ],
-                "scale": [
-                    1.0,
-                    1.0,
-                    5.0
                 ]
             }
         },
@@ -168,9 +139,9 @@
             "name": "player",
             "transform": {
                 "position": [
-                    3.239720582962036,
+                    23.650802612304688,
                     0.0,
-                    2.649764060974121
+                    3.2185614109039307
                 ],
                 "rotation": [
                     -0.0,
@@ -274,6 +245,64 @@
                     -0.48201075196266174,
                     0.6281003952026367,
                     -0.49541687965393066
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            }
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "modelPath": "assets/model/ground/ground.gltf",
+                    "type": "MeshRenderer"
+                }
+            ],
+            "layer": 1,
+            "name": "ground",
+            "transform": {
+                "position": [
+                    18.198837280273438,
+                    0.0,
+                    46.79069137573242
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                ],
+                "scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            }
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "modelPath": "assets/model/temple/temple.gltf",
+                    "type": "MeshRenderer"
+                }
+            ],
+            "layer": 1,
+            "name": "temple",
+            "transform": {
+                "position": [
+                    23.044822692871094,
+                    0.0,
+                    -4.030616760253906
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
                 ],
                 "scale": [
                     1.0,

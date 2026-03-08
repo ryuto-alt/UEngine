@@ -154,6 +154,10 @@ public:
     }
     bool IsMouseLocked() const { return mouseLocked_; }
 
+    // スタンドアロン時のマウスロック/アンロック処理
+    void LockMouse();
+    void UnlockMouse();
+
     // カメラのYaw/Pitch取得（Lua用）
     float GetCameraYaw() const { return cameraYaw_; }
     float GetCameraPitch() const { return cameraPitch_; }
@@ -208,6 +212,7 @@ private:
     bool hideTargetInFirstPerson_ = true; // 一人称: ターゲットモデルを非表示にするか
     float cameraYaw_ = 0.0f;         // 一人称: 累積Yaw角度
     float cameraPitch_ = 0.0f;       // 一人称: 累積Pitch角度
+    bool yawPitchInitialized_ = false; // yaw/pitchが初期化済みか
     bool isPlaying_ = false;         // 再生中フラグ
     bool mouseLocked_ = false;       // マウスロック状態
     int mouseLockX_ = 0;             // マウスロック位置X

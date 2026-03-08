@@ -821,8 +821,8 @@ namespace UnoEngine {
 			// 残りをビューポート(75%) | 右プロパティ(25%)に分割
 			dock_viewport = ImGui::DockBuilderSplitNode(dock_main, ImGuiDir_Left, 0.75f, nullptr, &dock_right);
 
-			// 下部を左(20%) | 右(80%)に分割
-			dock_project = ImGui::DockBuilderSplitNode(dock_bottom, ImGuiDir_Left, 0.20f, nullptr, &dock_console);
+			// 下部を左(40%) | 右(60%)に分割
+			dock_project = ImGui::DockBuilderSplitNode(dock_bottom, ImGuiDir_Left, 0.40f, nullptr, &dock_console);
 
 			// ゲームを先にドック → シーンを後でドックしてアクティブにする
 			ImGui::DockBuilderDockWindow(U8("ゲーム"), dock_viewport);
@@ -5491,14 +5491,22 @@ void EditorUI::PreLoadPendingThumbnails() {
 			// ビルドログ（エラー時に表示）
 			const auto& buildLog = gameExporter_.GetBuildLog();
 			if (!buildLog.empty() && buildStatusMessage_.find("失敗") != std::string::npos) {
+				ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
 				if (ImGui::CollapsingHeader(U8("ビルドログ"))) {
-					if (ImGui::Button(U8("ログをコピー"))) {
+					if (ImGui::Button(U8("ログをクリップボードにコピー"))) {
 						ImGui::SetClipboardText(buildLog.c_str());
+						buildLogCopied_ = true;
+					}
+					if (buildLogCopied_) {
+						ImGui::SameLine();
+						ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.2f, 1.0f), U8("コピーしました!"));
 					}
 					ImGui::BeginChild("BuildLog", ImVec2(0, 150), ImGuiChildFlags_Borders);
 					ImGui::TextWrapped("%s", buildLog.c_str());
 					ImGui::EndChild();
 				}
+			} else {
+				buildLogCopied_ = false;
 			}
 
 			// ビルドボタン
@@ -5586,6 +5594,197 @@ void EditorUI::PreLoadPendingThumbnails() {
 			ImGui::Text("(%.1f, %.1f, %.1f, %.1f)", rot.GetX(), rot.GetY(), rot.GetZ(), rot.GetW());
 			ImGui::TextColored({0.65f,0.65f,0.65f,1.f}, U8("スケール")); ImGui::SameLine();
 			ImGui::Text("(%.2f, %.2f, %.2f)", scale.GetX(), scale.GetY(), scale.GetZ());
+
+			// メッシュ情報の表示
+			{
+				auto* meshRenderer = selected->GetComponent<MeshRenderer>();
+				auto* skinnedRenderer = selected->GetComponent<SkinnedMeshRenderer>();
+
+				if (meshRenderer && meshRenderer->HasModel()) {
+					ImGui::Separator();
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.9f, 1.0f, 1.0f));
+					ImGui::TextUnformatted("Mesh Info");
+					ImGui::PopStyleColor();
+
+					// モデルパス
+					const auto& modelPath = meshRenderer->GetModelPath();
+					if (!modelPath.empty()) {
+						std::string fileName = modelPath.substr(modelPath.find_last_of("/\\") + 1);
+						ImGui::TextColored({0.65f,0.65f,0.65f,1.f}, U8("モデル  ")); ImGui::SameLine();
+						ImGui::TextUnformatted(fileName.c_str());
+						if (ImGui::IsItemHovered()) {
+							ImGui::SetTooltip("%s", modelPath.c_str());
+						}
+					}
+
+					auto* model = meshRenderer->GetModel();
+					const auto& meshes = model->meshes;
+					uint32 totalVertices = 0;
+					uint32 totalIndices = 0;
+
+					for (const auto& mesh : meshes) {
+						totalVertices += mesh.GetVertexBuffer().GetVertexCount();
+						totalIndices += mesh.GetIndexBuffer().GetIndexCount();
+					}
+
+					ImGui::TextColored({0.65f,0.65f,0.65f,1.f}, U8("メッシュ数")); ImGui::SameLine();
+					ImGui::Text("%u", static_cast<uint32>(meshes.size()));
+					ImGui::TextColored({0.65f,0.65f,0.65f,1.f}, U8("頂点数  ")); ImGui::SameLine();
+					ImGui::Text("%u", totalVertices);
+					ImGui::TextColored({0.65f,0.65f,0.65f,1.f}, U8("三角形数")); ImGui::SameLine();
+					ImGui::Text("%u", totalIndices / 3);
+					ImGui::TextColored({0.65f,0.65f,0.65f,1.f}, U8("インデックス数")); ImGui::SameLine();
+					ImGui::Text("%u", totalIndices);
+
+					// バウンディングボックス
+					auto bbMin = model->boundingBox.min;
+					auto bbMax = model->boundingBox.max;
+					ImGui::TextColored({0.65f,0.65f,0.65f,1.f}, "Bounds Min"); ImGui::SameLine();
+					ImGui::Text("(%.2f, %.2f, %.2f)", bbMin.GetX(), bbMin.GetY(), bbMin.GetZ());
+					ImGui::TextColored({0.65f,0.65f,0.65f,1.f}, "Bounds Max"); ImGui::SameLine();
+					ImGui::Text("(%.2f, %.2f, %.2f)", bbMax.GetX(), bbMax.GetY(), bbMax.GetZ());
+					auto size = bbMax - bbMin;
+					ImGui::TextColored({0.65f,0.65f,0.65f,1.f}, U8("サイズ  ")); ImGui::SameLine();
+					ImGui::Text("(%.2f, %.2f, %.2f)", size.GetX(), size.GetY(), size.GetZ());
+
+					// メッシュ詳細（折りたたみ）
+					if (meshes.size() > 1 && ImGui::TreeNode(U8("メッシュ詳細"))) {
+						for (size_t i = 0; i < meshes.size(); ++i) {
+							const auto& mesh = meshes[i];
+							std::string meshLabel = mesh.GetName().empty()
+								? std::format("Mesh #{}", i)
+								: mesh.GetName();
+
+							if (ImGui::TreeNode(meshLabel.c_str())) {
+								ImGui::Text(U8("  頂点: %u  三角形: %u"),
+									mesh.GetVertexBuffer().GetVertexCount(),
+									mesh.GetIndexBuffer().GetIndexCount() / 3);
+
+								auto mMin = mesh.GetBoundsMin();
+								auto mMax = mesh.GetBoundsMax();
+								ImGui::Text("  Bounds: (%.2f,%.2f,%.2f) - (%.2f,%.2f,%.2f)",
+									mMin.GetX(), mMin.GetY(), mMin.GetZ(),
+									mMax.GetX(), mMax.GetY(), mMax.GetZ());
+
+								if (mesh.HasMaterial()) {
+									const auto& mat = mesh.GetMaterial()->GetData();
+									if (!mat.name.empty()) {
+										ImGui::Text(U8("  マテリアル: %s"), mat.name.c_str());
+									}
+									if (!mat.diffuseTexturePath.empty()) {
+										std::string texName = mat.diffuseTexturePath.substr(
+											mat.diffuseTexturePath.find_last_of("/\\") + 1);
+										ImGui::Text(U8("  テクスチャ: %s"), texName.c_str());
+									}
+									ImGui::Text("  Metallic: %.2f  Roughness: %.2f", mat.metallic, mat.roughness);
+								}
+								ImGui::TreePop();
+							}
+						}
+						ImGui::TreePop();
+					} else if (meshes.size() == 1 && meshes[0].HasMaterial()) {
+						const auto& mat = meshes[0].GetMaterial()->GetData();
+						if (!mat.name.empty()) {
+							ImGui::TextColored({0.65f,0.65f,0.65f,1.f}, U8("マテリアル")); ImGui::SameLine();
+							ImGui::TextUnformatted(mat.name.c_str());
+						}
+						if (!mat.diffuseTexturePath.empty()) {
+							std::string texName = mat.diffuseTexturePath.substr(
+								mat.diffuseTexturePath.find_last_of("/\\") + 1);
+							ImGui::TextColored({0.65f,0.65f,0.65f,1.f}, U8("テクスチャ")); ImGui::SameLine();
+							ImGui::TextUnformatted(texName.c_str());
+						}
+						ImGui::TextColored({0.65f,0.65f,0.65f,1.f}, "PBR"); ImGui::SameLine();
+						ImGui::Text("Metallic: %.2f  Roughness: %.2f", mat.metallic, mat.roughness);
+					}
+				}
+				else if (skinnedRenderer && skinnedRenderer->HasModel()) {
+					ImGui::Separator();
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.9f, 1.0f, 1.0f));
+					ImGui::TextUnformatted("Skinned Mesh Info");
+					ImGui::PopStyleColor();
+
+					// モデルパス
+					const auto& modelPath = skinnedRenderer->GetModelPath();
+					if (!modelPath.empty()) {
+						std::string fileName = modelPath.substr(modelPath.find_last_of("/\\") + 1);
+						ImGui::TextColored({0.65f,0.65f,0.65f,1.f}, U8("モデル  ")); ImGui::SameLine();
+						ImGui::TextUnformatted(fileName.c_str());
+						if (ImGui::IsItemHovered()) {
+							ImGui::SetTooltip("%s", modelPath.c_str());
+						}
+					}
+
+					auto* modelData = skinnedRenderer->GetModelData();
+					const auto& meshes = modelData->meshes;
+					uint32 totalVertices = 0;
+					uint32 totalIndices = 0;
+
+					for (const auto& mesh : meshes) {
+						totalVertices += mesh.GetVertexBuffer().GetVertexCount();
+						totalIndices += mesh.GetIndexBuffer().GetIndexCount();
+					}
+
+					ImGui::TextColored({0.65f,0.65f,0.65f,1.f}, U8("メッシュ数")); ImGui::SameLine();
+					ImGui::Text("%u", static_cast<uint32>(meshes.size()));
+					ImGui::TextColored({0.65f,0.65f,0.65f,1.f}, U8("頂点数  ")); ImGui::SameLine();
+					ImGui::Text("%u", totalVertices);
+					ImGui::TextColored({0.65f,0.65f,0.65f,1.f}, U8("三角形数")); ImGui::SameLine();
+					ImGui::Text("%u", totalIndices / 3);
+					ImGui::TextColored({0.65f,0.65f,0.65f,1.f}, U8("インデックス数")); ImGui::SameLine();
+					ImGui::Text("%u", totalIndices);
+
+					// ボーン情報
+					if (modelData->skeleton) {
+						ImGui::TextColored({0.65f,0.65f,0.65f,1.f}, U8("ボーン数")); ImGui::SameLine();
+						ImGui::Text("%u", modelData->skeleton->GetBoneCount());
+					}
+
+					// アニメーション情報
+					if (!modelData->animations.empty()) {
+						ImGui::TextColored({0.65f,0.65f,0.65f,1.f}, U8("アニメーション")); ImGui::SameLine();
+						ImGui::Text("%u", static_cast<uint32>(modelData->animations.size()));
+					}
+
+					// バウンディングボックス
+					auto bbMin = modelData->boundingBox.min;
+					auto bbMax = modelData->boundingBox.max;
+					ImGui::TextColored({0.65f,0.65f,0.65f,1.f}, "Bounds Min"); ImGui::SameLine();
+					ImGui::Text("(%.2f, %.2f, %.2f)", bbMin.GetX(), bbMin.GetY(), bbMin.GetZ());
+					ImGui::TextColored({0.65f,0.65f,0.65f,1.f}, "Bounds Max"); ImGui::SameLine();
+					ImGui::Text("(%.2f, %.2f, %.2f)", bbMax.GetX(), bbMax.GetY(), bbMax.GetZ());
+
+					// メッシュ詳細（折りたたみ）
+					if (meshes.size() > 1 && ImGui::TreeNode(U8("メッシュ詳細"))) {
+						for (size_t i = 0; i < meshes.size(); ++i) {
+							const auto& mesh = meshes[i];
+							std::string meshLabel = mesh.GetName().empty()
+								? std::format("Mesh #{}", i)
+								: mesh.GetName();
+
+							if (ImGui::TreeNode(meshLabel.c_str())) {
+								ImGui::Text(U8("  頂点: %u  三角形: %u"),
+									mesh.GetVertexBuffer().GetVertexCount(),
+									mesh.GetIndexBuffer().GetIndexCount() / 3);
+
+								if (mesh.HasMaterial()) {
+									const auto& mat = mesh.GetMaterial()->GetData();
+									if (!mat.name.empty()) {
+										ImGui::Text(U8("  マテリアル: %s"), mat.name.c_str());
+									}
+									if (!mat.diffuseTexturePath.empty()) {
+										std::string texName = mat.diffuseTexturePath.substr(
+											mat.diffuseTexturePath.find_last_of("/\\") + 1);
+										ImGui::Text(U8("  テクスチャ: %s"), texName.c_str());
+									}
+								}
+								ImGui::TreePop();
+							}
+						}
+						ImGui::TreePop();
+					}
+				}
+			}
 
 			// NavAgentコンポーネントの表示
 			auto* navAgent = selected->GetComponent<NavAgentComponent>();

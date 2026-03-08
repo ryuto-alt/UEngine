@@ -506,6 +506,7 @@ private:
     std::atomic<bool> exportDone_{false};
     bool exportSuccess_ = false;
     std::string exportError_;
+    bool buildLogCopied_ = false;
 };
 
 } // namespace UnoEngine

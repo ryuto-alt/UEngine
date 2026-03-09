@@ -414,6 +414,7 @@ private:
     // 遅延ロード用キュー
     std::vector<std::string> pendingModelLoads_;
     std::optional<Vector3> pendingDropPosition_;  // Scene ViewへのD&Dドロップ位置
+    std::vector<GameObject*> pendingPasteResourceLoads_;  // ペースト後のリソース遅延ロード
 
     // D&D処理用ヘルパー
     void HandleModelDragDrop(const std::string& modelPath);

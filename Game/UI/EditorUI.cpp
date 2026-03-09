@@ -4329,6 +4329,10 @@ void EditorUI::PreLoadPendingThumbnails() {
 						GameObject* rawPtr = newObj.get();
 						gameObjects_->push_back(std::move(newObj));
 						if (scene_) scene_->StartGameObject(rawPtr);
+
+						// リソースロードは遅延処理（レンダリング中のコマンドリスト衝突を回避）
+						pendingPasteResourceLoads_.push_back(rawPtr);
+
 						selectedObjects_.insert(rawPtr);
 						selectedObject_ = rawPtr;
 
@@ -4810,6 +4814,52 @@ void EditorUI::PreLoadPendingThumbnails() {
 
 	// 遅延ロード処理
 	void EditorUI::ProcessPendingLoads() {
+		// ペーストされたオブジェクトのリソースロード
+		if (!pendingPasteResourceLoads_.empty() && resourceManager_) {
+			for (auto* obj : pendingPasteResourceLoads_) {
+				if (!obj) continue;
+
+				auto* skinnedRenderer = obj->GetComponent<SkinnedMeshRenderer>();
+				if (skinnedRenderer) {
+					std::string modelPath = skinnedRenderer->GetModelPath();
+					if (!modelPath.empty()) {
+						resourceManager_->BeginUpload();
+						auto* modelData = resourceManager_->LoadSkinnedModel(modelPath);
+						resourceManager_->EndUpload();
+						if (modelData) {
+							skinnedRenderer->SetModel(modelData);
+							auto* animator = obj->GetComponent<AnimatorComponent>();
+							if (!animator) animator = obj->AddComponent<AnimatorComponent>();
+							if (modelData->skeleton) {
+								animator->Initialize(modelData->skeleton, modelData->animations);
+								if (!modelData->animations.empty()) {
+									animator->Play(modelData->animations[0]->GetName(), true);
+								}
+							}
+						}
+					}
+				}
+
+				auto* meshRenderer = obj->GetComponent<MeshRenderer>();
+				if (meshRenderer) {
+					std::string modelPath = meshRenderer->GetModelPath();
+					if (!modelPath.empty()) {
+						resourceManager_->BeginUpload();
+						auto* modelData = resourceManager_->LoadStaticModel(modelPath);
+						resourceManager_->EndUpload();
+						if (modelData && !modelData->meshes.empty()) {
+							meshRenderer->SetModel(modelData);
+							auto* collision = obj->GetComponent<CollisionComponent>();
+							if (collision) collision->RecalculateFromMesh();
+							auto* meshCollider = obj->GetComponent<MeshColliderComponent>();
+							if (meshCollider) meshCollider->RebuildBVH();
+						}
+					}
+				}
+			}
+			pendingPasteResourceLoads_.clear();
+		}
+
 		if (pendingModelLoads_.empty()) return;
 		if (!gameObjects_ || !resourceManager_) return;
 

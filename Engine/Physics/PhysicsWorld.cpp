@@ -2,6 +2,9 @@
 #include "PhysicsWorld.h"
 #include "../Core/GameObject.h"
 #include "../Core/CollisionComponent.h"
+#include "MeshColliderComponent.h"
+#include "../Core/Transform.h"
+#include "../Math/Matrix.h"
 #include <limits>
 #include <cmath>
 
@@ -92,6 +95,32 @@ std::optional<RayHit> PhysicsWorld::Raycast(
             for (const auto& aabb : collision->GetWorldAABBs()) testAABB(aabb);
         } else {
             testAABB(collision->GetWorldAABB());
+        }
+
+        // BVH mesh raycast for higher precision
+        auto* meshCollider = obj->GetComponent<MeshColliderComponent>();
+        if (meshCollider && meshCollider->IsBuilt()) {
+            Matrix4x4 worldMatrix = obj->GetTransform().GetWorldMatrix();
+            Matrix4x4 invWorld = worldMatrix.Inverse();
+
+            Vector3 localOrigin = invWorld.TransformPoint(origin);
+            Vector3 localDir = invWorld.TransformDirection(dir).Normalize();
+
+            auto bvhHit = meshCollider->GetBVH()->Raycast(localOrigin, localDir, closestDist);
+            if (bvhHit) {
+                // Transform hit back to world space
+                Vector3 worldPoint = worldMatrix.TransformPoint(bvhHit->point);
+                float worldDist = (worldPoint - origin).Length();
+                if (worldDist < closestDist) {
+                    closestDist = worldDist;
+                    RayHit hit;
+                    hit.object   = obj.get();
+                    hit.distance = worldDist;
+                    hit.point    = worldPoint;
+                    hit.normal   = worldMatrix.TransformDirection(bvhHit->normal).Normalize();
+                    closest = hit;
+                }
+            }
         }
     }
 

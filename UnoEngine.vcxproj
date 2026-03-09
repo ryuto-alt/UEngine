@@ -154,6 +154,9 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
     <ClCompile Include="Engine\Core\CollisionComponent.cpp" />
     <ClCompile Include="Engine\Core\PrefabManager.cpp" />
     <ClCompile Include="Engine\Physics\PhysicsWorld.cpp" />
+    <ClCompile Include="Engine\Physics\BVHTree.cpp" />
+    <ClCompile Include="Engine\Physics\MeshColliderComponent.cpp" />
+    <ClCompile Include="Engine\Physics\CapsuleColliderComponent.cpp" />
     <ClCompile Include="Engine\Scene\SceneSerializer.cpp" />
     <ClCompile Include="Engine\Core\OrbitController.cpp" />
     <ClCompile Include="Engine\Core\Logger.cpp" />
@@ -165,6 +168,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
     <ClCompile Include="Engine\Graphics\Pipeline.cpp" />
     <ClCompile Include="Engine\Graphics\VertexBuffer.cpp" />
     <ClCompile Include="Engine\Math\Quaternion.cpp" />
+    <ClCompile Include="Engine\Math\GeometryUtils.cpp" />
     <ClCompile Include="Engine\Input\Keyboard.cpp" />
     <ClCompile Include="Engine\Input\Mouse.cpp" />
     <ClCompile Include="Engine\Input\InputManager.cpp" />
@@ -222,6 +226,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
     <ClCompile Include="Engine\Systems\SystemManager.cpp" />
     <ClCompile Include="Engine\Systems\CollisionSystem.cpp" />
     <ClCompile Include="Engine\Systems\PhysicsSystem.cpp" />
+    <ClCompile Include="Engine\Systems\MeshCollisionSystem.cpp" />
     <ClCompile Include="Engine\AI\NavMesh\NavMeshBuilder.cpp" />
     <ClCompile Include="Engine\AI\NavMesh\NavMeshQuery.cpp" />
     <ClCompile Include="Engine\AI\NavMesh\NavMeshSerializer.cpp" />

@@ -43,6 +43,9 @@
     <Filter Include="Engine\Systems">
       <UniqueIdentifier>{1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Physics">
+      <UniqueIdentifier>{2c3d4e5f-6a7b-8c9d-0e1f-2a3b4c5d6e7f}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Engine\Vegetation">
       <UniqueIdentifier>{a1b2c3d4-e5f6-7890-abcd-ef1234567890}</UniqueIdentifier>
     </Filter>
@@ -254,6 +257,9 @@
     <ClCompile Include="Engine\Math\Quaternion.cpp">
       <Filter>Engine\Math</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Math\GeometryUtils.cpp">
+      <Filter>Engine\Math</Filter>
+    </ClCompile>
     <!-- Engine\Input -->
     <ClCompile Include="Engine\Input\Keyboard.cpp">
       <Filter>Engine\Input</Filter>
@@ -328,6 +334,19 @@
     </ClCompile>
     <ClCompile Include="Engine\Systems\CollisionSystem.cpp">
       <Filter>Engine\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Systems\MeshCollisionSystem.cpp">
+      <Filter>Engine\Systems</Filter>
+    </ClCompile>
+    <!-- Engine\Physics -->
+    <ClCompile Include="Engine\Physics\BVHTree.cpp">
+      <Filter>Engine\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Physics\MeshColliderComponent.cpp">
+      <Filter>Engine\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Physics\CapsuleColliderComponent.cpp">
+      <Filter>Engine\Physics</Filter>
     </ClCompile>
     <!-- Engine\Animation -->
     <ClCompile Include="Engine\Animation\Skeleton.cpp">
@@ -819,6 +838,9 @@
     <ClInclude Include="Engine\Math\BoundingVolume.h">
       <Filter>Engine\Math</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Math\GeometryUtils.h">
+      <Filter>Engine\Math</Filter>
+    </ClInclude>
     <!-- Engine\Input -->
     <ClInclude Include="Engine\Input\Keyboard.h">
       <Filter>Engine\Input</Filter>
@@ -899,6 +921,19 @@
     </ClInclude>
     <ClInclude Include="Engine\Systems\CollisionSystem.h">
       <Filter>Engine\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Systems\MeshCollisionSystem.h">
+      <Filter>Engine\Systems</Filter>
+    </ClInclude>
+    <!-- Engine\Physics -->
+    <ClInclude Include="Engine\Physics\BVHTree.h">
+      <Filter>Engine\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Physics\MeshColliderComponent.h">
+      <Filter>Engine\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Physics\CapsuleColliderComponent.h">
+      <Filter>Engine\Physics</Filter>
     </ClInclude>
     <!-- Engine\Animation -->
     <ClInclude Include="Engine\Animation\Skeleton.h">

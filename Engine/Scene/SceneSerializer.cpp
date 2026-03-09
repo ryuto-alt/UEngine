@@ -17,6 +17,8 @@
 #include "../Graphics/PointLightComponent.h"
 #include "../Graphics/SpotLightComponent.h"
 #include "../Physics/RigidbodyComponent.h"
+#include "../Physics/MeshColliderComponent.h"
+#include "../Physics/CapsuleColliderComponent.h"
 #include "../Vegetation/GrassSystem.h"
 #include <fstream>
 #include <iostream>
@@ -581,6 +583,25 @@ json SceneSerializer::SerializeComponent(const Component& component) {
         return comp;
     }
 
+    // MeshColliderComponent
+    if (auto* mc = dynamic_cast<const MeshColliderComponent*>(&component)) {
+        comp["type"] = "MeshColliderComponent";
+        comp["enabled"] = mc->IsEnabled();
+        return comp;
+    }
+
+    // CapsuleColliderComponent
+    if (auto* cc = dynamic_cast<const CapsuleColliderComponent*>(&component)) {
+        comp["type"] = "CapsuleColliderComponent";
+        comp["enabled"] = cc->IsEnabled();
+        auto base = cc->GetLocalBase();
+        auto tip  = cc->GetLocalTip();
+        comp["localBase"] = { base.GetX(), base.GetY(), base.GetZ() };
+        comp["localTip"]  = { tip.GetX(),  tip.GetY(),  tip.GetZ()  };
+        comp["radius"]    = cc->GetRadius();
+        return comp;
+    }
+
     return json();
 }
 
@@ -974,6 +995,29 @@ void SceneSerializer::DeserializeComponent(const json& json, GameObject& gameObj
         if (json.contains("drag"))        rb->SetDrag(json["drag"].get<float>());
         if (json.contains("useGravity"))  rb->SetUseGravity(json["useGravity"].get<bool>());
         if (json.contains("isKinematic")) rb->SetKinematic(json["isKinematic"].get<bool>());
+    }
+    else if (type == "MeshColliderComponent") {
+        auto* mc = gameObject.AddComponent<MeshColliderComponent>();
+        if (json.contains("enabled")) {
+            mc->SetEnabled(json["enabled"].get<bool>());
+        }
+    }
+    else if (type == "CapsuleColliderComponent") {
+        auto* cc = gameObject.AddComponent<CapsuleColliderComponent>();
+        if (json.contains("enabled")) {
+            cc->SetEnabled(json["enabled"].get<bool>());
+        }
+        if (json.contains("localBase") && json["localBase"].is_array()) {
+            auto& b = json["localBase"];
+            cc->SetLocalBase(Vector3(b[0].get<float>(), b[1].get<float>(), b[2].get<float>()));
+        }
+        if (json.contains("localTip") && json["localTip"].is_array()) {
+            auto& t = json["localTip"];
+            cc->SetLocalTip(Vector3(t[0].get<float>(), t[1].get<float>(), t[2].get<float>()));
+        }
+        if (json.contains("radius")) {
+            cc->SetRadius(json["radius"].get<float>());
+        }
     }
 }
 

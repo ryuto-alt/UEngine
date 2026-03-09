@@ -23,6 +23,8 @@
 #include "../../Engine/Graphics/PointLightComponent.h"
 #include "../../Engine/Graphics/SpotLightComponent.h"
 #include "../../Engine/Physics/RigidbodyComponent.h"
+#include "../../Engine/Physics/MeshColliderComponent.h"
+#include "../../Engine/Physics/CapsuleColliderComponent.h"
 #include "../../Engine/Core/PrefabManager.h"
 #include "../../Engine/Editor/ParticleEditor.h"
 #include "../../Engine/Navigation/NavMeshManager.h"
@@ -1417,151 +1419,224 @@ namespace UnoEngine {
 				}
 			}
 
-			// Collision セクション
-			if (auto* collision = selected->GetComponent<CollisionComponent>()) {
-				if (DrawComponentHeader(U8("  コリジョン"), {0.55f, 0.28f, 0.08f, 0.85f})) {
-					// 有効/無効
-					bool enabled = collision->IsEnabled();
-					ImGui::Text(U8("有効"));
-					ImGui::SameLine(100.0f);
-					if (ImGui::Checkbox("##CollisionEnabled", &enabled)) {
-						collision->SetEnabled(enabled);
-						isDirty_ = true;
-					}
+			// ── 当たり判定セクション ──
+			{
+				auto* collision = selected->GetComponent<CollisionComponent>();
+				auto* meshCol   = selected->GetComponent<MeshColliderComponent>();
+				auto* capsuleCol = selected->GetComponent<CapsuleColliderComponent>();
+				bool hasAnyCollider = collision || meshCol || capsuleCol;
 
-					// 衝突状態表示
-					bool isColliding = collision->IsColliding();
-					ImGui::Text(U8("衝突中"));
-					ImGui::SameLine(100.0f);
-					ImGui::TextColored(isColliding ? ImVec4(1, 0, 0, 1) : ImVec4(0, 1, 0, 1),
-						isColliding ? U8("はい") : U8("いいえ"));
+				if (hasAnyCollider) {
+					if (DrawComponentHeader(U8("  当たり判定"), {0.55f, 0.28f, 0.08f, 0.85f})) {
 
-					// トリガー設定
-					bool isTrigger = collision->IsTrigger();
-					ImGui::Text(U8("トリガー"));
-					ImGui::SameLine(100.0f);
-					if (ImGui::Checkbox("##IsTrigger", &isTrigger)) {
-						collision->SetTrigger(isTrigger);
-						isDirty_ = true;
-					}
-
-					// 静的設定（壁や地形など動かないオブジェクト用）
-					bool isStatic = collision->IsStatic();
-					ImGui::Text(U8("静的"));
-					ImGui::SameLine(100.0f);
-					if (ImGui::Checkbox("##IsStatic", &isStatic)) {
-						collision->SetStatic(isStatic);
-						isDirty_ = true;
-					}
-
-					// NavMeshエリア設定
-					NavMeshAreaType navArea = collision->GetNavMeshArea();
-					const char* navAreaNames[] = { U8("なし"), U8("歩行可能") };
-					int navAreaIdx = static_cast<int>(navArea);
-					ImGui::Text(U8("NavMesh"));
-					ImGui::SameLine(100.0f);
-					ImGui::SetNextItemWidth(-1);
-					if (ImGui::Combo("##NavMeshArea", &navAreaIdx, navAreaNames, 2)) {
-						collision->SetNavMeshArea(static_cast<NavMeshAreaType>(navAreaIdx));
-						isDirty_ = true;
-					}
-					if (ImGui::IsItemHovered()) {
-						ImGui::SetTooltip(U8("「歩行可能」に設定するとNavMeshベイク時にこのコライダーが含まれます"));
-					}
-
-					// 自動サイズ設定
-					bool autoSize = collision->IsAutoSized();
-					ImGui::Text(U8("自動サイズ"));
-					ImGui::SameLine(100.0f);
-					if (ImGui::Checkbox("##AutoSize", &autoSize)) {
-						collision->SetAutoSize(autoSize);
-						if (autoSize) {
-							collision->RecalculateFromMesh();
-						}
-						isDirty_ = true;
-					}
-
-					// AABB表示
-					const auto& aabb = collision->GetLocalAABB();
-					float aabbMin[3] = { aabb.min.GetX(), aabb.min.GetY(), aabb.min.GetZ() };
-					float aabbMax[3] = { aabb.max.GetX(), aabb.max.GetY(), aabb.max.GetZ() };
-
-					ImGui::Text(U8("AABB Min"));
-					ImGui::SameLine(100.0f);
-					ImGui::SetNextItemWidth(-1);
-					if (!autoSize) {
-						if (ImGui::DragFloat3("##AABBMin", aabbMin, 0.01f)) {
-							collision->SetLocalAABB(
-								Vector3(aabbMin[0], aabbMin[1], aabbMin[2]),
-								Vector3(aabbMax[0], aabbMax[1], aabbMax[2])
-							);
+						// ── 形状タイプ切り替え (AABB / メッシュ) ──
+						bool hasMeshCol = meshCol != nullptr;
+						int shapeType = hasMeshCol ? 1 : 0;  // 0=AABB, 1=メッシュ
+						const char* shapeNames[] = { "AABB", U8("メッシュ") };
+						ImGui::Text(U8("形状"));
+						ImGui::SameLine(100.0f);
+						ImGui::SetNextItemWidth(-1);
+						if (ImGui::Combo("##CollShape", &shapeType, shapeNames, 2)) {
+							if (shapeType == 1 && !hasMeshCol) {
+								selected->AddComponent<MeshColliderComponent>();
+								if (!collision) {
+									selected->AddComponent<CollisionComponent>();
+									collision = selected->GetComponent<CollisionComponent>();
+								}
+							} else if (shapeType == 0 && hasMeshCol) {
+								selected->RemoveComponent<MeshColliderComponent>();
+								meshCol = nullptr;
+							}
 							isDirty_ = true;
 						}
-					} else {
-						ImGui::Text("%.2f, %.2f, %.2f", aabbMin[0], aabbMin[1], aabbMin[2]);
-					}
 
-					ImGui::Text(U8("AABB Max"));
-					ImGui::SameLine(100.0f);
-					ImGui::SetNextItemWidth(-1);
-					if (!autoSize) {
-						if (ImGui::DragFloat3("##AABBMax", aabbMax, 0.01f)) {
-							collision->SetLocalAABB(
-								Vector3(aabbMin[0], aabbMin[1], aabbMin[2]),
-								Vector3(aabbMax[0], aabbMax[1], aabbMax[2])
-							);
+						// ── 共通設定 (CollisionComponent) ──
+						if (collision) {
+							bool enabled = collision->IsEnabled();
+							ImGui::Text(U8("有効"));
+							ImGui::SameLine(100.0f);
+							if (ImGui::Checkbox("##CollEnabled", &enabled)) {
+								collision->SetEnabled(enabled);
+								if (meshCol) meshCol->SetEnabled(enabled);
+								isDirty_ = true;
+							}
+
+							bool isColliding = collision->IsColliding();
+							ImGui::Text(U8("衝突中"));
+							ImGui::SameLine(100.0f);
+							ImGui::TextColored(isColliding ? ImVec4(1, 0, 0, 1) : ImVec4(0, 1, 0, 1),
+								isColliding ? U8("はい") : U8("いいえ"));
+
+							bool isTrigger = collision->IsTrigger();
+							ImGui::Text(U8("トリガー"));
+							ImGui::SameLine(100.0f);
+							if (ImGui::Checkbox("##IsTrigger", &isTrigger)) {
+								collision->SetTrigger(isTrigger); isDirty_ = true;
+							}
+
+							bool isStatic = collision->IsStatic();
+							ImGui::Text(U8("静的"));
+							ImGui::SameLine(100.0f);
+							if (ImGui::Checkbox("##IsStatic", &isStatic)) {
+								collision->SetStatic(isStatic); isDirty_ = true;
+							}
+
+							NavMeshAreaType navArea = collision->GetNavMeshArea();
+							const char* navAreaNames[] = { U8("なし"), U8("歩行可能") };
+							int navAreaIdx = static_cast<int>(navArea);
+							ImGui::Text(U8("NavMesh"));
+							ImGui::SameLine(100.0f);
+							ImGui::SetNextItemWidth(-1);
+							if (ImGui::Combo("##NavMeshArea", &navAreaIdx, navAreaNames, 2)) {
+								collision->SetNavMeshArea(static_cast<NavMeshAreaType>(navAreaIdx));
+								isDirty_ = true;
+							}
+						}
+
+						ImGui::Separator();
+
+						// ── 形状別パラメータ ──
+						meshCol = selected->GetComponent<MeshColliderComponent>();
+						if (meshCol) {
+							// メッシュコライダー詳細
+							ImGui::TextDisabled(U8("三角形数: %u"), meshCol->GetTriangleCount());
+							ImGui::TextDisabled(meshCol->IsBuilt() ? U8("BVH: 構築済み") : U8("BVH: 未構築"));
+							if (ImGui::Button(U8("BVH再構築"))) {
+								meshCol->RebuildBVH(); isDirty_ = true;
+							}
+						} else if (collision) {
+							// AABB詳細
+							bool autoSize = collision->IsAutoSized();
+							ImGui::Text(U8("自動サイズ"));
+							ImGui::SameLine(100.0f);
+							if (ImGui::Checkbox("##AutoSize", &autoSize)) {
+								collision->SetAutoSize(autoSize);
+								if (autoSize) collision->RecalculateFromMesh();
+								isDirty_ = true;
+							}
+
+							const auto& aabb = collision->GetLocalAABB();
+							float aabbMin[3] = { aabb.min.GetX(), aabb.min.GetY(), aabb.min.GetZ() };
+							float aabbMax[3] = { aabb.max.GetX(), aabb.max.GetY(), aabb.max.GetZ() };
+
+							ImGui::Text(U8("最小"));
+							ImGui::SameLine(100.0f);
+							ImGui::SetNextItemWidth(-1);
+							if (!autoSize) {
+								if (ImGui::DragFloat3("##AABBMin", aabbMin, 0.01f)) {
+									collision->SetLocalAABB(
+										Vector3(aabbMin[0], aabbMin[1], aabbMin[2]),
+										Vector3(aabbMax[0], aabbMax[1], aabbMax[2]));
+									isDirty_ = true;
+								}
+							} else {
+								ImGui::Text("%.2f, %.2f, %.2f", aabbMin[0], aabbMin[1], aabbMin[2]);
+							}
+
+							ImGui::Text(U8("最大"));
+							ImGui::SameLine(100.0f);
+							ImGui::SetNextItemWidth(-1);
+							if (!autoSize) {
+								if (ImGui::DragFloat3("##AABBMax", aabbMax, 0.01f)) {
+									collision->SetLocalAABB(
+										Vector3(aabbMin[0], aabbMin[1], aabbMin[2]),
+										Vector3(aabbMax[0], aabbMax[1], aabbMax[2]));
+									isDirty_ = true;
+								}
+							} else {
+								ImGui::Text("%.2f, %.2f, %.2f", aabbMax[0], aabbMax[1], aabbMax[2]);
+							}
+
+							if (ImGui::Button(U8("メッシュから再計算"))) {
+								collision->RecalculateFromMesh(); isDirty_ = true;
+							}
+						}
+
+						// ── カプセルコライダー (キャラクター用) ──
+						ImGui::Separator();
+						if (capsuleCol) {
+							ImGui::TextColored(ImVec4(0.6f, 0.85f, 1.0f, 1.0f), U8("カプセル"));
+
+							bool ccEnabled = capsuleCol->IsEnabled();
+							if (ImGui::Checkbox(U8("有効##CC"), &ccEnabled)) {
+								capsuleCol->SetEnabled(ccEnabled); isDirty_ = true;
+							}
+							float base[3] = { capsuleCol->GetLocalBase().GetX(), capsuleCol->GetLocalBase().GetY(), capsuleCol->GetLocalBase().GetZ() };
+							ImGui::Text(U8("下端")); ImGui::SameLine(100.0f); ImGui::SetNextItemWidth(-1);
+							if (ImGui::DragFloat3("##CCBase", base, 0.01f)) {
+								capsuleCol->SetLocalBase(Vector3(base[0], base[1], base[2])); isDirty_ = true;
+							}
+							float tip[3] = { capsuleCol->GetLocalTip().GetX(), capsuleCol->GetLocalTip().GetY(), capsuleCol->GetLocalTip().GetZ() };
+							ImGui::Text(U8("上端")); ImGui::SameLine(100.0f); ImGui::SetNextItemWidth(-1);
+							if (ImGui::DragFloat3("##CCTip", tip, 0.01f)) {
+								capsuleCol->SetLocalTip(Vector3(tip[0], tip[1], tip[2])); isDirty_ = true;
+							}
+							float radius = capsuleCol->GetRadius();
+							ImGui::Text(U8("半径")); ImGui::SameLine(100.0f); ImGui::SetNextItemWidth(-1);
+							if (ImGui::DragFloat("##CCRadius", &radius, 0.01f, 0.01f, 10.0f)) {
+								capsuleCol->SetRadius(radius); isDirty_ = true;
+							}
+							if (ImGui::Button(U8("カプセル削除"))) {
+								selected->RemoveComponent<CapsuleColliderComponent>(); isDirty_ = true;
+							}
+						} else {
+							if (ImGui::Button(U8("カプセル追加"))) {
+								selected->AddComponent<CapsuleColliderComponent>(); isDirty_ = true;
+							}
+							ImGui::SameLine();
+							ImGui::TextDisabled(U8("(キャラクターに必要)"));
+						}
+					}
+				} else {
+					// 当たり判定コンポーネントが何もない場合
+					if (DrawComponentHeader(U8("  当たり判定"), {0.38f, 0.38f, 0.38f, 0.85f}, false)) {
+						ImGui::TextDisabled(U8("(当たり判定なし)"));
+						if (ImGui::Button(U8("AABB追加"))) {
+							selected->AddComponent<CollisionComponent>(); isDirty_ = true;
+						}
+						ImGui::SameLine();
+						if (ImGui::Button(U8("メッシュ追加"))) {
+							selected->AddComponent<CollisionComponent>();
+							selected->AddComponent<MeshColliderComponent>();
 							isDirty_ = true;
 						}
-					} else {
-						ImGui::Text("%.2f, %.2f, %.2f", aabbMax[0], aabbMax[1], aabbMax[2]);
-					}
-
-					// メッシュから再計算ボタン
-					if (ImGui::Button(U8("メッシュから再計算"))) {
-						collision->RecalculateFromMesh();
-						isDirty_ = true;
-					}
-				}
-			} else {
-				// CollisionComponentがない場合
-				if (DrawComponentHeader(U8("  物理"), {0.38f, 0.38f, 0.38f, 0.85f}, false)) {
-					ImGui::TextDisabled(U8("(コリジョンなし)"));
-					if (ImGui::Button(U8("コリジョン追加"))) {
-						selected->AddComponent<CollisionComponent>();
-						isDirty_ = true;
+						ImGui::SameLine();
+						if (ImGui::Button(U8("カプセル追加"))) {
+							selected->AddComponent<CapsuleColliderComponent>(); isDirty_ = true;
+						}
 					}
 				}
 			}
 
-			// Rigidbody section
+			// ── 物理セクション ──
 			if (auto* rb = selected->GetComponent<RigidbodyComponent>()) {
-				if (DrawComponentHeader(U8("  Rigidbody"), {0.20f, 0.50f, 0.80f, 0.85f})) {
+				if (DrawComponentHeader(U8("  物理"), {0.20f, 0.50f, 0.80f, 0.85f})) {
 					float rbMass = rb->GetMass();
-					ImGui::Text("Mass"); ImGui::SameLine(100.0f); ImGui::SetNextItemWidth(-1);
+					ImGui::Text(U8("質量")); ImGui::SameLine(100.0f); ImGui::SetNextItemWidth(-1);
 					if (ImGui::DragFloat("##RBMass", &rbMass, 0.01f, 0.001f, 1000.0f)) {
 						rb->SetMass(rbMass); isDirty_ = true;
 					}
 					float rbDrag = rb->GetDrag();
-					ImGui::Text("Drag"); ImGui::SameLine(100.0f); ImGui::SetNextItemWidth(-1);
+					ImGui::Text(U8("抗力")); ImGui::SameLine(100.0f); ImGui::SetNextItemWidth(-1);
 					if (ImGui::DragFloat("##RBDrag", &rbDrag, 0.001f, 0.0f, 10.0f)) {
 						rb->SetDrag(rbDrag); isDirty_ = true;
 					}
 					bool rbUseGrav = rb->UseGravity();
-					if (ImGui::Checkbox("Use Gravity", &rbUseGrav)) {
+					if (ImGui::Checkbox(U8("重力"), &rbUseGrav)) {
 						rb->SetUseGravity(rbUseGrav); isDirty_ = true;
 					}
 					bool rbKinematic = rb->IsKinematic();
-					if (ImGui::Checkbox("Is Kinematic", &rbKinematic)) {
+					if (ImGui::Checkbox(U8("キネマティック"), &rbKinematic)) {
 						rb->SetKinematic(rbKinematic); isDirty_ = true;
 					}
 					auto rbVel = rb->GetVelocity();
-					ImGui::TextDisabled("Vel: (%.2f, %.2f, %.2f)", rbVel.GetX(), rbVel.GetY(), rbVel.GetZ());
-					ImGui::TextDisabled(rb->IsGrounded() ? "Grounded: Yes" : "Grounded: No");
+					ImGui::TextDisabled(U8("速度: (%.2f, %.2f, %.2f)"), rbVel.GetX(), rbVel.GetY(), rbVel.GetZ());
+					ImGui::TextDisabled(rb->IsGrounded() ? U8("接地: はい") : U8("接地: いいえ"));
 				}
 			} else {
-				if (DrawComponentHeader("  Rigidbody", {0.38f, 0.38f, 0.38f, 0.85f}, false)) {
-					ImGui::TextDisabled("(No Rigidbody)");
-					if (ImGui::Button("Add Rigidbody")) {
+				if (DrawComponentHeader(U8("  物理"), {0.38f, 0.38f, 0.38f, 0.85f}, false)) {
+					ImGui::TextDisabled(U8("(物理なし)"));
+					if (ImGui::Button(U8("物理追加"))) {
 						selected->AddComponent<RigidbodyComponent>(); isDirty_ = true;
 					}
 				}

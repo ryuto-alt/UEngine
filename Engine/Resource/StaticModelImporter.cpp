@@ -262,10 +262,9 @@ StaticModelData StaticModelImporter::Load(GraphicsDevice* graphics, ID3D12Graphi
     const aiScene* scene = importer.ReadFile(filepath, flags);
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-        std::string errorMsg = "静的モデルファイルを読み込めませんでした\n\n";
-        errorMsg += "Assimpエラー: " + std::string(importer.GetErrorString());
-        LogImportError(errorMsg, filepath);
-        throw std::runtime_error("Failed to load static model: " + filepath);
+        Logger::Warning("[StaticModelImporter] ファイルをスキップ: {} ({})",
+                     filepath, importer.GetErrorString());
+        return {};
     }
 
     namespace fs = std::filesystem;

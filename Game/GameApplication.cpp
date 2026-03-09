@@ -7,6 +7,7 @@
 #include "../Engine/Audio/AudioSystem.h"
 #include "../Engine/Systems/CollisionSystem.h"
 #include "../Engine/Systems/PhysicsSystem.h"
+#include "../Engine/Systems/MeshCollisionSystem.h"
 #include "../Engine/Core/Logger.h"
 #include "../Engine/Video/VideoPlayerComponent.h"
 #include "../Engine/Rendering/LightManager.h"
@@ -31,7 +32,8 @@ void GameApplication::OnInit() {
     GetSystemManager()->RegisterSystem<AudioSystem>();
     GetSystemManager()->RegisterSystem<CollisionSystem>();
     GetSystemManager()->RegisterSystem<PhysicsSystem>();
-    Logger::Info("[初期化] システム登録完了 (Animation, Camera, Audio, Collision, Physics)");
+    GetSystemManager()->RegisterSystem<MeshCollisionSystem>();
+    Logger::Info("[初期化] システム登録完了 (Animation, Camera, Audio, Collision, Physics, MeshCollision)");
 }
 
 void GameApplication::OnUpdate(float deltaTime) {

@@ -5,6 +5,8 @@
 #include "../Core/GameObject.h"
 #include "../Core/Transform.h"
 #include "../Core/Logger.h"
+#include "../Physics/MeshColliderComponent.h"
+#include "../Physics/CapsuleColliderComponent.h"
 #include <algorithm>
 #include <cmath>
 #include <cfloat>
@@ -362,6 +364,19 @@ void CollisionSystem::UpdateCollisionStates() {
 bool CollisionSystem::ShouldCheckCollision(CollisionComponent* a, CollisionComponent* b) const {
     if (!a || !b) return false;
     if (!a->IsEnabled() || !b->IsEnabled()) return false;
+
+    // MeshCollider vs CapsuleCollider のペアはMeshCollisionSystemが処理する
+    auto* goA = a->GetGameObject();
+    auto* goB = b->GetGameObject();
+    if (goA && goB) {
+        auto* meshA = goA->GetComponent<MeshColliderComponent>();
+        auto* meshB = goB->GetComponent<MeshColliderComponent>();
+        auto* capA  = goA->GetComponent<CapsuleColliderComponent>();
+        auto* capB  = goB->GetComponent<CapsuleColliderComponent>();
+        bool hasMeshCap = (meshA && meshA->IsEnabled() && meshA->IsBuilt() && capB && capB->IsEnabled())
+                       || (meshB && meshB->IsEnabled() && meshB->IsBuilt() && capA && capA->IsEnabled());
+        if (hasMeshCap) return false;
+    }
 
     uint32_t layerA = a->GetCollisionLayer();
     uint32_t layerB = b->GetCollisionLayer();

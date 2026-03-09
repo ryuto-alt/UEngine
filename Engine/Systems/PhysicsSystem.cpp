@@ -33,19 +33,23 @@ void PhysicsSystem::OnUpdate(Scene* scene, float deltaTime) {
         auto& transform = obj->GetTransform();
         auto pos        = transform.GetLocalPosition();
 
-        // Gravity
-        if (rb->useGravity_) {
+        // MeshCollisionSystem (or previous frame) may have set grounded
+        bool wasGrounded = rb->isGrounded_;
+        bool aabbColliding = collision && collision->IsColliding();
+
+        // Gravity — skip if grounded (from any collision source)
+        if (rb->useGravity_ && !wasGrounded && !aabbColliding) {
             float vy = rb->velocity_.GetY() + kGravity * deltaTime;
             rb->velocity_ = Vector3(rb->velocity_.GetX(), vy, rb->velocity_.GetZ());
         }
 
-        // Ground detection: if colliding and moving downward, stop vertical motion
-        if (collision && collision->IsColliding() && rb->velocity_.GetY() < 0.0f) {
+        // Clamp downward velocity when grounded
+        if ((wasGrounded || aabbColliding) && rb->velocity_.GetY() < 0.0f) {
             rb->velocity_ = Vector3(rb->velocity_.GetX(), 0.0f, rb->velocity_.GetZ());
-            rb->isGrounded_ = true;
-        } else {
-            rb->isGrounded_ = false;
         }
+
+        // Reset grounded — will be re-set by MeshCollisionSystem / CollisionSystem
+        rb->isGrounded_ = false;
 
         // Integrate position
         float nx = pos.GetX() + rb->velocity_.GetX() * deltaTime;

@@ -119,17 +119,30 @@ void ShadowMap::RestoreForNextFrame(ID3D12GraphicsCommandList* cmdList) {
 
 Matrix4x4 ShadowMap::ComputeLightViewProj(const Vector3& lightDir,
                                            const Vector3& sceneCenter,
-                                           float sceneRadius) {
+                                           float sceneRadius,
+                                           uint32_t resolution) {
     Vector3 dir = lightDir.Normalize();
-    Vector3 lightPos = sceneCenter - dir * (sceneRadius * 2.0f);
-
     Vector3 up = (std::abs(dir.GetY()) > 0.99f)
         ? Vector3(1, 0, 0) : Vector3(0, 1, 0);
 
+    float halfSize = sceneRadius * 1.5f;
+
+    // Texel snapping: quantize shadow center to texel grid to prevent shadow swimming
+    Vector3 lightPos = sceneCenter - dir * (sceneRadius * 2.0f);
     Matrix4x4 view = Matrix4x4::LookAtLH(lightPos, sceneCenter, up);
 
-    // Symmetrical ortho covering the scene
-    float halfSize = sceneRadius * 1.5f;
+    Vector3 centerLS = view.TransformPoint(sceneCenter);
+    float texelSize = (halfSize * 2.0f) / static_cast<float>(resolution);
+    Vector3 snappedLS(
+        std::floor(centerLS.GetX() / texelSize) * texelSize,
+        std::floor(centerLS.GetY() / texelSize) * texelSize,
+        centerLS.GetZ()
+    );
+
+    Vector3 snappedCenter = view.Inverse().TransformPoint(snappedLS);
+    Vector3 snappedLightPos = snappedCenter - dir * (sceneRadius * 2.0f);
+    view = Matrix4x4::LookAtLH(snappedLightPos, snappedCenter, up);
+
     Matrix4x4 proj = Matrix4x4::OrthographicLH(
         halfSize * 2.0f, halfSize * 2.0f,
         0.1f, sceneRadius * 6.0f

@@ -29,14 +29,6 @@ void Material::LoadFromData(const MaterialData& data, GraphicsDevice* graphics,
             diffuseTexture_ = std::make_unique<Texture2D>();
             diffuseTexture_->LoadFromFile(graphics, commandList, texturePath.wstring(), srvIndex);
             textureLoaded = true;
-            OutputDebugStringA(("[Material] Texture loaded: " + texturePath.string() + " SRV=" + std::to_string(srvIndex) + "\n").c_str());
-
-            // Auto-detect alpha clip from texture alpha channel
-            if (diffuseTexture_->HasAlphaPixels() && !data_.useAlphaClip) {
-                data_.useAlphaClip = true;
-                data_.alphaClipThreshold = 0.5f;
-                OutputDebugStringA(("[Material] Alpha clip auto-enabled for: " + texturePath.string() + "\n").c_str());
-            }
         } else {
             OutputDebugStringA(("[Material] Texture NOT FOUND: " + texturePath.string() + "\n").c_str());
         }

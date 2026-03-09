@@ -43,7 +43,7 @@ void ShadowPipeline::CreateStaticPipeline(ID3D12Device* device) {
     pso.BlendState.RenderTarget[0].RenderTargetWriteMask = 0; // no color write
     pso.SampleMask              = UINT_MAX;
     pso.RasterizerState.FillMode      = D3D12_FILL_MODE_SOLID;
-    pso.RasterizerState.CullMode      = D3D12_CULL_MODE_FRONT; // front-face cull for peter-panning
+    pso.RasterizerState.CullMode      = D3D12_CULL_MODE_BACK;
     pso.RasterizerState.DepthBias     = 100;
     pso.RasterizerState.SlopeScaledDepthBias = 1.0f;
     pso.RasterizerState.DepthClipEnable = TRUE;

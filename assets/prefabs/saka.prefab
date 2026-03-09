@@ -1,0 +1,67 @@
+{
+    "active": true,
+    "components": [
+        {
+            "modelPath": "assets/model/saka/saka.gltf",
+            "type": "MeshRenderer"
+        },
+        {
+            "autoSize": true,
+            "collisionLayer": 0,
+            "collisionMask": 4294967295,
+            "enabled": true,
+            "isStatic": true,
+            "isTrigger": false,
+            "localAABBMax": [
+                1.0,
+                4.357112407684326,
+                6.709364414215088
+            ],
+            "localAABBMin": [
+                -1.0,
+                -4.357112407684326,
+                -6.709364414215088
+            ],
+            "localAABBs": [
+                {
+                    "max": [
+                        1.0,
+                        4.357112407684326,
+                        6.709364414215088
+                    ],
+                    "min": [
+                        -1.0,
+                        -4.357112407684326,
+                        -6.709364414215088
+                    ]
+                }
+            ],
+            "navMeshArea": 0,
+            "type": "CollisionComponent"
+        },
+        {
+            "enabled": true,
+            "type": "MeshColliderComponent"
+        }
+    ],
+    "layer": 1,
+    "name": "saka",
+    "transform": {
+        "position": [
+            81.13240814208984,
+            0.0,
+            61.144805908203125
+        ],
+        "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+        ],
+        "scale": [
+            2.130000114440918,
+            3.430000066757202,
+            5.0
+        ]
+    }
+}

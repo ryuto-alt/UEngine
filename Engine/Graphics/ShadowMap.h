@@ -27,7 +27,8 @@ public:
     // Compute orthographic light VP from directional light direction + scene bounds
     static Matrix4x4 ComputeLightViewProj(const Vector3& lightDir,
                                           const Vector3& sceneCenter,
-                                          float sceneRadius);
+                                          float sceneRadius,
+                                          uint32_t resolution = 2048);
 
     // Compute perspective VP for a spot light
     static Matrix4x4 ComputeSpotLightViewProj(const Vector3& position,

@@ -8,9 +8,8 @@
 #include <assimp/postprocess.h>
 #include <assimp/GltfMaterial.h>
 #include <filesystem>
-#include <Windows.h>
 #include <iostream>
-#include <cstdio>
+#include <Windows.h>
 #include <cfloat>
 
 namespace UnoEngine {
@@ -97,12 +96,17 @@ MaterialData ConvertMaterial(const aiMaterial* aiMat, const std::string& baseDir
         }
     }
 
-    // doubleSided検出
+    // doubleSided検出 (Assimpバージョンでint/boolどちらかで格納される)
     int twosided = 0;
     if (aiMat->Get(AI_MATKEY_TWOSIDED, twosided) == AI_SUCCESS && twosided) {
         material.doubleSided = true;
     }
-
+    if (!material.doubleSided) {
+        bool twosidedBool = false;
+        if (aiMat->Get(AI_MATKEY_TWOSIDED, twosidedBool) == AI_SUCCESS && twosidedBool) {
+            material.doubleSided = true;
+        }
+    }
     aiString texPath;
     if (aiMat->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == AI_SUCCESS) {
         namespace fs = std::filesystem;

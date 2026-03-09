@@ -196,8 +196,9 @@ void Renderer::UpdateLighting(const RenderView& view, LightManager* lights, Matr
 
     currentLightGpuAddr_ = lightBuffer_.Update(lightData);
 
-    // Compute directional light view-projection for shadow map
-    outLightViewProj = ShadowMap::ComputeLightViewProj(gpuLight.direction, Vector3(0.0f, 0.0f, 0.0f), 50.0f);
+    // Compute directional light view-projection for shadow map (centered on camera)
+    Vector3 shadowCenter = view.camera ? view.camera->GetPosition() : Vector3(0.0f, 0.0f, 0.0f);
+    outLightViewProj = ShadowMap::ComputeLightViewProj(gpuLight.direction, shadowCenter, 80.0f);
     lastLightViewProj_ = outLightViewProj;
 }
 

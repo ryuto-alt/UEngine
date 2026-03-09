@@ -108,6 +108,8 @@ void MeshCollisionSystem::ProcessCapsule(CapsuleEntity& capsuleEnt) {
     std::vector<Vector3> slideNormals;
 
     // Iterative depenetration — re-query each pass with updated capsule position
+    float totalVerticalPush = 0.0f;
+
     for (uint32_t pass = 0; pass < kMaxDepenetrationPasses; ++pass) {
         Capsule worldCapsule = capsuleEnt.capsule->GetWorldCapsule();
 
@@ -119,7 +121,6 @@ void MeshCollisionSystem::ProcessCapsule(CapsuleEntity& capsuleEnt) {
 
         if (contacts.empty()) break;
 
-        // 最深の地面contactと最深の壁contactだけを採用（加算しない）
         float bestGroundDepth = 0.0f;
         Vector3 bestGroundNormal = Vector3::Zero();
         float bestWallDepth = 0.0f;
@@ -146,13 +147,26 @@ void MeshCollisionSystem::ProcessCapsule(CapsuleEntity& capsuleEnt) {
             }
         }
 
-        // スキン幅を加算して振動を防止
         Vector3 totalPush = Vector3::Zero();
         if (bestGroundDepth > 0.0f) {
             totalPush = totalPush + bestGroundNormal * (bestGroundDepth + kSkinWidth);
         }
         if (bestWallDepth > 0.0f) {
             totalPush = totalPush + bestWallNormal * (bestWallDepth + kSkinWidth);
+        }
+
+        if (totalPush.LengthSq() < 1e-8f) break;
+
+        // 階段での過剰な垂直押し上げを制限
+        float pushY = totalPush.GetY();
+        if (pushY > 0.0f) {
+            float remaining = kMaxStepHeight - totalVerticalPush;
+            if (remaining <= 0.0f) {
+                totalPush = Vector3(totalPush.GetX(), 0.0f, totalPush.GetZ());
+            } else if (pushY > remaining) {
+                totalPush = Vector3(totalPush.GetX(), remaining, totalPush.GetZ());
+            }
+            totalVerticalPush += totalPush.GetY();
         }
 
         if (totalPush.LengthSq() < 1e-8f) break;
@@ -164,14 +178,7 @@ void MeshCollisionSystem::ProcessCapsule(CapsuleEntity& capsuleEnt) {
     if (rb) {
         rb->SetGrounded(grounded);
 
-        if (grounded) {
-            Vector3 vel = rb->GetVelocity();
-            if (vel.GetY() < 0.0f) {
-                rb->SetVelocity(Vector3(vel.GetX(), 0.0f, vel.GetZ()));
-            }
-        }
-
-        // 押し戻しパスで収集した法線で速度をスライド（再クエリ不要）
+        // 壁スライド（接触法線に沿って速度を滑らせる）
         Vector3 velocity = rb->GetVelocity();
         for (const auto& normal : slideNormals) {
             float vn = velocity.Dot(normal);
@@ -180,6 +187,14 @@ void MeshCollisionSystem::ProcessCapsule(CapsuleEntity& capsuleEnt) {
             }
         }
         rb->SetVelocity(velocity);
+
+        // 接地時: X/Z速度をゼロに（移動はtransform.translateで行うため不要）
+        // Y速度は正（ジャンプ中）なら維持、負（落下中）ならゼロ
+        if (grounded) {
+            Vector3 vel = rb->GetVelocity();
+            float newY = vel.GetY() < 0.0f ? 0.0f : vel.GetY();
+            rb->SetVelocity(Vector3(0.0f, newY, 0.0f));
+        }
     }
 }
 

@@ -16,7 +16,7 @@ public:
     // Lower priority = runs before CollisionSystem (priority 50)
     int GetPriority() const override { return 40; }
 
-    static constexpr float kGravity = -9.81f;
+    static constexpr float kGravity = -30.0f;
 };
 
 } // namespace UnoEngine

@@ -32,7 +32,8 @@ public:
 private:
     static constexpr float kGroundNormalThreshold = 0.7f;
     static constexpr uint32_t kMaxDepenetrationPasses = 4;
-    static constexpr float kSkinWidth = 0.005f;  // 振動防止マージン
+    static constexpr float kSkinWidth = 0.005f;
+    static constexpr float kMaxStepHeight = 0.4f;  // 1フレームの最大ステップ高
 
     struct CapsuleEntity {
         GameObject* object = nullptr;

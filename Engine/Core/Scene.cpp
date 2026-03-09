@@ -21,6 +21,7 @@
 #include "../AI/EnemyDetectionComponent.h"
 #include "../Navigation/NavAgentComponent.h"
 #include "../Video/VideoPlayerComponent.h"
+#include "../Physics/MeshColliderComponent.h"
 #include "../../Game/GameApplication.h"
 #include <algorithm>
 #include <fstream>
@@ -183,6 +184,12 @@ void Scene::LoadSceneFromFile(const std::string& filepath) {
                     if (collision) {
                         Logger::Info("[シーン] CollisionComponent found, autoSize={}", collision->IsAutoSized());
                         collision->RecalculateFromMesh();
+                    }
+
+                    // MeshColliderのBVHをメッシュデータから再構築
+                    auto* meshCollider = obj->GetComponent<MeshColliderComponent>();
+                    if (meshCollider) {
+                        meshCollider->RebuildBVH();
                     }
                 } else {
                     Logger::Warning("[シーン] 静的モデル再ロード失敗: {}", modelPath);

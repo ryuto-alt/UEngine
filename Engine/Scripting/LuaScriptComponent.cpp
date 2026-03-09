@@ -8,6 +8,7 @@
 #include "../Animation/AnimatorComponent.h"
 #include "../Navigation/NavAgentComponent.h"
 #include "../Physics/PhysicsWorld.h"
+#include "../Physics/RigidbodyComponent.h"
 
 namespace UnoEngine {
 
@@ -34,8 +35,8 @@ void LuaScriptComponent::Awake() {
 }
 
 void LuaScriptComponent::Start() {
-    // InputManagerが設定されていればAPIを再バインド
-    if (inputManager_ && luaState_) {
+    // Start時に全APIを再バインド（Awake時に未設定だったコンポーネントを拾う）
+    if (luaState_) {
         BindEngineAPI();
     }
 
@@ -481,6 +482,25 @@ void LuaScriptComponent::BindEngineAPI() {
                 },
                 "getInitialYaw", [navAgent]() -> float {
                     return navAgent->GetInitialYaw();
+                }
+            );
+        }
+    }
+
+    // ===== Rigidbody API =====
+    if (gameObject) {
+        auto* rb = gameObject->GetComponent<RigidbodyComponent>();
+        if (rb) {
+            lua["Rigidbody"] = lua.create_table_with(
+                "getVelocity", [rb]() {
+                    auto v = rb->GetVelocity();
+                    return std::make_tuple(v.GetX(), v.GetY(), v.GetZ());
+                },
+                "setVelocity", [rb](float x, float y, float z) {
+                    rb->SetVelocity(Vector3(x, y, z));
+                },
+                "isGrounded", [rb]() -> bool {
+                    return rb->IsGrounded();
                 }
             );
         }

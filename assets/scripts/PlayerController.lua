@@ -1,12 +1,14 @@
 -- PlayerController.lua
--- カメラの視点方向に基づいてWASD移動 + SHIFTダッシュ
+-- カメラの視点方向に基づいてWASD移動 + SHIFTダッシュ + Spaceジャンプ
 
 -- public変数（Inspectorに表示される）
 moveSpeed = 10.0
 dashSpeedBonus = 4.0
+jumpForce = 12.0
 
 -- ローカル変数
 local isMoving = false
+local jumpWasDown = false
 
 function Awake()
     Debug.log("PlayerController initialized on: " .. gameObject.name)
@@ -27,35 +29,47 @@ function Update(deltaTime)
     local isDashing = false
 
     -- 入力取得
-    local horizontal = Input.getAxis("Horizontal")  -- A/D
-    local vertical = Input.getAxis("Vertical")      -- W/S
+    local horizontal = Input.getAxis("Horizontal")
+    local vertical = Input.getAxis("Vertical")
+    local spaceDown = Input.isKeyDown("Space")
+    local shiftDown = Input.isKeyDown("Shift")
 
     if math.abs(horizontal) > 0.1 or math.abs(vertical) > 0.1 then
         isMoving = true
     end
 
-    -- SHIFTキーでダッシュ
-    if Input.isKeyDown("Shift") then
+    if shiftDown then
         isDashing = true
     end
 
+    -- Spaceでジャンプ（Rigidbody接地時、held中に着地したら即発動）
+    if Rigidbody then
+        local grounded = Rigidbody.isGrounded()
+
+        if spaceDown and grounded and not jumpWasDown then
+            local vx, vy, vz = Rigidbody.getVelocity()
+            Rigidbody.setVelocity(vx, jumpForce, vz)
+            jumpWasDown = true
+        end
+
+        if not spaceDown then
+            jumpWasDown = false
+        end
+    end
+
     if isMoving then
-        -- カメラの向きを取得
         local forwardX, forwardY, forwardZ = Camera.getForward()
         local rightX, rightY, rightZ = Camera.getRight()
 
-        -- 移動方向を計算（カメラ基準）
         local moveX = forwardX * vertical + rightX * horizontal
         local moveZ = forwardZ * vertical + rightZ * horizontal
 
-        -- 正規化
         local length = math.sqrt(moveX * moveX + moveZ * moveZ)
         if length > 0.001 then
             moveX = moveX / length
             moveZ = moveZ / length
         end
 
-        -- 速度計算（ダッシュ時は+4）
         local currentSpeed = moveSpeed
         if isDashing then
             currentSpeed = moveSpeed + dashSpeedBonus
@@ -64,12 +78,10 @@ function Update(deltaTime)
         local speed = currentSpeed * deltaTime
         transform.translate(moveX * speed, 0, moveZ * speed)
 
-        -- 移動アニメーション
         if Animator and not wasMoving then
             Animator.play("Walk", true)
         end
     else
-        -- アイドルアニメーション
         if Animator and wasMoving then
             Animator.play("Idle", true)
         end

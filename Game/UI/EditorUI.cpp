@@ -417,6 +417,10 @@ namespace UnoEngine {
 			particleEditor_->Draw();
 		}
 
+		// シネマティックエディター描画
+		cinematicEditor_.RenderWindow();
+
+
 		// ビルドダイアログ描画
 		RenderBuildDialog();
 
@@ -456,6 +460,10 @@ namespace UnoEngine {
 
 		// エディタカメラの更新
 		float deltaTime = ImGui::GetIO().DeltaTime;
+
+		// シネマティックエディタ更新（再生中のカメラ移動）
+		cinematicEditor_.Update(deltaTime);
+
 		editorCamera_.SetMovementEnabled(true);
 		editorCamera_.SetPlaying(IsPlaying());
 		// Raw Inputデルタを渡す
@@ -635,6 +643,17 @@ namespace UnoEngine {
 				} else {
 					ImGui::MenuItem(U8("パーティクルエディタ (利用不可)"), nullptr, false, false);
 				}
+				{
+					bool cinematicOpen = cinematicEditor_.IsOpen();
+					if (ImGui::MenuItem(U8("シネマティックエディタ"), "Ctrl+Shift+C", &cinematicOpen)) {
+						cinematicEditor_.SetOpen(cinematicOpen);
+						if (cinematicOpen) {
+							cinematicEditor_.SetSceneViewCamera(&sceneViewCamera_);
+							cinematicEditor_.SetPreviewCamera(&sceneViewCamera_);
+						}
+					}
+				}
+
 
 				ImGui::Separator();
 				if (ImGui::MenuItem(U8("レイアウトをリセット"), "Ctrl+Shift+R")) {
@@ -4285,6 +4304,15 @@ void EditorUI::PreLoadPendingThumbnails() {
 			consoleMessages_.push_back(U8("[エディタ] レイアウトをリセットしました"));
 		}
 
+		// Ctrl+Shift+C: シネマティックエディタ トグル
+		if (io.KeyCtrl && io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_C, false)) {
+			cinematicEditor_.ToggleOpen();
+			if (cinematicEditor_.IsOpen()) {
+				cinematicEditor_.SetSceneViewCamera(&sceneViewCamera_);
+				cinematicEditor_.SetPreviewCamera(&sceneViewCamera_);
+			}
+		}
+
 		// Shift+F5: 停止（VSスタイル）
 		if (io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_F5, false)) {
 			if (editorMode_ != EditorMode::Edit) {
@@ -7047,6 +7075,13 @@ void EditorUI::PreLoadPendingThumbnails() {
 				grassPaintCooldown_ = 0.0f;
 			}
 		}
+	}
+
+	// ============================================================
+	// シネマティックエディタ更新（GameApplicationから毎フレーム呼ぶ）
+	// ============================================================
+	void EditorUI::UpdateCinematicEditor(float deltaTime) {
+		cinematicEditor_.Update(deltaTime);
 	}
 
 } // namespace UnoEngine

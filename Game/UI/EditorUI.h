@@ -11,6 +11,7 @@
 #include "../../Engine/Audio/AudioListener.h"
 #include "../../Engine/Scripting/LuaScriptComponent.h"
 #include "../../Engine/Navigation/NavMeshBuildSettings.h"
+#include "../../Engine/Cinematic/CinematicEditor.h"
 #include "EditorCamera.h"
 #include "GizmoSystem.h"
 #include "../Build/GameExporter.h"
@@ -244,6 +245,10 @@ private:
     void RenderNavMeshInspectorTab();
     void RenderGrassPaintTab();
     void AppendNavAgentLogLine(const std::string& line);
+
+    // シネマティックエディタ
+    void UpdateCinematicEditor(float deltaTime);
+    CinematicEditor& GetCinematicEditor() { return cinematicEditor_; }
 
     // 草ペイントツール
     void HandleGrassPainting();
@@ -508,6 +513,9 @@ private:
     bool exportSuccess_ = false;
     std::string exportError_;
     bool buildLogCopied_ = false;
+
+    // シネマティックエディタ
+    CinematicEditor cinematicEditor_;
 };
 
 } // namespace UnoEngine

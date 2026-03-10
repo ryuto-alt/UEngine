@@ -71,15 +71,15 @@
             "name": "Camera",
             "transform": {
                 "position": [
-                    80.03042602539063,
-                    3.518540859222412,
-                    15.961915969848633
+                    80.03043365478516,
+                    3.5185420513153076,
+                    15.961915016174316
                 ],
                 "rotation": [
-                    -0.0002461475960444659,
-                    -0.9997183680534363,
-                    0.02046271227300167,
-                    -0.01202569343149662
+                    -0.0002461482654325664,
+                    -0.9997183084487915,
+                    0.02046271413564682,
+                    -0.012025722302496433
                 ],
                 "scale": [
                     1.0,
@@ -118,6 +118,16 @@
                 {
                     "properties": [
                         {
+                            "name": "dashSpeedBonus",
+                            "type": "int",
+                            "value": 4
+                        },
+                        {
+                            "name": "jumpForce",
+                            "type": "int",
+                            "value": 12
+                        },
+                        {
                             "name": "gravity",
                             "type": "int",
                             "value": -28
@@ -126,16 +136,6 @@
                             "name": "moveSpeed",
                             "type": "int",
                             "value": 10
-                        },
-                        {
-                            "name": "jumpForce",
-                            "type": "int",
-                            "value": 12
-                        },
-                        {
-                            "name": "dashSpeedBonus",
-                            "type": "int",
-                            "value": 4
                         }
                     ],
                     "scriptPath": "assets/scripts/PlayerController.lua",

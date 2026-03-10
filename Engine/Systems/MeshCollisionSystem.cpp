@@ -8,9 +8,44 @@
 #include "../Physics/RigidbodyComponent.h"
 #include "../Math/Matrix.h"
 
+#include <fstream>
+#include <sstream>
+#include <iomanip>
+#include <chrono>
+#include <mutex>
+
 #ifdef WITH_EDITOR
 #include "../../Game/UI/EditorUI.h"
 #endif
+
+// ── デバッグログ ──
+namespace {
+
+static constexpr bool kEnableStepLog = true;
+static constexpr const char* kLogPath = "C:/Users/ryuto/Documents/github/step_debug.log";
+static std::mutex sLogMutex;
+static int sFrameCount = 0;
+static int sLoggedFrames = 0;
+// 毎フレーム出すと巨大になるので、ステップアップ発生時 or 30フレームごとに出力
+static constexpr int kLogInterval = 30;
+
+void StepLog(const char* fmt, ...) {
+    if (!kEnableStepLog) return;
+    std::lock_guard<std::mutex> lock(sLogMutex);
+    static FILE* fp = nullptr;
+    if (!fp) {
+        fopen_s(&fp, kLogPath, "w");
+        if (!fp) return;
+        fprintf(fp, "=== MeshCollisionSystem Step Debug Log ===\n\n");
+    }
+    va_list args;
+    va_start(args, fmt);
+    vfprintf(fp, fmt, args);
+    va_end(args);
+    fflush(fp);
+}
+
+} // anonymous namespace
 
 namespace UnoEngine {
 
@@ -29,6 +64,7 @@ void MeshCollisionSystem::OnUpdate(Scene* scene, float deltaTime) {
 #endif
 
     GatherComponents(scene);
+    sFrameCount++;
 
     for (auto& capsuleEnt : capsuleEntities_) {
         ProcessCapsule(capsuleEnt);
@@ -88,6 +124,9 @@ bool MeshCollisionSystem::QueryContacts(const Capsule& worldCapsule, const MeshE
             MeshContact contact;
             // Transform normal to world space
             contact.normal = meshWorldMatrix.TransformDirection(result.normal).Normalize();
+            // Triangle face normal (for ground classification)
+            Vector3 localFaceNormal = tri.GetNormal();
+            contact.faceNormal = meshWorldMatrix.TransformDirection(localFaceNormal).Normalize();
             // Scale depth along the contact normal direction
             Vector3 localNormal = result.normal;
             Vector3 worldScaledNormal = meshWorldMatrix.TransformDirection(localNormal);
@@ -102,12 +141,26 @@ bool MeshCollisionSystem::QueryContacts(const Capsule& worldCapsule, const MeshE
 void MeshCollisionSystem::ProcessCapsule(CapsuleEntity& capsuleEnt) {
     auto& transform = capsuleEnt.object->GetTransform();
     auto* rb = capsuleEnt.object->GetComponent<RigidbodyComponent>();
+    const float maxStepHeight = capsuleEnt.capsule->GetMaxStepHeight();
     bool grounded = false;
+    bool hasWallContact = false;
 
     // 最終パスの接触法線を保持（速度スライド用）
     std::vector<Vector3> slideNormals;
 
-    // Iterative depenetration — re-query each pass with updated capsule position
+    // デペネトレーション前の位置を保存（ステップアップの基準点）
+    Vector3 posBeforeDepenetration = transform.GetLocalPosition();
+
+    // ログ出力判定（定期 or ステップアップ発生時）
+    bool shouldLog = kEnableStepLog && (sFrameCount % kLogInterval == 0);
+    bool stepUpTriggered = false;
+
+    // ── 通常デペネトレーション ──
+    // faceNormal（三角形表面法線）で地面/壁を判定
+    // 垂直pushはmaxStepHeightで制限（壁の上面に飛び乗るのを防止）
+    int totalContactCount = 0;
+    int groundContactCount = 0;
+    int wallContactCount = 0;
     float totalVerticalPush = 0.0f;
 
     for (uint32_t pass = 0; pass < kMaxDepenetrationPasses; ++pass) {
@@ -132,18 +185,24 @@ void MeshCollisionSystem::ProcessCapsule(CapsuleEntity& capsuleEnt) {
             if (contact.depth <= 0.0f) continue;
 
             slideNormals.push_back(contact.normal);
+            totalContactCount++;
 
+            // 通常デペネではcontact.normalで判定（横からの接触は壁扱い）
+            // faceNormalはステップアップでのみ使用
             if (contact.normal.GetY() > kGroundNormalThreshold) {
                 if (contact.depth > bestGroundDepth) {
                     bestGroundDepth = contact.depth;
                     bestGroundNormal = contact.normal;
                 }
                 grounded = true;
+                groundContactCount++;
             } else {
                 if (contact.depth > bestWallDepth) {
                     bestWallDepth = contact.depth;
                     bestWallNormal = contact.normal;
                 }
+                hasWallContact = true;
+                wallContactCount++;
             }
         }
 
@@ -157,10 +216,10 @@ void MeshCollisionSystem::ProcessCapsule(CapsuleEntity& capsuleEnt) {
 
         if (totalPush.LengthSq() < 1e-8f) break;
 
-        // 階段での過剰な垂直押し上げを制限
+        // 垂直pushをmaxStepHeightで制限（壁の上に飛び乗るのを防止）
         float pushY = totalPush.GetY();
         if (pushY > 0.0f) {
-            float remaining = kMaxStepHeight - totalVerticalPush;
+            float remaining = maxStepHeight - totalVerticalPush;
             if (remaining <= 0.0f) {
                 totalPush = Vector3(totalPush.GetX(), 0.0f, totalPush.GetZ());
             } else if (pushY > remaining) {
@@ -173,6 +232,126 @@ void MeshCollisionSystem::ProcessCapsule(CapsuleEntity& capsuleEnt) {
 
         Vector3 pos = transform.GetLocalPosition();
         transform.SetLocalPosition(pos + totalPush);
+    }
+
+    Vector3 posAfterNormal = transform.GetLocalPosition();
+
+    // ── ステップアップ（段差乗り越え）──
+    // posBeforeDepenetration（段差に埋まった位置）から持ち上げて段の上面を探す。
+    // faceNormalで地面判定 → 垂直成分のみでpushして段の上に着地。
+    // 壁pushを適用しないので、次の段の壁で押し戻されない。
+    bool stepUpSuccess = false;
+    int stepUpCheckedHeight = -1;
+    int stepUpGroundFoundAt = -1;
+    float stepUpFinalY = 0.0f;
+
+    if (grounded && hasWallContact && maxStepHeight > 0.0f) {
+        stepUpTriggered = true;
+        constexpr int kStepChecks = 16;
+        float stepInc = maxStepHeight / static_cast<float>(kStepChecks);
+
+        // 上から下へ検索 — 最も高い着地面を見つける（床ではなくステップ面）
+        for (int i = kStepChecks; i >= 1; --i) {
+            float h = stepInc * static_cast<float>(i);
+            transform.SetLocalPosition(posBeforeDepenetration + Vector3(0.0f, h, 0.0f));
+            stepUpCheckedHeight = i;
+
+            // この高さで地面(faceNormal)があるか確認
+            Capsule testCapsule = capsuleEnt.capsule->GetWorldCapsule();
+            std::vector<MeshContact> testContacts;
+            for (auto& meshEnt : meshEntities_) {
+                if (capsuleEnt.object == meshEnt.object) continue;
+                QueryContacts(testCapsule, meshEnt, testContacts);
+            }
+
+            bool foundGround = false;
+            for (const auto& c : testContacts) {
+                if (c.depth > 0.0f && c.faceNormal.GetY() > kGroundNormalThreshold) {
+                    foundGround = true;
+                    break;
+                }
+            }
+
+            if (!foundGround) continue;
+
+            stepUpGroundFoundAt = i;
+
+            // 着地面あり → 垂直成分のみでデペネトレーション
+            for (uint32_t pass = 0; pass < kMaxDepenetrationPasses; ++pass) {
+                Capsule wc = capsuleEnt.capsule->GetWorldCapsule();
+                std::vector<MeshContact> contacts;
+                for (auto& meshEnt : meshEntities_) {
+                    if (capsuleEnt.object == meshEnt.object) continue;
+                    QueryContacts(wc, meshEnt, contacts);
+                }
+                if (contacts.empty()) break;
+
+                // 地面三角形からの接触のみ、垂直成分だけ適用
+                float bestUpPush = 0.0f;
+                for (const auto& c : contacts) {
+                    if (c.depth <= 0.0f) continue;
+                    if (c.faceNormal.GetY() > kGroundNormalThreshold) {
+                        float upPush = c.faceNormal.GetY() * c.depth;
+                        if (upPush > bestUpPush) {
+                            bestUpPush = upPush;
+                        }
+                    }
+                }
+                if (bestUpPush < 1e-8f) break;
+                Vector3 p = transform.GetLocalPosition();
+                transform.SetLocalPosition(p + Vector3(0.0f, bestUpPush, 0.0f));
+            }
+
+            // ステップアップ後の位置を検証
+            // 1) 通常結果より高いか  2) maxStepHeightを超えていないか
+            Vector3 stepPos = transform.GetLocalPosition();
+            stepUpFinalY = stepPos.GetY();
+            float heightGain = stepPos.GetY() - posBeforeDepenetration.GetY();
+            if (stepPos.GetY() > posAfterNormal.GetY() + kSkinWidth
+                && heightGain <= maxStepHeight + kSkinWidth) {
+                stepUpSuccess = true;
+                grounded = true;
+                break;
+            }
+        }
+
+        if (!stepUpSuccess) {
+            transform.SetLocalPosition(posAfterNormal);
+        }
+    }
+
+    // ── デバッグログ出力 ──
+    if (shouldLog || stepUpTriggered) {
+        Vector3 finalPos = transform.GetLocalPosition();
+        float heightChange = finalPos.GetY() - posBeforeDepenetration.GetY();
+
+        StepLog("[Frame %d] obj=%s  maxStep=%.3f\n",
+            sFrameCount,
+            capsuleEnt.object->GetName().c_str(),
+            maxStepHeight);
+        StepLog("  posBefore:  (%.3f, %.3f, %.3f)\n",
+            posBeforeDepenetration.GetX(), posBeforeDepenetration.GetY(), posBeforeDepenetration.GetZ());
+        StepLog("  posAfterNormal: (%.3f, %.3f, %.3f)\n",
+            posAfterNormal.GetX(), posAfterNormal.GetY(), posAfterNormal.GetZ());
+        StepLog("  posFinal:   (%.3f, %.3f, %.3f)  heightChange=%.4f\n",
+            finalPos.GetX(), finalPos.GetY(), finalPos.GetZ(), heightChange);
+        StepLog("  contacts: total=%d  ground=%d  wall=%d\n",
+            totalContactCount, groundContactCount, wallContactCount);
+        StepLog("  grounded=%s  wallContact=%s\n",
+            grounded ? "YES" : "no", hasWallContact ? "YES" : "no");
+
+        if (stepUpTriggered) {
+            StepLog("  >>> STEP-UP triggered! maxStepH=%.3f\n", maxStepHeight);
+            StepLog("      checked %d heights, ground found at height #%d\n",
+                stepUpCheckedHeight, stepUpGroundFoundAt);
+            StepLog("      result: %s  finalY=%.4f  normalY=%.4f  diff=%.4f\n",
+                stepUpSuccess ? "SUCCESS" : "FAILED",
+                stepUpFinalY,
+                posAfterNormal.GetY(),
+                stepUpFinalY - posAfterNormal.GetY());
+        }
+        StepLog("\n");
+        sLoggedFrames++;
     }
 
     if (rb) {

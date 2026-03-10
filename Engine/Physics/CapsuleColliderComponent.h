@@ -20,6 +20,10 @@ public:
     const Vector3& GetLocalTip() const { return localTip_; }
     float GetRadius() const { return radius_; }
 
+    // 階段を登れる最大段差の高さ
+    void SetMaxStepHeight(float height) { maxStepHeight_ = height; }
+    float GetMaxStepHeight() const { return maxStepHeight_; }
+
     // Height = distance between base and tip (not including radius caps)
     void SetFromHeightRadius(float height, float radius) {
         radius_ = radius;
@@ -34,6 +38,7 @@ private:
     Vector3 localBase_ = Vector3(0.0f, 0.0f, 0.0f);
     Vector3 localTip_  = Vector3(0.0f, 1.0f, 0.0f);
     float radius_ = 0.3f;
+    float maxStepHeight_ = 0.4f;  // 階段を登れる最大段差高さ
 };
 
 } // namespace UnoEngine

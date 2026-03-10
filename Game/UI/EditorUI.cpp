@@ -1576,6 +1576,14 @@ namespace UnoEngine {
 							if (ImGui::DragFloat("##CCRadius", &radius, 0.01f, 0.01f, 10.0f)) {
 								capsuleCol->SetRadius(radius); isDirty_ = true;
 							}
+							float stepHeight = capsuleCol->GetMaxStepHeight();
+							ImGui::Text(U8("段差高さ")); ImGui::SameLine(100.0f); ImGui::SetNextItemWidth(-1);
+							if (ImGui::DragFloat("##CCStepHeight", &stepHeight, 0.01f, 0.0f, 5.0f, "%.2f m")) {
+								capsuleCol->SetMaxStepHeight(stepHeight); isDirty_ = true;
+							}
+							if (ImGui::IsItemHovered()) {
+								ImGui::SetTooltip(U8("登れる階段の最大段差の高さ"));
+							}
 							if (ImGui::Button(U8("カプセル削除"))) {
 								selected->RemoveComponent<CapsuleColliderComponent>(); isDirty_ = true;
 							}

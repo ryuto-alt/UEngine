@@ -11,7 +11,8 @@ class CapsuleColliderComponent;
 class MeshColliderComponent;
 
 struct MeshContact {
-    Vector3 normal;
+    Vector3 normal;      // 接触点からの分離方向（エッジでは水平になりうる）
+    Vector3 faceNormal;  // 三角形の表面法線（地面判定に使用）
     float depth = 0.0f;
 };
 
@@ -33,7 +34,7 @@ private:
     static constexpr float kGroundNormalThreshold = 0.7f;
     static constexpr uint32_t kMaxDepenetrationPasses = 4;
     static constexpr float kSkinWidth = 0.005f;
-    static constexpr float kMaxStepHeight = 0.4f;  // 1フレームの最大ステップ高
+    static constexpr float kDefaultMaxStepHeight = 0.4f;  // デフォルトの最大ステップ高
 
     struct CapsuleEntity {
         GameObject* object = nullptr;

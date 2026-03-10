@@ -599,6 +599,7 @@ json SceneSerializer::SerializeComponent(const Component& component) {
         comp["localBase"] = { base.GetX(), base.GetY(), base.GetZ() };
         comp["localTip"]  = { tip.GetX(),  tip.GetY(),  tip.GetZ()  };
         comp["radius"]    = cc->GetRadius();
+        comp["maxStepHeight"] = cc->GetMaxStepHeight();
         return comp;
     }
 
@@ -1017,6 +1018,9 @@ void SceneSerializer::DeserializeComponent(const json& json, GameObject& gameObj
         }
         if (json.contains("radius")) {
             cc->SetRadius(json["radius"].get<float>());
+        }
+        if (json.contains("maxStepHeight")) {
+            cc->SetMaxStepHeight(json["maxStepHeight"].get<float>());
         }
     }
 }

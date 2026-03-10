@@ -71,15 +71,15 @@
             "name": "Camera",
             "transform": {
                 "position": [
-                    69.41033172607422,
-                    16.263046264648438,
-                    69.10203552246094
+                    80.03042602539063,
+                    3.518540859222412,
+                    15.961915969848633
                 ],
                 "rotation": [
-                    0.24157372117042542,
-                    -0.06042950972914696,
-                    0.015074818395078182,
-                    0.9683818221092224
+                    -0.0002461475960444659,
+                    -0.9997183680534363,
+                    0.02046271227300167,
+                    -0.01202569343149662
                 ],
                 "scale": [
                     1.0,
@@ -118,6 +118,16 @@
                 {
                     "properties": [
                         {
+                            "name": "gravity",
+                            "type": "int",
+                            "value": -28
+                        },
+                        {
+                            "name": "moveSpeed",
+                            "type": "int",
+                            "value": 10
+                        },
+                        {
                             "name": "jumpForce",
                             "type": "int",
                             "value": 12
@@ -126,16 +136,6 @@
                             "name": "dashSpeedBonus",
                             "type": "int",
                             "value": 4
-                        },
-                        {
-                            "name": "moveSpeed",
-                            "type": "int",
-                            "value": 10
-                        },
-                        {
-                            "name": "gravity",
-                            "type": "int",
-                            "value": -28
                         }
                     ],
                     "scriptPath": "assets/scripts/PlayerController.lua",
@@ -153,6 +153,7 @@
                         1.0,
                         0.0
                     ],
+                    "maxStepHeight": 0.4399999976158142,
                     "radius": 0.30000001192092896,
                     "type": "CapsuleColliderComponent"
                 },
@@ -171,9 +172,9 @@
             "name": "player",
             "transform": {
                 "position": [
-                    69.41031646728516,
-                    14.463043212890625,
-                    69.10205078125
+                    80.03044128417969,
+                    1.718542456626892,
+                    15.9619140625
                 ],
                 "rotation": [
                     -0.0,
@@ -572,7 +573,7 @@
                     "type": "MeshRenderer"
                 },
                 {
-                    "autoSize": true,
+                    "autoSize": false,
                     "collisionLayer": 0,
                     "collisionMask": 4294967295,
                     "enabled": true,

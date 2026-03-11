@@ -350,7 +350,7 @@ bool GameExporter::CopyAssetsFolder(const std::wstring& outputPath, const Export
 
 std::vector<std::string> GameExporter::ExtractQuotedPaths(const std::string& text) {
     static const std::vector<std::string_view> kExts = {
-        ".gltf", ".glb", ".fbx", ".obj", ".wav", ".mp3", ".ogg", ".lua", ".navmesh"
+        ".gltf", ".glb", ".fbx", ".obj", ".wav", ".mp3", ".ogg", ".lua", ".navmesh", ".json"
     };
 
     std::vector<std::string> result;

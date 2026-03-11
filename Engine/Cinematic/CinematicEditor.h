@@ -86,7 +86,7 @@ private:
 
     // ---- バッファ ----
     char sequenceNameBuf_[128] = "Intro";
-    char filePathBuf_[256]     = "Resources/cinematics/intro.json";
+    char filePathBuf_[256]     = "assets/cinematics/intro.json";
 
     // ---- 定数 ----
     static constexpr float kBasePixelsPerSec = 80.0f;

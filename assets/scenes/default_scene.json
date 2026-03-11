@@ -633,6 +633,7 @@
             }
         }
     ],
+    "introCinematicPath": "assets/cinematics/intro.json",
     "scene_name": "Scene",
-    "version": "1.2"
+    "version": "1.3"
 }

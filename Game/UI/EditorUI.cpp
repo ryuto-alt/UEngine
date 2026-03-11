@@ -34,6 +34,7 @@
 #include "../../Engine/Rendering/Renderer.h"
 #include "../../Engine/Vegetation/GrassSystem.h"
 #include "../../Engine/Vegetation/GrassRenderer.h"
+#include "../GameApplication.h"
 #include <imgui.h>
 #include <imgui_internal.h>
 #include "../../Engine/UI/imgui_toggle.h"
@@ -521,6 +522,17 @@ namespace UnoEngine {
 					}
 				}
 			}
+			// イントロシネマティックをリセット＆再生（Game Viewのカメラを使用）
+			if (scene_) {
+				auto* app = static_cast<GameApplication*>(scene_->GetApplication());
+				if (app) {
+					auto& player = app->GetIntroCinematicPlayer();
+					player.SetCamera(scene_->GetActiveCamera());
+					player.Stop();
+					player.Play();
+				}
+			}
+
 			consoleMessages_.push_back("[Editor] Play mode started (triggered " + std::to_string(playCount) + " audio sources)");
 		}
 		else if (editorMode_ == EditorMode::Pause) {
@@ -583,6 +595,14 @@ namespace UnoEngine {
 				AudioListener::GetInstance()->ClearEditorOverride();
 			}
 			editorAudioListener_.reset();
+
+			// イントロシネマティックを停止
+			if (scene_) {
+				auto* app = static_cast<GameApplication*>(scene_->GetApplication());
+				if (app) {
+					app->GetIntroCinematicPlayer().Stop();
+				}
+			}
 
 			consoleMessages_.push_back("[Editor] Stopped - returned to Edit mode (stopped " + std::to_string(stoppedCount) + " audio sources)");
 		}
@@ -1165,8 +1185,13 @@ namespace UnoEngine {
 			}
 			ImGui::Image((ImTextureID)displayHandle.ptr, imageSize);
 
-			// Playモード時のマウスロック＋FPS視点操作
-			if (editorMode_ == EditorMode::Play) {
+			// Playモード時のマウスロック＋FPS視点操作（シネマティック再生中は抑制）
+			bool cinematicPlaying = false;
+			if (scene_) {
+				auto* app = static_cast<GameApplication*>(scene_->GetApplication());
+				if (app) cinematicPlaying = app->IsIntroCinematicPlaying();
+			}
+			if (editorMode_ == EditorMode::Play && !cinematicPlaying) {
 				ImGuiIO& io = ImGui::GetIO();
 				bool imageHovered = ImGui::IsItemHovered();
 

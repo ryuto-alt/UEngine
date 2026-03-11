@@ -32,7 +32,8 @@ bool SceneSerializer::SaveScene(const std::vector<std::unique_ptr<GameObject>>& 
     try {
         json sceneJson;
         sceneJson["scene_name"] = "Scene";
-        sceneJson["version"] = "1.2";
+        sceneJson["version"] = "1.3";
+        sceneJson["introCinematicPath"] = SceneSerializer::s_introCinematicPath;
 
         json objectsArray = json::array();
         for (const auto& obj : gameObjects) {
@@ -136,6 +137,13 @@ bool SceneSerializer::LoadScene(const std::string& filepath, std::vector<std::un
         json sceneJson;
         file >> sceneJson;
         file.close();
+
+        // イントロシネマティックパスを読み込み
+        if (sceneJson.contains("introCinematicPath")) {
+            s_introCinematicPath = sceneJson["introCinematicPath"].get<std::string>();
+        } else {
+            s_introCinematicPath.clear();
+        }
 
         // Clear existing objects
         outGameObjects.clear();

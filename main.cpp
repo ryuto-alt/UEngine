@@ -66,12 +66,7 @@ protected:
     }
 
     void OnUpdate(float deltaTime) override {
-        auto* input = GetInput();
-        const auto& keyboard = input->GetKeyboard();
-
-        if (keyboard.IsPressed(KeyCode::Escape)) {
-            PostQuitMessage(0);
-        }
+        GameApplication::OnUpdate(deltaTime);
     }
 
     // OnRenderは削除 (Application::OnRender()がfinalで自動実行)

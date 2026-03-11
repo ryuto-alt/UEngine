@@ -11,6 +11,8 @@
 #include "../Engine/Core/Logger.h"
 #include "../Engine/Video/VideoPlayerComponent.h"
 #include "../Engine/Rendering/LightManager.h"
+#include "../Engine/Scene/SceneSerializer.h"
+#include "../Engine/Cinematic/CinematicSequence.h"
 #ifdef WITH_EDITOR
 #include "../Engine/Graphics/MeshRenderer.h"
 #include "../Engine/Rendering/SkinnedMeshRenderer.h"
@@ -37,9 +39,48 @@ void GameApplication::OnInit() {
 }
 
 void GameApplication::OnUpdate(float deltaTime) {
+    // イントロシネマティックの遅延ロード（シーンロード後にカメラが確定してから）
+    if (!introCinematicLoaded_) {
+        Scene* scene = GetSceneManager()->GetActiveScene();
+        Camera* cam = scene ? scene->GetActiveCamera() : nullptr;
+        if (cam) {
+            const auto& cinematicPath = SceneSerializer::s_introCinematicPath;
+            if (!cinematicPath.empty()) {
+                auto seq = CinematicSequence::LoadFromFile(cinematicPath);
+                if (seq.has_value()) {
+                    introCinematicPlayer_.SetSequence(seq.value());
+                    introCinematicPlayer_.SetCamera(cam);
+#ifndef WITH_EDITOR
+                    // リリースビルドではゲーム開始時に自動再生
+                    introCinematicPlayer_.Play();
+                    Logger::Info("[シネマティック] イントロ再生開始: {}", cinematicPath);
+#else
+                    Logger::Info("[シネマティック] イントロシーケンスロード完了: {}", cinematicPath);
+#endif
+                } else {
+                    Logger::Warning("[シネマティック] ファイル読み込み失敗: {}", cinematicPath);
+                }
+            }
+            introCinematicLoaded_ = true;
+        }
+    }
+
+    // シネマティック再生中はカメラを上書き
+    if (introCinematicPlayer_.IsPlaying()) {
+        introCinematicPlayer_.Update(deltaTime);
+    }
+
+    // 再生終了後、Enterキーでリプレイ
+    auto* input = GetInput();
+    if (input && introCinematicLoaded_ && introCinematicPlayer_.IsFinished()) {
+        if (input->GetKeyboard().IsPressed(KeyCode::Enter)) {
+            introCinematicPlayer_.Play();
+            Logger::Info("[シネマティック] リプレイ開始");
+        }
+    }
+
 #ifndef WITH_EDITOR
     // ESCキー1.5秒長押しでゲーム終了
-    auto* input = GetInput();
     if (input && input->GetKeyboard().IsDown(KeyCode::Escape)) {
         escHoldTime_ += deltaTime;
         if (escHoldTime_ >= kEscQuitThreshold) {

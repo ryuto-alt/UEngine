@@ -5,6 +5,7 @@
 #include "../Engine/Audio/AudioSystem.h"
 #include "../Engine/Resource/ResourceManager.h"
 #include "../Engine/PostProcess/PostProcessType.h"
+#include "../Engine/Cinematic/CinematicPlayer.h"
 #include "Systems/CameraSystem.h"
 #include <memory>
 
@@ -22,6 +23,10 @@ public:
     // Game-layer resource API
     Mesh* LoadMesh(const std::string& path);
     Material* LoadMaterial(const std::string& name);
+
+    // シネマティック再生中かどうか（外部からカメラ制御を抑制するため）
+    bool IsIntroCinematicPlaying() const { return introCinematicPlayer_.IsPlaying(); }
+    CinematicPlayer& GetIntroCinematicPlayer() { return introCinematicPlayer_; }
 
     // Accessors
     CameraSystem* GetCameraSystem() { return GetSystemManager()->GetSystem<CameraSystem>(); }
@@ -41,6 +46,9 @@ protected:
 
 private:
     std::unique_ptr<ResourceManager> resourceManager_;
+    CinematicPlayer introCinematicPlayer_;
+    bool introCinematicLoaded_ = false;
+
 #ifndef WITH_EDITOR
     float escHoldTime_ = 0.0f;
     static constexpr float kEscQuitThreshold = 1.5f;

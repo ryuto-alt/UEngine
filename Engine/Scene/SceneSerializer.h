@@ -34,6 +34,9 @@ public:
     /// JSON文字列からGameObjectを復元（Prefab用）
     static std::unique_ptr<GameObject> DeserializeSingleObject(const std::string& jsonStr);
 
+    /// イントロシネマティックパス（Save/Loadで自動的に読み書きされる）
+    static inline std::string s_introCinematicPath;
+
 private:
     /// GameObject単体をJSONにシリアライズ
     static nlohmann::json SerializeGameObject(const GameObject& gameObject);

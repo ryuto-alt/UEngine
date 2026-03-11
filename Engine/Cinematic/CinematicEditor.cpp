@@ -26,7 +26,15 @@ namespace {
     constexpr ImU32 kColKfSelected  = IM_COL32(255, 255, 100, 255);
     constexpr ImU32 kColKfHover     = IM_COL32(255, 230,  80, 255);
     constexpr ImU32 kColRecord      = IM_COL32(220,  40,  40, 255);
-    constexpr float kHeaderWidth    = 70.0f;   // トラックヘッダー幅
+    constexpr ImU32 kColEventTrack  = IM_COL32( 35,  42,  50, 255);
+    constexpr ImU32 kColEventBar    = IM_COL32( 80, 160, 220, 180);
+    constexpr ImU32 kColEventBarSel = IM_COL32(100, 200, 255, 220);
+    constexpr ImU32 kColEventText   = IM_COL32( 60, 180, 120, 180);
+    constexpr ImU32 kColEventAudio  = IM_COL32(200, 140,  60, 180);
+    constexpr ImU32 kColEventObj    = IM_COL32(180,  80, 180, 180);
+    constexpr ImU32 kColEventLua    = IM_COL32(120, 120, 220, 180);
+    constexpr ImU32 kColEventWait   = IM_COL32(220,  60,  60, 180);
+    constexpr float kHeaderWidth    = 70.0f;
 }
 
 // ============================================================
@@ -55,7 +63,11 @@ void CinematicEditor::RenderWindow() {
     ImGui::Separator();
     RenderTimeline();
     ImGui::Separator();
-    RenderKeyframeInspector();
+    if (selectedEvent_ >= 0) {
+        RenderEventInspector();
+    } else {
+        RenderKeyframeInspector();
+    }
 
     // [F]キーでキーフレーム打刻（ウィンドウフォーカス中）
     if (recordMode_ && ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) {
@@ -360,8 +372,8 @@ float CinematicEditor::XToTime(float x) const {
 void CinematicEditor::RenderTimeline() {
     float pps = kBasePixelsPerSec * timelineZoom_;
 
-    // 全体の高さ
-    float timelineHeight = kRulerHeight + kTrackHeight + 4.0f;
+    // 全体の高さ (カメラトラック + イベントトラック)
+    float timelineHeight = kRulerHeight + kTrackHeight + kEventTrackHeight + 4.0f;
 
     // ---- スクロール可能な子ウィンドウ ----
     ImGui::BeginChild("##tl_scroll", ImVec2(-1, timelineHeight + 12.0f),
@@ -479,6 +491,128 @@ void CinematicEditor::RenderTimeline() {
         }
     }
 
+    // ---- イベントトラック背景 ----
+    float eventTrackTop = tlOriginY_ + kRulerHeight + kTrackHeight;
+    ImVec2 evTrackMin = { tlOriginX_, eventTrackTop };
+    ImVec2 evTrackMax = { tlOriginX_ + tlWidth_, eventTrackTop + kEventTrackHeight };
+    dl->AddRectFilled(evTrackMin, evTrackMax, kColEventTrack);
+    dl->AddRect(evTrackMin, evTrackMax, kColTrackBorder);
+
+    // イベントトラックヘッダー
+    dl->AddRectFilled({ tlOriginX_, eventTrackTop },
+                      { tlOriginX_ + kHeaderWidth, eventTrackTop + kEventTrackHeight },
+                      IM_COL32(50, 55, 65, 255));
+    dl->AddText({ tlOriginX_ + 6, eventTrackTop + 6 }, kColRulerText, U8("Events"));
+
+    // ---- イベントバー描画 ----
+    for (int i = 0; i < (int)sequence_.events.size(); ++i) {
+        auto& ev = sequence_.events[i];
+        float evStartX = TimeToX(ev.time);
+        float evEndX   = TimeToX(ev.time + ev.duration);
+        if (evEndX < tlOriginX_ + kHeaderWidth) continue;
+        if (evStartX > tlOriginX_ + tlWidth_) continue;
+
+        evStartX = std::max(evStartX, tlOriginX_ + kHeaderWidth);
+        float barY = eventTrackTop + 3.0f;
+        float barH = kEventTrackHeight - 6.0f;
+
+        // タイプごとの色
+        ImU32 barCol;
+        switch (ev.type) {
+            case CinematicEventType::Text:         barCol = kColEventText;  break;
+            case CinematicEventType::Audio:        barCol = kColEventAudio; break;
+            case CinematicEventType::ObjectToggle: barCol = kColEventObj;   break;
+            case CinematicEventType::Lua:          barCol = kColEventLua;   break;
+            case CinematicEventType::WaitForInput: barCol = kColEventWait;  break;
+            default:                               barCol = kColEventBar;   break;
+        }
+
+        bool isSelected = (i == selectedEvent_);
+        if (isSelected) barCol = kColEventBarSel;
+
+        float minBarW = 6.0f;
+        if (evEndX - evStartX < minBarW) evEndX = evStartX + minBarW;
+
+        dl->AddRectFilled({ evStartX, barY }, { evEndX, barY + barH }, barCol, 3.0f);
+        dl->AddRect({ evStartX, barY }, { evEndX, barY + barH }, IM_COL32(200,200,200,80), 3.0f);
+
+        // ラベル
+        const char* typeLabel = "";
+        switch (ev.type) {
+            case CinematicEventType::Text:         typeLabel = "T"; break;
+            case CinematicEventType::Audio:        typeLabel = "A"; break;
+            case CinematicEventType::ObjectToggle: typeLabel = "O"; break;
+            case CinematicEventType::Lua:          typeLabel = "L"; break;
+            case CinematicEventType::WaitForInput: typeLabel = "W"; break;
+        }
+        if (evEndX - evStartX > 12.0f) {
+            dl->AddText({ evStartX + 2, barY + 2 }, IM_COL32(255,255,255,200), typeLabel);
+        }
+
+        // クリック判定
+        ImGui::SetCursorScreenPos({ evStartX, barY });
+        float btnW = std::max(evEndX - evStartX, minBarW);
+        ImGui::InvisibleButton(std::format("##ev{}", i).c_str(), { btnW, barH });
+
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+            selectedEvent_ = i;
+            selectedKeyframe_ = -1;
+        }
+
+        // ドラッグで時間移動
+        if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+            float newT = snap001(std::clamp(XToTime(ImGui::GetIO().MousePos.x), 0.0f,
+                                            sequence_.duration - ev.duration));
+            ev.time = newT;
+        }
+
+        // 右クリックメニュー
+        if (ImGui::BeginPopupContextItem(std::format("##ev_ctx{}", i).c_str())) {
+            if (ImGui::MenuItem(U8("削除"))) {
+                sequence_.events.erase(sequence_.events.begin() + i);
+                selectedEvent_ = -1;
+                ImGui::EndPopup();
+                break;
+            }
+            ImGui::EndPopup();
+        }
+    }
+
+    // ---- イベントトラック右クリック → 新規追加 ----
+    {
+        ImGui::SetCursorScreenPos({ tlOriginX_ + kHeaderWidth, eventTrackTop });
+        ImGui::InvisibleButton("##evTrackBg", { tlWidth_ - kHeaderWidth, kEventTrackHeight });
+        if (ImGui::BeginPopupContextItem("##evTrackAddMenu")) {
+            float clickTime = snap001(std::clamp(XToTime(ImGui::GetIO().MousePos.x), 0.0f, sequence_.duration));
+
+            auto addEvent = [&](CinematicEventType type) {
+                CinematicEvent ev;
+                ev.type = type;
+                ev.time = clickTime;
+                ev.duration = (type == CinematicEventType::WaitForInput) ? 0.0f : 3.0f;
+                sequence_.events.push_back(ev);
+                selectedEvent_ = static_cast<int>(sequence_.events.size()) - 1;
+                selectedKeyframe_ = -1;
+            };
+
+            if (ImGui::MenuItem(U8("テキスト追加")))       addEvent(CinematicEventType::Text);
+            if (ImGui::MenuItem(U8("オーディオ追加")))     addEvent(CinematicEventType::Audio);
+            if (ImGui::MenuItem(U8("オブジェクト切替追加"))) addEvent(CinematicEventType::ObjectToggle);
+            if (ImGui::MenuItem(U8("Lua追加")))           addEvent(CinematicEventType::Lua);
+            if (ImGui::MenuItem(U8("入力待ち追加")))       addEvent(CinematicEventType::WaitForInput);
+            ImGui::EndPopup();
+        }
+    }
+
+    // スクラブ線をイベントトラックまで延長
+    {
+        float sx = TimeToX(scrubTime_);
+        if (sx >= tlOriginX_ + kHeaderWidth && sx <= tlOriginX_ + tlWidth_) {
+            dl->AddLine({ sx, eventTrackTop }, { sx, eventTrackTop + kEventTrackHeight },
+                        kColScrub, 1.5f);
+        }
+    }
+
     // ---- キーフレームダイヤモンド ----
     float trackCY = tlOriginY_ + kRulerHeight + kTrackHeight * 0.5f;
 
@@ -515,6 +649,7 @@ void CinematicEditor::RenderTimeline() {
         // シングルクリック → 選択のみ（ドラッグはしない）
         if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && !ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
             selectedKeyframe_   = i;
+            selectedEvent_      = -1;
             isDraggingKeyframe_ = false;
         }
 
@@ -709,6 +844,125 @@ void CinematicEditor::SortKeyframes() {
               [](const CameraKeyframe& a, const CameraKeyframe& b) {
                   return a.time < b.time;
               });
+}
+
+// ============================================================
+// RenderEventInspector
+// ============================================================
+void CinematicEditor::RenderEventInspector() {
+    if (selectedEvent_ < 0 || selectedEvent_ >= (int)sequence_.events.size()) {
+        selectedEvent_ = -1;
+        return;
+    }
+
+    auto& ev = sequence_.events[selectedEvent_];
+
+    const char* typeNames[] = { U8("テキスト"), U8("オーディオ"), U8("オブジェクト切替"), "Lua", U8("入力待ち") };
+    int typeIdx = static_cast<int>(ev.type);
+    ImGui::Text(U8("イベント #%d  [%s]"), selectedEvent_, typeNames[typeIdx]);
+
+    ImGui::SameLine(0, 20);
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.1f, 0.1f, 1.f));
+    if (ImGui::SmallButton(U8("削除##evDel"))) {
+        sequence_.events.erase(sequence_.events.begin() + selectedEvent_);
+        selectedEvent_ = -1;
+        ImGui::PopStyleColor();
+        return;
+    }
+    ImGui::PopStyleColor();
+
+    ImGui::Spacing();
+
+    // タイプ変更
+    ImGui::SetNextItemWidth(140.0f);
+    if (ImGui::Combo(U8("タイプ##evType"), &typeIdx, typeNames, 5)) {
+        ev.type = static_cast<CinematicEventType>(typeIdx);
+    }
+
+    ImGui::SameLine(0, 12);
+    ImGui::SetNextItemWidth(100.0f);
+    ImGui::DragFloat(U8("開始(秒)##evTime"), &ev.time, 0.01f, 0.0f, sequence_.duration, "%.3f");
+
+    ImGui::SameLine(0, 8);
+    ImGui::SetNextItemWidth(100.0f);
+    ImGui::DragFloat(U8("長さ(秒)##evDur"), &ev.duration, 0.01f, 0.0f, 60.0f, "%.2f");
+
+    ImGui::SameLine(0, 8);
+    ImGui::SetNextItemWidth(60.0f);
+    ImGui::DragFloat(U8("FadeIn##evFI"), &ev.fadeIn, 0.01f, 0.0f, ev.duration, "%.2f");
+
+    ImGui::SameLine(0, 4);
+    ImGui::SetNextItemWidth(60.0f);
+    ImGui::DragFloat(U8("FadeOut##evFO"), &ev.fadeOut, 0.01f, 0.0f, ev.duration, "%.2f");
+
+    // タイプ固有パラメータ
+    switch (ev.type) {
+        case CinematicEventType::Text: {
+            // テキスト内容（UTF-8、最大512バイト）
+            static char textBuf[512] = {};
+            if (selectedEvent_ >= 0) {
+                strncpy_s(textBuf, ev.text.c_str(), sizeof(textBuf) - 1);
+            }
+            ImGui::SetNextItemWidth(-1);
+            if (ImGui::InputText(U8("テキスト##evTxt"), textBuf, sizeof(textBuf))) {
+                ev.text = textBuf;
+            }
+
+            const char* styleNames[] = { U8("字幕（下部）"), U8("中央ダイアログ"), U8("吹き出し") };
+            int styleIdx = static_cast<int>(ev.displayStyle);
+            ImGui::SetNextItemWidth(140.0f);
+            if (ImGui::Combo(U8("表示スタイル##evStyle"), &styleIdx, styleNames, 3)) {
+                ev.displayStyle = static_cast<TextDisplayStyle>(styleIdx);
+            }
+
+            ImGui::SameLine(0, 12);
+            ImGui::SetNextItemWidth(80.0f);
+            ImGui::DragFloat(U8("フォントサイズ##evFS"), &ev.fontSize, 0.05f, 0.1f, 5.0f, "%.2f");
+            break;
+        }
+        case CinematicEventType::Audio: {
+            static char audioBuf[256] = {};
+            strncpy_s(audioBuf, ev.audioClip.c_str(), sizeof(audioBuf) - 1);
+            ImGui::SetNextItemWidth(300.0f);
+            if (ImGui::InputText(U8("クリップ名##evAudio"), audioBuf, sizeof(audioBuf))) {
+                ev.audioClip = audioBuf;
+            }
+            ImGui::SameLine(0, 8);
+            ImGui::SetNextItemWidth(80.0f);
+            ImGui::DragFloat(U8("音量##evVol"), &ev.volume, 0.01f, 0.0f, 1.0f, "%.2f");
+            break;
+        }
+        case CinematicEventType::ObjectToggle: {
+            static char objBuf[256] = {};
+            strncpy_s(objBuf, ev.targetObject.c_str(), sizeof(objBuf) - 1);
+            ImGui::SetNextItemWidth(300.0f);
+            if (ImGui::InputText(U8("オブジェクト名##evObj"), objBuf, sizeof(objBuf))) {
+                ev.targetObject = objBuf;
+            }
+            ImGui::SameLine(0, 8);
+            ImGui::Checkbox(U8("表示##evVis"), &ev.visible);
+            break;
+        }
+        case CinematicEventType::Lua: {
+            static char luaBuf[256] = {};
+            strncpy_s(luaBuf, ev.luaFunction.c_str(), sizeof(luaBuf) - 1);
+            ImGui::SetNextItemWidth(300.0f);
+            if (ImGui::InputText(U8("Lua関数##evLua"), luaBuf, sizeof(luaBuf))) {
+                ev.luaFunction = luaBuf;
+            }
+            break;
+        }
+        case CinematicEventType::WaitForInput: {
+            static char keyBuf[64] = {};
+            strncpy_s(keyBuf, ev.waitKey.c_str(), sizeof(keyBuf) - 1);
+            ImGui::SetNextItemWidth(120.0f);
+            if (ImGui::InputText(U8("待ちキー##evKey"), keyBuf, sizeof(keyBuf))) {
+                ev.waitKey = keyBuf;
+            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip(U8("空 = 任意キー"));
+            break;
+        }
+    }
 }
 
 // ============================================================

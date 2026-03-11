@@ -31,6 +31,10 @@ public:
 
     void Update(float deltaTime);
 
+    // ImGuiでテキストイベントオーバーレイを描画
+    // ImGui描画コンテキスト内で呼ぶこと
+    void RenderTextOverlay(float viewWidth, float viewHeight) const;
+
     CinematicPlayer& GetPlayer() { return player_; }
 
 private:

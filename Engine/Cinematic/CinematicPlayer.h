@@ -36,6 +36,14 @@ public:
     // 任意時刻でのポーズ評価（プレビュー・スクラブ用）
     void EvaluateAt(float time, Vector3& outPos, Quaternion& outRot, float& outFov) const;
 
+    // イベント評価
+    std::vector<const CinematicEvent*> GetActiveEvents(float time) const;
+    bool IsWaitingForInput() const { return waitingForInput_; }
+    void ResolveWaitForInput();
+
+    // 現在アクティブなテキストイベントのフェードアルファを計算
+    static float ComputeEventAlpha(const CinematicEvent& ev, float currentTime);
+
 private:
     static float ApplyEasing(float t, CameraKeyframe::Easing easing);
     void ApplyToCamera(float time);
@@ -50,6 +58,11 @@ private:
 
     // 自然三次スプライン用の事前計算済み接線（C2連続）
     std::vector<Vector3> splineTangents_;
+
+    // イベント再生状態
+    bool  waitingForInput_ = false;
+    int   lastFiredEventIndex_ = -1;   // ワンショットイベント用
+    std::vector<bool> eventFired_;     // Audio/Lua/ObjectToggle は一度だけ発火
 };
 
 } // namespace UnoEngine

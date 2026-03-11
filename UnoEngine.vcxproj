@@ -64,7 +64,7 @@
       <PreprocessorDefinitions>NOMINMAX;WITH_EDITOR</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)external\imgui;$(ProjectDir)external\imgui\backends;$(ProjectDir)external\assimp\include;$(ProjectDir)external\lua\src;$(ProjectDir)external;$(ProjectDir)external\recast\Recast\Include;$(ProjectDir)external\recast\Detour\Include;$(ProjectDir)external\recast\DetourCrowd\Include;$(ProjectDir)external\imguizmo;$(ProjectDir)external\ffmpeg\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -176,6 +176,8 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
     <ClCompile Include="Engine\Graphics\Material.cpp" />
     <ClCompile Include="Engine\Graphics\Mesh.cpp" />
     <ClCompile Include="Engine\Resource\ModelImporter.cpp" />
+    <ClCompile Include="Engine\Graphics\BitmapFont.cpp" />
+    <ClCompile Include="Engine\Graphics\TextRenderer.cpp" />
     <ClCompile Include="Engine\Graphics\Sprite.cpp" />
     <ClCompile Include="Engine\Graphics\SpritePipeline.cpp" />
     <ClCompile Include="Engine\Graphics\Texture2D.cpp" />
@@ -503,6 +505,8 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
     <ClInclude Include="Engine\Graphics\Material.h" />
     <ClInclude Include="Engine\Graphics\Mesh.h" />
     <ClInclude Include="Engine\Resource\ModelImporter.h" />
+    <ClInclude Include="Engine\Graphics\BitmapFont.h" />
+    <ClInclude Include="Engine\Graphics\TextRenderer.h" />
     <ClInclude Include="Engine\Graphics\Sprite.h" />
     <ClInclude Include="Engine\Graphics\SpritePipeline.h" />
     <ClInclude Include="Engine\Graphics\Texture2D.h" />

@@ -405,6 +405,17 @@ namespace UnoEngine {
 		RenderDockSpace();
 		RenderSceneView();
 		RenderGameView();
+
+		// シネマティックテキストオーバーレイ（Playモード中のみ）
+		if (editorMode_ == EditorMode::Play && scene_) {
+			if (auto* app = static_cast<GameApplication*>(scene_->GetApplication())) {
+				auto& cm = app->GetCinematicManager();
+				float vw = static_cast<float>(desiredGameViewWidth_);
+				float vh = static_cast<float>(desiredGameViewHeight_);
+				cm.RenderTextOverlay(vw, vh);
+			}
+		}
+
 		RenderObjectProperties(context); // 新: 右側パネル（Object Properties）
 		RenderConsoleAndDebugger();      // 新: 下部パネル（Console & Debugger）
 		RenderHierarchy(context);        // 互換性のため残す

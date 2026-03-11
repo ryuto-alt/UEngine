@@ -59,6 +59,8 @@ float CinematicPlayer::ApplyEasing(float t, CameraKeyframe::Easing easing) {
 void CinematicPlayer::SetSequence(const CinematicSequence& seq) {
     sequence_ = seq;
     RebuildSplineTangents();
+    eventFired_.assign(sequence_.events.size(), false);
+    waitingForInput_ = false;
 }
 
 // ============================================================
@@ -178,6 +180,8 @@ void CinematicPlayer::Stop() {
     isPlaying_   = false;
     isFinished_  = false;
     currentTime_ = 0.0f;
+    waitingForInput_ = false;
+    eventFired_.assign(sequence_.events.size(), false);
     if (camera_ && !sequence_.keyframes.empty()) {
         ApplyToCamera(0.0f);
     }
@@ -195,11 +199,29 @@ void CinematicPlayer::Update(float deltaTime) {
     if (!isPlaying_ || !camera_) return;
     if (sequence_.keyframes.size() < 1) return;
 
+    // WaitForInput中は時間を進めない
+    if (waitingForInput_) return;
+
     currentTime_ += deltaTime;
+
+    // WaitForInputイベントのチェック
+    for (size_t i = 0; i < sequence_.events.size(); ++i) {
+        const auto& ev = sequence_.events[i];
+        if (ev.type == CinematicEventType::WaitForInput && !eventFired_[i]) {
+            if (currentTime_ >= ev.time) {
+                currentTime_ = ev.time;
+                waitingForInput_ = true;
+                eventFired_[i] = true;
+                ApplyToCamera(currentTime_);
+                return;
+            }
+        }
+    }
 
     if (currentTime_ >= sequence_.duration) {
         if (sequence_.loop) {
             currentTime_ = std::fmod(currentTime_, sequence_.duration);
+            eventFired_.assign(sequence_.events.size(), false);
         } else {
             currentTime_ = sequence_.duration;
             isPlaying_   = false;
@@ -292,6 +314,48 @@ void CinematicPlayer::EvaluateAt(float time,
 
     // ---- FOV: 線形補間（イージング適用）----
     outFov = k1.fov + (k2.fov - k1.fov) * easedT;
+}
+
+// ============================================================
+// イベント評価
+// ============================================================
+std::vector<const CinematicEvent*> CinematicPlayer::GetActiveEvents(float time) const {
+    std::vector<const CinematicEvent*> active;
+    for (const auto& ev : sequence_.events) {
+        float end = ev.time + ev.duration;
+        if (time >= ev.time && time <= end) {
+            active.push_back(&ev);
+        }
+    }
+    return active;
+}
+
+void CinematicPlayer::ResolveWaitForInput() {
+    if (!waitingForInput_) return;
+    waitingForInput_ = false;
+}
+
+float CinematicPlayer::ComputeEventAlpha(const CinematicEvent& ev, float currentTime) {
+    float elapsed = currentTime - ev.time;
+    float end = ev.duration;
+
+    if (elapsed < 0.0f) return 0.0f;
+    if (elapsed > end) return 0.0f;
+
+    float alpha = 1.0f;
+
+    // Fade in
+    if (ev.fadeIn > 0.0f && elapsed < ev.fadeIn) {
+        alpha = elapsed / ev.fadeIn;
+    }
+
+    // Fade out
+    float fadeOutStart = end - ev.fadeOut;
+    if (ev.fadeOut > 0.0f && elapsed > fadeOutStart) {
+        alpha = std::min(alpha, (end - elapsed) / ev.fadeOut);
+    }
+
+    return std::clamp(alpha, 0.0f, 1.0f);
 }
 
 } // namespace UnoEngine

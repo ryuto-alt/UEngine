@@ -69,6 +69,14 @@ void GameApplication::OnUpdate(float deltaTime) {
 
     // 再生終了後、Enterキーでintroリプレイ
     auto* input = GetInput();
+
+    // WaitForInput中にEnter/Spaceで再開
+    if (cinematicManager_.GetPlayer().IsWaitingForInput() && input) {
+        if (input->GetKeyboard().IsPressed(KeyCode::Enter) ||
+            input->GetKeyboard().IsPressed(KeyCode::Space)) {
+            cinematicManager_.GetPlayer().ResolveWaitForInput();
+        }
+    }
     if (input && cinematicsLoaded_ && cinematicManager_.IsFinished()) {
         if (input->GetKeyboard().IsPressed(KeyCode::Enter)) {
             cinematicManager_.Play("intro");

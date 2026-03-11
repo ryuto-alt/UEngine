@@ -44,6 +44,7 @@ private:
     void RenderToolbar();
     void RenderTimeline();
     void RenderKeyframeInspector();
+    void RenderEventInspector();
 
     // ---- 操作ヘルパー ----
     void StampKeyframeFromCamera();      // 現在のシーンカメラからキーフレームを打刻
@@ -78,8 +79,10 @@ private:
     bool isDraggingKeyframe_  = false;
     float dragKeyframeOrigTime_ = 0.0f;
 
-    // ---- キーフレーム選択 ----
+    // ---- キーフレーム/イベント選択 ----
     int selectedKeyframe_ = -1;    // -1 = 未選択
+    int selectedEvent_    = -1;    // -1 = 未選択
+    bool isDraggingEvent_ = false;
 
     // ---- レコードモード ----
     bool recordMode_ = false;
@@ -101,6 +104,7 @@ private:
     static constexpr float kBasePixelsPerSec = 80.0f;
     static constexpr float kRulerHeight      = 22.0f;
     static constexpr float kTrackHeight      = 32.0f;
+    static constexpr float kEventTrackHeight = 28.0f;
     static constexpr float kDiamondRadius    = 7.0f;
 };
 

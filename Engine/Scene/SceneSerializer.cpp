@@ -33,7 +33,19 @@ bool SceneSerializer::SaveScene(const std::vector<std::unique_ptr<GameObject>>& 
         json sceneJson;
         sceneJson["scene_name"] = "Scene";
         sceneJson["version"] = "1.3";
-        sceneJson["introCinematicPath"] = SceneSerializer::s_introCinematicPath;
+        // シネマティックパス（複数対応）
+        if (!s_cinematicPaths.empty()) {
+            nlohmann::json cinematicsJson;
+            for (const auto& [name, path] : s_cinematicPaths) {
+                cinematicsJson[name] = path;
+            }
+            sceneJson["cinematics"] = cinematicsJson;
+        }
+        // 後方互換: introがあれば旧フィールドにも書き出す
+        auto introPath = GetIntroCinematicPath();
+        if (!introPath.empty()) {
+            sceneJson["introCinematicPath"] = introPath;
+        }
 
         json objectsArray = json::array();
         for (const auto& obj : gameObjects) {
@@ -138,11 +150,18 @@ bool SceneSerializer::LoadScene(const std::string& filepath, std::vector<std::un
         file >> sceneJson;
         file.close();
 
-        // イントロシネマティックパスを読み込み
-        if (sceneJson.contains("introCinematicPath")) {
-            s_introCinematicPath = sceneJson["introCinematicPath"].get<std::string>();
-        } else {
-            s_introCinematicPath.clear();
+        // シネマティックパス読み込み（新形式優先）
+        s_cinematicPaths.clear();
+        if (sceneJson.contains("cinematics") && sceneJson["cinematics"].is_object()) {
+            for (auto& [key, val] : sceneJson["cinematics"].items()) {
+                s_cinematicPaths[key] = val.get<std::string>();
+            }
+        } else if (sceneJson.contains("introCinematicPath")) {
+            // 旧形式フォールバック
+            auto path = sceneJson["introCinematicPath"].get<std::string>();
+            if (!path.empty()) {
+                s_cinematicPaths["intro"] = path;
+            }
         }
 
         // Clear existing objects

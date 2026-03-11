@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <unordered_map>
 #include <nlohmann/json.hpp>
 
 namespace UnoEngine {
@@ -34,8 +35,14 @@ public:
     /// JSON文字列からGameObjectを復元（Prefab用）
     static std::unique_ptr<GameObject> DeserializeSingleObject(const std::string& jsonStr);
 
-    /// イントロシネマティックパス（Save/Loadで自動的に読み書きされる）
-    static inline std::string s_introCinematicPath;
+    /// シネマティックパス（名前→ファイルパス）
+    static inline std::unordered_map<std::string, std::string> s_cinematicPaths;
+
+    /// 後方互換: 旧s_introCinematicPathへのアクセス
+    static std::string GetIntroCinematicPath() {
+        auto it = s_cinematicPaths.find("intro");
+        return (it != s_cinematicPaths.end()) ? it->second : std::string{};
+    }
 
 private:
     /// GameObject単体をJSONにシリアライズ

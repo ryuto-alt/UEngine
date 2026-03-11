@@ -20,7 +20,7 @@ struct CameraKeyframe {
     float     fov      = 60.0f;      // Field of View（度）
 
     // 前のキーフレームからこのキーフレームへの補間方式
-    enum class Easing { Linear, EaseIn, EaseOut, EaseInOut } easing = Easing::EaseInOut;
+    enum class Easing { Linear, EaseIn, EaseOut, EaseInOut, Emphasis } easing = Easing::EaseInOut;
 
     CameraKeyframe() = default;
     CameraKeyframe(float t, const Vector3& pos, const Quaternion& rot, float fovDeg = 60.0f)

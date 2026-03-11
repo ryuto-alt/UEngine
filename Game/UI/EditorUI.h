@@ -502,7 +502,6 @@ private:
     bool grassTextureScanned_ = false;
 
     // ビルド/エクスポート関連
-    bool showBuildDialog_ = false;
     GameExporter gameExporter_;
     ExportSettings exportSettings_;
     std::string buildStatusMessage_;

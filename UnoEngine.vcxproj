@@ -246,6 +246,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
     <ClCompile Include="Engine\Editor\CurveEditor.cpp" />
     <ClCompile Include="Engine\Editor\ParticleEditor.cpp" />
     <ClCompile Include="Engine\Cinematic\CinematicPlayer.cpp" />
+    <ClCompile Include="Engine\Cinematic\CinematicManager.cpp" />
     <ClCompile Include="Engine\Cinematic\CinematicEditor.cpp" />
     <ClCompile Include="Engine\PostProcess\PostProcessPipeline.cpp" />
     <ClCompile Include="Engine\PostProcess\PostProcessManager.cpp" />
@@ -566,6 +567,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
     <ClInclude Include="Engine\Editor\ParticleEditor.h" />
     <ClInclude Include="Engine\Cinematic\CinematicSequence.h" />
     <ClInclude Include="Engine\Cinematic\CinematicPlayer.h" />
+    <ClInclude Include="Engine\Cinematic\CinematicManager.h" />
     <ClInclude Include="Engine\Cinematic\CinematicEditor.h" />
     <ClInclude Include="Engine\PostProcess\PostProcess.h" />
     <ClInclude Include="Engine\PostProcess\PostProcessType.h" />

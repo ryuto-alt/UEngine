@@ -12,6 +12,7 @@
 #include "../Engine/Video/VideoPlayerComponent.h"
 #include "../Engine/Rendering/LightManager.h"
 #include "../Engine/Scene/SceneSerializer.h"
+#include "../Engine/Cinematic/CinematicManager.h"
 #include "../Engine/Cinematic/CinematicSequence.h"
 #ifdef WITH_EDITOR
 #include "../Engine/Graphics/MeshRenderer.h"
@@ -39,43 +40,39 @@ void GameApplication::OnInit() {
 }
 
 void GameApplication::OnUpdate(float deltaTime) {
-    // イントロシネマティックの遅延ロード（シーンロード後にカメラが確定してから）
-    if (!introCinematicLoaded_) {
+    // シネマティックの遅延ロード（シーンロード後にカメラが確定してから）
+    if (!cinematicsLoaded_) {
         Scene* scene = GetSceneManager()->GetActiveScene();
         Camera* cam = scene ? scene->GetActiveCamera() : nullptr;
         if (cam) {
-            const auto& cinematicPath = SceneSerializer::s_introCinematicPath;
-            if (!cinematicPath.empty()) {
-                auto seq = CinematicSequence::LoadFromFile(cinematicPath);
-                if (seq.has_value()) {
-                    introCinematicPlayer_.SetSequence(seq.value());
-                    introCinematicPlayer_.SetCamera(cam);
-#ifndef WITH_EDITOR
-                    // リリースビルドではゲーム開始時に自動再生
-                    introCinematicPlayer_.Play();
-                    Logger::Info("[シネマティック] イントロ再生開始: {}", cinematicPath);
-#else
-                    Logger::Info("[シネマティック] イントロシーケンスロード完了: {}", cinematicPath);
-#endif
-                } else {
-                    Logger::Warning("[シネマティック] ファイル読み込み失敗: {}", cinematicPath);
-                }
+            cinematicManager_.SetCamera(cam);
+            for (const auto& [name, path] : SceneSerializer::s_cinematicPaths) {
+                cinematicManager_.RegisterFromFile(name, path);
             }
-            introCinematicLoaded_ = true;
+#ifndef WITH_EDITOR
+            // リリースビルドではintroを自動再生
+            if (SceneSerializer::s_cinematicPaths.contains("intro")) {
+                cinematicManager_.Play("intro");
+                Logger::Info("[CinematicManager] Intro auto-play started");
+            }
+#else
+            if (!SceneSerializer::s_cinematicPaths.empty()) {
+                Logger::Info("[CinematicManager] {} sequence(s) loaded", SceneSerializer::s_cinematicPaths.size());
+            }
+#endif
+            cinematicsLoaded_ = true;
         }
     }
 
-    // シネマティック再生中はカメラを上書き
-    if (introCinematicPlayer_.IsPlaying()) {
-        introCinematicPlayer_.Update(deltaTime);
-    }
+    // シネマティック更新（再生中のカメラ上書き + 完了コールバック）
+    cinematicManager_.Update(deltaTime);
 
-    // 再生終了後、Enterキーでリプレイ
+    // 再生終了後、Enterキーでintroリプレイ
     auto* input = GetInput();
-    if (input && introCinematicLoaded_ && introCinematicPlayer_.IsFinished()) {
+    if (input && cinematicsLoaded_ && cinematicManager_.IsFinished()) {
         if (input->GetKeyboard().IsPressed(KeyCode::Enter)) {
-            introCinematicPlayer_.Play();
-            Logger::Info("[シネマティック] リプレイ開始");
+            cinematicManager_.Play("intro");
+            Logger::Info("[CinematicManager] Replay started");
         }
     }
 

@@ -5,7 +5,7 @@
 #include "../Engine/Audio/AudioSystem.h"
 #include "../Engine/Resource/ResourceManager.h"
 #include "../Engine/PostProcess/PostProcessType.h"
-#include "../Engine/Cinematic/CinematicPlayer.h"
+#include "../Engine/Cinematic/CinematicManager.h"
 #include "Systems/CameraSystem.h"
 #include <memory>
 
@@ -25,8 +25,8 @@ public:
     Material* LoadMaterial(const std::string& name);
 
     // シネマティック再生中かどうか（外部からカメラ制御を抑制するため）
-    bool IsIntroCinematicPlaying() const { return introCinematicPlayer_.IsPlaying(); }
-    CinematicPlayer& GetIntroCinematicPlayer() { return introCinematicPlayer_; }
+    bool IsIntroCinematicPlaying() const { return cinematicManager_.IsPlaying(); }
+    CinematicManager& GetCinematicManager() { return cinematicManager_; }
 
     // Accessors
     CameraSystem* GetCameraSystem() { return GetSystemManager()->GetSystem<CameraSystem>(); }
@@ -46,8 +46,8 @@ protected:
 
 private:
     std::unique_ptr<ResourceManager> resourceManager_;
-    CinematicPlayer introCinematicPlayer_;
-    bool introCinematicLoaded_ = false;
+    CinematicManager cinematicManager_;
+    bool cinematicsLoaded_ = false;
 
 #ifndef WITH_EDITOR
     float escHoldTime_ = 0.0f;

@@ -2,6 +2,7 @@
 
 #include "CinematicSequence.h"
 #include "../Core/Camera.h"
+#include <vector>
 
 namespace UnoEngine {
 
@@ -13,7 +14,7 @@ class CinematicPlayer {
 public:
     CinematicPlayer() = default;
 
-    void SetSequence(const CinematicSequence& seq) { sequence_ = seq; }
+    void SetSequence(const CinematicSequence& seq);
     const CinematicSequence& GetSequence() const   { return sequence_; }
     void SetCamera(Camera* camera)                  { camera_ = camera; }
 
@@ -38,6 +39,7 @@ public:
 private:
     static float ApplyEasing(float t, CameraKeyframe::Easing easing);
     void ApplyToCamera(float time);
+    void RebuildSplineTangents();
 
 private:
     CinematicSequence sequence_;
@@ -45,6 +47,9 @@ private:
     float             currentTime_ = 0.0f;
     bool              isPlaying_   = false;
     bool              isFinished_  = false;
+
+    // 自然三次スプライン用の事前計算済み接線（C2連続）
+    std::vector<Vector3> splineTangents_;
 };
 
 } // namespace UnoEngine

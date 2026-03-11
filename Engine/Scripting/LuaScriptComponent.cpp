@@ -9,6 +9,8 @@
 #include "../Navigation/NavAgentComponent.h"
 #include "../Physics/PhysicsWorld.h"
 #include "../Physics/RigidbodyComponent.h"
+#include "../Cinematic/CinematicManager.h"
+#include "../../Game/GameApplication.h"
 
 namespace UnoEngine {
 
@@ -541,6 +543,38 @@ void LuaScriptComponent::BindEngineAPI() {
             return {cosYaw, 0.0f, -sinYaw};
         }
     );
+
+    // ===== Cinematic API =====
+    if (scene_) {
+        auto* app = dynamic_cast<GameApplication*>(scene_->GetApplication());
+        if (app) {
+            CinematicManager* mgr = &app->GetCinematicManager();
+            LuaState* luaStateForCinematic = luaState_.get();
+            lua["Cinematic"] = lua.create_table_with(
+                "play", [mgr](const std::string& name) -> bool {
+                    return mgr->Play(name);
+                },
+                "pause", [mgr]() { mgr->Pause(); },
+                "stop", [mgr]() { mgr->Stop(); },
+                "isPlaying", [mgr]() -> bool { return mgr->IsPlaying(); },
+                "isFinished", [mgr]() -> bool { return mgr->IsFinished(); },
+                "load", [mgr](const std::string& name, const std::string& filepath) -> bool {
+                    return mgr->RegisterFromFile(name, filepath);
+                },
+                "onFinished", [mgr, luaStateForCinematic](sol::function callback) {
+                    mgr->SetOnFinished([luaStateForCinematic, callback](std::string_view name) {
+                        auto& ls = luaStateForCinematic->GetState();
+                        sol::protected_function fn = callback;
+                        auto result = fn(std::string(name));
+                        if (!result.valid()) {
+                            sol::error err = result;
+                            Logger::Error("[Lua] Cinematic.onFinished error: {}", err.what());
+                        }
+                    });
+                }
+            );
+        }
+    }
 
     // ===== Physics API =====
     if (scene_) {

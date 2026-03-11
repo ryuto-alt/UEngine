@@ -418,7 +418,11 @@ namespace UnoEngine {
 			particleEditor_->Draw();
 		}
 
-		// シネマティックエディター描画
+		// シネマティックエディター描画（カメラが未設定なら設定）
+		if (cinematicEditor_.IsOpen()) {
+			cinematicEditor_.SetSceneViewCamera(&sceneViewCamera_);
+			cinematicEditor_.SetPreviewCamera(&sceneViewCamera_);
+		}
 		cinematicEditor_.RenderWindow();
 
 
@@ -522,14 +526,14 @@ namespace UnoEngine {
 					}
 				}
 			}
-			// イントロシネマティックをリセット＆再生（Game Viewのカメラを使用）
+			// シネマティックをリセット＆再生（Game Viewのカメラを使用）
 			if (scene_) {
 				auto* app = static_cast<GameApplication*>(scene_->GetApplication());
 				if (app) {
-					auto& player = app->GetIntroCinematicPlayer();
-					player.SetCamera(scene_->GetActiveCamera());
-					player.Stop();
-					player.Play();
+					auto& mgr = app->GetCinematicManager();
+					mgr.SetCamera(scene_->GetActiveCamera());
+					mgr.Stop();
+					mgr.Play("intro");
 				}
 			}
 
@@ -596,11 +600,11 @@ namespace UnoEngine {
 			}
 			editorAudioListener_.reset();
 
-			// イントロシネマティックを停止
+			// シネマティックを停止
 			if (scene_) {
 				auto* app = static_cast<GameApplication*>(scene_->GetApplication());
 				if (app) {
-					app->GetIntroCinematicPlayer().Stop();
+					app->GetCinematicManager().Stop();
 				}
 			}
 
@@ -665,7 +669,7 @@ namespace UnoEngine {
 				}
 				{
 					bool cinematicOpen = cinematicEditor_.IsOpen();
-					if (ImGui::MenuItem(U8("シネマティックエディタ"), "Ctrl+Shift+C", &cinematicOpen)) {
+					if (ImGui::MenuItem(U8("シネマティック"), "Ctrl+Shift+C", &cinematicOpen)) {
 						cinematicEditor_.SetOpen(cinematicOpen);
 						if (cinematicOpen) {
 							cinematicEditor_.SetSceneViewCamera(&sceneViewCamera_);
@@ -684,8 +688,8 @@ namespace UnoEngine {
 			}
 
 			if (ImGui::BeginMenu(U8("ビルド"))) {
-				if (ImGui::MenuItem(U8("ゲームをエクスポート..."), "Ctrl+Shift+B")) {
-					showBuildDialog_ = true;
+				if (ImGui::MenuItem(U8("ビルドタブを表示"), "Ctrl+Shift+B")) {
+					ImGui::SetWindowFocus(U8("ビルド"));
 				}
 				ImGui::Separator();
 				ImGui::TextDisabled(U8("出力先を選択してGame.exeを生成します"));
@@ -886,8 +890,10 @@ namespace UnoEngine {
 			// 下部左: プロジェクト
 			ImGui::DockBuilderDockWindow(U8("プロジェクト"), dock_project);
 
-			// 下部右: コンソール & デバッガ
+			// 下部右: コンソール & シネマティック & ビルド
 			ImGui::DockBuilderDockWindow(U8("コンソール"), dock_console);
+			ImGui::DockBuilderDockWindow(U8("シネマティック"), dock_console);
+			ImGui::DockBuilderDockWindow(U8("ビルド"), dock_console);
 
 			// 旧ウィンドウ名も配置（互換性）
 			ImGui::DockBuilderDockWindow(U8("インスペクター"), dock_right);
@@ -5587,10 +5593,7 @@ void EditorUI::PreLoadPendingThumbnails() {
 	}
 
 	void EditorUI::RenderBuildDialog() {
-		if (!showBuildDialog_) return;
-
-		ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
-		if (ImGui::Begin(U8("ゲームをエクスポート"), &showBuildDialog_)) {
+		if (ImGui::Begin(U8("ビルド"))) {
 
 			ImGui::TextWrapped(U8("ゲームをスタンドアロン実行ファイルとしてエクスポートします。"));
 			ImGui::Separator();
@@ -5742,11 +5745,6 @@ void EditorUI::PreLoadPendingThumbnails() {
 				});
 			}
 			ImGui::EndDisabled();
-
-			ImGui::SameLine();
-			if (ImGui::Button(U8("閉じる"), ImVec2(120, 0))) {
-				showBuildDialog_ = false;
-			}
 
 			ImGui::SameLine();
 			if (ImGui::Button(U8("フォルダを開く"), ImVec2(120, 0))) {

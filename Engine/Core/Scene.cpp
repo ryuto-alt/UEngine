@@ -109,7 +109,9 @@ void Scene::LoadSceneFromFile(const std::string& filepath) {
         }
     }
 
-    // 各モデルを個別にロード
+    // GPU同期を1回にバッチ化してモデルを一括ロード
+    resourceManager->BeginUpload();
+
     for (auto& obj : GetGameObjects()) {
         // CameraComponentを持つオブジェクトを検出
         if (auto* cameraComp = obj->GetComponent<CameraComponent>()) {
@@ -129,14 +131,11 @@ void Scene::LoadSceneFromFile(const std::string& filepath) {
         if (skinnedRenderer) {
             std::string modelPath = skinnedRenderer->GetModelPath();
             if (!modelPath.empty()) {
-                resourceManager->BeginUpload();
                 auto* modelData = resourceManager->LoadSkinnedModel(modelPath);
-                resourceManager->EndUpload();
 
                 if (modelData) {
                     skinnedRenderer->SetModel(modelData);
 
-                    // Animatorを再初期化
                     auto* animator = obj->GetComponent<AnimatorComponent>();
                     if (!animator) {
                         animator = obj->AddComponent<AnimatorComponent>();
@@ -154,14 +153,16 @@ void Scene::LoadSceneFromFile(const std::string& filepath) {
                     Logger::Warning("[シーン] スキンモデル再ロード失敗: {}", modelPath);
                 }
 
-                // ローディング画面更新
                 loadedModels++;
 #ifdef WITH_EDITOR
+                // エディタではモデル毎にGPUフラッシュしてローディング画面を更新
+                resourceManager->EndUpload();
                 if (totalModels > 0) {
                     float progress = static_cast<float>(loadedModels) / static_cast<float>(totalModels);
                     std::string msg = "Loading models... (" + std::to_string(loadedModels) + "/" + std::to_string(totalModels) + ")";
                     GetApplication()->RenderLoadingScreen(msg, progress);
                 }
+                resourceManager->BeginUpload();
 #endif
             }
         }
@@ -171,22 +172,18 @@ void Scene::LoadSceneFromFile(const std::string& filepath) {
         if (meshRenderer) {
             std::string modelPath = meshRenderer->GetModelPath();
             if (!modelPath.empty()) {
-                resourceManager->BeginUpload();
                 auto* modelData = resourceManager->LoadStaticModel(modelPath);
-                resourceManager->EndUpload();
 
                 if (modelData && !modelData->meshes.empty()) {
                     meshRenderer->SetModel(modelData);
                     Logger::Info("[シーン] 静的モデル再ロード完了: {} (メッシュ: {}個)", modelPath, modelData->meshes.size());
-                    
-                    // モデル読み込み後にCollisionComponentのAABBを再計算
+
                     auto* collision = obj->GetComponent<CollisionComponent>();
                     if (collision) {
                         Logger::Info("[シーン] CollisionComponent found, autoSize={}", collision->IsAutoSized());
                         collision->RecalculateFromMesh();
                     }
 
-                    // MeshColliderのBVHをメッシュデータから再構築
                     auto* meshCollider = obj->GetComponent<MeshColliderComponent>();
                     if (meshCollider) {
                         meshCollider->RebuildBVH();
@@ -195,14 +192,15 @@ void Scene::LoadSceneFromFile(const std::string& filepath) {
                     Logger::Warning("[シーン] 静的モデル再ロード失敗: {}", modelPath);
                 }
 
-                // ローディング画面更新
                 loadedModels++;
 #ifdef WITH_EDITOR
+                resourceManager->EndUpload();
                 if (totalModels > 0) {
                     float progress = static_cast<float>(loadedModels) / static_cast<float>(totalModels);
                     std::string msg = "Loading models... (" + std::to_string(loadedModels) + "/" + std::to_string(totalModels) + ")";
                     GetApplication()->RenderLoadingScreen(msg, progress);
                 }
+                resourceManager->BeginUpload();
 #endif
             }
         }
@@ -214,6 +212,8 @@ void Scene::LoadSceneFromFile(const std::string& filepath) {
             Logger::Info("[シーン] VideoPlayerComponentにGraphicsDeviceを設定");
         }
     }
+
+    resourceManager->EndUpload();
 
     // Main Cameraがシーンに存在しない場合は作成
     if (!foundMainCamera) {

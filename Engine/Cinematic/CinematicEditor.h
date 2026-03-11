@@ -62,7 +62,7 @@ private:
     Camera* previewCamera_   = nullptr;
     Camera* sceneViewCamera_ = nullptr;
 
-    bool isOpen_ = false;
+    bool isOpen_ = true;
 
     // ---- タイムライン状態 ----
     float timelineZoom_    = 1.0f;   // ズーム倍率（1.0 = 80px/秒）
@@ -84,9 +84,18 @@ private:
     // ---- レコードモード ----
     bool recordMode_ = false;
 
+    // ---- デフォルトイージング ----
+    CameraKeyframe::Easing defaultEasing_ = CameraKeyframe::Easing::EaseInOut;
+
     // ---- バッファ ----
     char sequenceNameBuf_[128] = "Intro";
     char filePathBuf_[256]     = "assets/cinematics/intro.json";
+
+    // ---- 名前を付けて保存 ----
+    bool showSaveAsPopup_      = false;
+    char saveAsNameBuf_[128]   = "";
+    char saveAsPathBuf_[256]   = "";
+    std::string saveAsMessage_;
 
     // ---- 定数 ----
     static constexpr float kBasePixelsPerSec = 80.0f;

@@ -1,10 +1,12 @@
 #include "pch.h"
 #include "CinematicEditor.h"
+#include "../Scene/SceneSerializer.h"
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <algorithm>
 #include <cmath>
 #include <format>
+#include <filesystem>
 
 #define U8(str) reinterpret_cast<const char*>(u8##str)
 
@@ -43,11 +45,8 @@ void CinematicEditor::Update(float deltaTime) {
 void CinematicEditor::RenderWindow() {
     if (!isOpen_) return;
 
-    ImGui::SetNextWindowSize(ImVec2(900, 280), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSizeConstraints(ImVec2(500, 200), ImVec2(FLT_MAX, FLT_MAX));
-
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
-    if (!ImGui::Begin(U8("シネマティックエディタ"), &isOpen_, flags)) {
+    if (!ImGui::Begin(U8("シネマティック"), &isOpen_, flags)) {
         ImGui::End();
         return;
     }
@@ -58,9 +57,9 @@ void CinematicEditor::RenderWindow() {
     ImGui::Separator();
     RenderKeyframeInspector();
 
-    // [K]キーでキーフレーム打刻（ウィンドウフォーカス中）
+    // [F]キーでキーフレーム打刻（ウィンドウフォーカス中）
     if (recordMode_ && ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) {
-        if (ImGui::IsKeyPressed(ImGuiKey_K)) {
+        if (ImGui::IsKeyPressed(ImGuiKey_F)) {
             StampKeyframeFromCamera();
         }
     }
@@ -172,7 +171,7 @@ void CinematicEditor::RenderToolbar() {
     if (wasRecordMode) ImGui::PopStyleColor(2);
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip(recordMode_
-            ? U8("レコード中 - [K]キーでキーフレーム打刻")
+            ? U8("レコード中 - [F]キーでキーフレーム打刻")
             : U8("レコードモード ON"));
     }
 
@@ -183,6 +182,26 @@ void CinematicEditor::RenderToolbar() {
         StampKeyframeFromCamera();
     }
     if (ImGui::IsItemHovered()) ImGui::SetTooltip(U8("現在のシーンカメラ位置にキーフレームを追加"));
+
+    ImGui::SameLine(0, 8);
+
+    // ---- デフォルトイージング ----
+    {
+        const char* easingDefNames[] = { "Linear", "EaseIn", "EaseOut", "EaseInOut", U8("強調") };
+        int defIdx = static_cast<int>(defaultEasing_);
+        ImGui::SetNextItemWidth(90.0f);
+        if (ImGui::Combo("##defEasing", &defIdx, easingDefNames, 5)) {
+            defaultEasing_ = static_cast<CameraKeyframe::Easing>(defIdx);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip(U8("新規キーフレームのデフォルト補間モード"));
+        ImGui::SameLine(0, 2);
+        if (ImGui::Button(U8("全適用"), ImVec2(0, btnH))) {
+            for (auto& k : sequence_.keyframes) {
+                k.easing = defaultEasing_;
+            }
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip(U8("全キーフレームの補間モードを一括変更"));
+    }
 
     ImGui::SameLine(0, 12);
 
@@ -218,18 +237,37 @@ void CinematicEditor::RenderToolbar() {
     ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
     ImGui::SameLine(0, 8);
 
-    // ---- 保存 / 読み込み ----
-    ImGui::SetNextItemWidth(220.0f);
-    ImGui::InputText("##filepath", filePathBuf_, sizeof(filePathBuf_));
+    // ---- 現在のファイル表示 ----
+    ImGui::TextDisabled("[%s]", sequenceNameBuf_);
     ImGui::SameLine(0, 4);
+    ImGui::TextDisabled("%s", filePathBuf_);
+    ImGui::SameLine(0, 8);
 
-    if (ImGui::Button(U8("保存"), ImVec2(44, btnH))) {
-        // シーケンス名を更新
-        sequence_.name = sequenceNameBuf_;
-        bool ok = sequence_.SaveToFile(filePathBuf_);
-        ImGui::SetTooltip(ok ? U8("保存成功") : U8("保存失敗"));
+    // ---- 名前を付けて保存 ----
+    if (ImGui::Button(U8("名前を付けて保存"), ImVec2(0, btnH))) {
+        strncpy_s(saveAsNameBuf_, sequenceNameBuf_, sizeof(saveAsNameBuf_) - 1);
+        strncpy_s(saveAsPathBuf_, filePathBuf_, sizeof(saveAsPathBuf_) - 1);
+        saveAsMessage_.clear();
+        showSaveAsPopup_ = true;
+        ImGui::OpenPopup(U8("##SaveAsPopup"));
     }
     ImGui::SameLine(0, 2);
+
+    // ---- 上書き保存 ----
+    if (ImGui::Button(U8("上書き保存"), ImVec2(0, btnH))) {
+        sequence_.name = sequenceNameBuf_;
+        bool ok = sequence_.SaveToFile(filePathBuf_);
+        if (ok) {
+            std::string key = sequenceNameBuf_;
+            if (!key.empty()) {
+                SceneSerializer::s_cinematicPaths[key] = filePathBuf_;
+            }
+        }
+    }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip(U8("現在のパスに上書き保存"));
+    ImGui::SameLine(0, 2);
+
+    // ---- 読み込み ----
     if (ImGui::Button(U8("読込"), ImVec2(44, btnH))) {
         auto loaded = CinematicSequence::LoadFromFile(filePathBuf_);
         if (loaded.has_value()) {
@@ -238,6 +276,68 @@ void CinematicEditor::RenderToolbar() {
             selectedKeyframe_ = -1;
             scrubTime_ = 0.0f;
         }
+    }
+
+    // ---- 名前を付けて保存ポップアップ ----
+    if (showSaveAsPopup_) {
+        ImGui::OpenPopup(U8("##SaveAsPopup"));
+        showSaveAsPopup_ = false;
+    }
+    ImGui::SetNextWindowSize(ImVec2(420, 0), ImGuiCond_Always);
+    if (ImGui::BeginPopup(U8("##SaveAsPopup"))) {
+        ImGui::Text(U8("名前を付けて保存"));
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        ImGui::Text(U8("シネマティック名:"));
+        ImGui::SetNextItemWidth(-1);
+        ImGui::InputText("##SaveAsName", saveAsNameBuf_, sizeof(saveAsNameBuf_));
+
+        ImGui::Spacing();
+        ImGui::Text(U8("保存先パス:"));
+        ImGui::SetNextItemWidth(-1);
+        ImGui::InputText("##SaveAsPath", saveAsPathBuf_, sizeof(saveAsPathBuf_));
+
+        // 既存ファイル警告
+        if (std::filesystem::exists(saveAsPathBuf_) &&
+            std::string(saveAsPathBuf_) != std::string(filePathBuf_)) {
+            ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f),
+                U8("  既存ファイルを上書きします"));
+        }
+
+        ImGui::Spacing();
+
+        if (!saveAsMessage_.empty()) {
+            bool isError = saveAsMessage_.find(U8("失敗")) != std::string::npos;
+            ImVec4 color = isError ? ImVec4(1,0.3f,0.3f,1) : ImVec4(0.3f,1,0.3f,1);
+            ImGui::TextColored(color, "%s", saveAsMessage_.c_str());
+            ImGui::Spacing();
+        }
+
+        if (ImGui::Button(U8("保存"), ImVec2(120, 0))) {
+            sequence_.name = saveAsNameBuf_;
+            bool ok = sequence_.SaveToFile(saveAsPathBuf_);
+            if (ok) {
+                // 成功: バッファを更新
+                strncpy_s(sequenceNameBuf_, saveAsNameBuf_, sizeof(sequenceNameBuf_) - 1);
+                strncpy_s(filePathBuf_, saveAsPathBuf_, sizeof(filePathBuf_) - 1);
+                std::string key = saveAsNameBuf_;
+                if (!key.empty()) {
+                    SceneSerializer::s_cinematicPaths[key] = saveAsPathBuf_;
+                }
+                saveAsMessage_.clear();
+                ImGui::CloseCurrentPopup();
+            } else {
+                saveAsMessage_ = U8("保存失敗");
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::Button(U8("キャンセル"), ImVec2(120, 0))) {
+            saveAsMessage_.clear();
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
     }
 }
 
@@ -537,10 +637,10 @@ void CinematicEditor::RenderKeyframeInspector() {
 
     // ---- イージング ----
     ImGui::SameLine(0, 20);
-    const char* easingNames[] = { "Linear", "EaseIn", "EaseOut", "EaseInOut" };
+    const char* easingNames[] = { "Linear", "EaseIn", "EaseOut", "EaseInOut", U8("強調") };
     int easingIdx = static_cast<int>(kf.easing);
     ImGui::SetNextItemWidth(100.0f);
-    if (ImGui::Combo(U8("補間##kf_ease"), &easingIdx, easingNames, 4)) {
+    if (ImGui::Combo(U8("補間##kf_ease"), &easingIdx, easingNames, 5)) {
         kf.easing = static_cast<CameraKeyframe::Easing>(easingIdx);
     }
 
@@ -578,6 +678,7 @@ void CinematicEditor::StampKeyframeFromCamera() {
     kf.position = sceneViewCamera_->GetPosition();
     kf.rotation = sceneViewCamera_->GetRotation();
     kf.fov      = sceneViewCamera_->GetFieldOfView() * kRad2Deg;  // rad→deg
+    kf.easing   = defaultEasing_;
 
     // 同じ時刻に既存のキーフレームがあれば上書き
     for (auto& existing : sequence_.keyframes) {

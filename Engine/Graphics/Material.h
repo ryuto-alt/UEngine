@@ -59,6 +59,13 @@ public:
     void ClearDynamicTexture() { m_useDynamicTexture = false; }
     bool HasDynamicTexture() const { return m_useDynamicTexture; }
 
+    // GPU転送完了後にアップロードバッファを解放
+    void ReleaseUploadBuffers() {
+        if (diffuseTexture_) {
+            diffuseTexture_->ReleaseUploadBuffer();
+        }
+    }
+
 private:
     MaterialData data_;
     std::unique_ptr<Texture2D> diffuseTexture_;

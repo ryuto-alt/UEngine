@@ -13,6 +13,8 @@
 #include "../Systems/SystemManager.h"
 #include "../Particle/ParticleSystem.h"
 #include "../Editor/ParticleEditor.h"
+#include "EventSystem.h"
+#include "SettingsSystem.h"
 
 namespace UnoEngine {
 

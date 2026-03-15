@@ -1,10 +1,13 @@
 #include "pch.h"
 #include "ResourceManager.h"
+#include "ModelCache.h"
 #include "../Graphics/GraphicsDevice.h"
 #include "../Core/Logger.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <chrono>
+#include <filesystem>
 
 namespace UnoEngine {
 
@@ -50,25 +53,43 @@ SkinnedModelData* ResourceManager::LoadSkinnedModel(const std::string& path) {
 
     // Load new model
     Logger::Info("[リソース] スキンモデル読み込み中: {}", path);
-    
+    auto start = std::chrono::high_resolution_clock::now();
+
     if (!isUploading_) {
         Logger::Warning("ResourceManager: BeginUpload() not called before loading resources");
     }
 
     auto* commandList = device_->GetCommandList();
     auto modelData = std::make_unique<SkinnedModelData>();
-    *modelData = SkinnedModelImporter::Load(device_, commandList, path);
+
+    // バイナリキャッシュから読み込みを試行
+    bool fromCache = false;
+    if (ModelCache::IsEnabled()) {
+        fromCache = ModelCache::TryLoadSkinnedModel(path, device_, commandList, *modelData);
+    }
+
+    if (!fromCache) {
+        *modelData = SkinnedModelImporter::Load(device_, commandList, path);
+
+        // キャッシュに保存
+        if (ModelCache::IsEnabled() && !modelData->meshes.empty()) {
+            ModelCache::SaveSkinnedModel(path, *modelData);
+        }
+    }
 
     if (modelData->meshes.empty()) {
         Logger::Error("[リソース] スキンモデル読み込み失敗: {}", path);
         return nullptr;
     }
 
+    auto elapsed = std::chrono::high_resolution_clock::now() - start;
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+
     SkinnedModelData* ptr = modelData.get();
     skinnedModels_[path] = std::move(modelData);
 
-    Logger::Info("[リソース] スキンモデル読み込み完了 (メッシュ: {}個, アニメーション: {}個)",
-                 ptr->meshes.size(), ptr->animations.size());
+    Logger::Info("[リソース] スキンモデル読み込み完了 (メッシュ: {}個, アニメーション: {}個) [{}ms{}]",
+                 ptr->meshes.size(), ptr->animations.size(), ms, fromCache ? " キャッシュ" : "");
 
     return ptr;
 }
@@ -83,6 +104,7 @@ StaticModelData* ResourceManager::LoadStaticModel(const std::string& path) {
 
     // Load new model
     Logger::Info("[リソース] 静的モデル読み込み中: {}", path);
+    auto start = std::chrono::high_resolution_clock::now();
 
     if (!isUploading_) {
         Logger::Warning("ResourceManager: BeginUpload() not called before loading resources");
@@ -90,17 +112,35 @@ StaticModelData* ResourceManager::LoadStaticModel(const std::string& path) {
 
     auto* commandList = device_->GetCommandList();
     auto modelData = std::make_unique<StaticModelData>();
-    *modelData = StaticModelImporter::Load(device_, commandList, path);
+
+    // バイナリキャッシュから読み込みを試行
+    bool fromCache = false;
+    if (ModelCache::IsEnabled()) {
+        fromCache = ModelCache::TryLoadStaticModel(path, device_, commandList, *modelData);
+    }
+
+    if (!fromCache) {
+        *modelData = StaticModelImporter::Load(device_, commandList, path);
+
+        // キャッシュに保存
+        if (ModelCache::IsEnabled() && !modelData->meshes.empty()) {
+            ModelCache::SaveStaticModel(path, *modelData);
+        }
+    }
 
     if (modelData->meshes.empty()) {
         Logger::Error("[リソース] 静的モデル読み込み失敗: {}", path);
         return nullptr;
     }
 
+    auto elapsed = std::chrono::high_resolution_clock::now() - start;
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+
     StaticModelData* ptr = modelData.get();
     staticModels_[path] = std::move(modelData);
 
-    Logger::Info("[リソース] 静的モデル読み込み完了 (メッシュ: {}個)", ptr->meshes.size());
+    Logger::Info("[リソース] 静的モデル読み込み完了 (メッシュ: {}個) [{}ms{}]",
+                 ptr->meshes.size(), ms, fromCache ? " キャッシュ" : "");
 
     return ptr;
 }
@@ -109,7 +149,7 @@ bool ResourceManager::LoadModel(const std::string& path, SkinnedModelData** outS
     if (outSkinnedModel) *outSkinnedModel = nullptr;
     if (outStaticModel) *outStaticModel = nullptr;
 
-    // Check cache first
+    // Check in-memory cache first
     auto skinnedIt = skinnedModels_.find(path);
     if (skinnedIt != skinnedModels_.end()) {
         if (outSkinnedModel) *outSkinnedModel = skinnedIt->second.get();
@@ -122,7 +162,31 @@ bool ResourceManager::LoadModel(const std::string& path, SkinnedModelData** outS
         return false;
     }
 
-    // Check if model has bones
+    // モデルタイプ判定キャッシュ: バイナリキャッシュファイルの存在でタイプを判定
+    // これにより ModelHasBones() のAssimp二重パースを回避
+    if (ModelCache::IsEnabled()) {
+        namespace fs = std::filesystem;
+        // スキンモデルキャッシュが存在するか
+        size_t hash = std::hash<std::string>{}(fs::absolute(path).string());
+        std::string stem = fs::path(path).stem().string();
+        std::string skCachePath = ".cache/models/" + stem + "_" + std::to_string(hash) + ".skcache";
+        std::string smCachePath = ".cache/models/" + stem + "_" + std::to_string(hash) + ".smcache";
+
+        if (fs::exists(skCachePath) && ModelCache::IsCacheValid(path, skCachePath)) {
+            Logger::Info("[リソース] キャッシュからスキンモデルとして判定");
+            auto* skinnedModel = LoadSkinnedModel(path);
+            if (outSkinnedModel) *outSkinnedModel = skinnedModel;
+            return true;
+        }
+        if (fs::exists(smCachePath) && ModelCache::IsCacheValid(path, smCachePath)) {
+            Logger::Info("[リソース] キャッシュから静的モデルとして判定");
+            auto* staticModel = LoadStaticModel(path);
+            if (outStaticModel) *outStaticModel = staticModel;
+            return false;
+        }
+    }
+
+    // キャッシュなし: Assimpでタイプ判定（初回のみ）
     Logger::Info("[リソース] モデルタイプを判定中: {}", path);
     bool hasBones = ModelHasBones(path);
 
@@ -168,14 +232,11 @@ std::shared_ptr<AnimationClip> ResourceManager::LoadAnimation(const std::string&
         return it->second;
     }
 
-    // Animation clips are typically loaded as part of SkinnedModel
-    // This method is for loading standalone animation files (future feature)
     Logger::Warning("ResourceManager: Standalone animation loading not yet implemented: {}", path);
     return nullptr;
 }
 
 void ResourceManager::UnloadUnused() {
-    // For now, just log. In the future, implement reference counting
     Logger::Debug("ResourceManager: UnloadUnused() called - not yet implemented");
 }
 
@@ -203,6 +264,38 @@ void ResourceManager::EndUpload() {
     }
     device_->EndResourceUpload();
     isUploading_ = false;
+
+    // GPU転送完了後にアップロードバッファを解放（GPUメモリリーク防止）
+    ReleaseUploadBuffers();
+}
+
+void ResourceManager::ReleaseUploadBuffers() {
+    // テクスチャのアップロードバッファ解放
+    for (auto& [path, texture] : textures_) {
+        if (texture) {
+            texture->ReleaseUploadBuffer();
+        }
+    }
+
+    // スキンモデルのアップロードバッファ解放
+    for (auto& [path, model] : skinnedModels_) {
+        if (model) {
+            for (auto& mesh : model->meshes) {
+                mesh.ReleaseUploadBuffers();
+            }
+        }
+    }
+
+    // 静的モデルのアップロードバッファ解放
+    for (auto& [path, model] : staticModels_) {
+        if (model) {
+            for (auto& mesh : model->meshes) {
+                mesh.ReleaseUploadBuffers();
+            }
+        }
+    }
+
+    Logger::Debug("[ResourceManager] アップロードバッファ解放完了");
 }
 
 } // namespace UnoEngine

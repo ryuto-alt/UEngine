@@ -260,10 +260,13 @@ void GraphicsDevice::CreateSRV(ID3D12Resource* resource, uint32 index) {
 
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     DXGI_FORMAT format = resource->GetDesc().Format;
-    
-    // R8G8B8A8_UNORMの場合、sRGBとして解釈（ガンマ補正を適用）
+
+    // カラーテクスチャはsRGBとして解釈（ガンマ補正を適用）
+    // BC4/BC5はリニアデータ（法線/ラフネス等）なのでsRGB変換しない
     if (format == DXGI_FORMAT_R8G8B8A8_UNORM) {
         srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+    } else if (format == DXGI_FORMAT_BC7_UNORM) {
+        srvDesc.Format = DXGI_FORMAT_BC7_UNORM_SRGB;
     } else {
         srvDesc.Format = format;
     }

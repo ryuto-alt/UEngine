@@ -80,6 +80,11 @@ Mesh* ResourceLoader::LoadMeshImpl(const std::string& path) {
     WaitForSingleObject(fenceEvent, INFINITE);
     CloseHandle(fenceEvent);
 
+    // GPU転送完了後にアップロードバッファを解放
+    for (auto& m : loadedMeshes) {
+        m.ReleaseUploadBuffers();
+    }
+
     if (loadedMeshes.empty()) {
         return nullptr;
     }
@@ -130,6 +135,11 @@ std::vector<Mesh*> ResourceLoader::LoadModelImpl(const std::string& path) {
     fence->SetEventOnCompletion(1, fenceEvent);
     WaitForSingleObject(fenceEvent, INFINITE);
     CloseHandle(fenceEvent);
+
+    // GPU転送完了後にアップロードバッファを解放
+    for (auto& m : loadedMeshes) {
+        m.ReleaseUploadBuffers();
+    }
 
     std::vector<Mesh*> result;
     std::vector<std::unique_ptr<Mesh>>& cacheEntry = modelCache_[path];
@@ -189,6 +199,9 @@ Texture2D* ResourceLoader::LoadTextureImpl(const std::wstring& path) {
     fence->SetEventOnCompletion(1, fenceEvent);
     WaitForSingleObject(fenceEvent, INFINITE);
     CloseHandle(fenceEvent);
+
+    // GPU転送完了後にアップロードバッファを解放
+    texture->ReleaseUploadBuffer();
 
     Texture2D* ptr = texture.get();
     textureCache_[path] = std::move(texture);

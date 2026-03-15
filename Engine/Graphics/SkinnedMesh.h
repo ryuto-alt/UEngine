@@ -40,6 +40,19 @@ public:
     Vector3 GetBoundsMin() const { return boundsMin_; }
     Vector3 GetBoundsMax() const { return boundsMax_; }
 
+    // CPU-side geometry data for cache
+    const std::vector<SkinnedVertex>& GetVertices() const { return cpuVertices_; }
+    const std::vector<uint32>& GetIndices() const { return cpuIndices_; }
+
+    // GPU転送完了後にアップロードバッファを解放（GPUメモリリーク防止）
+    void ReleaseUploadBuffers() {
+        vertexBuffer_.ReleaseUploadBuffer();
+        indexBuffer_.ReleaseUploadBuffer();
+        if (material_) {
+            material_->ReleaseUploadBuffers();
+        }
+    }
+
 private:
     void CalculateBounds(const std::vector<SkinnedVertex>& vertices);
 
@@ -49,6 +62,10 @@ private:
     Vector3 boundsMin_;
     Vector3 boundsMax_;
     std::unique_ptr<Material> material_;
+
+    // CPU-side copies for model cache
+    std::vector<SkinnedVertex> cpuVertices_;
+    std::vector<uint32> cpuIndices_;
 };
 
 } // namespace UnoEngine

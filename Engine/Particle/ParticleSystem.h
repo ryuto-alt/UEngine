@@ -18,7 +18,7 @@ class Texture2D;
 
 // パーティクルシステム設定
 struct ParticleSystemConfig {
-    uint32 maxParticles = 100000;   // 最大パーティクル数
+    uint32 maxParticles = 50000;    // 最大パーティクル数
     bool enableCollision = true;    // コリジョン有効
     bool enableSorting = false;     // ソート有効
 };

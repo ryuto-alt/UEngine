@@ -14,6 +14,7 @@
 #include "../../Engine/Cinematic/CinematicEditor.h"
 #include "EditorCamera.h"
 #include "GizmoSystem.h"
+#include "../../Engine/UI/SettingsUI.h"
 #include "../Build/GameExporter.h"
 #include <vector>
 #include <string>
@@ -323,6 +324,9 @@ private:
     // Hierarchy展開状態
     std::unordered_set<GameObject*> expandedObjects_;
 
+    // Hierarchy検索フィルター
+    char hierarchySearchBuffer_[256] = {};
+
     // Scene View用の独立したカメラ（EditorCameraが操作する）
     Camera sceneViewCamera_;
 
@@ -515,6 +519,9 @@ private:
 
     // シネマティックエディタ
     CinematicEditor cinematicEditor_;
+
+    // 設定UI
+    SettingsUI settingsUI_;
 };
 
 } // namespace UnoEngine

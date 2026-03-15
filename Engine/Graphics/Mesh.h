@@ -52,6 +52,15 @@ public:
     const std::vector<uint32>& GetIndices() const { return cpuIndices_; }
     bool HasCPUData() const { return !cpuVertices_.empty(); }
 
+    // GPU転送完了後にアップロードバッファを解放（GPUメモリリーク防止）
+    void ReleaseUploadBuffers() {
+        vertexBuffer_.ReleaseUploadBuffer();
+        indexBuffer_.ReleaseUploadBuffer();
+        if (material_) {
+            material_->ReleaseUploadBuffers();
+        }
+    }
+
 private:
     void CalculateBounds(const std::vector<Vertex>& vertices);
 

@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "InputManager.h"
+#include "../Core/EventSystem.h"
 #include <vector>
 
 namespace UnoEngine {
@@ -7,6 +8,38 @@ namespace UnoEngine {
 void InputManager::Update() {
     keyboard_.Update();
     mouse_.Update();
+    gamepad_.Update();
+
+    // 入力デバイス切り替え検出
+    if (activeDevice_ == InputDevice::Keyboard) {
+        // キーボード/マウス使用中にゲームパッド入力があった場合
+        if (gamepad_.HasInput()) {
+            activeDevice_ = InputDevice::Gamepad;
+            EventSystem::GetInstance().Fire<InputDeviceChangedEvent>(InputDevice::Gamepad);
+        }
+    } else {
+        // ゲームパッド使用中にキーボード/マウス入力があった場合
+        // キーボードのキーが押されたか、マウスが動いたかを検出
+        bool keyboardInput = false;
+        // 主要キーのチェック（WASD、矢印、Space、Escなど）
+        for (uint32 vk = 0; vk < 256; ++vk) {
+            if (GetAsyncKeyState(vk) & 0x8000) {
+                // マウスボタンはここでは除外（マウス移動で検出する）
+                if (vk != VK_LBUTTON && vk != VK_RBUTTON && vk != VK_MBUTTON) {
+                    keyboardInput = true;
+                    break;
+                }
+            }
+        }
+
+        bool mouseInput = (mouse_.GetRawDeltaX() != 0 || mouse_.GetRawDeltaY() != 0 ||
+                          mouse_.IsPressed(MouseButton::Left) || mouse_.IsPressed(MouseButton::Right));
+
+        if (keyboardInput || mouseInput) {
+            activeDevice_ = InputDevice::Keyboard;
+            EventSystem::GetInstance().Fire<InputDeviceChangedEvent>(InputDevice::Keyboard);
+        }
+    }
 }
 
 void InputManager::ProcessMessage(UINT msg, WPARAM wparam, LPARAM lparam) {
@@ -101,6 +134,8 @@ void InputManager::ProcessMessage(UINT msg, WPARAM wparam, LPARAM lparam) {
 void InputManager::Reset() {
     keyboard_.Reset();
     mouse_.Reset();
+    gamepad_.Reset();
+    activeDevice_ = InputDevice::Keyboard;
 }
 
 } // namespace UnoEngine

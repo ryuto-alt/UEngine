@@ -19,6 +19,9 @@ public:
     D3D12_INDEX_BUFFER_VIEW GetView() const { return view_; }
     uint32 GetIndexCount() const { return indexCount_; }
 
+    // GPU転送完了後にアップロードバッファを解放（GPUメモリリーク防止）
+    void ReleaseUploadBuffer() { uploadBuffer_.Reset(); }
+
 private:
     ComPtr<ID3D12Resource> buffer_;
     ComPtr<ID3D12Resource> uploadBuffer_;  // GPU処理完了まで保持

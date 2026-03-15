@@ -1,5 +1,7 @@
 #include "pch.h"
 #include "Application.h"
+#include "EventSystem.h"
+#include "SettingsSystem.h"
 #include "../Resource/ResourceLoader.h"
 #include <chrono>
 
@@ -72,6 +74,8 @@ void Application::Initialize() {
     particleEditor_ = MakeUnique<ParticleEditor>();
     particleEditor_->Initialize(graphics_.get(), particleSystem_.get());
 
+    // 設定システム初期化
+    SettingsSystem::GetInstance().Load();
 }
 
 #ifdef WITH_EDITOR
@@ -126,6 +130,9 @@ void Application::MainLoop() {
 
         OnUpdate(deltaTime);
 
+        // 遅延イベント処理
+        EventSystem::GetInstance().ProcessQueue();
+
         // 描画
         OnRender();
     }
@@ -169,6 +176,9 @@ void Application::Shutdown() {
     }
 
     OnShutdown();
+
+    // イベントシステムクリア
+    EventSystem::GetInstance().ClearAll();
 
     // パーティクルシステム解放
     particleEditor_.reset();

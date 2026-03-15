@@ -52,6 +52,7 @@
 #endif
 #include <windows.h>
 #include <commdlg.h>
+#include <psapi.h>
 #include <filesystem>
 
 namespace UnoEngine {
@@ -440,6 +441,9 @@ namespace UnoEngine {
 		// ビルドダイアログ描画
 		RenderBuildDialog();
 
+		// 設定UI描画
+		settingsUI_.Render();
+
 		// NavMeshベイク中モーダル
 		if (navMeshBaking_.load()) {
 			ImGui::OpenPopup(U8("NavMesh ベイク中"));
@@ -646,7 +650,9 @@ namespace UnoEngine {
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 
-		ImGui::Begin("DockSpace", nullptr, windowFlags);
+		// タイトルバーに未保存インジケーター表示
+		std::string dockTitle = isDirty_ ? "DockSpace *" : "DockSpace";
+		ImGui::Begin(dockTitle.c_str(), nullptr, windowFlags);
 		ImGui::PopStyleVar(3);
 
 		ImGuiID dockspaceID = ImGui::GetID("MainDockSpace");
@@ -790,6 +796,13 @@ namespace UnoEngine {
 				ImGui::EndMenu();
 			}
 
+			if (ImGui::BeginMenu(U8("設定"))) {
+				if (ImGui::MenuItem(U8("設定を開く..."), "Ctrl+,")) {
+					settingsUI_.SetOpen(true);
+				}
+				ImGui::EndMenu();
+			}
+
 			// Play/Pause/Stop ボタンをメニューバー中央に配置
 			float menuBarWidth = ImGui::GetWindowWidth();
 			float buttonWidth = 28.0f;
@@ -813,6 +826,7 @@ namespace UnoEngine {
 					Play();
 				}
 			}
+			if (ImGui::IsItemHovered()) ImGui::SetTooltip(isPlaying ? U8("一時停止 (F5)") : U8("再生 (F5)"));
 			if (isPlaying) {
 				ImGui::PopStyleColor();
 			}
@@ -827,6 +841,7 @@ namespace UnoEngine {
 			if (ImGui::Button("[]##StopBtn", ImVec2(buttonWidth, 0)) && canStop) {
 				Stop();
 			}
+			if (ImGui::IsItemHovered()) ImGui::SetTooltip(U8("停止 (Shift+F5)"));
 			if (!canStop) {
 				ImGui::PopStyleVar();
 			}
@@ -841,11 +856,12 @@ namespace UnoEngine {
 			if (ImGui::Button(">|##StepBtn", ImVec2(buttonWidth, 0)) && canStep) {
 				Step();
 			}
+			if (ImGui::IsItemHovered()) ImGui::SetTooltip(U8("1フレーム進む (F10)"));
 			if (!canStep) {
 				ImGui::PopStyleVar();
 			}
 
-			// モード表示
+			// モード表示 + 未保存インジケーター
 			ImGui::SameLine();
 			const char* modeText = U8("編集中");
 			ImVec4 modeColor = ImVec4(0.6f, 0.6f, 0.6f, 1.0f);
@@ -858,6 +874,12 @@ namespace UnoEngine {
 				modeColor = ImVec4(0.8f, 0.8f, 0.2f, 1.0f);
 			}
 			ImGui::TextColored(modeColor, "%s", modeText);
+
+			// 未保存変更インジケーター
+			if (isDirty_) {
+				ImGui::SameLine();
+				ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.2f, 1.0f), U8(" [未保存]"));
+			}
 
 			ImGui::EndMenuBar();
 		}
@@ -923,94 +945,94 @@ namespace UnoEngine {
 		ImGui::Begin(U8("シーン"), &showSceneView_);
 
 		// ========================================
-		// Scene View ツールバー（Unity風）
+		// Scene View ツールバー（Unity風・グループ分け）
 		// ========================================
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 2));
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 4));
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5, 3));
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(3, 4));
 
-		// 描画モード選択
+		// ── グループ1: シェーディングモード ──
 		static int shadingMode = 0;
 		const char* shadingModes[] = { U8("シェーディング"), U8("ワイヤーフレーム"), U8("両方") };
 		ImGui::SetNextItemWidth(120.0f);
 		ImGui::Combo("##Shading", &shadingMode, shadingModes, IM_ARRAYSIZE(shadingModes));
+		if (ImGui::IsItemHovered()) ImGui::SetTooltip(U8("描画モードを切り替え"));
 		ImGui::SameLine();
 
-		// 2Dボタン
+		// ── グループ2: 2D/3D切替 ──
+		ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+		ImGui::SameLine();
 		static bool is2DMode = false;
 		if (ImGui::Button(is2DMode ? "3D" : "2D", ImVec2(30, 0))) {
 			is2DMode = !is2DMode;
 		}
+		if (ImGui::IsItemHovered()) ImGui::SetTooltip(U8("2D/3D表示の切り替え"));
 		ImGui::SameLine();
 
-		// ギズモツールボタン
-		ImGui::Separator();
+		// ── グループ3: ギズモツール ──
+		ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
 		ImGui::SameLine();
 
-		// Move Tool
+		// 移動ツール
 		bool isTranslate = (gizmoSystem_.GetOperation() == GizmoOperation::Translate);
 		if (isTranslate) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
 		if (ImGui::Button(U8("移動"), ImVec2(40, 0))) {
 			gizmoSystem_.SetOperation(GizmoOperation::Translate);
 		}
-		if (ImGui::IsItemHovered()) ImGui::SetTooltip(U8("移動ツール (Q)"));
+		if (ImGui::IsItemHovered()) ImGui::SetTooltip(U8("移動ツール (Q)\nオブジェクトを移動します"));
 		if (isTranslate) ImGui::PopStyleColor();
 		ImGui::SameLine();
 
-		// Rotate Tool
+		// 回転ツール
 		bool isRotate = (gizmoSystem_.GetOperation() == GizmoOperation::Rotate);
 		if (isRotate) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
 		if (ImGui::Button(U8("回転"), ImVec2(40, 0))) {
 			gizmoSystem_.SetOperation(GizmoOperation::Rotate);
 		}
-		if (ImGui::IsItemHovered()) ImGui::SetTooltip(U8("回転ツール (W)"));
+		if (ImGui::IsItemHovered()) ImGui::SetTooltip(U8("回転ツール (W)\nオブジェクトを回転します"));
 		if (isRotate) ImGui::PopStyleColor();
 		ImGui::SameLine();
 
-		// Scale Tool
+		// スケールツール
 		bool isScale = (gizmoSystem_.GetOperation() == GizmoOperation::Scale);
 		if (isScale) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
 		if (ImGui::Button(U8("拡縮"), ImVec2(40, 0))) {
 			gizmoSystem_.SetOperation(GizmoOperation::Scale);
 		}
-		if (ImGui::IsItemHovered()) ImGui::SetTooltip(U8("スケールツール (E)"));
+		if (ImGui::IsItemHovered()) ImGui::SetTooltip(U8("スケールツール (E)\nオブジェクトのサイズを変更します"));
 		if (isScale) ImGui::PopStyleColor();
 		ImGui::SameLine();
 
-		ImGui::Separator();
+		// ── グループ4: 座標系・ピボット ──
+		ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
 		ImGui::SameLine();
 
-		// 座標系切り替え（Local/Global）
 		static bool isLocalSpace = true;
 		if (ImGui::Button(isLocalSpace ? U8("ローカル") : U8("グローバル"), ImVec2(70, 0))) {
 			isLocalSpace = !isLocalSpace;
 		}
+		if (ImGui::IsItemHovered()) ImGui::SetTooltip(U8("座標系切り替え\nローカル: オブジェクト基準\nグローバル: ワールド基準"));
 		ImGui::SameLine();
 
-		// Pivot/Center
 		static bool isPivot = true;
 		if (ImGui::Button(isPivot ? U8("ピボット") : U8("中心"), ImVec2(60, 0))) {
 			isPivot = !isPivot;
 		}
+		if (ImGui::IsItemHovered()) ImGui::SetTooltip(U8("ピボット/中心切り替え\nピボット: オブジェクトの原点\n中心: バウンディングボックスの中心"));
 		ImGui::SameLine();
 
-		ImGui::Separator();
+		// ── グループ5: 表示オプション ──
+		ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
 		ImGui::SameLine();
 
-		// Gizmosドロップダウン
 		if (ImGui::Button(U8("ギズモ"))) {
 			ImGui::OpenPopup("GizmosPopup");
 		}
+		if (ImGui::IsItemHovered()) ImGui::SetTooltip(U8("ギズモ表示オプション"));
 		if (ImGui::BeginPopup("GizmosPopup")) {
 			ImGui::Checkbox(U8("グリッド表示"), &showGrid_);
 			ImGui::Checkbox(U8("カメラ視錐台"), &showCameraFrustum_);
 			ImGui::EndPopup();
 		}
-		ImGui::SameLine();
-
-		// 右寄せで表示オプション
-		float windowWidth = ImGui::GetContentRegionAvail().x;
-		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + windowWidth - 100);
-		ImGui::Text(U8("全て"));
 
 		ImGui::PopStyleVar(2);
 		ImGui::Separator();
@@ -2721,19 +2743,51 @@ namespace UnoEngine {
 		if (ImGui::BeginTabBar("ConsoleDebuggerTabs")) {
 			// コンソール タブ
 			if (ImGui::BeginTabItem(U8("コンソール"))) {
+				// メッセージカウントを集計
+				int infoCount = 0, warningCount = 0, errorCount = 0;
+				for (const auto& msg : consoleMessages_) {
+					if (msg.find("[Error]") != std::string::npos) {
+						errorCount++;
+					} else if (msg.find("[Warning]") != std::string::npos) {
+						warningCount++;
+					} else {
+						infoCount++;
+					}
+				}
+
 				// ツールバー
 				if (ImGui::Button(U8("クリア"))) {
 					consoleMessages_.clear();
 				}
+				if (ImGui::IsItemHovered()) ImGui::SetTooltip(U8("全てのログをクリア"));
 				ImGui::SameLine();
+
+				// フィルターボタン（カウント付き）- static変数で状態を保持
 				static bool showInfo = true;
 				static bool showWarning = true;
 				static bool showError = true;
-				ImGui::Checkbox(U8("情報"), &showInfo);
+
+				{
+					char infoLabel[64];
+					snprintf(infoLabel, sizeof(infoLabel), "%s (%d)", U8("情報"), infoCount);
+					ImGui::Checkbox(infoLabel, &showInfo);
+				}
 				ImGui::SameLine();
-				ImGui::Checkbox(U8("警告"), &showWarning);
+				{
+					if (warningCount > 0) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.2f, 1.0f));
+					char warnLabel[64];
+					snprintf(warnLabel, sizeof(warnLabel), "%s (%d)", U8("警告"), warningCount);
+					ImGui::Checkbox(warnLabel, &showWarning);
+					if (warningCount > 0) ImGui::PopStyleColor();
+				}
 				ImGui::SameLine();
-				ImGui::Checkbox(U8("エラー"), &showError);
+				{
+					if (errorCount > 0) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
+					char errLabel[64];
+					snprintf(errLabel, sizeof(errLabel), "%s (%d)", U8("エラー"), errorCount);
+					ImGui::Checkbox(errLabel, &showError);
+					if (errorCount > 0) ImGui::PopStyleColor();
+				}
 
 				ImGui::Separator();
 
@@ -2808,20 +2862,58 @@ namespace UnoEngine {
 		ImGui::PopStyleColor();
 		ImGui::Separator();
 
-		// 選択解除ボタン
+		// 検索フィルター
+		ImGui::SetNextItemWidth(-1);
+		ImGui::InputTextWithHint("##HierarchySearch", U8("オブジェクトを検索..."), hierarchySearchBuffer_, sizeof(hierarchySearchBuffer_));
+		if (ImGui::IsItemHovered()) ImGui::SetTooltip(U8("名前でオブジェクトをフィルタリング"));
+
+		// 選択解除ボタン + オブジェクト数
 		if ((selectedObject_ || !selectedObjects_.empty()) && ImGui::SmallButton(U8("選択解除"))) {
 			ClearSelection();
 		}
 		ImGui::SameLine();
 		if (context.gameObjects) {
-			ImGui::TextDisabled(U8("(%zu オブジェクト)"), context.gameObjects->size());
+			// 検索結果カウント
+			std::string searchStr(hierarchySearchBuffer_);
+			if (!searchStr.empty()) {
+				int matchCount = 0;
+				for (const auto& obj : *context.gameObjects) {
+					std::string objName = obj->GetName();
+					// 大文字小文字を無視して検索
+					std::string lowerName = objName;
+					std::string lowerSearch = searchStr;
+					std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), ::tolower);
+					std::transform(lowerSearch.begin(), lowerSearch.end(), lowerSearch.begin(), ::tolower);
+					if (lowerName.find(lowerSearch) != std::string::npos) {
+						matchCount++;
+					}
+				}
+				ImGui::TextDisabled(U8("%d / %zu 件一致"), matchCount, context.gameObjects->size());
+			} else {
+				ImGui::TextDisabled(U8("(%zu オブジェクト)"), context.gameObjects->size());
+			}
 		}
 		ImGui::Separator();
 
 		// オブジェクトリスト
 		if (context.gameObjects) {
+			std::string searchFilter(hierarchySearchBuffer_);
+			std::string lowerSearchFilter = searchFilter;
+			std::transform(lowerSearchFilter.begin(), lowerSearchFilter.end(), lowerSearchFilter.begin(), ::tolower);
+
 			for (size_t i = 0; i < context.gameObjects->size(); ++i) {
 				GameObject* obj = (*context.gameObjects)[i].get();
+
+				// 検索フィルター適用
+				if (!lowerSearchFilter.empty()) {
+					std::string objName = obj->GetName();
+					std::string lowerObjName = objName;
+					std::transform(lowerObjName.begin(), lowerObjName.end(), lowerObjName.begin(), ::tolower);
+					if (lowerObjName.find(lowerSearchFilter) == std::string::npos) {
+						continue;  // フィルターに一致しないオブジェクトをスキップ
+					}
+				}
+
 				bool isExpanded = expandedObjects_.count(obj) > 0;
 				bool isRenaming = (renamingObject_ == obj);
 
@@ -2945,12 +3037,12 @@ namespace UnoEngine {
 
 				// 右クリックメニュー
 				if (ImGui::BeginPopupContextItem()) {
-					if (ImGui::MenuItem("Rename", "F2")) {
+					if (ImGui::MenuItem(U8("名前変更"), "F2")) {
 						renamingObject_ = obj;
 						strncpy_s(renameBuffer_, obj->GetName().c_str(), sizeof(renameBuffer_) - 1);
 						renameBuffer_[sizeof(renameBuffer_) - 1] = '\0';
 					}
-					if (ImGui::MenuItem("Focus", "F")) {
+					if (ImGui::MenuItem(U8("フォーカス"), "F")) {
 						FocusOnObject(obj);
 					}
 					ImGui::Separator();
@@ -2959,7 +3051,7 @@ namespace UnoEngine {
 					if (!canDelete) {
 						ImGui::BeginDisabled();
 					}
-					if (ImGui::MenuItem("Delete", "DEL", false, canDelete)) {
+					if (ImGui::MenuItem(U8("削除"), "DEL", false, canDelete)) {
 						if (gameObjects_ && canDelete) {
 							if (renamingObject_ == obj) renamingObject_ = nullptr;
 						consoleMessages_.push_back("[Editor] Deleted object: " + obj->GetName());
@@ -2969,11 +3061,11 @@ namespace UnoEngine {
 					if (!canDelete) {
 						ImGui::EndDisabled();
 						if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-							ImGui::SetTooltip("This object cannot be deleted");
+							ImGui::SetTooltip(U8("このオブジェクトは削除できません"));
 						}
 					}
 					ImGui::Separator();
-					if (ImGui::BeginMenu("Add Component")) {
+					if (ImGui::BeginMenu(U8("コンポーネント追加"))) {
 						if (ImGui::MenuItem("AudioSource")) {
 							if (!obj->GetComponent<AudioSource>()) {
 								obj->AddComponent<AudioSource>();
@@ -3285,7 +3377,7 @@ namespace UnoEngine {
 							}
 						}
 						if (ImGui::IsItemHovered()) {
-							ImGui::SetTooltip("Browse for external WAV file");
+							ImGui::SetTooltip(U8("外部WAVファイルを参照"));
 						}
 
 						// 音量
@@ -3431,7 +3523,7 @@ namespace UnoEngine {
 							}
 						}
 						if (ImGui::IsItemHovered()) {
-							ImGui::SetTooltip("Browse for video file");
+							ImGui::SetTooltip(U8("動画ファイルを参照"));
 						}
 
 						// ターゲットマテリアル名
@@ -3444,7 +3536,7 @@ namespace UnoEngine {
 							isDirty_ = true;
 						}
 						if (ImGui::IsItemHovered()) {
-							ImGui::SetTooltip("Material name to display video on");
+							ImGui::SetTooltip(U8("動画を表示するマテリアル名"));
 						}
 
 						// ビデオ情報表示
@@ -3506,7 +3598,7 @@ namespace UnoEngine {
 			}
 		}
 		else {
-			ImGui::TextDisabled("(no objects)");
+			ImGui::TextDisabled(U8("(オブジェクトなし)"));
 		}
 
 		// DELキーで選択中のオブジェクトを削除（削除不可オブジェクトは除く）
@@ -3533,7 +3625,7 @@ namespace UnoEngine {
 
 		// Hierarchy背景の右クリックメニュー（オブジェクト作成）
 		if (ImGui::BeginPopupContextWindow("HierarchyContextMenu", ImGuiPopupFlags_NoOpenOverItems | ImGuiPopupFlags_MouseButtonRight)) {
-			if (ImGui::MenuItem("Create Empty")) {
+			if (ImGui::MenuItem(U8("空のオブジェクト作成"))) {
 				auto newObj = std::make_unique<GameObject>();
 				newObj->SetName("GameObject");
 				auto* ptr = newObj.get();
@@ -3544,8 +3636,8 @@ namespace UnoEngine {
 					consoleMessages_.push_back("[Editor] Created: GameObject");
 				}
 			}
-			if (ImGui::BeginMenu("Create Light")) {
-				if (ImGui::MenuItem("Directional Light")) {
+			if (ImGui::BeginMenu(U8("ライト作成"))) {
+				if (ImGui::MenuItem(U8("ディレクショナルライト"))) {
 					auto newObj = std::make_unique<GameObject>();
 					newObj->SetName("Directional Light");
 					auto* dl = newObj->AddComponent<DirectionalLightComponent>();
@@ -3562,7 +3654,7 @@ namespace UnoEngine {
 						consoleMessages_.push_back("[Editor] Created: Directional Light");
 					}
 				}
-				if (ImGui::MenuItem("Point Light")) {
+				if (ImGui::MenuItem(U8("ポイントライト"))) {
 					auto newObj = std::make_unique<GameObject>();
 					newObj->SetName("Point Light");
 					newObj->AddComponent<PointLightComponent>();
@@ -3573,10 +3665,10 @@ namespace UnoEngine {
 						selectedObject_ = ptr;
 						FocusOnNewObject(ptr);
 						isDirty_ = true;
-						consoleMessages_.push_back("[Editor] Created: Point Light");
+						consoleMessages_.push_back(U8("[エディタ] 作成: Point Light"));
 					}
 				}
-				if (ImGui::MenuItem("Spot Light")) {
+				if (ImGui::MenuItem(U8("スポットライト"))) {
 					auto newObj = std::make_unique<GameObject>();
 					newObj->SetName("Spot Light");
 					newObj->AddComponent<SpotLightComponent>();
@@ -3614,7 +3706,7 @@ namespace UnoEngine {
 
 		// ドロップゾーンのヒント表示
 		if (ImGui::IsItemHovered()) {
-			ImGui::SetTooltip("Drop models here to add to scene");
+			ImGui::SetTooltip(U8("モデルをここにドロップしてシーンに追加"));
 		}
 
 		ImGui::End();
@@ -3625,39 +3717,54 @@ namespace UnoEngine {
 
 		ImGui::Begin(U8("統計情報"), &showStats_);
 
-		// Performance section
+		// ── パフォーマンス ──
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.48f, 0.72f, 0.89f, 1.0f));
 		ImGui::Text(U8("パフォーマンス"));
 		ImGui::PopStyleColor();
 		ImGui::Separator();
 
-		// FPS display with color coding (update every 0.5 seconds)
+		// FPS表示（0.5秒更新、安定した表示）
 		static float displayedFPS = 0.0f;
 		static float displayedFrameTime = 0.0f;
 		static float displayUpdateTimer = 0.0f;
+		static float minFPS = 9999.0f;
+		static float maxFPS = 0.0f;
 
 		displayUpdateTimer += ImGui::GetIO().DeltaTime;
 		if (displayUpdateTimer >= 0.5f) {
 			displayedFPS = context.fps;
 			displayedFrameTime = context.frameTime;
+			if (displayedFPS > 0.0f) {
+				minFPS = std::min(minFPS, displayedFPS);
+				maxFPS = std::max(maxFPS, displayedFPS);
+			}
 			displayUpdateTimer = 0.0f;
 		}
 
-		ImVec4 fpsColor = displayedFPS >= 60.0f ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) :  // Green if 60+ FPS
-			displayedFPS >= 30.0f ? ImVec4(1.0f, 1.0f, 0.0f, 1.0f) :  // Yellow if 30-60 FPS
-			ImVec4(1.0f, 0.0f, 0.0f, 1.0f);   // Red if < 30 FPS
+		// FPSカラーコード（60+: 緑, 30-60: 黄, <30: 赤）
+		ImVec4 fpsColor = displayedFPS >= 60.0f ? ImVec4(0.2f, 1.0f, 0.2f, 1.0f) :
+			displayedFPS >= 30.0f ? ImVec4(1.0f, 0.9f, 0.2f, 1.0f) :
+			ImVec4(1.0f, 0.3f, 0.3f, 1.0f);
 
-		ImGui::Text("FPS:");
-		ImGui::SameLine(120.0f);
+		// 大きなFPS表示
 		ImGui::PushStyleColor(ImGuiCol_Text, fpsColor);
-		ImGui::Text("%.1f", displayedFPS);
+		ImGui::SetWindowFontScale(1.4f);
+		ImGui::Text("%.0f FPS", displayedFPS);
+		ImGui::SetWindowFontScale(1.0f);
 		ImGui::PopStyleColor();
 
-		ImGui::Text(U8("フレーム時間:"));
-		ImGui::SameLine(120.0f);
-		ImGui::Text("%.3f ms", displayedFrameTime);
+		ImGui::SameLine(0, 16.0f);
+		ImGui::TextDisabled("%.2f ms", displayedFrameTime);
 
-		// FPS Graph (update every 0.5 seconds)
+		// Min/Max FPS
+		ImGui::TextDisabled(U8("最小: %.0f  最大: %.0f"), minFPS > 9000.0f ? 0.0f : minFPS, maxFPS);
+		ImGui::SameLine();
+		if (ImGui::SmallButton(U8("リセット##FPS"))) {
+			minFPS = 9999.0f;
+			maxFPS = 0.0f;
+		}
+
+		// FPSグラフ（0.5秒更新）
 		static float fpsHistory[90] = {};
 		static int fpsOffset = 0;
 		static float updateTimer = 0.0f;
@@ -3670,12 +3777,13 @@ namespace UnoEngine {
 		}
 
 		ImGui::Spacing();
-		ImGui::PlotLines("##FPSGraph", fpsHistory, 90, fpsOffset, nullptr, 0.0f, 120.0f, ImVec2(0, 60));
+		std::string fpsOverlay = std::format("{:.0f} fps", displayedFPS);
+		ImGui::PlotLines("##FPSGraph", fpsHistory, 90, fpsOffset, fpsOverlay.c_str(), 0.0f, 120.0f, ImVec2(-1, 50));
 
 		ImGui::Spacing();
 		ImGui::Separator();
 
-		// シーン統計
+		// ── シーン統計 ──
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.48f, 0.72f, 0.89f, 1.0f));
 		ImGui::Text(U8("シーン"));
 		ImGui::PopStyleColor();
@@ -3683,14 +3791,31 @@ namespace UnoEngine {
 
 		if (context.gameObjects) {
 			ImGui::Text(U8("オブジェクト数:"));
-			ImGui::SameLine(120.0f);
+			ImGui::SameLine(130.0f);
 			ImGui::Text("%zu", context.gameObjects->size());
+		}
+
+		// メモリ使用量（概算）
+		ImGui::Text(U8("メモリ (概算):"));
+		ImGui::SameLine(130.0f);
+		// Working setサイズを取得
+		PROCESS_MEMORY_COUNTERS_EX pmc = {};
+		pmc.cb = sizeof(pmc);
+		if (GetProcessMemoryInfo(GetCurrentProcess(), reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&pmc), sizeof(pmc))) {
+			float memMB = pmc.WorkingSetSize / (1024.0f * 1024.0f);
+			if (memMB > 1024.0f) {
+				ImGui::Text("%.1f GB", memMB / 1024.0f);
+			} else {
+				ImGui::Text("%.0f MB", memMB);
+			}
+		} else {
+			ImGui::TextDisabled("N/A");
 		}
 
 		ImGui::Spacing();
 		ImGui::Separator();
 
-		// カメラ情報
+		// ── カメラ情報 ──
 		if (context.camera) {
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.48f, 0.72f, 0.89f, 1.0f));
 			ImGui::Text(U8("カメラ"));
@@ -3699,11 +3824,8 @@ namespace UnoEngine {
 
 			auto pos = context.camera->GetPosition();
 			ImGui::Text(U8("位置:"));
-			ImGui::Indent(20.0f);
-			ImGui::Text("X: %.2f", pos.GetX());
-			ImGui::Text("Y: %.2f", pos.GetY());
-			ImGui::Text("Z: %.2f", pos.GetZ());
-			ImGui::Unindent(20.0f);
+			ImGui::SameLine(130.0f);
+			ImGui::Text("(%.1f, %.1f, %.1f)", pos.GetX(), pos.GetY(), pos.GetZ());
 		}
 
 		ImGui::End();
@@ -6303,7 +6425,7 @@ void EditorUI::PreLoadPendingThumbnails() {
 					RefreshScriptPaths();
 				}
 				if (ImGui::IsItemHovered()) {
-					ImGui::SetTooltip("Refresh script list");
+					ImGui::SetTooltip(U8("スクリプトリストを更新"));
 				}
 
 				if (luaScript->HasError()) {

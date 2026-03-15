@@ -21,6 +21,9 @@ public:
     D3D12_VERTEX_BUFFER_VIEW GetView() const { return view_; }
     uint32 GetVertexCount() const { return vertexCount_; }
 
+    // GPU転送完了後にアップロードバッファを解放（GPUメモリリーク防止）
+    void ReleaseUploadBuffer() { uploadBuffer_.Reset(); }
+
 private:
     ComPtr<ID3D12Resource> buffer_;
     ComPtr<ID3D12Resource> uploadBuffer_;  // アップロード用の中間バッファ

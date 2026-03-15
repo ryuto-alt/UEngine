@@ -51,6 +51,9 @@ public:
     void BeginUpload();
     void EndUpload();
 
+    // GPU転送完了後にアップロードバッファを一括解放
+    void ReleaseUploadBuffers();
+
 private:
     GraphicsDevice* device_;
 

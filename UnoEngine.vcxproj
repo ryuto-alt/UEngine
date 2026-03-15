@@ -160,6 +160,8 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
     <ClCompile Include="Engine\Scene\SceneSerializer.cpp" />
     <ClCompile Include="Engine\Core\OrbitController.cpp" />
     <ClCompile Include="Engine\Core\Logger.cpp" />
+    <ClCompile Include="Engine\Core\EventSystem.cpp" />
+    <ClCompile Include="Engine\Core\SettingsSystem.cpp" />
     <ClCompile Include="Engine\Rendering\RenderSystem.cpp" />
     <ClCompile Include="Engine\Rendering\LightManager.cpp" />
     <ClCompile Include="Engine\Graphics\GraphicsDevice.cpp" />
@@ -171,6 +173,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
     <ClCompile Include="Engine\Math\GeometryUtils.cpp" />
     <ClCompile Include="Engine\Input\Keyboard.cpp" />
     <ClCompile Include="Engine\Input\Mouse.cpp" />
+    <ClCompile Include="Engine\Input\Gamepad.cpp" />
     <ClCompile Include="Engine\Input\InputManager.cpp" />
     <ClCompile Include="Engine\Graphics\IndexBuffer.cpp" />
     <ClCompile Include="Engine\Graphics\Material.cpp" />
@@ -206,6 +209,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
     <ClCompile Include="Engine\UI\imgui_toggle_presets.cpp" />
     <ClCompile Include="Engine\UI\imgui_toggle_renderer.cpp" />
     <ClCompile Include="Engine\UI\imgui_toggle_palette.cpp" />
+    <ClCompile Include="Engine\UI\SettingsUI.cpp" />
     <ClCompile Include="Engine\Graphics\SkinnedMesh.cpp" />
     <ClCompile Include="Engine\Graphics\SkinnedPipeline.cpp" />
     <ClCompile Include="Engine\Graphics\OutlinePipeline.cpp" />
@@ -216,6 +220,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
     <ClCompile Include="Engine\Resource\SkinnedModelImporter.cpp" />
     <ClCompile Include="Engine\Resource\StaticModelImporter.cpp" />
     <ClCompile Include="Engine\Resource\ResourceManager.cpp" />
+    <ClCompile Include="Engine\Resource\ModelCache.cpp" />
     <ClCompile Include="Engine\Vegetation\GrassSystem.cpp" />
     <ClCompile Include="Engine\Vegetation\GrassPipeline.cpp" />
     <ClCompile Include="Engine\Vegetation\GrassRenderer.cpp" />
@@ -485,6 +490,9 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
     <ClInclude Include="Engine\Graphics\ConstantBuffer.h" />
     <ClInclude Include="Engine\Core\NonCopyable.h" />
     <ClInclude Include="Engine\Core\Types.h" />
+    <ClInclude Include="Engine\Core\EventSystem.h" />
+    <ClInclude Include="Engine\Core\EngineEvents.h" />
+    <ClInclude Include="Engine\Core\SettingsSystem.h" />
     <ClInclude Include="Engine\Graphics\D3D12Common.h" />
     <ClInclude Include="Engine\Graphics\GraphicsDevice.h" />
     <ClInclude Include="Engine\Window\Window.h" />
@@ -500,6 +508,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
     <ClInclude Include="Engine\Math\BoundingVolume.h" />
     <ClInclude Include="Engine\Input\Keyboard.h" />
     <ClInclude Include="Engine\Input\Mouse.h" />
+    <ClInclude Include="Engine\Input\Gamepad.h" />
     <ClInclude Include="Engine\Input\InputManager.h" />
     <ClInclude Include="Engine\Graphics\IndexBuffer.h" />
     <ClInclude Include="Engine\Graphics\Material.h" />
@@ -528,6 +537,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
     <ClInclude Include="external\imguizmo\ImViewGuizmo.h" />
     <ClInclude Include="Engine\Graphics\d3dx12.h" />
     <ClInclude Include="Engine\UI\ImGuiManager.h" />
+    <ClInclude Include="Engine\UI\SettingsUI.h" />
     <ClInclude Include="Engine\Graphics\SkinnedMesh.h" />
     <ClInclude Include="Engine\Graphics\SkinnedPipeline.h" />
     <ClInclude Include="Engine\Graphics\OutlinePipeline.h" />
@@ -539,6 +549,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
     <ClInclude Include="Engine\Resource\SkinnedModelImporter.h" />
     <ClInclude Include="Engine\Resource\StaticModelImporter.h" />
     <ClInclude Include="Engine\Resource\ResourceManager.h" />
+    <ClInclude Include="Engine\Resource\ModelCache.h" />
     <ClInclude Include="Engine\Vegetation\GrassSystem.h" />
     <ClInclude Include="Engine\Vegetation\GrassPipeline.h" />
     <ClInclude Include="Engine\Vegetation\GrassRenderer.h" />

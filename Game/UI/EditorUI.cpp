@@ -650,9 +650,8 @@ namespace UnoEngine {
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 
-		// タイトルバーに未保存インジケーター表示
-		std::string dockTitle = isDirty_ ? "DockSpace *" : "DockSpace";
-		ImGui::Begin(dockTitle.c_str(), nullptr, windowFlags);
+		// ###でウィンドウIDを固定（タイトル変更でドッキングが壊れるのを防止）
+		ImGui::Begin("DockSpace###MainDockSpaceWindow", nullptr, windowFlags);
 		ImGui::PopStyleVar(3);
 
 		ImGuiID dockspaceID = ImGui::GetID("MainDockSpace");
@@ -940,7 +939,12 @@ namespace UnoEngine {
 	}
 
 	void EditorUI::RenderSceneView() {
-		if (!showSceneView_) return;
+		if (!showSceneView_) {
+			// ドッキングレイアウト維持のため、非表示でもBegin/Endは必ず呼ぶ
+			ImGui::Begin(U8("シーン"), &showSceneView_);
+			ImGui::End();
+			return;
+		}
 
 		ImGui::Begin(U8("シーン"), &showSceneView_);
 
@@ -1188,7 +1192,12 @@ namespace UnoEngine {
 	}
 
 	void EditorUI::RenderGameView() {
-		if (!showGameView_) return;
+		if (!showGameView_) {
+			// ドッキングレイアウト維持のため、非表示でもBegin/Endは必ず呼ぶ
+			ImGui::Begin(U8("ゲーム"), &showGameView_);
+			ImGui::End();
+			return;
+		}
 
 		ImGui::Begin(U8("ゲーム"), &showGameView_);
 
@@ -1339,7 +1348,11 @@ namespace UnoEngine {
 	}
 
 	void EditorUI::RenderInspector(const EditorContext& context) {
-		if (!showInspector_) return;
+		if (!showInspector_) {
+			ImGui::Begin(U8("インスペクター"), &showInspector_);
+			ImGui::End();
+			return;
+		}
 
 		ImGui::Begin(U8("インスペクター"), &showInspector_);
 
@@ -2852,7 +2865,11 @@ namespace UnoEngine {
 	// ============================================================
 
 	void EditorUI::RenderHierarchy(const EditorContext& context) {
-		if (!showHierarchy_) return;
+		if (!showHierarchy_) {
+			ImGui::Begin(U8("ヒエラルキー"), &showHierarchy_);
+			ImGui::End();
+			return;
+		}
 
 		ImGui::Begin(U8("ヒエラルキー"), &showHierarchy_);
 
@@ -3713,7 +3730,11 @@ namespace UnoEngine {
 	}
 
 	void EditorUI::RenderStats(const EditorContext& context) {
-		if (!showStats_) return;
+		if (!showStats_) {
+			ImGui::Begin(U8("統計情報"), &showStats_);
+			ImGui::End();
+			return;
+		}
 
 		ImGui::Begin(U8("統計情報"), &showStats_);
 
@@ -3844,7 +3865,11 @@ void EditorUI::PreLoadPendingThumbnails() {
 	}
 
 	void EditorUI::RenderProject(const EditorContext& context) {
-		if (!showProject_) return;
+		if (!showProject_) {
+			ImGui::Begin(U8("プロジェクト"), &showProject_);
+			ImGui::End();
+			return;
+		}
 
 		ImGui::Begin(U8("プロジェクト"), &showProject_);
 
@@ -4381,7 +4406,11 @@ void EditorUI::PreLoadPendingThumbnails() {
 	}
 
 	void EditorUI::RenderProfiler() {
-		if (!showProfiler_) return;
+		if (!showProfiler_) {
+			ImGui::Begin(U8("プロファイラー"), &showProfiler_);
+			ImGui::End();
+			return;
+		}
 
 		ImGui::Begin(U8("プロファイラー"), &showProfiler_);
 

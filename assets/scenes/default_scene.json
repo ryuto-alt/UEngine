@@ -1,4 +1,8 @@
 {
+    "cinematics": {
+        "intro": "assets/cinematics/intro.json"
+    },
+    "introCinematicPath": "assets/cinematics/intro.json",
     "navmesh": {
         "agentHeight": 2.0,
         "agentMaxClimb": 0.30000001192092896,
@@ -71,15 +75,15 @@
             "name": "Camera",
             "transform": {
                 "position": [
-                    80.03043365478516,
-                    3.5185420513153076,
-                    15.961915016174316
+                    19.352834701538086,
+                    2.11376690864563,
+                    29.194032669067383
                 ],
                 "rotation": [
-                    -0.0002461482654325664,
-                    -0.9997183084487915,
-                    0.02046271413564682,
-                    -0.012025722302496433
+                    -0.0023324538487941027,
+                    -0.5456798076629639,
+                    0.0015188428806141019,
+                    -0.8379891514778137
                 ],
                 "scale": [
                     1.0,
@@ -118,14 +122,14 @@
                 {
                     "properties": [
                         {
-                            "name": "dashSpeedBonus",
-                            "type": "int",
-                            "value": 4
-                        },
-                        {
                             "name": "jumpForce",
                             "type": "int",
                             "value": 12
+                        },
+                        {
+                            "name": "moveSpeed",
+                            "type": "int",
+                            "value": 10
                         },
                         {
                             "name": "gravity",
@@ -133,9 +137,9 @@
                             "value": -28
                         },
                         {
-                            "name": "moveSpeed",
+                            "name": "dashSpeedBonus",
                             "type": "int",
-                            "value": 10
+                            "value": 4
                         }
                     ],
                     "scriptPath": "assets/scripts/PlayerController.lua",
@@ -172,9 +176,9 @@
             "name": "player",
             "transform": {
                 "position": [
-                    80.03044128417969,
-                    1.718542456626892,
-                    15.9619140625
+                    19.337459564208984,
+                    0.30190691351890564,
+                    29.18724250793457
                 ],
                 "rotation": [
                     -0.0,
@@ -361,7 +365,7 @@
                     "type": "MeshRenderer"
                 },
                 {
-                    "autoSize": false,
+                    "autoSize": true,
                     "collisionLayer": 0,
                     "collisionMask": 4294967295,
                     "enabled": true,
@@ -511,9 +515,9 @@
             "name": "temple",
             "transform": {
                 "position": [
-                    79.9251708984375,
+                    29.661571502685547,
                     0.0,
-                    0.4056246876716614
+                    8.805538177490234
                 ],
                 "rotation": [
                     0.0,
@@ -527,113 +531,8 @@
                     0.5
                 ]
             }
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "color": [
-                        1.0,
-                        1.0,
-                        1.0
-                    ],
-                    "innerAngle": 21.694000244140625,
-                    "intensity": 100.0,
-                    "range": 10.600000381469727,
-                    "spotAngle": 37.20800018310547,
-                    "type": "SpotLightComponent"
-                }
-            ],
-            "layer": 1,
-            "name": "Spot Light",
-            "transform": {
-                "position": [
-                    72.7921142578125,
-                    6.2801923751831055,
-                    14.59261703491211
-                ],
-                "rotation": [
-                    0.03685229271650314,
-                    0.14275559782981873,
-                    0.22203093767166138,
-                    0.9638283252716064
-                ],
-                "scale": [
-                    1.0,
-                    1.0,
-                    1.0
-                ]
-            }
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "modelPath": "assets/model/saka/saka.gltf",
-                    "type": "MeshRenderer"
-                },
-                {
-                    "autoSize": false,
-                    "collisionLayer": 0,
-                    "collisionMask": 4294967295,
-                    "enabled": true,
-                    "isStatic": false,
-                    "isTrigger": false,
-                    "localAABBMax": [
-                        3.0,
-                        10.869807243347168,
-                        18.527057647705078
-                    ],
-                    "localAABBMin": [
-                        -3.0,
-                        -10.869807243347168,
-                        -18.527057647705078
-                    ],
-                    "localAABBs": [
-                        {
-                            "max": [
-                                3.0,
-                                10.869807243347168,
-                                18.527057647705078
-                            ],
-                            "min": [
-                                -3.0,
-                                -10.869807243347168,
-                                -18.527057647705078
-                            ]
-                        }
-                    ],
-                    "navMeshArea": 0,
-                    "type": "CollisionComponent"
-                },
-                {
-                    "enabled": true,
-                    "type": "MeshColliderComponent"
-                }
-            ],
-            "layer": 1,
-            "name": "saka",
-            "transform": {
-                "position": [
-                    68.65843200683594,
-                    11.164016723632813,
-                    73.60613250732422
-                ],
-                "rotation": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    1.0
-                ],
-                "scale": [
-                    1.0,
-                    1.0,
-                    1.0
-                ]
-            }
         }
     ],
-    "introCinematicPath": "assets/cinematics/intro.json",
     "scene_name": "Scene",
     "version": "1.3"
 }

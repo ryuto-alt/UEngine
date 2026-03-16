@@ -385,3 +385,6 @@ BITMAPFONT/
 
 # Source art (large binaries, not needed at runtime)
 SourceArt/
+
+# Asset cache (DDS texture cache for fast startup)
+.cache/

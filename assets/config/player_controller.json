@@ -1,0 +1,7 @@
+{
+    "moveSpeed": 10.0,
+    "dashSpeedBonus": 4.0,
+    "jumpForce": 12.0,
+    "inputThreshold": 0.1,
+    "normalizationEpsilon": 0.001
+}

@@ -563,6 +563,7 @@ json SceneSerializer::SerializeComponent(const Component& component) {
         comp["loseRange"] = detection->GetLoseRange();
         comp["lostWaitTime"] = detection->GetLostWaitTime();
         comp["wanderRadius"] = detection->GetWanderRadius();
+        comp["chaseStoppingDistance"] = detection->GetChaseStoppingDistance();
         comp["targetName"] = detection->GetTargetName();
         return comp;
     }
@@ -978,6 +979,9 @@ void SceneSerializer::DeserializeComponent(const json& json, GameObject& gameObj
         }
         if (json.contains("wanderRadius")) {
             detection->SetWanderRadius(json["wanderRadius"].get<float>());
+        }
+        if (json.contains("chaseStoppingDistance")) {
+            detection->SetChaseStoppingDistance(json["chaseStoppingDistance"].get<float>());
         }
         if (json.contains("targetName")) {
             detection->SetTargetName(json["targetName"].get<std::string>());

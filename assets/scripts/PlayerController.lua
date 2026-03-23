@@ -1,10 +1,17 @@
 -- PlayerController.lua
 -- カメラの視点方向に基づいてWASD移動 + SHIFTダッシュ + Spaceジャンプ
 
--- public変数（Inspectorに表示される）
-moveSpeed = 10.0
-dashSpeedBonus = 4.0
-jumpForce = 12.0
+-- 設定をJSONから読み込み
+local config = Config and Config.loadJson("assets/config/player_controller.json") or {}
+
+-- public変数（JSONのデフォルト値を使用、Inspectorで上書き可能）
+moveSpeed = config.moveSpeed or 10.0
+dashSpeedBonus = config.dashSpeedBonus or 4.0
+jumpForce = config.jumpForce or 12.0
+
+-- 定数（JSONから読み込み）
+local INPUT_THRESHOLD         = config.inputThreshold or 0.1
+local NORMALIZATION_EPSILON   = config.normalizationEpsilon or 0.001
 
 -- ローカル変数
 local isMoving = false
@@ -34,7 +41,7 @@ function Update(deltaTime)
     local spaceDown = Input.isKeyDown("Space")
     local shiftDown = Input.isKeyDown("Shift")
 
-    if math.abs(horizontal) > 0.1 or math.abs(vertical) > 0.1 then
+    if math.abs(horizontal) > INPUT_THRESHOLD or math.abs(vertical) > INPUT_THRESHOLD then
         isMoving = true
     end
 
@@ -65,7 +72,7 @@ function Update(deltaTime)
         local moveZ = forwardZ * vertical + rightZ * horizontal
 
         local length = math.sqrt(moveX * moveX + moveZ * moveZ)
-        if length > 0.001 then
+        if length > NORMALIZATION_EPSILON then
             moveX = moveX / length
             moveZ = moveZ / length
         end

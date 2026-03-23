@@ -1,0 +1,8 @@
+{
+    "wanderRadius": 15.0,
+    "moveSpeed": 7.5,
+    "waitTime": 0.0,
+    "angularSpeed": 720.0,
+    "initialYaw": 0.0,
+    "stoppingDistance": 0.5
+}

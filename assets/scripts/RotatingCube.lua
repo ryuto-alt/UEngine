@@ -1,9 +1,19 @@
 -- RotatingCube.lua
 -- オブジェクトを回転させるサンプルスクリプト
 
--- public変数（Inspectorに表示される）
-rotationSpeed = 45.0  -- 度/秒
-axis = "y"            -- 回転軸 (x, y, z)
+-- 設定をJSONから読み込み
+local config = Config and Config.loadJson("assets/config/rotating_cube.json") or {}
+
+-- public変数（JSONのデフォルト値を使用、Inspectorで上書き可能）
+rotationSpeed = config.rotationSpeed or 45.0
+axis = config.axis or "y"
+
+-- 軸ごとの回転適用テーブル（データ駆動）
+local axisApply = {
+    x = function(rx, ry, rz, rot) transform.setRotation(rx + rot, ry, rz) end,
+    y = function(rx, ry, rz, rot) transform.setRotation(rx, ry + rot, rz) end,
+    z = function(rx, ry, rz, rot) transform.setRotation(rx, ry, rz + rot) end,
+}
 
 -- ローカル変数
 local totalRotation = 0
@@ -17,20 +27,14 @@ function Start()
 end
 
 function Update(deltaTime)
-    -- 回転量を計算
     local rotation = rotationSpeed * deltaTime
     totalRotation = totalRotation + rotation
-    
-    -- 現在の回転を取得
+
     local rx, ry, rz = transform.getRotation()
-    
-    -- 指定軸で回転
-    if axis == "x" then
-        transform.setRotation(rx + rotation, ry, rz)
-    elseif axis == "y" then
-        transform.setRotation(rx, ry + rotation, rz)
-    elseif axis == "z" then
-        transform.setRotation(rx, ry, rz + rotation)
+
+    local applyFn = axisApply[axis]
+    if applyFn then
+        applyFn(rx, ry, rz, rotation)
     end
 end
 

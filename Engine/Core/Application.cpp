@@ -152,7 +152,7 @@ void Application::OnRender() {
         RenderView view;
         scene->OnRender(view);
 
-        auto items = renderSystem_->CollectRenderables(scene, view);
+        const auto& items = renderSystem_->CollectRenderables(scene, view);
 
         renderer_->Draw(view, items, lightManager_.get(), scene);
 

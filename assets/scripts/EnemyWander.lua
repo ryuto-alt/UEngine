@@ -2,12 +2,18 @@
 -- NavMeshを使って自動徘徊するEnemyスクリプト
 -- Dark Deception風の狭い迷路でも動作
 
--- public変数（Inspectorに表示される）
-wanderRadius = 15.0      -- 徘徊範囲（メートル）
-moveSpeed = 7.5          -- 移動速度
-waitTime = 0.0           -- 到着後の待機時間（0=連続移動）
-angularSpeed = 720.0     -- 回転速度（度/秒）高速回転
-initialYaw = 0.0         -- 初期向き（ラジアン、0=+Z方向）
+-- 設定をJSONから読み込み
+local config = Config and Config.loadJson("assets/config/enemy_wander.json") or {}
+
+-- public変数（JSONのデフォルト値を使用、Inspectorで上書き可能）
+wanderRadius = config.wanderRadius or 15.0
+moveSpeed = config.moveSpeed or 7.5
+waitTime = config.waitTime or 0.0
+angularSpeed = config.angularSpeed or 720.0
+initialYaw = config.initialYaw or 0.0
+
+-- 定数（JSONから読み込み）
+local STOPPING_DISTANCE = config.stoppingDistance or 0.5
 
 -- ローカル変数
 local initialized = false
@@ -33,10 +39,7 @@ function Start()
     NavAgent.setSpeed(moveSpeed)
     NavAgent.setAngularSpeed(angularSpeed)
     NavAgent.setWaitTime(waitTime)
-    NavAgent.setStoppingDistance(0.5)
-
-    -- 直進モードは一旦無効（Crowd本来の動作をテスト）
-    -- NavAgent.setDirectMoveEnabled(true)
+    NavAgent.setStoppingDistance(STOPPING_DISTANCE)
 
     -- 徘徊開始（スポーン地点周辺）
     NavAgent.startWander(wanderRadius)
@@ -49,13 +52,13 @@ function Update(deltaTime)
     if not initialized or not NavAgent then
         return
     end
-    
+
     -- 状態変化をログ出力（デバッグ用）
     local state = NavAgent.getState()
     if state ~= lastState then
         Debug.log("EnemyWander: State changed to " .. state)
         lastState = state
-        
+
         -- アニメーション切り替え
         if Animator then
             if state == "wandering" or state == "moving" then
@@ -65,10 +68,6 @@ function Update(deltaTime)
             end
         end
     end
-    
-    -- 速度に応じたアニメーション（オプション）
-    -- local vx, vy, vz = NavAgent.getVelocity()
-    -- local speed = math.sqrt(vx*vx + vz*vz)
 end
 
 function OnDestroy()

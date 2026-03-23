@@ -99,13 +99,23 @@ public:
     void BeginFrame();
     void Draw(const RenderView& view, const std::vector<RenderItem>& renderItems, LightManager* lightManager, Scene* scene = nullptr);
     void DrawSkinnedMeshes(const RenderView& view, const std::vector<SkinnedRenderItem>& items, LightManager* lightManager);
+    // シャドウマップを1回だけ描画（エディタモードで複数ビュー共有用）
+    void RenderShadowPrePass(const RenderView& view,
+                             const std::vector<RenderItem>& items,
+                             const std::vector<SkinnedRenderItem>& skinnedItems,
+                             LightManager* lightManager);
+
+    // シャドウマップをDEPTH_WRITEに復元（RenderShadowPrePass使用時、全DrawToTexture完了後に呼ぶ）
+    void RestoreShadowMaps();
+
     void DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle,
                        D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle, const RenderView& view,
                        const std::vector<RenderItem>& items, LightManager* lightManager,
                        const std::vector<SkinnedRenderItem>& skinnedItems = {},
                        bool enableDebugDraw = false,
                        std::span<const RenderItem> outlineItems = {},
-                       std::span<const SkinnedRenderItem> outlineSkinnedItems = {});
+                       std::span<const SkinnedRenderItem> outlineSkinnedItems = {},
+                       bool shadowsAlreadyRendered = false);
     void RenderUIOnly(Scene* scene);
 
 #ifdef WITH_EDITOR

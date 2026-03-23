@@ -17,17 +17,19 @@ public:
     RenderSystem() = default;
     ~RenderSystem() = default;
 
-    // Collect static mesh renderables
-    std::vector<RenderItem> CollectRenderables(Scene* scene, const RenderView& view);
+    // Collect static mesh renderables (returns cached ref, valid until next call)
+    const std::vector<RenderItem>& CollectRenderables(Scene* scene, const RenderView& view);
 
-    // Collect skinned mesh renderables (NEW)
-    std::vector<SkinnedRenderItem> CollectSkinnedRenderables(Scene* scene, const RenderView& view);
+    // Collect skinned mesh renderables (returns cached ref, valid until next call)
+    const std::vector<SkinnedRenderItem>& CollectSkinnedRenderables(Scene* scene, const RenderView& view);
 
-    // Clear cached items
     void Clear();
 
 private:
     bool PassesLayerMask(uint32 objectLayer, uint32 viewMask) const;
+
+    std::vector<RenderItem> cachedItems_;
+    std::vector<SkinnedRenderItem> cachedSkinnedItems_;
 };
 
 } // namespace UnoEngine

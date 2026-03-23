@@ -114,8 +114,9 @@ PostProcess* PostProcessManager::GetEffectByType(PostProcessType type) {
 }
 
 void PostProcessManager::Apply(GraphicsDevice* graphics, RenderTexture* source, RenderTexture* destination) {
-    // 有効なエフェクトをフィルタリング
-    std::vector<PostProcessType> activeEffects;
+    // 有効なエフェクトをフィルタリング（メンバ変数で容量を保持）
+    auto& activeEffects = m_activeEffectsCache;
+    activeEffects.clear();
     for (auto type : m_effectChain) {
         auto* effect = GetEffectByType(type);
         if (effect && effect->IsEnabled()) {

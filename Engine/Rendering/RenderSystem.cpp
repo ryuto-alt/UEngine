@@ -11,11 +11,12 @@
 
 namespace UnoEngine {
 
-std::vector<RenderItem> RenderSystem::CollectRenderables(Scene* scene, const RenderView& view) {
+const std::vector<RenderItem>& RenderSystem::CollectRenderables(Scene* scene, const RenderView& view) {
     assert(scene && "Scene is null");
     assert(view.camera && "Camera is null");
-    
-    std::vector<RenderItem> items;
+
+    auto& items = cachedItems_;
+    items.clear();
     
     for (const auto& go : scene->GetGameObjects()) {
         if (!go->IsActive()) continue;
@@ -62,11 +63,12 @@ std::vector<RenderItem> RenderSystem::CollectRenderables(Scene* scene, const Ren
     return items;
 }
 
-std::vector<SkinnedRenderItem> RenderSystem::CollectSkinnedRenderables(Scene* scene, const RenderView& view) {
+const std::vector<SkinnedRenderItem>& RenderSystem::CollectSkinnedRenderables(Scene* scene, const RenderView& view) {
     assert(scene && "Scene is null");
     assert(view.camera && "Camera is null");
-    
-    std::vector<SkinnedRenderItem> items;
+
+    auto& items = cachedSkinnedItems_;
+    items.clear();
     
     for (const auto& go : scene->GetGameObjects()) {
         if (!go->IsActive()) continue;
@@ -127,7 +129,8 @@ std::vector<SkinnedRenderItem> RenderSystem::CollectSkinnedRenderables(Scene* sc
 }
 
 void RenderSystem::Clear() {
-    // Reserved for future cached data clearing
+    cachedItems_.clear();
+    cachedSkinnedItems_.clear();
 }
 
 bool RenderSystem::PassesLayerMask(uint32 objectLayer, uint32 viewMask) const {

@@ -64,6 +64,9 @@ private:
     std::unique_ptr<PS1PostProcess> m_ps1;
     std::unique_ptr<ChromaticAberrationPostProcess> m_chromaticAberration;
 
+    // Apply()内で毎フレーム使用するフィルタ済みリスト（ヒープ割当回避）
+    std::vector<PostProcessType> m_activeEffectsCache;
+
     // Ping-Pong バッファ（チェーン処理用）
     std::unique_ptr<RenderTexture> m_intermediateA;
     std::unique_ptr<RenderTexture> m_intermediateB;

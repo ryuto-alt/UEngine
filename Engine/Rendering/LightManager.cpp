@@ -45,7 +45,10 @@ DirectionalLightComponent* LightManager::GetDirectionalLight() const {
 }
 
 void LightManager::SyncFromScene(const std::vector<UniquePtr<GameObject>>& objects) {
-    Clear();
+    // clear() keeps capacity, avoiding reallocation each frame
+    directionalLight_ = nullptr;
+    pointLights_.clear();
+    spotLights_.clear();
     for (const auto& obj : objects) {
         if (!obj) continue;
         if (auto* dl = obj->GetComponent<DirectionalLightComponent>()) {
@@ -72,37 +75,38 @@ GPULightData LightManager::BuildGPULightData() const {
         data.intensity = 0.0f;
     }
 
-    constexpr int kMaxPoint = 8;
-    constexpr int kMaxSpot  = 4;
     static const float kDegToRad = 0.0174532925f;
 
+    uint32 pointIdx = 0;
     for (auto* p : pointLights_) {
         if (!p || !p->IsEnabled()) continue;
-        if (static_cast<int>(data.pointLights.size()) >= kMaxPoint) break;
+        if (pointIdx >= GPULightData::kMaxPointLights) break;
         auto* go = p->GetGameObject();
-        GPULightData::PointLight pl;
+        auto& pl = data.pointLights[pointIdx];
         pl.position  = go ? go->GetTransform().GetLocalPosition() : Vector3{};
         pl.range     = p->GetRange();
         pl.color     = p->GetColor();
         pl.intensity = p->GetIntensity();
-        data.pointLights.push_back(pl);
+        ++pointIdx;
     }
+    data.pointLightCount = pointIdx;
 
+    uint32 spotIdx = 0;
     for (auto* s : spotLights_) {
         if (!s || !s->IsEnabled()) continue;
-        if (static_cast<int>(data.spotLights.size()) >= kMaxSpot) break;
+        if (spotIdx >= GPULightData::kMaxSpotLights) break;
         auto* go = s->GetGameObject();
-        GPULightData::SpotLight sl;
+        auto& sl = data.spotLights[spotIdx];
         sl.position   = go ? go->GetTransform().GetLocalPosition() : Vector3{};
         sl.range      = s->GetRange();
         sl.color      = s->GetColor();
         sl.intensity  = s->GetIntensity();
         sl.spotAngle  = s->GetSpotAngle() * kDegToRad;
         sl.innerAngle = s->GetInnerAngle() * kDegToRad;
-        // Use -forward as spot direction
         sl.direction  = go ? -go->GetTransform().GetForward() : Vector3(0, -1, 0);
-        data.spotLights.push_back(sl);
+        ++spotIdx;
     }
+    data.spotLightCount = spotIdx;
 
     return data;
 }

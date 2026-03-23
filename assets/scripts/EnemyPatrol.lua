@@ -1,14 +1,19 @@
 -- EnemyPatrol.lua
 -- NavMeshを使って指定ポイント間をパトロールするEnemyスクリプト
 
--- public変数（Inspectorに表示される）
-moveSpeed = 4.0          -- 移動速度
-waitTime = 2.0           -- 各ポイントでの待機時間（秒）
-loopPatrol = true        -- ループするか（falseなら往復）
+-- 設定をJSONから読み込み
+local config = Config and Config.loadJson("assets/config/enemy_patrol.json") or {}
 
--- パトロールポイント（Inspectorから設定できないので、ここで定義）
--- 実際のゲームではシーンに配置したマーカーから取得する
-local patrolPoints = {
+-- public変数（JSONのデフォルト値を使用、Inspectorで上書き可能）
+moveSpeed = config.moveSpeed or 4.0
+waitTime = config.waitTime or 2.0
+loopPatrol = (config.loopPatrol ~= nil) and config.loopPatrol or true
+
+-- 定数（JSONから読み込み）
+local STOPPING_DISTANCE = config.stoppingDistance or 0.5
+
+-- パトロールポイント（JSONから読み込み）
+local patrolPoints = config.patrolPoints or {
     {x = 0, y = 0, z = 0},
     {x = 10, y = 0, z = 0},
     {x = 10, y = 0, z = 10},
@@ -25,28 +30,28 @@ end
 
 function Start()
     Debug.log("EnemyPatrol: Start")
-    
+
     if not NavAgent then
         Debug.error("EnemyPatrol: NavAgent component not found!")
         return
     end
-    
+
     -- NavAgentのパラメータ設定
     NavAgent.setSpeed(moveSpeed)
     NavAgent.setWaitTime(waitTime)
-    NavAgent.setStoppingDistance(0.5)
-    
+    NavAgent.setStoppingDistance(STOPPING_DISTANCE)
+
     -- パトロールポイントを追加
     NavAgent.clearPatrolPoints()
     for i, point in ipairs(patrolPoints) do
         NavAgent.addPatrolPoint(point.x, point.y, point.z)
-        Debug.log(string.format("EnemyPatrol: Added point %d (%.1f, %.1f, %.1f)", 
+        Debug.log(string.format("EnemyPatrol: Added point %d (%.1f, %.1f, %.1f)",
             i, point.x, point.y, point.z))
     end
-    
+
     -- パトロール開始
     NavAgent.startPatrol(loopPatrol)
-    
+
     initialized = true
     Debug.log("EnemyPatrol: Patrol started")
 end
@@ -55,12 +60,12 @@ function Update(deltaTime)
     if not initialized or not NavAgent then
         return
     end
-    
+
     local state = NavAgent.getState()
     if state ~= lastState then
         Debug.log("EnemyPatrol: State changed to " .. state)
         lastState = state
-        
+
         if Animator then
             if state == "patrolling" or state == "moving" then
                 Animator.play("Walk", true)

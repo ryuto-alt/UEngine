@@ -599,6 +599,7 @@ xcopy "$(ProjectDir)external\ffmpeg\bin\*.dll" "$(OutDir)" /Y /D</Command>
     <ClInclude Include="Engine\Navigation\NavMeshManager.h" />
     <ClInclude Include="Engine\Navigation\NavAgentComponent.h" />
     <!-- Engine AI -->
+    <ClInclude Include="Engine\AI\EnemyState.h" />
     <ClInclude Include="Engine\AI\EnemyDetectionComponent.h" />
     <!-- Recast Headers -->
     <ClInclude Include="external\recast\Recast\Include\Recast.h" />

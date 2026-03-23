@@ -4,6 +4,7 @@
 #include "../Graphics/PointLightComponent.h"
 #include "../Graphics/SpotLightComponent.h"
 #include "../Core/Types.h"
+#include <array>
 #include <vector>
 
 namespace UnoEngine {
@@ -12,6 +13,9 @@ class DirectionalLightComponent;
 class GameObject;
 
 struct GPULightData {
+    static constexpr uint32 kMaxPointLights = 8;
+    static constexpr uint32 kMaxSpotLights  = 4;
+
     Vector3 direction{0.0f, -1.0f, 0.0f};
     Vector3 color{1.0f, 1.0f, 1.0f};
     float intensity{1.0f};
@@ -34,8 +38,10 @@ struct GPULightData {
         float innerAngle;
     };
 
-    std::vector<PointLight> pointLights;
-    std::vector<SpotLight>  spotLights;
+    std::array<PointLight, kMaxPointLights> pointLights{};
+    uint32 pointLightCount = 0;
+    std::array<SpotLight, kMaxSpotLights>   spotLights{};
+    uint32 spotLightCount = 0;
 };
 
 class LightManager {

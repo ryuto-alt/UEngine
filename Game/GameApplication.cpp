@@ -255,8 +255,8 @@ void GameApplication::OnRender() {
         }
 
         // Collect render items via RenderSystem
-        auto items = renderSystem_->CollectRenderables(scene, view);
-        auto skinnedItems = renderSystem_->CollectSkinnedRenderables(scene, view);
+        const auto& items = renderSystem_->CollectRenderables(scene, view);
+        const auto& skinnedItems = renderSystem_->CollectSkinnedRenderables(scene, view);
         
         static bool loggedOnce = false;
         if (!loggedOnce) {
@@ -280,6 +280,9 @@ void GameApplication::OnRender() {
                 Logger::Warning("[描画] SceneCameraとMainCameraが同じです！");
             }
 
+            // シャドウマップを1回だけ描画（Game View + Scene Viewで共有）
+            renderer_->RenderShadowPrePass(view, items, skinnedItems, lightManager_.get());
+
             // Game Viewに描画（Main Cameraを使用）
             auto* gameViewTex = editorUI->GetGameViewTexture();
             if (gameViewTex && gameViewTex->GetResource() && view.camera) {
@@ -291,7 +294,10 @@ void GameApplication::OnRender() {
                     items,
                     lightManager_.get(),
                     skinnedItems,
-                    false  // デバッグ描画無効
+                    false,  // デバッグ描画無効
+                    {},
+                    {},
+                    true   // シャドウ済み
                 );
 
                 // ポストプロセス設定を取得して適用
@@ -364,9 +370,13 @@ void GameApplication::OnRender() {
                     skinnedItems,
                     true,  // デバッグ描画有効
                     outlineItems,
-                    outlineSkinnedItems
+                    outlineSkinnedItems,
+                    true   // シャドウ済み
                 );
             }
+
+            // シャドウマップをDEPTH_WRITEに復元
+            renderer_->RestoreShadowMaps();
 
             // メインウィンドウのレンダーターゲットを再設定
             graphics_->SetBackBufferAsRenderTarget();

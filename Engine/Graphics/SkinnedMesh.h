@@ -53,6 +53,14 @@ public:
         }
     }
 
+    // GPU転送完了後にCPU側頂点/インデックスデータを解放（メモリ節約）
+    void ReleaseCPUData() {
+        cpuVertices_.clear();
+        cpuVertices_.shrink_to_fit();
+        cpuIndices_.clear();
+        cpuIndices_.shrink_to_fit();
+    }
+
 private:
     void CalculateBounds(const std::vector<SkinnedVertex>& vertices);
 

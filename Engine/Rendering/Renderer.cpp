@@ -158,7 +158,7 @@ void Renderer::UpdateLighting(const RenderView& view, LightManager* lights, Matr
     lightData.cameraPosition = Float3(cameraPos.GetX(), cameraPos.GetY(), cameraPos.GetZ());
 
     // Point lights (max 8)
-    auto pointCount = static_cast<int32_t>(std::min(gpuLight.pointLights.size(), size_t(8)));
+    auto pointCount = static_cast<int32_t>(gpuLight.pointLightCount);
     lightData.pointLightCount = pointCount;
     for (int32_t i = 0; i < pointCount; ++i) {
         const auto& pl = gpuLight.pointLights[i];
@@ -169,7 +169,7 @@ void Renderer::UpdateLighting(const RenderView& view, LightManager* lights, Matr
     }
 
     // Spot lights (max 4)
-    auto spotCount = static_cast<int32_t>(std::min(gpuLight.spotLights.size(), size_t(4)));
+    auto spotCount = static_cast<int32_t>(gpuLight.spotLightCount);
     lightData.spotLightCount = spotCount;
     for (int32_t i = 0; i < spotCount; ++i) {
         const auto& sl = gpuLight.spotLights[i];
@@ -402,23 +402,58 @@ void Renderer::RenderLoadingScreen(std::string_view message, float progress) {
 }
 #endif
 
+void Renderer::RenderShadowPrePass(const RenderView& view,
+                                    const std::vector<RenderItem>& items,
+                                    const std::vector<SkinnedRenderItem>& skinnedItems,
+                                    LightManager* lightManager) {
+    if (!view.camera) return;
+
+    Matrix4x4 lightViewProj;
+    UpdateLighting(view, lightManager, lightViewProj);
+    RenderShadowMap(items, skinnedItems, lightViewProj);
+    RenderSpotShadowMaps(items, skinnedItems);
+    currentBoneSlot_ = 0;
+}
+
 void Renderer::DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle,
                              D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle, const RenderView& view,
                              const std::vector<RenderItem>& items, LightManager* lightManager,
                              const std::vector<SkinnedRenderItem>& skinnedItems,
                              bool enableDebugDraw,
                              std::span<const RenderItem> outlineItems,
-                             std::span<const SkinnedRenderItem> outlineSkinnedItems) {
+                             std::span<const SkinnedRenderItem> outlineSkinnedItems,
+                             bool shadowsAlreadyRendered) {
     if (!view.camera) return;
 
     auto* cmdList = graphics_->GetCommandList();
 
-    // Shadow pass (before scene RT barrier)
     Matrix4x4 lightViewProj;
-    UpdateLighting(view, lightManager, lightViewProj);
-    RenderShadowMap(items, skinnedItems, lightViewProj);
-    RenderSpotShadowMaps(items, skinnedItems);
-    currentBoneSlot_ = 0;
+
+    if (!shadowsAlreadyRendered) {
+        UpdateLighting(view, lightManager, lightViewProj);
+        RenderShadowMap(items, skinnedItems, lightViewProj);
+        RenderSpotShadowMaps(items, skinnedItems);
+        currentBoneSlot_ = 0;
+    } else {
+        // シャドウ済み: ライトCBのみ更新（カメラ位置がビュー毎に異なる）
+        // lastLightViewProj_ と spotLightViewProjs_ はプリパスの値を保持
+        Matrix4x4 savedLightViewProj = lastLightViewProj_;
+        Matrix4x4 savedSpotViewProjs[MAX_SPOT_SHADOWS];
+        int32_t savedSpotCount = activeSpotShadowCount_;
+        for (int i = 0; i < savedSpotCount; ++i) {
+            savedSpotViewProjs[i] = spotLightViewProjs_[i];
+        }
+
+        UpdateLighting(view, lightManager, lightViewProj);
+
+        lastLightViewProj_ = savedLightViewProj;
+        activeSpotShadowCount_ = savedSpotCount;
+        for (int i = 0; i < savedSpotCount; ++i) {
+            spotLightViewProjs_[i] = savedSpotViewProjs[i];
+        }
+        lightViewProj = savedLightViewProj;
+        currentBoneSlot_ = 0;
+    }
 
     // Resource barrier: PIXEL_SHADER_RESOURCE -> RENDER_TARGET
     D3D12_RESOURCE_BARRIER barrier = {};
@@ -514,7 +549,17 @@ void Renderer::DrawToTexture(ID3D12Resource* renderTarget, D3D12_CPU_DESCRIPTOR_
     barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
     cmdList->ResourceBarrier(1, &barrier);
 
-    // Restore shadow map to DEPTH_WRITE for next frame
+    // Restore shadow map to DEPTH_WRITE for next frame (skip if pre-pass handles it)
+    if (!shadowsAlreadyRendered) {
+        shadowMap_.RestoreForNextFrame(cmdList);
+        for (int i = 0; i < activeSpotShadowCount_; ++i) {
+            spotShadowMaps_[i].RestoreForNextFrame(cmdList);
+        }
+    }
+}
+
+void Renderer::RestoreShadowMaps() {
+    auto* cmdList = graphics_->GetCommandList();
     shadowMap_.RestoreForNextFrame(cmdList);
     for (int i = 0; i < activeSpotShadowCount_; ++i) {
         spotShadowMaps_[i].RestoreForNextFrame(cmdList);

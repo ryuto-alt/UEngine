@@ -11,8 +11,33 @@
 #include "../Physics/RigidbodyComponent.h"
 #include "../Cinematic/CinematicManager.h"
 #include "../../Game/GameApplication.h"
+#include <nlohmann/json.hpp>
+#include <fstream>
 
 namespace UnoEngine {
+
+// nlohmann::json → sol::object 再帰変換
+static sol::object JsonToLua(sol::state& lua, const nlohmann::json& j) {
+    if (j.is_object()) {
+        sol::table t = lua.create_table();
+        for (auto& [key, val] : j.items()) {
+            t[key] = JsonToLua(lua, val);
+        }
+        return t;
+    }
+    if (j.is_array()) {
+        sol::table t = lua.create_table();
+        for (std::size_t i = 0; i < j.size(); ++i) {
+            t[static_cast<int>(i + 1)] = JsonToLua(lua, j[i]);
+        }
+        return t;
+    }
+    if (j.is_number_float())   return sol::make_object(lua, j.get<double>());
+    if (j.is_number_integer()) return sol::make_object(lua, j.get<int>());
+    if (j.is_boolean())        return sol::make_object(lua, j.get<bool>());
+    if (j.is_string())         return sol::make_object(lua, j.get<std::string>());
+    return sol::lua_nil;
+}
 
 void LuaScriptComponent::Awake() {
     // LuaStateがまだ作成されていない場合は作成
@@ -607,6 +632,33 @@ void LuaScriptComponent::BindEngineAPI() {
                 t["normal_y"]    = hit->normal.GetY();
                 t["normal_z"]    = hit->normal.GetZ();
                 return t;
+            }
+        );
+    }
+
+    // ===== Config API (JSON設定ファイル読み込み) =====
+    {
+        LuaState* luaStatePtr = luaState_.get();
+        lua["Config"] = lua.create_table_with(
+            "loadJson", [luaStatePtr](const std::string& path) -> sol::object {
+                auto& ls = luaStatePtr->GetState();
+
+                std::ifstream file(path);
+                if (!file.is_open()) {
+                    Logger::Warning("[Config] Failed to open: {}", path);
+                    return sol::lua_nil;
+                }
+
+                nlohmann::json j;
+                try {
+                    file >> j;
+                } catch (...) {
+                    Logger::Warning("[Config] Failed to parse: {}", path);
+                    return sol::lua_nil;
+                }
+
+                Logger::Info("[Config] Loaded: {}", path);
+                return JsonToLua(ls, j);
             }
         );
     }

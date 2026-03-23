@@ -6341,6 +6341,12 @@ void EditorUI::PreLoadPendingThumbnails() {
 					isDirty_ = true;
 				}
 
+				float chaseDist = detection->GetChaseStoppingDistance();
+				if (ImGui::DragFloat(U8("追跡停止距離"), &chaseDist, 0.05f, 0.0f, 5.0f, "%.2f m")) {
+					detection->SetChaseStoppingDistance(chaseDist);
+					isDirty_ = true;
+				}
+
 				// ターゲット選択（ドロップダウン）
 				std::string currentTarget = detection->GetTargetName();
 				std::string displayName = currentTarget.empty() ? "(None)" : currentTarget;
@@ -6375,12 +6381,12 @@ void EditorUI::PreLoadPendingThumbnails() {
 				ImGui::Spacing();
 				const char* stateStr = "Idle";
 				ImVec4 stateColor = ImVec4(0.6f, 0.6f, 0.6f, 1.0f);
-				switch (detection->GetState()) {
-					case EnemyDetectionComponent::State::Chasing:
+				switch (detection->GetStateType()) {
+					case EnemyStateType::Chasing:
 						stateStr = "Chasing";
 						stateColor = ImVec4(1.0f, 0.3f, 0.3f, 1.0f);
 						break;
-					case EnemyDetectionComponent::State::LostTarget:
+					case EnemyStateType::LostTarget:
 						stateStr = "Lost Target";
 						stateColor = ImVec4(1.0f, 0.8f, 0.0f, 1.0f);
 						break;

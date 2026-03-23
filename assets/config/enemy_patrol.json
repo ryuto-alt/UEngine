@@ -1,0 +1,12 @@
+{
+    "moveSpeed": 4.0,
+    "waitTime": 2.0,
+    "loopPatrol": true,
+    "stoppingDistance": 0.5,
+    "patrolPoints": [
+        { "x": 0, "y": 0, "z": 0 },
+        { "x": 10, "y": 0, "z": 0 },
+        { "x": 10, "y": 0, "z": 10 },
+        { "x": 0, "y": 0, "z": 10 }
+    ]
+}

@@ -1,12 +1,21 @@
 #include "pch.h"
 #include "EnemyDetectionComponent.h"
+#include "EnemyState.h"
 #include "../Core/GameObject.h"
 #include "../Core/Scene.h"
 #include "../Core/Logger.h"
 #include "../Navigation/NavAgentComponent.h"
 #include <cmath>
+#include <algorithm>
 
 namespace UnoEngine {
+
+// ─────────────────────────────────────────────
+// EnemyDetectionComponent
+// ─────────────────────────────────────────────
+
+EnemyDetectionComponent::EnemyDetectionComponent()
+    : currentState_(std::make_unique<IdleState>()) {}
 
 void EnemyDetectionComponent::Awake() {
     navAgent_ = GetGameObject()->GetComponent<NavAgentComponent>();
@@ -27,53 +36,22 @@ void EnemyDetectionComponent::Start() {
 }
 
 void EnemyDetectionComponent::OnUpdate(float deltaTime) {
-    if (!navAgent_) {
+    if (!navAgent_ || !scene_) {
         return;
     }
 
-    if (!scene_) {
-        return;
+    if (auto nextState = currentState_->Update(*this, deltaTime)) {
+        currentState_->Exit(*this);
+        nextState->Enter(*this);
+        currentState_ = std::move(nextState);
     }
+}
 
-    switch (state_) {
-        case State::Idle: {
-            // プレイヤーを探す
-            auto* target = FindTarget();
-            if (target) {
-                float dist = GetDistanceToTarget(target);
-                bool inFOV = IsTargetInFOV(target);
-
-                if (dist <= detectionRange_ && inFOV) {
-                    Logger::Info("[EnemyDetection] Found target! Distance: {:.1f}m, InFOV: true", dist);
-                    StartChasing(target);
-                }
-            }
-            break;
-        }
-
-        case State::Chasing: {
-            if (!currentTarget_) {
-                StopChasing();
-                break;
-            }
-
-            float distance = GetDistanceToTarget(currentTarget_);
-
-            // 見失う距離を超えたら追跡終了
-            if (distance > loseRange_) {
-                StopChasing();
-            }
-            break;
-        }
-
-        case State::LostTarget: {
-            lostTimer_ += deltaTime;
-            if (lostTimer_ >= lostWaitTime_) {
-                StartWandering();
-            }
-            break;
-        }
+EnemyStateType EnemyDetectionComponent::GetStateType() const {
+    if (currentState_) {
+        return currentState_->GetType();
     }
+    return EnemyStateType::Idle;
 }
 
 GameObject* EnemyDetectionComponent::FindTarget() {
@@ -88,19 +66,6 @@ GameObject* EnemyDetectionComponent::FindTarget() {
     }
 
     return nullptr;
-}
-
-bool EnemyDetectionComponent::IsTargetInSight(GameObject* target) {
-    if (!target) {
-        return false;
-    }
-
-    float distance = GetDistanceToTarget(target);
-    if (distance > detectionRange_) {
-        return false;
-    }
-
-    return IsTargetInFOV(target);
 }
 
 float EnemyDetectionComponent::GetDistanceToTarget(GameObject* target) {
@@ -127,60 +92,116 @@ bool EnemyDetectionComponent::IsTargetInFOV(GameObject* target) {
     auto myPos = myTransform.GetPosition();
     auto targetPos = target->GetTransform().GetPosition();
 
-    // ターゲットへの方向ベクトル（XZ平面）
     float dx = targetPos.GetX() - myPos.GetX();
     float dz = targetPos.GetZ() - myPos.GetZ();
     float length = std::sqrt(dx * dx + dz * dz);
 
-    if (length < 0.001f) {
-        return true; // 同じ位置
+    if (length < kNormalizationEpsilon) {
+        return true;
     }
 
     dx /= length;
     dz /= length;
 
-    // 敵の前方ベクトルを取得
     auto forward = myTransform.GetForward();
     float forwardX = forward.GetX();
     float forwardZ = forward.GetZ();
 
-    // XZ平面で正規化
     float forwardLen = std::sqrt(forwardX * forwardX + forwardZ * forwardZ);
-    if (forwardLen > 0.001f) {
+    if (forwardLen > kNormalizationEpsilon) {
         forwardX /= forwardLen;
         forwardZ /= forwardLen;
     }
 
-    // 内積で角度を計算
     float dot = dx * forwardX + dz * forwardZ;
-    float angleRad = std::acos(std::clamp(dot, -1.0f, 1.0f));
-    float angleDeg = angleRad * (180.0f / 3.14159265f);
+    float angleDeg = std::acos(std::clamp(dot, -1.0f, 1.0f)) * kRadToDeg;
 
-    // FOVの半分と比較（±45度 = 90度FOV）
     return angleDeg <= (fieldOfView_ * 0.5f);
 }
 
 void EnemyDetectionComponent::StartChasing(GameObject* target) {
     currentTarget_ = target;
-    state_ = State::Chasing;
-    // StartChaseが内部で状態を切り替えるのでStopWanderは不要
-    navAgent_->StartChase(target, 0.2f);
+    navAgent_->StartChase(target, chaseStoppingDistance_);
     Logger::Info("[EnemyDetection] Start chasing: {}", target->GetName());
 }
 
 void EnemyDetectionComponent::StopChasing() {
     currentTarget_ = nullptr;
-    state_ = State::LostTarget;
-    lostTimer_ = 0.0f;
-    navAgent_->StopChase(); // 内部でStop()も呼ばれる
+    navAgent_->StopChase();
     Logger::Info("[EnemyDetection] Lost target, waiting...");
 }
 
 void EnemyDetectionComponent::StartWandering() {
-    state_ = State::Idle;
-    lostTimer_ = 0.0f;
     navAgent_->StartWander(NavAgentComponent::WanderMode::AroundSpawn, wanderRadius_);
     Logger::Info("[EnemyDetection] Start wandering");
+}
+
+// ─────────────────────────────────────────────
+// State implementations
+// ─────────────────────────────────────────────
+
+// IdleState
+
+void IdleState::Enter(EnemyDetectionComponent& owner) {
+    owner.SetCurrentTarget(nullptr);
+    owner.StartWandering();
+}
+
+auto IdleState::Update(EnemyDetectionComponent& owner, float /*deltaTime*/)
+    -> std::unique_ptr<EnemyState> {
+    auto* target = owner.FindTarget();
+    if (!target) {
+        return nullptr;
+    }
+
+    float dist = owner.GetDistanceToTarget(target);
+    bool inFOV = owner.IsTargetInFOV(target);
+
+    if (dist <= owner.GetDetectionRange() && inFOV) {
+        Logger::Info("[EnemyDetection] Found target! Distance: {:.1f}m, InFOV: true", dist);
+        auto nextState = std::make_unique<ChasingState>();
+        owner.StartChasing(target);
+        return nextState;
+    }
+
+    return nullptr;
+}
+
+// ChasingState
+
+void ChasingState::Enter(EnemyDetectionComponent& /*owner*/) {}
+
+auto ChasingState::Update(EnemyDetectionComponent& owner, float /*deltaTime*/)
+    -> std::unique_ptr<EnemyState> {
+    if (!owner.GetCurrentTarget()) {
+        return std::make_unique<LostTargetState>();
+    }
+
+    float distance = owner.GetDistanceToTarget(owner.GetCurrentTarget());
+
+    if (distance > owner.GetLoseRange()) {
+        owner.StopChasing();
+        return std::make_unique<LostTargetState>();
+    }
+
+    return nullptr;
+}
+
+// LostTargetState
+
+void LostTargetState::Enter(EnemyDetectionComponent& /*owner*/) {
+    timer_ = 0.0f;
+}
+
+auto LostTargetState::Update(EnemyDetectionComponent& owner, float deltaTime)
+    -> std::unique_ptr<EnemyState> {
+    timer_ += deltaTime;
+
+    if (timer_ >= owner.GetLostWaitTime()) {
+        return std::make_unique<IdleState>();
+    }
+
+    return nullptr;
 }
 
 } // namespace UnoEngine

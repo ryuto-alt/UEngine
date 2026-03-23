@@ -1,0 +1,7 @@
+{
+    "moveSpeed": 12.0,
+    "rotateSpeed": 500.0,
+    "inputThreshold": 0.1,
+    "halfTurnDeg": 180,
+    "fullTurnDeg": 360
+}

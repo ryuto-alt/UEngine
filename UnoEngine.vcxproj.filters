@@ -1086,6 +1086,9 @@
       <Filter>Engine\Navigation</Filter>
     </ClInclude>
     <!-- Engine\AI -->
+    <ClInclude Include="Engine\AI\EnemyState.h">
+      <Filter>Engine\AI</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\AI\EnemyDetectionComponent.h">
       <Filter>Engine\AI</Filter>
     </ClInclude>

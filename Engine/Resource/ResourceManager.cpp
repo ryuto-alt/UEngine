@@ -277,11 +277,12 @@ void ResourceManager::ReleaseUploadBuffers() {
         }
     }
 
-    // スキンモデルのアップロードバッファ解放
+    // スキンモデルのアップロードバッファ解放 + CPU頂点データ解放
     for (auto& [path, model] : skinnedModels_) {
         if (model) {
             for (auto& mesh : model->meshes) {
                 mesh.ReleaseUploadBuffers();
+                mesh.ReleaseCPUData();
             }
         }
     }

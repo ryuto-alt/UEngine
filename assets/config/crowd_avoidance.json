@@ -1,0 +1,32 @@
+{
+    "preset0": {
+        "velBias": 0.4,
+        "weightDesVel": 2.0,
+        "weightCurVel": 0.75,
+        "weightSide": 0.75,
+        "weightToi": 2.5,
+        "horizTime": 2.5,
+        "gridSize": 33,
+        "adaptiveDivs": 7,
+        "adaptiveRings": 2,
+        "adaptiveDepth": 5
+    },
+    "preset1": {
+        "velBias": 0.4,
+        "weightDesVel": 2.0,
+        "weightCurVel": 0.75,
+        "weightSide": 0.75,
+        "weightToi": 2.5,
+        "horizTime": 2.5,
+        "gridSize": 33,
+        "adaptiveDivs": 8,
+        "adaptiveRings": 3,
+        "adaptiveDepth": 6
+    },
+    "agentDefaults": {
+        "accelerationMultiplier": 10.0,
+        "collisionQueryRangeMultiplier": 12.0,
+        "pathOptimizationRangeMultiplier": 30.0,
+        "separationWeight": 0.0
+    }
+}

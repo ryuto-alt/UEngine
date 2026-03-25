@@ -6,11 +6,29 @@
 #include "../Physics/RigidbodyComponent.h"
 #include "../Core/Transform.h"
 
+#include <nlohmann/json.hpp>
+#include <fstream>
+
 #ifdef WITH_EDITOR
 #include "../../Game/UI/EditorUI.h"
 #endif
 
 namespace UnoEngine {
+
+PhysicsSystem::PhysicsSystem() {
+    LoadConfig();
+}
+
+void PhysicsSystem::LoadConfig() {
+    std::ifstream file("assets/config/physics.json");
+    if (!file.is_open()) return;
+
+    try {
+        nlohmann::json j;
+        file >> j;
+        gravity_ = j.value("gravity", gravity_);
+    } catch (...) {}
+}
 
 void PhysicsSystem::OnSceneStart(Scene* /*scene*/) {}
 void PhysicsSystem::OnSceneEnd(Scene* /*scene*/) {}
@@ -33,13 +51,12 @@ void PhysicsSystem::OnUpdate(Scene* scene, float deltaTime) {
         auto& transform = obj->GetTransform();
         auto pos        = transform.GetLocalPosition();
 
-        // MeshCollisionSystem (or previous frame) may have set grounded
         bool wasGrounded = rb->isGrounded_;
         bool aabbColliding = collision && collision->IsColliding();
 
-        // Gravity — skip if grounded (from any collision source)
+        // 外部設定可能な重力を適用
         if (rb->useGravity_ && !wasGrounded && !aabbColliding) {
-            float vy = rb->velocity_.GetY() + kGravity * deltaTime;
+            float vy = rb->velocity_.GetY() + gravity_ * deltaTime;
             rb->velocity_ = Vector3(rb->velocity_.GetX(), vy, rb->velocity_.GetZ());
         }
 

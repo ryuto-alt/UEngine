@@ -47,8 +47,8 @@ void CollisionSystem::OnUpdate(Scene* scene, float deltaTime) {
     GatherCollisionComponents(scene);
     
     // 複数回イテレーションで衝突解決（トンネル効果と押し戻し後の再衝突を防ぐ）
-    constexpr int maxIterations = 4;
-    for (int iter = 0; iter < maxIterations; ++iter) {
+    static constexpr int kMaxCollisionIterations = 4;
+    for (int iter = 0; iter < kMaxCollisionIterations; ++iter) {
         CheckCollisions();
         if (currentCollisions_.empty()) break;
         ResolveCollisions();
@@ -260,19 +260,19 @@ void CollisionSystem::ResolveCollisions() {
         Vector3 resolution = pair.penetration;
         
         // 押し戻し後の再衝突を防ぐマージン（CheckAABBCollisionのepsilonより大きく）
-        constexpr float margin = 0.002f;
+        static constexpr float kCollisionMargin = 0.002f;
         float resX = resolution.GetX();
         float resY = resolution.GetY();
         float resZ = resolution.GetZ();
         
         if (std::abs(resX) > 0.0001f) {
-            resX += (resX > 0) ? margin : -margin;
+            resX += (resX > 0) ? kCollisionMargin : -kCollisionMargin;
         }
         if (std::abs(resY) > 0.0001f) {
-            resY += (resY > 0) ? margin : -margin;
+            resY += (resY > 0) ? kCollisionMargin : -kCollisionMargin;
         }
         if (std::abs(resZ) > 0.0001f) {
-            resZ += (resZ > 0) ? margin : -margin;
+            resZ += (resZ > 0) ? kCollisionMargin : -kCollisionMargin;
         }
         
         resolution = Vector3(resX, resY, resZ);

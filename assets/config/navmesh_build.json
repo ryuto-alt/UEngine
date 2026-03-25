@@ -1,0 +1,36 @@
+{
+    "voxel": {
+        "cellSize": 0.1,
+        "cellHeight": 0.2
+    },
+    "agent": {
+        "radius": 0.5,
+        "height": 2.0,
+        "maxClimb": 0.3,
+        "maxSlope": 45.0
+    },
+    "geometry": {
+        "maxSimplificationError": 1.2,
+        "detailSampleDist": 6.0,
+        "detailSampleMaxError": 1.0
+    },
+    "region": {
+        "minArea": 8,
+        "mergeArea": 20
+    },
+    "polyMesh": {
+        "maxEdgeLength": 12,
+        "maxVertsPerPoly": 6
+    },
+    "tiling": {
+        "maxTiles": 32,
+        "tileSize": 32,
+        "borderSize": 0.0
+    },
+    "filtering": {
+        "useMonotone": true,
+        "filterLowHangingObstacles": true,
+        "filterLedgeSpans": true,
+        "filterWalkableLowHeightSpans": true
+    }
+}

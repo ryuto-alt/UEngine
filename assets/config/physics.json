@@ -1,0 +1,19 @@
+{
+    "gravity": -30.0,
+    "rigidbodyDefaults": {
+        "mass": 1.0,
+        "drag": 0.05
+    },
+    "collision": {
+        "groundNormalThreshold": 0.7,
+        "maxDepenetrationPasses": 4,
+        "skinWidth": 0.005,
+        "defaultMaxStepHeight": 0.4,
+        "maxIterations": 4,
+        "margin": 0.002
+    },
+    "capsuleDefaults": {
+        "radius": 0.3,
+        "maxStepHeight": 0.4
+    }
+}

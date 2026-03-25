@@ -10,6 +10,7 @@
 #include <DetourNavMeshQuery.h>
 #include <DetourCrowd.h>
 
+#include <nlohmann/json.hpp>
 #include <chrono>
 #include <cstring>
 #include <algorithm>
@@ -647,27 +648,27 @@ bool NavMeshManager::FindPath(const DirectX::XMFLOAT3& start,
     }
     
     // パス検索
-    static const int MAX_POLYS = 256;
-    dtPolyRef polys[MAX_POLYS];
+    static constexpr int kMaxPathPolys = 256;
+    dtPolyRef polys[kMaxPathPolys];
     int npolys = 0;
-    
-    status = m_navMeshQuery->findPath(startRef, endRef, startNearest, endNearest, &filter, polys, &npolys, MAX_POLYS);
+
+    status = m_navMeshQuery->findPath(startRef, endRef, startNearest, endNearest, &filter, polys, &npolys, kMaxPathPolys);
     if (dtStatusFailed(status) || npolys == 0)
     {
         return false;
     }
-    
+
     // パスを直線パスに変換
-    static const int MAX_STRAIGHT_PATH = 256;
-    float straightPath[MAX_STRAIGHT_PATH * 3];
-    unsigned char straightPathFlags[MAX_STRAIGHT_PATH];
-    dtPolyRef straightPathPolys[MAX_STRAIGHT_PATH];
+    static constexpr int kMaxStraightPath = 256;
+    float straightPath[kMaxStraightPath * 3];
+    unsigned char straightPathFlags[kMaxStraightPath];
+    dtPolyRef straightPathPolys[kMaxStraightPath];
     int nstraightPath = 0;
-    
+
     status = m_navMeshQuery->findStraightPath(startNearest, endNearest,
                                                polys, npolys,
                                                straightPath, straightPathFlags, straightPathPolys,
-                                               &nstraightPath, MAX_STRAIGHT_PATH);
+                                               &nstraightPath, kMaxStraightPath);
     if (dtStatusFailed(status))
     {
         return false;
@@ -1104,30 +1105,48 @@ bool NavMeshManager::InitializeCrowd(int maxAgents, float maxAgentRadius)
         return false;
     }
     
-    // 障害物回避パラメータの設定（狭い通路向けに最適化）
+    // 障害物回避パラメータをJSONから読み込み
+    auto loadPreset = [](const nlohmann::json& preset, dtObstacleAvoidanceParams& out) {
+        out.velBias       = preset.value("velBias", 0.4f);
+        out.weightDesVel  = preset.value("weightDesVel", 2.0f);
+        out.weightCurVel  = preset.value("weightCurVel", 0.75f);
+        out.weightSide    = preset.value("weightSide", 0.75f);
+        out.weightToi     = preset.value("weightToi", 2.5f);
+        out.horizTime     = preset.value("horizTime", 2.5f);
+        out.gridSize      = static_cast<unsigned char>(preset.value("gridSize", 33));
+        out.adaptiveDivs  = static_cast<unsigned char>(preset.value("adaptiveDivs", 7));
+        out.adaptiveRings = static_cast<unsigned char>(preset.value("adaptiveRings", 2));
+        out.adaptiveDepth = static_cast<unsigned char>(preset.value("adaptiveDepth", 5));
+    };
+
+    nlohmann::json crowdConfig;
+    {
+        std::ifstream file("assets/config/crowd_avoidance.json");
+        if (file.is_open()) {
+            try { file >> crowdConfig; } catch (...) { crowdConfig = {}; }
+        }
+    }
+
     dtObstacleAvoidanceParams params;
     std::memset(&params, 0, sizeof(params));
-    
-    // 高精度設定（狭い迷路向け）
-    params.velBias = 0.4f;
-    params.weightDesVel = 2.0f;
-    params.weightCurVel = 0.75f;
-    params.weightSide = 0.75f;
-    params.weightToi = 2.5f;
-    params.horizTime = 2.5f;
-    params.gridSize = 33;
-    params.adaptiveDivs = 7;
-    params.adaptiveRings = 2;
-    params.adaptiveDepth = 5;
-    
+
+    // プリセット0: 標準精度（狭い迷路向け）
+    if (crowdConfig.contains("preset0"))
+        loadPreset(crowdConfig["preset0"], params);
+    else
+        loadPreset({}, params);
     m_crowd->setObstacleAvoidanceParams(0, &params);
-    
-    // さらに高精度なプリセット（インデックス1）
-    params.adaptiveDivs = 8;
-    params.adaptiveRings = 3;
-    params.adaptiveDepth = 6;
+
+    // プリセット1: 高精度
+    if (crowdConfig.contains("preset1"))
+        loadPreset(crowdConfig["preset1"], params);
+    else {
+        params.adaptiveDivs  = 8;
+        params.adaptiveRings = 3;
+        params.adaptiveDepth = 6;
+    }
     m_crowd->setObstacleAvoidanceParams(1, &params);
-    
+
     return true;
 }
 
@@ -1139,18 +1158,43 @@ int NavMeshManager::AddCrowdAgent(const DirectX::XMFLOAT3& position, float radiu
         return -1;
     }
 
+    // エージェントパラメータ乗数をJSONから取得（crowd_avoidance.json → agentDefaults）
+    static const auto agentDefaults = []() {
+        struct AgentMultipliers {
+            float acceleration = 10.0f;
+            float collisionQueryRange = 12.0f;
+            float pathOptimizationRange = 30.0f;
+            float separationWeight = 0.0f;
+        } defaults;
+        std::ifstream file("assets/config/crowd_avoidance.json");
+        if (file.is_open()) {
+            try {
+                nlohmann::json j;
+                file >> j;
+                if (j.contains("agentDefaults")) {
+                    auto& d = j["agentDefaults"];
+                    defaults.acceleration            = d.value("accelerationMultiplier", defaults.acceleration);
+                    defaults.collisionQueryRange     = d.value("collisionQueryRangeMultiplier", defaults.collisionQueryRange);
+                    defaults.pathOptimizationRange   = d.value("pathOptimizationRangeMultiplier", defaults.pathOptimizationRange);
+                    defaults.separationWeight        = d.value("separationWeight", defaults.separationWeight);
+                }
+            } catch (...) {}
+        }
+        return defaults;
+    }();
+
     dtCrowdAgentParams ap;
     std::memset(&ap, 0, sizeof(ap));
 
     ap.radius = radius;
     ap.height = height;
-    ap.maxAcceleration = maxAcceleration * 10.0f; // 即座に最高速へ到達
+    ap.maxAcceleration = maxAcceleration * agentDefaults.acceleration;
     ap.maxSpeed = maxSpeed;
 
-    // コーナーでの飛び出しを避けるため、NavMesh境界を考慮して進行させる
-    ap.collisionQueryRange = radius * 12.0f;
-    ap.pathOptimizationRange = radius * 30.0f;
-    ap.separationWeight = 0.0f;
+    // NavMesh境界を考慮した回避範囲
+    ap.collisionQueryRange = radius * agentDefaults.collisionQueryRange;
+    ap.pathOptimizationRange = radius * agentDefaults.pathOptimizationRange;
+    ap.separationWeight = agentDefaults.separationWeight;
 
     ap.updateFlags = DT_CROWD_ANTICIPATE_TURNS |
                      DT_CROWD_OBSTACLE_AVOIDANCE |
@@ -1439,7 +1483,7 @@ bool NavMeshManager::GetNextCorner(int agentIndex, DirectX::XMFLOAT3& outCorner,
         return false;
     }
 
-    constexpr float MIN_LOOKAHEAD_DIST = 0.3f;
+    static constexpr float kMinLookaheadDist = 0.3f;
 
     // コーナーリストから十分遠いものを探す
     for (int i = 0; i < agent->ncorners; ++i)
@@ -1453,7 +1497,7 @@ bool NavMeshManager::GetNextCorner(int agentIndex, DirectX::XMFLOAT3& outCorner,
         float dz = cz - agent->npos[2];
         float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
 
-        if (dist >= MIN_LOOKAHEAD_DIST)
+        if (dist >= kMinLookaheadDist)
         {
             outCorner.x = cx;
             outCorner.y = cy;

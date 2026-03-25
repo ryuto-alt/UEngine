@@ -6,17 +6,23 @@ namespace UnoEngine {
 
 class PhysicsSystem : public ISystem {
 public:
-    PhysicsSystem() = default;
+    PhysicsSystem();
     ~PhysicsSystem() override = default;
 
     void OnSceneStart(Scene* scene) override;
     void OnUpdate(Scene* scene, float deltaTime) override;
     void OnSceneEnd(Scene* scene) override;
 
-    // Lower priority = runs before CollisionSystem (priority 50)
     int GetPriority() const override { return 40; }
 
-    static constexpr float kGravity = -30.0f;
+    float GetGravity() const { return gravity_; }
+    void SetGravity(float g) { gravity_ = g; }
+
+private:
+    // assets/config/physics.json から読み込み。デフォルト -30.0
+    float gravity_ = -30.0f;
+
+    void LoadConfig();
 };
 
 } // namespace UnoEngine
